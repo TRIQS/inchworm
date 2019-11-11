@@ -1,22 +1,22 @@
 /*******************************************************************************
  *
- * app4triqs: A TRIQS based impurity solver
+ * inchworm: A TRIQS based impurity solver
  *
  * Copyright (c) 2019 The Simons foundation
  *   authors: Nils Wentzell
  *
- * app4triqs is free software: you can redistribute it and/or modify it under the
+ * inchworm is free software: you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 3 of the License, or (at your option) any later
  * version.
  *
- * app4triqs is distributed in the hope that it will be useful, but WITHOUT ANY
+ * inchworm is distributed in the hope that it will be useful, but WITHOUT ANY
  * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
  *
  * You should have received a copy of the GNU General Public License along with
- * app4triqs. If not, see <http://www.gnu.org/licenses/>.
+ * inchworm. If not, see <http://www.gnu.org/licenses/>.
  *
  ******************************************************************************/
 #include "./solver_core.hpp"
@@ -28,7 +28,7 @@
 #include <triqs/utility/callbacks.hpp>
 #include <triqs/mc_tools/mc_generic.hpp>
 
-namespace app4triqs {
+namespace inchworm {
 
   solver_core::solver_core(constr_params_t const &p) : constr_params(p) {
 
@@ -49,7 +49,7 @@ namespace app4triqs {
 
     if (world.rank() == 0)
       std::cout << "\n"
-                   "APP4TRIQS Solver\n";
+                   "INCHWORM Solver\n";
 
     // Assert hermiticity of the given Weiss field
     if (!is_gf_hermitian(G0_iw)) TRIQS_RUNTIME_ERROR << "Please make sure that G0_iw fullfills the hermiticity relation G_ij[iw] = G_ji[-iw]*";
@@ -97,7 +97,7 @@ namespace app4triqs {
     auto grp = h5group.create_group(subgroup_name);
     h5_write_attribute(grp, "TRIQS_HDF5_data_scheme", solver_core::hdf5_scheme());
     h5_write_attribute(grp, "TRIQS_GIT_HASH", std::string(AS_STRING(TRIQS_GIT_HASH)));
-    h5_write_attribute(grp, "APP4TRIQS_GIT_HASH", std::string(AS_STRING(APP4TRIQS_GIT_HASH)));
+    h5_write_attribute(grp, "INCHWORM_GIT_HASH", std::string(AS_STRING(INCHWORM_GIT_HASH)));
     h5_write(grp, "", s.result_set());
     h5_write(grp, "constr_params", s.constr_params);
     h5_write(grp, "last_solve_params", s.last_solve_params);
@@ -114,4 +114,4 @@ namespace app4triqs {
     return s;
   }
 
-} // namespace app4triqs
+} // namespace inchworm

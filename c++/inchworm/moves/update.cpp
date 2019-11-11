@@ -1,6 +1,6 @@
 #include "./update.hpp"
 
-namespace app4triqs::moves {
+namespace inchworm::moves {
 
   mc_weight_t insert::attempt() {
     // TODO
@@ -16,4 +16,4 @@ namespace app4triqs::moves {
     // TODO
   }
 
-} // namespace app4triqs::moves
+} // namespace inchworm::moves

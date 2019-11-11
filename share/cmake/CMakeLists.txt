@@ -1,10 +1,10 @@
-configure_file(app4triqs-config.cmake.in app4triqs-config.cmake @ONLY)
-configure_file(app4triqs-config-version.cmake.in app4triqs-config-version.cmake @ONLY)
+configure_file(inchworm-config.cmake.in inchworm-config.cmake @ONLY)
+configure_file(inchworm-config-version.cmake.in inchworm-config-version.cmake @ONLY)
 install(
   FILES
-    ${CMAKE_CURRENT_BINARY_DIR}/app4triqs-config.cmake
-    ${CMAKE_CURRENT_BINARY_DIR}/app4triqs-config-version.cmake
-  DESTINATION lib/cmake/app4triqs
+    ${CMAKE_CURRENT_BINARY_DIR}/inchworm-config.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/inchworm-config-version.cmake
+  DESTINATION lib/cmake/inchworm
 )
 
-install(EXPORT app4triqs-targets NAMESPACE app4triqs:: DESTINATION lib/cmake/app4triqs)
+install(EXPORT inchworm-targets NAMESPACE inchworm:: DESTINATION lib/cmake/inchworm)

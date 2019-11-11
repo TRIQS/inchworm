@@ -3,7 +3,7 @@
 
 #include <triqs/mc_tools/random_generator.hpp>
 
-namespace app4triqs::moves {
+namespace inchworm::moves {
 
   /// A simple Monte-Carlo move
   struct insert {
@@ -24,4 +24,4 @@ namespace app4triqs::moves {
     void reject();
   };
 
-} // namespace app4triqs::moves
+} // namespace inchworm::moves

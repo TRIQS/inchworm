@@ -2,7 +2,7 @@
 #include "./types.hpp"
 #include "./params.hpp"
 
-namespace app4triqs {
+namespace inchworm {
 
   /// The Monte-Carlo Configuration Class
   struct qmc_config_t {
@@ -11,4 +11,4 @@ namespace app4triqs {
     qmc_config_t(params_t const &params);
   };
 
-} // namespace app4triqs
+} // namespace inchworm

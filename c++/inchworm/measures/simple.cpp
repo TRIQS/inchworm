@@ -1,6 +1,6 @@
 #include "./simple.hpp"
 
-namespace app4triqs::measures {
+namespace inchworm::measures {
 
   simple::simple(params_t const &params, qmc_config_t const &qmc_config_, container_set &results) : qmc_config(qmc_config_) {
     // TODO
@@ -14,4 +14,4 @@ namespace app4triqs::measures {
     // TODO
   }
 
-} // namespace app4triqs::measures
+} // namespace inchworm::measures

@@ -2,7 +2,7 @@
 #include "../qmc_config.hpp"
 #include "../container_set.hpp"
 
-namespace app4triqs::measures {
+namespace inchworm::measures {
 
   /// A simple measurement
   struct simple {
@@ -21,4 +21,4 @@ namespace app4triqs::measures {
     qmc_config_t const &qmc_config;
   };
 
-} // namespace app4triqs::measures
+} // namespace inchworm::measures
