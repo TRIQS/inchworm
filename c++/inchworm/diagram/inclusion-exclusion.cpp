@@ -36,7 +36,7 @@
 //#include <triqs/operators/many_body_operator.hpp>
 //#include <triqs/utility/callbacks.hpp>
 
-#define SMALLEST_SEGMENT 2
+#define SMALLEST_SEGMENT 4
 
 struct time_and_orbital_t{
   double tau=0.;
@@ -133,7 +133,7 @@ class hybridization_matrix{
   
   //hybridization_matrix(op_list_t const & diagram, hybridization_function_t const & hyb): mat(diagram.k_order(), diagram.k_order()), diagram{diagram}{
   
-  hybridization_matrix(op_list_t const & diagram): mat(diagram.k_order(), diagram.k_order()), diagram{diagram}{
+  hybridization_matrix(op_list_t const & diagram, int split_point): mat(diagram.k_order(), diagram.k_order()), diagram{diagram}{
     //int N = diagram.k_order();
     
     for(auto [i,c] : enumerate(diagram.c_list))
@@ -142,6 +142,22 @@ class hybridization_matrix{
       
         double dtau = cdag.tau - c.tau;
         mat(i,j) = hyb_function( dtau );
+        if(SMALLEST_SEGMENT==4){
+          for(int k=0; k<diagram.list.size()-1; k++){
+            if(k != diagram.list.size() - split_point -1){
+              if( not diagram.list[k].dag and diagram.list[k+1].dag ) { // segment on length 2
+                int it     = diagram.list[k+1].order_index;  /// ERROR: it seems that the definition of c and cdagger are inverted?
+                int it_dag = diagram.list[k].order_index;
+                mat(it,it_dag) = 0.;
+              }
+              else if( diagram.list[k].dag and not diagram.list[k+1].dag ) { // segment on length 2
+                int it_dag = diagram.list[k+1].order_index;
+                int it     = diagram.list[k].order_index;
+                mat(it,it_dag) = 0.;
+              }
+            }
+          }
+        }
 //put this below in hyb_funciton at some point:m
 //        if(dtau>=0) mat(i,j) = hyb( dtau )( cdag.orb, c.orb );
 //        else mat(i,j) = -hyb( hyb.mesh().domain().beta + dtau )( cdag.orb, c.orb );
@@ -340,7 +356,7 @@ std::vector<k_connected_segment_t> determine_segments(int split_point, op_list_t
   
   int N_segment = 0;
   for(int i =0; i < N-1; i++) //starting position of segment
-    for(int a =SMALLEST_SEGMENT; a < N-i+1; a+=2) //length of segment
+    for(int a=SMALLEST_SEGMENT; a < N-i+1; a+=2) //length of segment
       if(not segment_cross_p(i, i+a, diagram.list.size()-split_point)){
         //printf("#### %d %d %d ####\n", i,i+a);
         int Ndag = 0;
@@ -352,7 +368,7 @@ std::vector<k_connected_segment_t> determine_segments(int split_point, op_list_t
           list.push_back(seg);
           if(verbose>0){
             seg.print(N);
-            if((a==4) and (diagram.list[i].dag == diagram.list[i+2].dag ) ) printf("  will always be zero, to be ignore in future");
+            //if((a==4) and (diagram.list[i].dag == diagram.list[i+2].dag ) ) printf("  will always be zero, to be ignore in future");
             //printf("\nnumero=%d\n\n",seg.numero);
             printf("\n");
           }
@@ -547,9 +563,9 @@ hybridization_scalar_t inclusion_exclusion(op_list_t const & diagram,int split_p
     }
   }
   
-  hybridization_matrix hyb_mat(diagram);
+  hybridization_matrix hyb_mat(diagram,split_point);
   
-  for(int length=2; length<=2*diagram.k_order(); length+=2){
+  for(int length=SMALLEST_SEGMENT; length<=2*diagram.k_order(); length+=2){
     if(verbose>1) printf("\n############\nsegment length = %d\n",length);
     for(auto seg : segment_list){
       if(seg.size == length){

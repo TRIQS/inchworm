@@ -30,7 +30,7 @@ TEST(inchworm, subdeterminant) {
   std::vector<time_and_orbital_t> tau2={{1.2,0},{1.8,0},{4.6,0},{4.7,0}};
   op_list_t diagram(tau1, tau2);
 
-  hybridization_matrix hyb_mat(diagram);
+  hybridization_matrix hyb_mat(diagram,0);
   
   //printf("det=% 4.8f\n",hyb_mat.extract_det());
   //double value = hyb_mat.extract_det({0,2});
@@ -57,14 +57,15 @@ TEST(inchworm, segment) {
 
 TEST(inchworm, inclusion_exclusion1) { 
   int verbose = 1;
-//  std::vector<double> tau1={0.4344,0.1,0.3,0.5,0.75,0.9,0.55,0.566,0.33,.4959594,.4494929,.12349512,.62343,0.123412444,0.2134444,.99949941,1.1,1.23,1.45,2.3,1.6,4.3,1.222,2.98,3.1244};
-//  std::vector<double> tau2={0,0.3452,0.21,0.45,0.69,0.81,0.998,0.122,0.833,0.4934,.210342134,.210343,.02134,.0030404,.02142430,0.1111,1.2,1.3,1.4,3.4,2.34,3.11,2.9,1.99,3.098};
+  std::vector<double> tau1={0.4344,0.1,0.3,0.5,0.75,0.9,0.55,0.566,0.33,.4959594,.4494929,.12349512,.62343,0.123412444,0.2134444,.99949941,1.1,1.23,1.45,2.3,1.6,4.3,1.222,2.98,3.1244};
+  std::vector<double> tau2={0,0.3452,0.21,0.45,0.69,0.81,0.998,0.122,0.833,0.4934,.210342134,.210343,.02134,.0030404,.02142430,0.1111,1.2,1.3,1.4,3.4,2.34,3.11,2.9,1.99,3.098};
 
-  std::vector<double> tau1={0.4344,0.1,0.3,0.5,0.75,0.9,0.55,0.566,0.33,.4959594,.4494929,.12349512,.62343,0.123412444,0.2134444,.99949941};
-  std::vector<double> tau2={0,0.3452,0.21,0.45,0.69,0.81,0.998,0.122,0.833,0.4934,.210342134,.210343,.02134,.0030404,.02142430,0.1111};
+  //std::vector<double> tau1={0.4344,0.1,0.3,0.5,0.75,0.9,0.55,0.566,0.33,.4959594,.4494929,.12349512,.62343,0.123412444,0.2134444,.99949941};
+  //std::vector<double> tau2={0,0.3452,0.21,0.45,0.69,0.81,0.998,0.122,0.833,0.4934,.210342134,.210343,.02134,.0030404,.02142430,0.1111};
   
-  //std::vector<double> tau1={0.4344,0.1,0.3};
-  //std::vector<double> tau2={0.0,0.3452,0.21};
+  //std::vector<double> tau1={0.4344,0.1,0.3, 0.9};
+  //std::vector<double> tau2={0.0,0.3452,0.21,0.7};
+
 
   //std::vector<double> tau1={1.0,2.0,3.0,4.5};
   //std::vector<double> tau2={1.23421,1.8,4.6,4.7};
@@ -79,12 +80,13 @@ TEST(inchworm, inclusion_exclusion1) {
   op_list_t diagram(c,cdag);
   
   int split_point = 4;
+  hybridization_matrix hyb_mat(diagram,split_point);
+  TRIQS_PRINT(hyb_mat.mat);
   
   hybridization_scalar_t  value = inclusion_exclusion(diagram, split_point, verbose);
   
-  printf("c_k = % 4.7f\n\n", value);
-  
-  //hybridization_matrix hyb_mat(diagram);
+  printf("c_k = % 4.6f\n\n", value);
+    
   
   //std::cout << hyb_mat.det() << '\n';
   //std::cout << hyb_mat.extract_det({0,1,2,3,4,5}) << '\n';
