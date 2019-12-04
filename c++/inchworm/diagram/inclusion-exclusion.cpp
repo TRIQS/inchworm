@@ -66,6 +66,7 @@ class op_list_t {
   
   int k_order() const {return c_list.size();} 
 
+  
   op_list_t(std::vector<time_and_orbital_t> const & c, std::vector<time_and_orbital_t> const & cdag): list(2*c.size()), c_list{c}, cdag_list{cdag} {
     
     EXPECTS(std::is_sorted(c.begin(),    c.end()));
@@ -248,14 +249,14 @@ void printLine(std::vector<int> const & segments_vector){
 
 struct k_connected_segment_t {
 
-  int size;
-  int pos1;
-  int pos2; // note: by definition here, segment goes from index pos1 to pos2-1
-  hybridization_scalar_t value; 
-  hybridization_scalar_t value_without_cuts; 
+  int pos1 = 0;
+  int pos2 = 0; // note: by definition here, segment goes from index pos1 to pos2-1
+  int size = 0;
+  hybridization_scalar_t value = 0.; 
+  hybridization_scalar_t value_without_cuts = 0.; 
   
-  bool calculated;
-  int numero;
+  bool calculated = false;
+  int numero = 0;
   // trying to do without these and calculate on the fly:
   // std::vector<int> cuts;
   // std::vector<int> subs;
@@ -264,10 +265,10 @@ struct k_connected_segment_t {
     EXPECTS(pos2 > pos1);
     size = pos2-pos1;
     
-    calculated = false;
+    //calculated = false;
     //numero = 0;
-    value = 0.;
-    value_without_cuts = 0.;
+    //value = 0.;
+    //value_without_cuts = 0.;
   }
   
   void print(int N){
@@ -439,74 +440,131 @@ std::vector<int> remove_segment_from_list(std::vector<int> const & list, int seg
 }
 
 
+
 void calculate_segment(int segment_numero, 
                  std::vector<k_connected_segment_t> & segments_list,  // not const: modified
                  std::vector<combination_of_segments_t> const & combination_disjoint_list, 
                  std::vector<combination_of_segments_t> const & combination_adjacent_list,
                  hybridization_matrix const & hyb_mat,
-                 int k_order, int verbose=0){
+                 int k_order, int verbose=0, bool special=false){
     
-    //k_connected_segment_t segment = segments_list[segment_numero];
-    segments_list[segment_numero].calculated = true;
-    if(verbose>0) segments_list[segment_numero].print(2*k_order);
+  segments_list[segment_numero].calculated = true;
+  //k_connected_segment_t segment = segments_list[segment_numero];
+  if(verbose>1) {
+    segments_list[segment_numero].print(2*k_order);
     //printf("\n");
+  }
+  
+  
+  std::vector<int> range_of_vertex(segments_list[segment_numero].size);
+  std::iota(range_of_vertex.begin(), range_of_vertex.end(), segments_list[segment_numero].pos1);
+  
+  segments_list[segment_numero].value += hyb_mat.extract_det(range_of_vertex);
+  
+  for(auto subs: combination_disjoint_list){
+    if((not special) and not ((segments_list[segment_numero].pos1 <= subs.pos1) and (segments_list[segment_numero].pos2 > subs.pos2))) continue;    
+    if(special and (subs.list.size() == 1) 
+               and ((segments_list[segment_numero].pos1 == subs.pos1) 
+               and (segments_list[segment_numero].pos2 == subs.pos2))) continue; // this is tricky, might have to change this at some point
+   
+    //if(subs.list.size() == 1) 
     
-    std::vector<int> range_of_vertex(segments_list[segment_numero].size);
-    std::iota(range_of_vertex.begin(), range_of_vertex.end(), segments_list[segment_numero].pos1);
+    hybridization_scalar_t value = 1.0;
+    std::vector<int> range_of_subvertex(range_of_vertex);
+    int signe_of_parcollet_charlebois = 1;        
     
-    segments_list[segment_numero].value += hyb_mat.extract_det(range_of_vertex);
-    
-    for(auto subs: combination_disjoint_list){
-      if((segments_list[segment_numero].pos1 <= subs.pos1) and (segments_list[segment_numero].pos2 > subs.pos2)){
-          
+    for(auto sub_segment_numero: subs.list){
+      //printf("sub:\n");
+      //subs.print(segments_list);
+      //printf("\n");
+      k_connected_segment_t seg = segments_list[sub_segment_numero];
+      EXPECTS(seg.calculated);
+      
+      value *= -seg.value;
+      
+      range_of_subvertex = remove_segment_from_list(range_of_subvertex, seg.pos1, seg.size);
+      
+      if(seg.size % 4 !=0) 
+        if((seg.pos2-segments_list[segment_numero].pos1) %2 ==1)
+          signe_of_parcollet_charlebois *= -1;
+    }
+
+    if(range_of_subvertex.size()>0){
+      hybridization_scalar_t det1 = hyb_mat.extract_det(range_of_subvertex);
+      value *= signe_of_parcollet_charlebois * det1;
+    }
+    segments_list[segment_numero].value += value;
+
+  
+  }
+  
+  segments_list[segment_numero].value_without_cuts = segments_list[segment_numero].value;
+  
+  for(auto cuts: combination_adjacent_list){
+    if(segments_list[segment_numero].pos1 == cuts.pos1)
+     if(segments_list[segment_numero].pos2 == cuts.pos2)
+      if(cuts.list.size() >1){
+
         hybridization_scalar_t value = 1.0;
-        std::vector<int> range_of_subvertex(range_of_vertex);
-        int signe_of_parcollet_charlebois = 1;        
         
-        for(auto sub_segment_numero: subs.list){
-          //printf("sub:\n");
-          //subs.print(segments_list);
-          //printf("\n");
+        for(auto sub_segment_numero: cuts.list){
           k_connected_segment_t seg = segments_list[sub_segment_numero];
           EXPECTS(seg.calculated);
           
-          value *= -seg.value;
-          
-          range_of_subvertex = remove_segment_from_list(range_of_subvertex, seg.pos1, seg.size);
-          
-          if(seg.size % 4 !=0) 
-            if((seg.pos2-segments_list[segment_numero].pos1) %2 ==1)
-              signe_of_parcollet_charlebois *= -1;
+          value *= -seg.value_without_cuts;
         }
+        segments_list[segment_numero].value -= value;
+      }
+  }
+  
+  if(verbose>1) printf("   % 4.8f      % 4.8f\n", segments_list[segment_numero].value, segments_list[segment_numero].value_without_cuts);
+  
+}
 
-        EXPECTS(range_of_subvertex.size()>0)
-        hybridization_scalar_t det1 = hyb_mat.extract_det(range_of_subvertex);
-        value *= signe_of_parcollet_charlebois * det1;
-        segments_list[segment_numero].value += value;
 
+
+hybridization_scalar_t inclusion_exclusion(op_list_t const & diagram,int split_point, int verbose=0){
+
+  if(verbose>1) printDiag(split_point, diagram);
+  std::vector<k_connected_segment_t> segment_list = determine_segments(split_point, diagram, verbose);
+  if(verbose) printf("\nsegment number = %lu\n\n",segment_list.size());
+  
+  std::vector<combination_of_segments_t> combination_disjoint_list = combine_segments(segment_list, diagram.k_order(), split_point, true);    
+  std::vector<combination_of_segments_t> combination_adjacent_list = combine_segments(segment_list, diagram.k_order(), split_point, false);    
+  
+  if(verbose>1){
+    printf("\n\ncombination of disjoint segments:\n\n");
+    printDiag(split_point, diagram);  
+    for(auto comb : combination_disjoint_list){
+      comb.print(segment_list);
+      printf("\n");
+    }
+    printf("\n\ncombination of adjacent segments:\n\n");  
+    printDiag(split_point, diagram);
+    for(auto comb : combination_adjacent_list){
+      comb.print(segment_list);
+      printf("\n");
+    }
+  }
+  
+  hybridization_matrix hyb_mat(diagram);
+  
+  for(int length=2; length<=2*diagram.k_order(); length+=2){
+    if(verbose>1) printf("\n############\nsegment length = %d\n",length);
+    for(auto seg : segment_list){
+      if(seg.size == length){
+        bool special = false;
+        if(length==2*diagram.k_order()) special = true;
+        calculate_segment(seg.numero, segment_list, combination_disjoint_list, combination_adjacent_list, hyb_mat, diagram.k_order(), verbose, special);
       }
     }
-    
-    segments_list[segment_numero].value_without_cuts = segments_list[segment_numero].value;
-    
-    for(auto cuts: combination_adjacent_list){
-      if(segments_list[segment_numero].pos1 == cuts.pos1)
-       if(segments_list[segment_numero].pos2 == cuts.pos2)
-        if(cuts.list.size() >1){
-
-          hybridization_scalar_t value = 1.0;
-          
-          for(auto sub_segment_numero: cuts.list){
-            k_connected_segment_t seg = segments_list[sub_segment_numero];
-            EXPECTS(seg.calculated);
-            
-            value *= -seg.value_without_cuts;
-          }
-          segments_list[segment_numero].value -= value;
-        }
-    }
-    
-    if(verbose>0) printf("   % 4.8f      % 4.8f\n", segments_list[segment_numero].value, segments_list[segment_numero].value_without_cuts);
+  }
+  //printf("segment_list.back().value % 4.7f\n",segment_list.back().value);
+  //printf("segment_list.back().value_without_cuts % 4.7f\n",segment_list.back().value_without_cuts);
+  
+  
+  
+  return segment_list.back().value;
 }
 
 

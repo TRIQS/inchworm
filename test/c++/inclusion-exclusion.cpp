@@ -38,6 +38,7 @@ TEST(inchworm, subdeterminant) {
   EXPECT_CLOSE(1.7968,hyb_mat.extract_det({0,2}));
   EXPECT_CLOSE(-13.43255200,hyb_mat.extract_det({0,2,5,6}));
   EXPECT_CLOSE(0.13697019,hyb_mat.det());
+  EXPECT_CLOSE(hyb_mat.det(),hyb_mat.extract_det({0,1,2,3,4,5,6,7}));
 }
 
 
@@ -48,39 +49,47 @@ TEST(inchworm, segment) {
   op_list_t diagram(tau1, tau2);
   int split_point = 4;
   
-  printDiag(split_point, diagram);
-  std::vector<k_connected_segment_t> segment_list = determine_segments(split_point, diagram, 1);
-  printf("\nsegment_list = %lu\n\n",segment_list.size());
+  hybridization_scalar_t  value = inclusion_exclusion(diagram, split_point, verbose);
   
-  std::vector<combination_of_segments_t> combination_disjoint_list = combine_segments(segment_list, diagram.k_order(), split_point, true);    
-  std::vector<combination_of_segments_t> combination_adjacent_list = combine_segments(segment_list, diagram.k_order(), split_point, false);    
+  printf("c_k = % 4.7f\n\n", value);
+}
+
+
+TEST(inchworm, inclusion_exclusion1) { 
+  int verbose = 1;
+//  std::vector<double> tau1={0.4344,0.1,0.3,0.5,0.75,0.9,0.55,0.566,0.33,.4959594,.4494929,.12349512,.62343,0.123412444,0.2134444,.99949941,1.1,1.23,1.45,2.3,1.6,4.3,1.222,2.98,3.1244};
+//  std::vector<double> tau2={0,0.3452,0.21,0.45,0.69,0.81,0.998,0.122,0.833,0.4934,.210342134,.210343,.02134,.0030404,.02142430,0.1111,1.2,1.3,1.4,3.4,2.34,3.11,2.9,1.99,3.098};
+
+  std::vector<double> tau1={0.4344,0.1,0.3,0.5,0.75,0.9,0.55,0.566,0.33,.4959594,.4494929,.12349512,.62343,0.123412444,0.2134444,.99949941};
+  std::vector<double> tau2={0,0.3452,0.21,0.45,0.69,0.81,0.998,0.122,0.833,0.4934,.210342134,.210343,.02134,.0030404,.02142430,0.1111};
   
-  if(verbose>0){
-    printf("\n\ncombination of disjoint segments:\n\n");
-    printDiag(split_point, diagram);  
-    for(auto comb : combination_disjoint_list){
-      comb.print(segment_list);
-      printf("\n");
-    }
-    printf("\n\ncombination of adjacent segments:\n\n");  
-    printDiag(split_point, diagram);
-    for(auto comb : combination_adjacent_list){
-      comb.print(segment_list);
-      printf("\n");
-    }
-  }
+  //std::vector<double> tau1={0.4344,0.1,0.3};
+  //std::vector<double> tau2={0.0,0.3452,0.21};
+
+  //std::vector<double> tau1={1.0,2.0,3.0,4.5};
+  //std::vector<double> tau2={1.23421,1.8,4.6,4.7};
   
-  hybridization_matrix hyb_mat(diagram);
-  for(int length=2; length<=2*diagram.k_order(); length+=2){
-    if(verbose>0) printf("\n############\nsegment length = %d\n",length);
-    for(auto seg : segment_list){
-      if(seg.size == length){
-        calculate_segment(seg.numero, segment_list, combination_disjoint_list, combination_adjacent_list, hyb_mat, diagram.k_order(), 1);
-      }
-    }
-  }
-  printf("segment_list.back().value % 4.7f\n",segment_list.back().value);
-  printf("segment_list.back().value_without_cuts % 4.7f\n",segment_list.back().value_without_cuts);
+  std::sort (tau1.begin(), tau1.end());
+  std::sort (tau2.begin(), tau2.end());
+
+  
+  std::vector<time_and_orbital_t> c, cdag;
+  for(auto t : tau1) c.push_back({t,0});
+  for(auto t : tau2) cdag.push_back({t,0});
+  op_list_t diagram(c,cdag);
+  
+  int split_point = 4;
+  
+  hybridization_scalar_t  value = inclusion_exclusion(diagram, split_point, verbose);
+  
+  printf("c_k = % 4.7f\n\n", value);
+  
+  //hybridization_matrix hyb_mat(diagram);
+  
+  //std::cout << hyb_mat.det() << '\n';
+  //std::cout << hyb_mat.extract_det({0,1,2,3,4,5}) << '\n';
+  
+  
 }
 
 MAKE_MAIN
