@@ -101,10 +101,11 @@ print len(t1), len(t2)
 #t2 = [0.8,1.8,3.6,4.7]
 
 
-#t1=[1.0,2.0,3.0,4.5];
-#t2=[1.23421,1.8,4.6,4.7];
-split_point = 4
-verbose1=0
+t1=[1.0,2.0,3.0,4.5];
+t2=[1.2,1.8,4.6,4.7];
+
+split_point = 5
+verbose1=2
 SMALLEST_SEGMENT=4
 
 def hyb(dtau):
@@ -875,15 +876,13 @@ def proper_enum(t1,t2,split_point1,subrange=()):
   return value
   
   
-#val1 = proper_enum(t1,t2,split_point)
-#print 'proper_enum():         c_k = %f' %val1
-
+val1 = proper_enum(t1,t2,split_point)
 val2 = inclusion_exclusion(t1,t2,split_point)
 
-#print 'proper_enum():         c_k = %f' %val1
+print 'proper_enum():         c_k = %f' %val1
 print 'inclusion_exclusion(): c_k = %f' %val2
 
-#print 'difference = %e' %(val2-val1) 
+print 'difference = %e' %(val2-val1) 
     
     
 exit()
