@@ -20,8 +20,6 @@
  *
  ******************************************************************************/
 
-//#include <triqs/gfs.hpp>
-//#include <triqs/h5.hpp>
 #include <triqs/test_tools/gfs.hpp>
 #include <inchworm/diagram/proper_enum.cpp>
 
