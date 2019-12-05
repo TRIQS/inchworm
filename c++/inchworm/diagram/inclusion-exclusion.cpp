@@ -23,18 +23,13 @@
 #include <stdio.h> 
 #include <algorithm>
 
-#include <assert.h>  // will be removed later
+//#include <assert.h>  // will be removed later
 #include <vector>
-//#include <list>
-//#include <iostream>
 #include <numeric>
 
 #include <triqs/gfs.hpp>
 #include <triqs/utility/macros.hpp>
 #include <triqs/utility/itertools.hpp>
-//#include <triqs/mc_tools/mc_generic.hpp>
-//#include <triqs/operators/many_body_operator.hpp>
-//#include <triqs/utility/callbacks.hpp>
 
 #define SMALLEST_SEGMENT 4
 
@@ -75,8 +70,7 @@ class op_list_t {
     
     
     int k_order = c.size();
-    //TRIQS_PRINT(k_order);
-    
+
     for(int i=0,j=k_order; i<k_order; i++,j++){
       list[i].tau = c[i].tau;
       list[i].orb = c[i].orb;
@@ -89,15 +83,7 @@ class op_list_t {
       list[j].order_index = i;
     }
     
-    //for(auto op : list) printf("% 4.5f  ", op.tau); 
-    //printf("\n");
-    
     std::sort(list.begin(), list.end(), [](auto const & x, auto const & y) {return x.tau < y.tau;});
-    
-    //for(auto op : list) printf("% d  ",    op.order_index); 
-    //printf("\n");
-    //for(auto op : list) printf("% 4.5f  ", op.tau);         
-    //printf("\n");
   }
   
   std::string string() const {
@@ -129,7 +115,6 @@ hybridization_scalar_t hyb_function(hybridization_scalar_t dtau){ // to be chang
   return (2.2 + dtau + 0.7*dtau*dtau + 0.1*dtau*dtau*dtau);
 }
 
-//G0_iw = block_gf<imfreq>{{p.beta, Fermion, p.n_iw}, p.gf_struct};
 class hybridization_matrix{
   
   public:
@@ -166,7 +151,7 @@ class hybridization_matrix{
             }
           }
         }
-//put this below in hyb_funciton at some point:m
+//put this below in hyb_funciton at some point:
 //        if(dtau>=0) mat(i,j) = hyb( dtau )( cdag.orb, c.orb );
 //        else mat(i,j) = -hyb( hyb.mesh().domain().beta + dtau )( cdag.orb, c.orb );
       }
@@ -200,7 +185,6 @@ class hybridization_matrix{
     //print_vector(list_of_indices);
     //TRIQS_PRINT(m);
     //TRIQS_PRINT(determinant(m));
-    
     
     return determinant(m);
   }
@@ -281,18 +265,10 @@ struct k_connected_segment_t {
   
   bool calculated = false;
   int numero = 0;
-  // trying to do without these and calculate on the fly:
-  // std::vector<int> cuts;
-  // std::vector<int> subs;
   
   k_connected_segment_t(int p1, int p2, int n): pos1{p1}, pos2{p2}, numero{n} {    
     EXPECTS(pos2 > pos1);
     size = pos2-pos1;
-    
-    //calculated = false;
-    //numero = 0;
-    //value = 0.;
-    //value_without_cuts = 0.;
   }
   
   void print(int N){
@@ -320,19 +296,10 @@ struct combination_of_segments_t {
     list.push_back(seg0.numero);
   };
   
-  //copy constructor: //do I need to implement?
-  //  combination_of_segments_t(combination_of_segments_t const & comb):
-  //  pos1{comb.pos1}, pos2{comb.pos2}, size{comb.size}, k_order{comb.k_order}, split_point{comb.split_point}, disjoint{comb.disjoint}, adjacent{comb.adjacent}, list{comb.list}
-  //  {};
-  // use instead:
-  // combination_of_segments_t comb2 = comb1; // this works apparently.
-  
   void append(k_connected_segment_t const & seg1){
     if(seg1.pos1 != pos2) adjacent = false;
     else if (2*k_order-split_point == pos2) adjacent = false; // if the previous combination of segments already ends at a split point, adding another one will make this combination not adjacent anymore.
     else disjoint = false; // note, we consider that even if two segments touch at the split point, the combination is still disjoint.
-    
-    //printf("disjoint = %d\nadjacent = %d\n",disjoint,adjacent);
     
     size = seg1.pos2-pos1;
     pos2 = seg1.pos2;
@@ -411,11 +378,8 @@ combine_segments(std::vector<k_connected_segment_t> const & segment_list, int k_
     int i1=start_index_list.size()-2;
     int i2=start_index_list.size()-1;
     for(int prev_index = start_index_list[i1]; prev_index < start_index_list[i2]; prev_index++){
-      //printf("prev_index=%d\n",prev_index);
+
       combination_of_segments_t previous_combination = combination_list[prev_index];
-      
-      //previous_combination.print(segment_list);
-      //printf("\n");
       //if we do not search for disjoint combination, we search for adjacent combination, only. We do not need the ones that are neither.
       
       for(auto additional_segment : segment_list){
@@ -440,26 +404,15 @@ combine_segments(std::vector<k_connected_segment_t> const & segment_list, int k_
 
 std::vector<int> remove_segment_from_list(std::vector<int> const & list, int segment_min, int segment_size)
 {
-  //auto it = std::find (list.begin(), list.end(), segment_min); 
   std::vector<int> output;
   output.reserve(list.size() - segment_size);
   
-  //printf("segment_min = % d, segment_size=%d\n",segment_min,segment_size);
-  //print_vector(list);
-  
   int segment_max = segment_min+segment_size;
-  
   for(auto l: list) if( (l<segment_min) or (l>=segment_max) ){
     output.push_back(l);
   }
   
-  //print_vector(output);
-  
   EXPECTS(output.size() == list.size() - segment_size)
-//  if(output.size() != list.size() - segment_size){
-//    printf("error, segment not found in list.\n");
-//    exit(0);
-//  }
   return output;
 }
 
@@ -473,10 +426,8 @@ void calculate_segment(int segment_numero,
                  int k_order, int verbose=0, bool special=false){
     
   segments_list[segment_numero].calculated = true;
-  //k_connected_segment_t segment = segments_list[segment_numero];
   if(verbose>1) {
     segments_list[segment_numero].print(2*k_order);
-    //printf("\n");
   }
   
   
@@ -490,17 +441,12 @@ void calculate_segment(int segment_numero,
     if(special and (subs.list.size() == 1) 
                and ((segments_list[segment_numero].pos1 == subs.pos1) 
                and (segments_list[segment_numero].pos2 == subs.pos2))) continue; // this is tricky, might have to change this at some point
-   
-    //if(subs.list.size() == 1) 
     
     hybridization_scalar_t value = 1.0;
     std::vector<int> range_of_subvertex(range_of_vertex);
     int signe_of_parcollet_charlebois = 1;        
     
     for(auto sub_segment_numero: subs.list){
-      //printf("sub:\n");
-      //subs.print(segments_list);
-      //printf("\n");
       k_connected_segment_t seg = segments_list[sub_segment_numero];
       EXPECTS(seg.calculated);
       
@@ -540,9 +486,7 @@ void calculate_segment(int segment_numero,
         segments_list[segment_numero].value -= value;
       }
   }
-  
-  if(verbose>1) printf("   % 4.8f      % 4.8f\n", segments_list[segment_numero].value, segments_list[segment_numero].value_without_cuts);
-  
+  if(verbose>1) printf("   % 4.8f      % 4.8f\n", segments_list[segment_numero].value, segments_list[segment_numero].value_without_cuts);  
 }
 
 
@@ -583,8 +527,6 @@ hybridization_scalar_t inclusion_exclusion(op_list_t const & diagram,int split_p
       }
     }
   }
-  //printf("segment_list.back().value % 4.7f\n",segment_list.back().value);
-  //printf("segment_list.back().value_without_cuts % 4.7f\n",segment_list.back().value_without_cuts);
   
   if(verbose > 0){
     printf("\n## diagram = '%s'\n", diagram.string().c_str());
