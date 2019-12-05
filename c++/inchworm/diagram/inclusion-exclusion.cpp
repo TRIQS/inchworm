@@ -100,6 +100,14 @@ class op_list_t {
     //printf("\n");
   }
   
+  std::string string() const {
+    std::string diagram_order="";
+    for(auto l : list){
+      if(l.dag) diagram_order += "x";
+      else diagram_order += "o";
+    }
+    return diagram_order;
+  }
   
 };
 
@@ -578,7 +586,13 @@ hybridization_scalar_t inclusion_exclusion(op_list_t const & diagram,int split_p
   //printf("segment_list.back().value % 4.7f\n",segment_list.back().value);
   //printf("segment_list.back().value_without_cuts % 4.7f\n",segment_list.back().value_without_cuts);
   
-  
+  if(verbose > 0){
+    printf("\n## diagram = '%s'\n", diagram.string().c_str());
+    printf("kOrder = %d\n", diagram.k_order());
+    printf("number of segments = %lu\n", segment_list.size());
+    printf("number of adjacent combinations = %lu\n", combination_adjacent_list.size());
+    printf("number of disjoint combinations = %lu\n", combination_disjoint_list.size());
+  }  
   
   return segment_list.back().value;
 }
