@@ -39,13 +39,12 @@
 // find parity of a permutation by evaluating
 // by evaluating the parity of all cycle (or orbits)
 //
-int find_parity(std::vector<int> const &permutation, int n) {
+int find_parity(std::vector<int> const &permutation) {
   int parity = 1;
-  //bool visited[n];  //vectorize
-  std::vector<bool> visited(n, false);
+  std::vector<bool> visited(permutation.size(), false);
 
-  for (int ii = 0; ii < n; ii++) {
-    if (not visited[ii]) continue;
+  for (int ii = 0; ii < permutation.size(); ii++) {
+    if (visited[ii]) continue;
     int jj = permutation[ii];
     while (jj != ii) {
       parity *= -1; //change for addiiton?
@@ -171,7 +170,7 @@ hybridization_scalar_t proper_enum(time_diagram_t const & diagram) {
   hybridization_scalar_t total_value = 0.0, value=1.0;
   do {
     NN += 1;
-    int parity = find_parity(permutation,diagram.k_order());
+    int parity = find_parity(permutation);
     value = 1.0;
     for(int i=0; i<permutation.size(); i++) value *= hyb_mat.mat(permutation[i],i);
     
@@ -191,7 +190,7 @@ hybridization_scalar_t proper_enum(time_diagram_t const & diagram) {
     std::printf("number of diagram = %d\n", NN);
     std::printf("number of proper diagram = %d\n", N_proper);
   }
-  return N_proper;
+  return total_value;
 }
 
 
