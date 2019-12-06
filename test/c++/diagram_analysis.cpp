@@ -57,9 +57,10 @@ TEST(inchworm, proper_enum1) {
   std::printf("c_k = % 4.6f\n", value_proper);
   
   hybridization_scalar_t  value_inclus = inclusion_exclusion(diagram);
-  std::printf("c_k = % 4.6f\n\n", value_inclus);
+  std::printf("c_k = % 4.6f\n\n\n", value_inclus);
   
-  std::printf("c_k = % 4.6f    % 4.6f\n\n", value_proper, value_inclus);
+  std::printf("proper-enum         c_k = % 4.6f\n",   value_proper);
+  std::printf("inclusion-exclusion c_k = % 4.6f\n\n", value_inclus);
     
   //EXPECT_EQ(N_proper, 13);
 }
