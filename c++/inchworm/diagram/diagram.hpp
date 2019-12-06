@@ -30,7 +30,7 @@
 #include "./utilities.hpp"
 
 
-#define SMALLEST_SEGMENT 4
+
 
 // Degrees of freedom of an creation (annihilation) operator:
 // 

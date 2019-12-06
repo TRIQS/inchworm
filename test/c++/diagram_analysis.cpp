@@ -21,25 +21,28 @@
  ******************************************************************************/
 
 #include <triqs/test_tools/gfs.hpp>
-#include <inchworm/diagram/inclusion_exclusion.hpp>
 #include <inchworm/diagram/proper_enum.hpp>
+#include <inchworm/diagram/inclusion_exclusion.hpp>
 
 /*
 TEST(inchworm, dummy) { 
   std::string diagram ="oxoxxoxxoooxxoxo";
   int split_point = 3;
   int verbose = 0;
-  int N_proper = find_proper_diagrams(diagram, split_point, verbose);
+  int N_proper = find_proper_diagrams(diagram, split_point);
 
   EXPECT_EQ(N_proper, 10832);
 }*/
 
 TEST(inchworm, proper_enum1) { 
-  int verbose = 2;
+  //int verbose = 2;
 
-  std::vector<double> split_times = {1.9};
-  std::vector<double> tau1={1.0,2.0,3.0,4.5};
-  std::vector<double> tau2={1.2,1.8,4.6,4.7};
+  //std::vector<double> split_times = {1.9};
+  //std::vector<double> tau1={1.0,2.0,3.0,4.5};
+  //std::vector<double> tau2={1.2,1.8,4.6,4.7};
+  std::vector<double> tau1={0.4344,0.1,0.3,0.5,0.75,0.9};
+  std::vector<double> tau2={0,0.3452,0.21,0.45,0.69,0.81};
+  std::vector<double> split_times = {0.8};
   
   std::sort (tau1.begin(), tau1.end());
   std::sort (tau2.begin(), tau2.end());
@@ -49,13 +52,19 @@ TEST(inchworm, proper_enum1) {
   for(auto t : tau2) cdag.push_back({t,0});
   time_diagram_t diagram(c,cdag,split_times);
   
-  int N_proper = find_proper_diagrams(diagram, verbose);
-  //hybridization_scalar_t  value = inclusion_exclusion(diagram, verbose);
-  std::printf("N_proper = %d\n\n", N_proper);
-  //std::printf("c_k = % 4.6f\n\n", value);
+  //int N_proper = find_proper_diagrams(diagram);
+  hybridization_scalar_t  value_proper = proper_enum(diagram);
+  std::printf("c_k = % 4.6f\n", value_proper);
+  
+  hybridization_scalar_t  value_inclus = inclusion_exclusion(diagram);
+  std::printf("c_k = % 4.6f\n\n", value_inclus);
+  
+  std::printf("c_k = % 4.6f    % 4.6f\n\n", value_proper, value_inclus);
     
-  EXPECT_EQ(N_proper, 13);
+  //EXPECT_EQ(N_proper, 13);
 }
+
+
 
 
 
@@ -88,14 +97,13 @@ TEST(inchworm, segment) {
   time_diagram_t diagram(tau1, tau2, split_times);
   //int split_point = 4;
   
-  hybridization_scalar_t  value = inclusion_exclusion(diagram, verbose);
+  hybridization_scalar_t  value = inclusion_exclusion(diagram);
   
   std::printf("c_k = % 4.7f\n\n", value);
 }
-*/
 
 TEST(inchworm, inclusion_exclusion1) { 
-  int verbose = 1;
+  //int verbose = 1;
   //std::vector<double> tau1={0.4344,0.1,0.3,0.5,0.75,0.9,0.55,0.566,0.33,.4959594,.4494929,.12349512,.62343,0.123412444,0.2134444,.99949941,1.1,1.23,1.45,2.3,1.6,4.3,1.222,2.98,3.1244};
   //std::vector<double> tau2={0,0.3452,0.21,0.45,0.69,0.81,0.998,0.122,0.833,0.4934,.210342134,.210343,.02134,.0030404,.02142430,0.1111,1.2,1.3,1.4,3.4,2.34,3.11,2.9,1.99,3.098};
 
@@ -119,11 +127,12 @@ TEST(inchworm, inclusion_exclusion1) {
   for(auto t : tau2) cdag.push_back({t,0});
   time_diagram_t diagram(c,cdag,split_times);
   
-  hybridization_scalar_t  value = inclusion_exclusion(diagram, verbose);
+  hybridization_scalar_t  value = inclusion_exclusion(diagram);
   std::printf("c_k = % 4.6f\n\n", value);
     
   EXPECT_NEAR(-8458508.82790539,value, 1e-7);
 }
+*/
 
 MAKE_MAIN
 

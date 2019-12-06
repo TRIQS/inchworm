@@ -30,9 +30,11 @@
 #include <assert.h> // will be removed later
 #include <vector>
 
+
 #include "diagram.hpp"
 #include "utilities.hpp"
 #include "print.hpp"
+#include "hybridization_function_matrix.hpp"
 
 // find parity of a permutation by evaluating
 // by evaluating the parity of all cycle (or orbits)
@@ -81,7 +83,7 @@ void print_graph(const std::vector<int> &permutation, const std::vector<bool> &c
     if (visited[arch]) char1 = '=';
     printArch(diagram.pos_c[arch], diagram.pos_cdag[permutation[arch]], diagram.k_order(), char1);
   }
-  printf("\n");
+  std::printf("\n");
 }
 
 
@@ -114,7 +116,7 @@ void grow_pile(int arch, std::vector<int> const &permutation, std::vector<bool> 
 // that keep track of the arches that cross the split_point, we name
 // this vector cross_split_point_pile.
 //
-bool test_diagram_connection(const std::vector<int> &permutation, time_diagram_t const & diagram, int verbose = 0) {
+bool test_diagram_connection(const std::vector<int> &permutation, time_diagram_t const & diagram) {
   
   std::vector<bool> cross_split_point(diagram.k_order(), false); // for graphic purpose only (to change)
   std::vector<bool> visited(diagram.k_order(), false);
@@ -126,7 +128,7 @@ bool test_diagram_connection(const std::vector<int> &permutation, time_diagram_t
     int c    = diagram.pos_c[arch];
     int cdag = diagram.pos_cdag[permutation[arch]];
     
-    //for(auto p : diagram.split_points) printf("c=%d  cdag=%d   p=%d  \n", c, cdag, p);
+    //for(auto p : diagram.split_points) std::printf("c=%d  cdag=%d   p=%d  \n", c, cdag, p);
 
     if (std::any_of(diagram.split_points.begin(), diagram.split_points.end(),
         [c, cdag](auto &split_point) { return segment_cross_point(c, cdag, split_point-1); })) {
@@ -137,7 +139,7 @@ bool test_diagram_connection(const std::vector<int> &permutation, time_diagram_t
   }
 
   if (verbose > 1) {
-    printf("\n\n");
+    std::printf("\n\n");
     print_graph(permutation, cross_split_point, visited, diagram);
   }
 
@@ -153,30 +155,44 @@ bool test_diagram_connection(const std::vector<int> &permutation, time_diagram_t
 }
 
 
+
 // Look at all the arches combinaitions (represented by a permutation vector)
 // for a given diagram definition. We can use the function 
 // "test_diagram_connection" to define if a diagram is proper or not.
 //
-int find_proper_diagrams(time_diagram_t const & diagram, int verbose = 0) {
-  std::vector<int> permutation(diagram.k_order());
-  for (int ii = 0; ii < diagram.k_order(); ii++) permutation[ii] = ii;
+hybridization_scalar_t proper_enum(time_diagram_t const & diagram) {
+
+  auto hyb_mat = hybridization_matrix{diagram};
+  auto permutation = std::vector<int>(diagram.k_order());
+  
+  for (int i = 0; i < diagram.k_order(); i++) permutation[i] = i;
 
   int NN = 0, N_proper = 0;
+  hybridization_scalar_t total_value = 0.0, value=1.0;
   do {
     NN += 1;
-    //int parity = find_parity(permutation,k_order);
-    if (test_diagram_connection(permutation, diagram, verbose)) { N_proper += 1; }
+    int parity = find_parity(permutation,diagram.k_order());
+    value = 1.0;
+    for(int i=0; i<permutation.size(); i++) value *= hyb_mat.mat(permutation[i],i);
+    
+
+    if (test_diagram_connection(permutation, diagram)) { 
+      N_proper += 1;
+      total_value += parity*value;
+      if (verbose>1) std::printf("proper,   value=% 4.7f, parity=%d\n\n", value, parity);
+    }
+    else
+      if (verbose>1) std::printf("improper, value=% 4.7f, parity=%d\n\n", value, parity);
   } while (std::next_permutation(permutation.begin(), permutation.end()));
 
   if (verbose) {
-    printf("## diagram = '%s'\n", diagram_string(diagram).c_str());
-    printf("k_order = %d\n", diagram.k_order());
-    printf("number of diagram = %d\n", NN);
-    printf("number of proper diagram = %d\n", N_proper);
+    std::printf("## diagram = '%s'\n", diagram_string(diagram).c_str());
+    std::printf("k_order = %d\n", diagram.k_order());
+    std::printf("number of diagram = %d\n", NN);
+    std::printf("number of proper diagram = %d\n", N_proper);
   }
   return N_proper;
 }
-
 
 
 

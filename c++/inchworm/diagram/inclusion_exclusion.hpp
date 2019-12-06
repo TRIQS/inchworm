@@ -59,14 +59,14 @@ void print_segment(segment_t const &segment, time_diagram_t const &diagram) {
 // The simple rule is: "Any segment should: 1. contain the same number of c
 // and cdag and 2. not cross a split point".
 //
-std::vector<segment_t> determine_segments(time_diagram_t const &diagram, int verbose = 0) {
+std::vector<segment_t> determine_segments(time_diagram_t const &diagram) {
 
   std::vector<segment_t> list;
   int N = diagram.list.size();
 
   int N_segment = 0;
   for (int i = 0; i < N - 1; i++)                           //starting position of segment
-    for (int a = SMALLEST_SEGMENT; a < N - i + 1; a += 2) { //length of segment
+    for (int a = smallest_segment; a < N - i + 1; a += 2) { //length of segment
 
       if (std::any_of(diagram.split_points.begin(), diagram.split_points.end(),
                       [i, a](auto &split_point) { return segment_cross_p(i, i + a, split_point); }))
@@ -77,7 +77,7 @@ std::vector<segment_t> determine_segments(time_diagram_t const &diagram, int ver
         if (diagram.list[j].dag) Ndag++;
       if (2 * Ndag == a) // check if same number of cdag an c in the segment starting at i and ending before i+a
       {
-        segment_t seg(i, i + a, N_segment++);
+        auto seg = segment_t{i, i + a, N_segment++};
         list.push_back(seg);
         if (verbose > 0) {
           print_segment(seg, diagram);
@@ -89,7 +89,7 @@ std::vector<segment_t> determine_segments(time_diagram_t const &diagram, int ver
   //lastly, put the last segment (this one is k-connected and not fully connected. So we bypass the condition that it should not cross the split point:
   segment_t seg(0, N, N_segment++);
   list.push_back(seg);
-  print_segment(seg, diagram);
+  if(verbose) print_segment(seg, diagram);
   return list;
 }
 
@@ -109,7 +109,7 @@ struct combination_of_segments_t {
   combination_of_segments_t(segment_t const &seg0, time_diagram_t const &diagram) : pos1{seg0.pos1}, pos2{seg0.pos2}, size{seg0.size} {
     list.reserve(
        diagram
-          .k_order() / (SMALLEST_SEGMENT/2) ); //If smallest segment is length 2, we know that this is the maximum number of segments in a combination. If the smallest is 4, then it becomes k_order/2.
+          .k_order() / (smallest_segment/2) ); //If smallest segment is length 2, we know that this is the maximum number of segments in a combination. If the smallest is 4, then it becomes k_order/2.
     list.push_back(seg0.numero);
   };
 
@@ -157,7 +157,9 @@ std::vector<combination_of_segments_t> combine_segments(std::vector<segment_t> c
   int n_seg = segment_list.size();
 
   std::vector<int> start_index_list = {0, 0};
-  std::vector<combination_of_segments_t> combination_list; // return value (pair[1])
+  //std::vector<combination_of_segments_t> combination_list; // return value (pair[1])
+  auto  combination_list = std::vector<combination_of_segments_t>{}; // return value (pair[1])
+  
 
   for (int j = 0; j < n_seg; j++) { combination_list.push_back(combination_of_segments_t(segment_list[j], diagram)); }
   for (int number_of_segment = 2; number_of_segment <= diagram.k_order(); number_of_segment++) {
@@ -214,7 +216,7 @@ void calculate_segment(int segment_numero,
                        std::vector<combination_of_segments_t> const &combination_disjoint_list,
                        std::vector<combination_of_segments_t> const &combination_adjacent_list, hybridization_matrix const &hyb_mat, 
                        time_diagram_t const & diagram, 
-                       int verbose = 0, bool special = false) {
+                       bool special = false) {
 
   segments_list[segment_numero].calculated = true;
   if (verbose > 1) { print_segment(segments_list[segment_numero], diagram); }
@@ -280,10 +282,10 @@ void calculate_segment(int segment_numero,
 // them into two lists: one fully disjoint (except for split points) 
 // and another fully adjacent.
 //
-hybridization_scalar_t inclusion_exclusion(time_diagram_t const &diagram, int verbose = 0) {
+hybridization_scalar_t inclusion_exclusion(time_diagram_t const &diagram) {
 
   if (verbose) print_diag(diagram);
-  std::vector<segment_t> segment_list = determine_segments(diagram, verbose);
+  std::vector<segment_t> segment_list = determine_segments(diagram);
   if (verbose) std::printf("\nsegment number = %lu\n\n", segment_list.size());
 
   std::vector<combination_of_segments_t> combination_disjoint_list = combine_segments(segment_list, diagram, true);
@@ -306,14 +308,13 @@ hybridization_scalar_t inclusion_exclusion(time_diagram_t const &diagram, int ve
 
   hybridization_matrix hyb_mat(diagram);
 
-  for (int length = SMALLEST_SEGMENT; length <= 2 * diagram.k_order(); length += 2) {
+  for (int length = smallest_segment; length <= 2 * diagram.k_order(); length += 2) {
     if (verbose > 1) std::printf("\n############\nsegment length = %d\n", length);
     for (auto seg : segment_list) {
       if (seg.size == length) {
         bool special = false;
         if (length == 2 * diagram.k_order()) special = true;
-        calculate_segment(seg.numero, segment_list, combination_disjoint_list, combination_adjacent_list, hyb_mat, diagram, verbose,
-                          special);
+        calculate_segment(seg.numero, segment_list, combination_disjoint_list, combination_adjacent_list, hyb_mat, diagram, special);
       }
     }
   }

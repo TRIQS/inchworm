@@ -54,7 +54,7 @@ class hybridization_matrix {
 
         double dtau = cdag.tau - c.tau;
         mat(i, j)   = hyb_function(dtau);
-        if (SMALLEST_SEGMENT == 4) {
+        if (smallest_segment == 4) {
           for (int k = 0; k < diagram.list.size() - 1; k++) {
 
             if (std::any_of(begin(diagram.split_points), end(diagram.split_points), [k](int l) { return l == k+1; })) continue;

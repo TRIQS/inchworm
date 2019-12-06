@@ -31,6 +31,9 @@
 #include <triqs/utility/macros.hpp>
 #include <triqs/utility/itertools.hpp>
 
+//#define SMALLEST_SEGMENT 4
+constexpr int smallest_segment = 4; // must be 2 or 4, beware.
+constexpr int verbose = 2; 
 
 
 
