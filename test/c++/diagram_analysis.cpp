@@ -42,7 +42,8 @@ TEST(inchworm, proper_enum1) {
   //std::vector<double> tau2={1.2,1.8,4.6,4.7};
   std::vector<double> tau1={0.4344,0.1,0.3,0.5,0.75,0.9};
   std::vector<double> tau2={0,0.3452,0.21,0.45,0.69,0.81};
-  std::vector<double> split_times = {0.8};
+  //std::vector<double> split_times = {0.8};
+  std::vector<double> split_times = {0.8,0.55,0.34};
   
   std::sort (tau1.begin(), tau1.end());
   std::sort (tau2.begin(), tau2.end());

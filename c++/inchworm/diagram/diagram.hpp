@@ -20,30 +20,23 @@
  *
  ******************************************************************************/
 #pragma once
-
-#include <stdlib.h>
-#include <stdio.h>
+//#include <stdio.h>
 #include <algorithm>
 #include <vector>
 #include <numeric>
 
 #include "./utilities.hpp"
 
-
-
-
 // Degrees of freedom of an creation (annihilation) operator:
-// 
+//
 struct time_and_orbital_t {
   double tau = 0.;
   int orb    = 0;
 };
 
-
 // Function necessary to order different time_and_orbital_t:
 //
 bool operator<(time_and_orbital_t const &t1, time_and_orbital_t const &t2) { return (t1.tau < t2.tau); }
-
 
 // Definition of a time_diagram_t:
 //
@@ -63,9 +56,9 @@ class time_diagram_t {
   std::vector<int> split_points;
   std::vector<int> pos_c;
   std::vector<int> pos_cdag;
-  
+
   int k_order() const { return c_list.size(); }
-  
+
   time_diagram_t(std::vector<time_and_orbital_t> const &c, std::vector<time_and_orbital_t> const &cdag, std::vector<double> const &split_times)
      : list(2 * c.size()), c_list{c}, cdag_list{cdag} {
 
@@ -100,12 +93,12 @@ class time_diagram_t {
       split_points.push_back(i);
       std::printf("%d  % 4.3f\n", i, s_time);
     }
-    
-    for (int i = 0; i < list.size(); i++) {
-      if(list[i].dag) pos_cdag.push_back(i);
-      else pos_c.push_back(i);
-    }
 
+    for (int i = 0; i < list.size(); i++) {
+      if (list[i].dag)
+        pos_cdag.push_back(i);
+      else
+        pos_c.push_back(i);
+    }
   }
 };
-
