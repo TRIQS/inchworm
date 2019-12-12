@@ -29,7 +29,6 @@
 
 #include "./diagram.hpp"
 
-
 ///////////////////////////////////
 ////////// PRINT //////////////////
 ///////////////////////////////////
@@ -39,28 +38,25 @@ void print_vector(std::vector<int> const &v) {
   std::printf("\n");
 }
 
-
-
 // print diagram and its split point above.
 //
 void print_diag(time_diagram_t const &diagram) {
-  for (int j = 0; j < diagram.list.size(); j++) {
-    if (std::any_of(begin(diagram.split_points), end(diagram.split_points), [j](int i) { return i == j+1; }))
+  for (int j = 0; j < diagram.op_list.size(); j++) {
+    if (std::any_of(begin(diagram.split_points), end(diagram.split_points), [j](int i) { return i == j + 1; }))
       std::printf(" |");
     else
-      std::printf("  ");  
+      std::printf("  ");
   }
   std::printf("\n");
-  for (int j = 0; j < diagram.list.size(); j++) {
-    if (diagram.list[j].dag)
+  for (int j = 0; j < diagram.op_list.size(); j++) {
+    if (diagram.op_list[j].dag)
       std::printf("x");
     else
       std::printf("o");
-    if (j < diagram.list.size() - 1) std::printf("-");
+    if (j < diagram.op_list.size() - 1) std::printf("-");
   }
   std::printf("\n");
 }
-
 
 // print one line of segments:
 //
@@ -88,11 +84,9 @@ void printLine(std::vector<int> const &segments_vector) {
   std::printf("%s", string1.c_str());
 }
 
-
-
 std::string diagram_string(time_diagram_t const &diagram) {
   std::string diagram_order = "";
-  for (auto l : diagram.list) {
+  for (auto l : diagram.op_list) {
     if (l.dag)
       diagram_order += "x";
     else
@@ -100,18 +94,6 @@ std::string diagram_string(time_diagram_t const &diagram) {
   }
   return diagram_order;
 }
-
-
-
-
-
-
-
-
-
-
-
-
 
 // print the arch from a to b with different character.
 //
@@ -136,4 +118,3 @@ void printArch(int a, int b, int k_order, char char1 = '.') {
   }
   printf("\n");
 }
-

@@ -104,11 +104,18 @@ print len(t1), len(t2)
 #t2 = [0.8,1.8,3.6,4.7]
 
 
+t1 = [0.1, 0.2, 0.3, 0.5, 1.3, 1.4, 1.5, 3.6, 3.78]
+t2 = [0.0, 0.53, 0., 1.2, 1.8, 2.2, 2.3, 4.6, 4.7]
+
+t1 = [0.1, 0.2, 0.3, 0.5, 1.3, 1.4, 1.5]
+t2 = [0.0, 0.53, 0., 1.2, 1.8, 2.2, 2.3]
+
 #t1=[1.0,2.0,3.0,4.5];
 #t2=[1.2,1.8,4.6,4.7];
 
-split_point = 2
-verbose1=2
+doProper = 0
+split_point = 11
+verbose1=1
 SMALLEST_SEGMENT=4
 
 def hyb(dtau):
@@ -183,6 +190,13 @@ class Delta:
     self.matrix = delta_matrix
     self.diagram = diagram
 
+  def prints(self,diagram):
+    for i in range(diagram.kOrder):
+      for j in range(diagram.kOrder):
+        print "% 5.3f" % self.matrix[i,j],
+      print 
+    print 
+
   def det(self,list_of_indices): #very dirty, need to find a more clever way
     
     it1 = []
@@ -219,9 +233,10 @@ class Delta:
 def inclusion_exclusion(t1,t2,split_point):
   diagramTime = DiagramTimes(t1,t2)
   delta = Delta(diagramTime)
-
+  
   print diagramTime.order
-  print delta.matrix
+  delta.prints(diagramTime)
+  exit()
 
   kOrder = diagramTime.kOrder 
   diagram = diagramTime.order
@@ -879,13 +894,13 @@ def proper_enum(t1,t2,split_point1,subrange=()):
   return value
   
   
-val1 = proper_enum(t1,t2,split_point)
+if (doProper): val1 = proper_enum(t1,t2,split_point)
 val2 = inclusion_exclusion(t1,t2,split_point)
 
-print 'proper_enum():         c_k = %f' %val1
+if (doProper): print 'proper_enum():         c_k = %f' %val1
 print 'inclusion_exclusion(): c_k = %f' %val2
 
-print 'difference = %e' %(val2-val1) 
+if (doProper): print 'difference = %e' %(val2-val1) 
     
     
 exit()

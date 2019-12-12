@@ -24,117 +24,122 @@
 #include <inchworm/diagram/proper_enum.hpp>
 #include <inchworm/diagram/inclusion_exclusion.hpp>
 
-/*
-TEST(inchworm, dummy) { 
-  std::string diagram ="oxoxxoxxoooxxoxo";
-  int split_point = 3;
-  int verbose = 0;
-  int N_proper = find_proper_diagrams(diagram, split_point);
+void compare_both_methods(std::vector<double> &tau1, std::vector<double> &tau2, std::vector<double> &split_times) {
 
-  EXPECT_EQ(N_proper, 10832);
-}*/
+  std::sort(tau1.begin(), tau1.end());
+  std::sort(tau2.begin(), tau2.end());
 
-TEST(inchworm, proper_enum1) { 
-  //int verbose = 2;
-
-  //std::vector<double> split_times = {1.9};
-  //std::vector<double> tau1={1.0,2.0,3.0,4.5};
-  //std::vector<double> tau2={1.2,1.8,4.6,4.7};
-  std::vector<double> tau1={0.4344,0.1,0.3,0.5,0.75,0.9};
-  std::vector<double> tau2={0,0.3452,0.21,0.45,0.69,0.81};
-  //std::vector<double> split_times = {0.8};
-  std::vector<double> split_times = {0.8,0.55,0.34};
-  
-  std::sort (tau1.begin(), tau1.end());
-  std::sort (tau2.begin(), tau2.end());
-  
   std::vector<time_and_orbital_t> c, cdag;
-  for(auto t : tau1) c.push_back({t,0});
-  for(auto t : tau2) cdag.push_back({t,0});
-  time_diagram_t diagram(c,cdag,split_times);
-  
+  for (auto t : tau1) c.push_back({t, 0});
+  for (auto t : tau2) cdag.push_back({t, 0});
+  time_diagram_t diagram(c, cdag, split_times);
+
   //int N_proper = find_proper_diagrams(diagram);
-  hybridization_scalar_t  value_proper = proper_enum(diagram);
-  std::printf("c_k = % 4.6f\n", value_proper);
-  
-  hybridization_scalar_t  value_inclus = inclusion_exclusion(diagram);
-  std::printf("c_k = % 4.6f\n\n\n", value_inclus);
-  
-  std::printf("proper-enum         c_k = % 4.6f\n",   value_proper);
-  std::printf("inclusion-exclusion c_k = % 4.6f\n\n", value_inclus);
-    
-  //EXPECT_EQ(N_proper, 13);
+  hybridization_scalar_t value_proper = proper_enum(diagram);
+  if constexpr (verbose) std::printf("c_k = % 4.6f\n", value_proper);
+
+  hybridization_scalar_t value_inclus = inclusion_exclusion(diagram);
+  if constexpr (verbose) std::printf("c_k = % 4.6f\n\n\n", value_inclus);
+
+  if constexpr (verbose) std::printf("proper-enum         c_k = % 4.6f\n", value_proper);
+  if constexpr (verbose) std::printf("inclusion-exclusion c_k = % 4.6f\n\n", value_inclus);
+
+  //EXPECT_CLOSE(value_proper, value_inclus);
+  EXPECT_NEAR(value_proper, value_inclus, std::abs(1e-10 * value_proper));
+}
+
+TEST(inchworm, benchmark_both1) {
+  std::vector<double> tau1        = {0.1, 0.3, 0.4344, 0.5, 0.75, 0.9};
+  std::vector<double> tau2        = {0, 0.21, 0.3452, 0.45, 0.69, 0.81};
+  std::vector<double> split_times = {0.8, 0.55, 0.34};
+  compare_both_methods(tau1, tau2, split_times);
+}
+
+TEST(inchworm, benchmark_both2) {
+  std::vector<double> tau1        = {1.0, 2.0, 3.0, 4.5};
+  std::vector<double> tau2        = {1.2, 1.8, 4.6, 4.7};
+  std::vector<double> split_times = {1.9};
+  compare_both_methods(tau1, tau2, split_times);
+}
+
+//long test, comment if verbose > 1
+TEST(inchworm, benchmark_both3) {
+  std::vector<double> tau1        = {0.1, 0.5, 0.6, 0.89, 1.3, 1.45, 1.78, 4.2};
+  std::vector<double> tau2        = {0.0, 0.11, 0.51, 1.2, 1.8, 2.2, 2.3, 4.6};
+  std::vector<double> split_times = {0.99};
+  compare_both_methods(tau1, tau2, split_times);
+  split_times.push_back(0.2);
+  compare_both_methods(tau1, tau2, split_times);
+  split_times.push_back(3.7);
+  compare_both_methods(tau1, tau2, split_times);
+}
+//
+
+//long test, comment if verbose > 1
+TEST(inchworm, benchmark_both4) {
+  std::vector<double> tau1 = {0.1, 0.2, 0.3, 0.5, 1.3, 1.4, 1.5, 3.6};
+  std::vector<double> tau2 = {0.0, 0.53, 0.54, 1.2, 1.8, 2.2, 2.3, 4.6};
+  std::vector<double> split_times = {0.99};
+  compare_both_methods(tau1, tau2, split_times);
+  split_times.push_back(0.21);
+  compare_both_methods(tau1, tau2, split_times);
+  split_times.push_back(3.7);
+  compare_both_methods(tau1, tau2, split_times);
 }
 
 
-
-
-
-
-
-
-/*
-TEST(inchworm, subdeterminant) { 
-  std::vector<time_and_orbital_t> tau1={{1.0,0},{2.0,0},{3.0,0},{4.5,0}};
-  std::vector<time_and_orbital_t> tau2={{1.2,0},{1.8,0},{4.6,0},{4.7,0}};
-  time_diagram_t diagram(tau1, tau2);
-
-  hybridization_matrix hyb_mat(diagram,0);
-  
-  //std::printf("det=% 4.8f\n",hyb_mat.extract_det());
-  //double value = hyb_mat.extract_det({0,2});
-  //std::printf("det=% 4.8f\n",value);
-  EXPECT_CLOSE(1.7968,hyb_mat.extract_det({0,2}));
-  EXPECT_CLOSE(-13.43255200,hyb_mat.extract_det({0,2,5,6}));
-  EXPECT_CLOSE(0.13697019,hyb_mat.det());
-  EXPECT_CLOSE(hyb_mat.det(),hyb_mat.extract_det({0,1,2,3,4,5,6,7}));
-}
-
-
-TEST(inchworm, segment) { 
-  int verbose = 2;
-  std::vector<time_and_orbital_t> tau1={{1.0,0},{2.0,0},{4.0,0},{4.5,0}};
-  std::vector<time_and_orbital_t> tau2={{0.8,0},{1.8,0},{3.6,0},{4.7,0}};
-  std::vector<double> split_times = {2.2};
-  time_diagram_t diagram(tau1, tau2, split_times);
-  //int split_point = 4;
-  
-  hybridization_scalar_t  value = inclusion_exclusion(diagram);
-  
-  std::printf("c_k = % 4.7f\n\n", value);
-}
-
-TEST(inchworm, inclusion_exclusion1) { 
-  //int verbose = 1;
+TEST(inchworm, inclusion_exclusion_big_order1) {
   //std::vector<double> tau1={0.4344,0.1,0.3,0.5,0.75,0.9,0.55,0.566,0.33,.4959594,.4494929,.12349512,.62343,0.123412444,0.2134444,.99949941,1.1,1.23,1.45,2.3,1.6,4.3,1.222,2.98,3.1244};
   //std::vector<double> tau2={0,0.3452,0.21,0.45,0.69,0.81,0.998,0.122,0.833,0.4934,.210342134,.210343,.02134,.0030404,.02142430,0.1111,1.2,1.3,1.4,3.4,2.34,3.11,2.9,1.99,3.098};
 
-  std::vector<double> tau1={0.4344,0.1,0.3,0.5,0.75,0.9,0.55,0.566,0.33,.4959594,.4494929,.12349512,.62343,0.123412444,0.2134444,.99949941};
-  std::vector<double> tau2={0,0.3452,0.21,0.45,0.69,0.81,0.998,0.122,0.833,0.4934,.210342134,.210343,.02134,.0030404,.02142430,0.1111};
-  //std::vector<double> split_times = {0.82,0.22,0.32,0.52};
+  std::vector<double> tau1 = {0.4344, 0.1,      0.3,      0.5,       0.75,   0.9,         0.55,      0.566,
+                              0.33,   .4959594, .4494929, .12349512, .62343, 0.123412444, 0.2134444, .99949941};
+  std::vector<double> tau2 = {0,     0.3452, 0.21,       0.45,    0.69,   0.81,     0.998,     0.122,
+                              0.833, 0.4934, .210342134, .210343, .02134, .0030404, .02142430, 0.1111};
   std::vector<double> split_times = {0.82};
-  
-  //std::vector<double> tau1={0.4344,0.1,0.3, 0.9};
-  //std::vector<double> tau2={0.0,0.3452,0.21,0.7};
 
+  std::sort(tau1.begin(), tau1.end());
+  std::sort(tau2.begin(), tau2.end());
 
-  //std::vector<double> tau1={1.0,2.0,3.0,4.5};
-  //std::vector<double> tau2={1.23421,1.8,4.6,4.7};
-  
-  std::sort (tau1.begin(), tau1.end());
-  std::sort (tau2.begin(), tau2.end());
-  
   std::vector<time_and_orbital_t> c, cdag;
-  for(auto t : tau1) c.push_back({t,0});
-  for(auto t : tau2) cdag.push_back({t,0});
-  time_diagram_t diagram(c,cdag,split_times);
-  
-  hybridization_scalar_t  value = inclusion_exclusion(diagram);
+  for (auto t : tau1) c.push_back({t, 0});
+  for (auto t : tau2) cdag.push_back({t, 0});
+  time_diagram_t diagram(c, cdag, split_times);
+
+  hybridization_scalar_t value = inclusion_exclusion(diagram);
   std::printf("c_k = % 4.6f\n\n", value);
-    
-  EXPECT_NEAR(-8458508.82790539,value, 1e-7);
+
+  EXPECT_NEAR(-8458508.82790539, value, 1e-7);
 }
-*/
+//*/
+/*
+TEST(inchworm, inclusion_exclusion_huge_order1) {
+  std::vector<double> tau1={0.4344,0.1,0.3,0.5,0.92882,0.75,0.9,0.55,0.566,0.33,.4959594,.4494929,.12349512,.62343,0.123412444,0.2134444,.99949941,1.1,1.23,1.45,2.3,1.6,4.3,1.222,2.98,3.1244};
+  std::vector<double> tau2={0,0.3452,0.21,0.45,0.9329,0.69,0.81,0.998,0.122,0.833,0.4934,.210342134,.210343,.02134,.0030404,.02142430,0.1111,1.2,1.3,1.4,3.4,2.34,3.11,2.9,1.99,3.098};
 
+  //std::vector<double> tau1={0.1,0.3,0.5,0.7,0.9,1.1,1.3,1.5,1.7,1.9,2.1,2.3,2.5,2.7,2.9,3.1,3.3,3.5,3.7,3.9,4.1,4.3,4.5,4.7,4.9,5.1};
+  //std::vector<double> tau2={0.2,0.4,0.6,0.8,1.0,1.2,1.4,1.6,1.8,2.0,2.2,2.4,2.6,2.8,3.0,3.2,3.4,3.6,3.8,4.0,4.2,4.4,4.6,4.8,5.0,5.2};
+  //std::vector<double> tau1={0.1,0.3,0.5,0.7,0.9,1.1,1.3,1.5,1.7,1.9,2.1,2.3,2.5,2.7,2.9,3.1,3.3,3.5,3.7,3.9,4.1};
+  //std::vector<double> tau2={0.2,0.4,0.6,0.8,1.0,1.2,1.4,1.6,1.8,2.0,2.2,2.4,2.6,2.8,3.0,3.2,3.4,3.6,3.8,4.0,4.2};
+
+  //std::vector<double> tau1 = {0.4344, 0.1,      0.3,      0.5,       0.75,   0.9,         0.55,      0.566,
+  //                            0.33,   .4959594, .4494929, .12349512, .62343, 0.123412444, 0.2134444, .99949941};
+  //std::vector<double> tau2 = {0,     0.3452, 0.21,       0.45,    0.69,   0.81,     0.998,     0.122,
+  //                            0.833, 0.4934, .210342134, .210343, .02134, .0030404, .02142430, 0.1111};
+  std::vector<double> split_times = {0.82};
+
+  std::sort(tau1.begin(), tau1.end());
+  std::sort(tau2.begin(), tau2.end());
+
+  std::vector<time_and_orbital_t> c, cdag;
+  for (auto t : tau1) c.push_back({t, 0});
+  for (auto t : tau2) cdag.push_back({t, 0});
+  time_diagram_t diagram(c, cdag, split_times);
+
+  hybridization_scalar_t value = inclusion_exclusion(diagram);
+  std::printf("c_k = % 4.6f\n\n", value);
+
+  //EXPECT_NEAR(-8458508.82790539, value, 1e-7);
+}
+//*/
 MAKE_MAIN
-

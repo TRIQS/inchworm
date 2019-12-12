@@ -23,8 +23,6 @@
 #include "./hybridization_function_matrix.hpp"
 #include "./print.hpp"
 
-
-
 // Definition of a segment:
 //
 struct segment_t {
@@ -45,24 +43,25 @@ struct segment_t {
   }
 };
 
-
-// print one segment 
-// 
+// print one segment
+//
 void print_segment(segment_t const &segment, time_diagram_t const &diagram) {
-  std::vector<int> num_vector(diagram.list.size(), 0);
+  std::vector<int> num_vector(diagram.op_list.size(), 0);
   for (int k = segment.pos1; k < segment.pos2; k++) num_vector[k] = 1;
   printLine(num_vector);
 }
-
 
 // Determine every possible segment based on the time_diagram definition.
 // The simple rule is: "Any segment should: 1. contain the same number of c
 // and cdag and 2. not cross a split point".
 //
+// Additionnal optimisation: a segment of length 4 and of type xoxo or oxox
+// does not need to be considered as it cannot be fully connected
+//
 std::vector<segment_t> determine_segments(time_diagram_t const &diagram) {
 
-  std::vector<segment_t> list;
-  int N = diagram.list.size();
+  std::vector<segment_t> seg_list;
+  int N = diagram.op_list.size();
 
   int N_segment = 0;
   for (int i = 0; i < N - 1; i++)                           //starting position of segment
@@ -73,13 +72,17 @@ std::vector<segment_t> determine_segments(time_diagram_t const &diagram) {
         continue;
 
       int Ndag = 0;
+
+      if constexpr (remove_xoxo) if (a == 4 and diagram.op_list[i].dag == diagram.op_list[i + 2].dag) continue;
+
+      // count the number of dag, must be half of the lenght a:
       for (int j = i; j < i + a; j++)
-        if (diagram.list[j].dag) Ndag++;
+        if (diagram.op_list[j].dag) Ndag++;
       if (2 * Ndag == a) // check if same number of cdag an c in the segment starting at i and ending before i+a
       {
         auto seg = segment_t{i, i + a, N_segment++};
-        list.push_back(seg);
-        if (verbose > 0) {
+        seg_list.push_back(seg);
+        if constexpr (verbose > 0) {
           print_segment(seg, diagram);
           std::printf("\n");
         }
@@ -88,40 +91,39 @@ std::vector<segment_t> determine_segments(time_diagram_t const &diagram) {
 
   //lastly, put the last segment (this one is k-connected and not fully connected. So we bypass the condition that it should not cross the split point:
   segment_t seg(0, N, N_segment++);
-  list.push_back(seg);
-  if(verbose) print_segment(seg, diagram);
-  return list;
+  seg_list.push_back(seg);
+  if constexpr (verbose) print_segment(seg, diagram);
+  return seg_list;
 }
 
-
-// Definition of combination_of_segments_t 
+// Definition of set_of_segments_t
 //
-struct combination_of_segments_t {
+struct set_of_segments_t {
 
   int pos1;
-  int pos2; // note: by definition here, the combination of segments goes from index pos1 to pos2-1
+  int pos2; // note: by definition here, the set of segments goes from index pos1 to pos2-1
   int size;
   bool disjoint = true; // we define disjoint when 2 segments does not touch (by convention, we choose a segment alone to be disjoint too)
   bool adjacent = true; // we define adjacent when all segments touches. If one does not, it is false.
   std::vector<int> list;
-  
+
   // Constructor:
-  combination_of_segments_t(segment_t const &seg0, time_diagram_t const &diagram) : pos1{seg0.pos1}, pos2{seg0.pos2}, size{seg0.size} {
+  set_of_segments_t(segment_t const &seg0, time_diagram_t const &diagram) : pos1{seg0.pos1}, pos2{seg0.pos2}, size{seg0.size} {
     list.reserve(
-       diagram
-          .k_order() / (smallest_segment/2) ); //If smallest segment is length 2, we know that this is the maximum number of segments in a combination. If the smallest is 4, then it becomes k_order/2.
+       diagram.perturbation_order()
+       / (smallest_segment
+          / 2)); //If smallest segment is length 2, we know that this is the maximum number of segments in a set. If the smallest is 4, then it becomes k_order/2.
     list.push_back(seg0.numero);
   };
 
-  // Function to add a segment to the present combination of segments:
+  // Function to add a segment to the present set of segments:
   void append(segment_t const &seg1, time_diagram_t const &diagram) {
     if (seg1.pos1 != pos2)
       adjacent = false;
     else if (std::any_of(begin(diagram.split_points), end(diagram.split_points), [j = pos2](int i) { return i == j; }))
-      adjacent =
-         false; // if the previous combination of segments already ends at a split point, adding another one will make this combination not adjacent anymore.
+      adjacent = false; // if the previous set of segments already ends at a split point, adding another one will make this set not adjacent anymore.
     else
-      disjoint = false; // note, we consider that even if two segments touch at the split point, the combination is still disjoint.
+      disjoint = false; // note, we consider that even if two segments touch at the split point, the set is still disjoint.
 
     size = seg1.pos2 - pos1;
     pos2 = seg1.pos2;
@@ -129,71 +131,66 @@ struct combination_of_segments_t {
   };
 };
 
+// print one set of segments
+//
+void print_set(std::vector<segment_t> const &segment_list, set_of_segments_t const &set_of_segments, time_diagram_t const &diagram) {
+  std::vector<int> num_vector(diagram.op_list.size(), 0);
 
-// print one combination of segments 
-// 
-void print_combin(std::vector<segment_t> const &segment_list, combination_of_segments_t const &combination_of_segments, time_diagram_t const &diagram) {
-  std::vector<int> num_vector(diagram.list.size(), 0);
-
-  for (int j = 0; j < combination_of_segments.list.size(); j++) {
-    for (int k = segment_list[combination_of_segments.list[j]].pos1; 
-              k < segment_list[combination_of_segments.list[j]].pos2; k++) num_vector[k] = j + 1;
+  for (int j = 0; j < set_of_segments.list.size(); j++) {
+    for (int k = segment_list[set_of_segments.list[j]].pos1; k < segment_list[set_of_segments.list[j]].pos2; k++) num_vector[k] = j + 1;
   }
   printLine(num_vector);
 }
 
-
 // Combine the different segments defined in segment_list. It proceed in
-// steps. Every step reuse the previous combination of segment. For exemple
-// when we try to generate combination of 3 segments, we reuse every combination
-// of 2 segment and try to append segments the segments in segment_list. 
+// steps. Every step reuse the previous set of segment. For exemple
+// when we try to generate set of 3 segments, we reuse every set
+// of 2 segment and try to append segments the segments in segment_list.
 // For this reason, we keep the information of the indices where the "N segments"
-// combination start in the list "combination_list". This is kept in the vector
+// set start in the list "set_list". This is kept in the vector
 // start_index_list.
 //
-std::vector<combination_of_segments_t> combine_segments(std::vector<segment_t> const &segment_list, time_diagram_t const &diagram,
-                                                        bool search_disjoint) {
+std::vector<set_of_segments_t> combine_segments(std::vector<segment_t> const &segment_list, time_diagram_t const &diagram, bool search_disjoint) {
 
   int n_seg = segment_list.size();
 
   std::vector<int> start_index_list = {0, 0};
-  //std::vector<combination_of_segments_t> combination_list; // return value (pair[1])
-  auto  combination_list = std::vector<combination_of_segments_t>{}; // return value (pair[1])
-  
+  //std::vector<set_of_segments_t> set_list; // return value (pair[1])
+  auto set_list = std::vector<set_of_segments_t>{}; // return value (pair[1])
 
-  for (int j = 0; j < n_seg; j++) { combination_list.push_back(combination_of_segments_t(segment_list[j], diagram)); }
-  for (int number_of_segment = 2; number_of_segment <= diagram.k_order(); number_of_segment++) {
-    start_index_list.push_back(combination_list.size());
+  for (int j = 0; j < n_seg; j++) { set_list.push_back(set_of_segments_t(segment_list[j], diagram)); }
+  for (int number_of_segment = 2; number_of_segment <= diagram.perturbation_order(); number_of_segment++) {
+    start_index_list.push_back(set_list.size());
 
     int i1 = start_index_list.size() - 2;
     int i2 = start_index_list.size() - 1;
     for (int prev_index = start_index_list[i1]; prev_index < start_index_list[i2]; prev_index++) {
 
-      combination_of_segments_t previous_combination = combination_list[prev_index];
-      //if we do not search for disjoint combination, we search for adjacent combination, only. We do not need the ones that are neither.
+      set_of_segments_t previous_set = set_list[prev_index];
+      //if we do not search for disjoint set, we search for adjacent set, only. We do not need the ones that are neither.
 
       for (auto additional_segment : segment_list) {
-        if (additional_segment.pos1 >= previous_combination.pos2) {
-          combination_of_segments_t new_combination = previous_combination;
-          new_combination.append(additional_segment, diagram);
+        if (additional_segment.pos1 >= previous_set.pos2) {
+          set_of_segments_t new_set = previous_set;
+          new_set.append(additional_segment, diagram);
 
           if (search_disjoint) {
-            if (not new_combination.disjoint) continue;
-          } else { // IMPORTANT distinction. A segment does not have to be disjoint or adjacent. But here, if we do not search for disjoint, we necessarly search for adjacent. 
-            if (not new_combination.adjacent) continue;
+            if (not new_set.disjoint) continue;
+          } else { // IMPORTANT distinction. A segment does not have to be disjoint or adjacent. But here, if we do not search for disjoint, we necessarly search for adjacent.
+            if (not new_set.adjacent) continue;
           } //important brackets
 
-          combination_list.push_back(new_combination);
+          set_list.push_back(new_set);
         }
       }
     }
   }
-  return combination_list;
+  return set_list;
 }
 
 // Remove "segment_size" elements of a vector of int, starting at the value "segment_min".
 // Of course is requires the "segment_min" to be in the vector and more than "segment_size"
-// away from the end of the vector. This is ensured by the EXPECTS() check. 
+// away from the end of the vector. This is ensured by the EXPECTS() check.
 //
 std::vector<int> remove_segment_from_list(std::vector<int> const &list, int segment_min, int segment_size) {
   std::vector<int> output;
@@ -207,26 +204,23 @@ std::vector<int> remove_segment_from_list(std::vector<int> const &list, int segm
   return output;
 }
 
-
 // Calculate the value of one segment
-// by analysing every segiments of the combination of segment (of both lists)
+// by analysing every segiments of the set of segment (of both lists)
 //
 void calculate_segment(int segment_numero,
                        std::vector<segment_t> &segments_list, // not const: modified
-                       std::vector<combination_of_segments_t> const &combination_disjoint_list,
-                       std::vector<combination_of_segments_t> const &combination_adjacent_list, hybridization_matrix const &hyb_mat, 
-                       time_diagram_t const & diagram, 
-                       bool special = false) {
+                       std::vector<set_of_segments_t> const &set_disjoint_list, std::vector<set_of_segments_t> const &set_adjacent_list,
+                       hybridization_matrix const &hyb_mat, time_diagram_t const &diagram, bool special = false) {
 
   segments_list[segment_numero].calculated = true;
-  if (verbose > 1) { print_segment(segments_list[segment_numero], diagram); }
+  if constexpr (verbose > 1) { print_segment(segments_list[segment_numero], diagram); }
 
   std::vector<int> range_of_vertex(segments_list[segment_numero].size);
   std::iota(range_of_vertex.begin(), range_of_vertex.end(), segments_list[segment_numero].pos1);
 
   segments_list[segment_numero].value += hyb_mat.extract_det(range_of_vertex);
 
-  for (auto subs : combination_disjoint_list) {
+  for (auto subs : set_disjoint_list) {
     if ((not special) and not((segments_list[segment_numero].pos1 <= subs.pos1) and (segments_list[segment_numero].pos2 > subs.pos2))) continue;
     if (special and (subs.list.size() == 1)
         and ((segments_list[segment_numero].pos1 == subs.pos1) and (segments_list[segment_numero].pos2 == subs.pos2)))
@@ -235,11 +229,16 @@ void calculate_segment(int segment_numero,
     hybridization_scalar_t value = 1.0;
     std::vector<int> range_of_subvertex(range_of_vertex);
     int sign_of_parcollet_charlebois = 1;
+    bool is_finite = true;
 
     for (auto sub_segment_numero : subs.list) {
       segment_t seg = segments_list[sub_segment_numero];
       EXPECTS(seg.calculated);
-
+      
+      if (seg.value==0.0){ // somehow, this seems to happen often even if we consider float (does it still holds for complex numbers?)
+	is_finite=false;
+        //std::printf("is not finite: %e \n", seg.value);
+      }
       value *= -seg.value;
 
       range_of_subvertex = remove_segment_from_list(range_of_subvertex, seg.pos1, seg.size);
@@ -247,6 +246,8 @@ void calculate_segment(int segment_numero,
       if (seg.size % 4 != 0)
         if ((seg.pos2 - segments_list[segment_numero].pos1) % 2 == 1) sign_of_parcollet_charlebois *= -1;
     }
+
+    if constexpr (remove_not_finite) {if (not is_finite) continue;} // avoid determinant calculation.
 
     if (range_of_subvertex.size() > 0) {
       hybridization_scalar_t det1 = hyb_mat.extract_det(range_of_subvertex);
@@ -257,7 +258,7 @@ void calculate_segment(int segment_numero,
 
   segments_list[segment_numero].value_without_cuts = segments_list[segment_numero].value;
 
-  for (auto cuts : combination_adjacent_list) {
+  for (auto cuts : set_adjacent_list) {
     if (segments_list[segment_numero].pos1 == cuts.pos1)
       if (segments_list[segment_numero].pos2 == cuts.pos2)
         if (cuts.list.size() > 1) {
@@ -273,60 +274,59 @@ void calculate_segment(int segment_numero,
           segments_list[segment_numero].value -= value;
         }
   }
-  if (verbose > 1) std::printf("   % 15.8f      % 15.8f\n", segments_list[segment_numero].value, segments_list[segment_numero].value_without_cuts);
+  if constexpr (verbose > 1)
+    std::printf("   % 15.8f      % 15.8f\n", segments_list[segment_numero].value, segments_list[segment_numero].value_without_cuts);
 }
-
 
 // inclusion_exclusion algo based on Boag et al. PRB (2018) (with few changes)
 // We first determine the independent segments. We then combine
-// them into two lists: one fully disjoint (except for split points) 
+// them into two lists: one fully disjoint (except for split points)
 // and another fully adjacent.
 //
 hybridization_scalar_t inclusion_exclusion(time_diagram_t const &diagram) {
 
-  if (verbose) print_diag(diagram);
+  if constexpr (verbose) print_diag(diagram);
   std::vector<segment_t> segment_list = determine_segments(diagram);
-  if (verbose) std::printf("\nsegment number = %lu\n\n", segment_list.size());
+  if constexpr (verbose) std::printf("\nsegment number = %lu\n\n", segment_list.size());
 
-  std::vector<combination_of_segments_t> combination_disjoint_list = combine_segments(segment_list, diagram, true);
-  std::vector<combination_of_segments_t> combination_adjacent_list = combine_segments(segment_list, diagram, false);
+  std::vector<set_of_segments_t> set_disjoint_list = combine_segments(segment_list, diagram, true);
+  std::vector<set_of_segments_t> set_adjacent_list = combine_segments(segment_list, diagram, false);
 
-  if (verbose > 1) {
-    std::printf("\n\ncombination of disjoint segments:\n\n");
+  if constexpr (verbose > 1) {
+    std::printf("\n\nset of disjoint segments:\n\n");
     print_diag(diagram);
-    for (auto comb : combination_disjoint_list) {
-      print_combin(segment_list, comb, diagram);
+    for (auto comb : set_disjoint_list) {
+      print_set(segment_list, comb, diagram);
       std::printf("\n");
     }
-    std::printf("\n\ncombination of adjacent segments:\n\n");
+    std::printf("\n\nset of adjacent segments:\n\n");
     print_diag(diagram);
-    for (auto comb : combination_adjacent_list) {
-      print_combin(segment_list, comb, diagram);
+    for (auto comb : set_adjacent_list) {
+      print_set(segment_list, comb, diagram);
       std::printf("\n");
     }
   }
 
   hybridization_matrix hyb_mat(diagram);
 
-  for (int length = smallest_segment; length <= 2 * diagram.k_order(); length += 2) {
-    if (verbose > 1) std::printf("\n############\nsegment length = %d\n", length);
+  for (int length = smallest_segment; length <= 2 * diagram.perturbation_order(); length += 2) {
+    if constexpr (verbose > 1) std::printf("\n############\nsegment length = %d\n", length);
     for (auto seg : segment_list) {
       if (seg.size == length) {
         bool special = false;
-        if (length == 2 * diagram.k_order()) special = true;
-        calculate_segment(seg.numero, segment_list, combination_disjoint_list, combination_adjacent_list, hyb_mat, diagram, special);
+        if (length == 2 * diagram.perturbation_order()) special = true;
+        calculate_segment(seg.numero, segment_list, set_disjoint_list, set_adjacent_list, hyb_mat, diagram, special);
       }
     }
   }
 
-  if (verbose > 0) {
+  if constexpr (verbose > 0) {
     std::printf("\n## diagram = '%s'\n", diagram_string(diagram).c_str());
-    std::printf("kOrder = %d\n", diagram.k_order());
+    std::printf("kOrder = %d\n", diagram.perturbation_order());
     std::printf("number of segments = %lu\n", segment_list.size());
-    std::printf("number of adjacent combinations = %lu\n", combination_adjacent_list.size());
-    std::printf("number of disjoint combinations = %lu\n", combination_disjoint_list.size());
+    std::printf("number of adjacent sets = %lu\n", set_adjacent_list.size());
+    std::printf("number of disjoint sets = %lu\n", set_disjoint_list.size());
   }
 
   return segment_list.back().value;
 }
-

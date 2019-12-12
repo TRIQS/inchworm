@@ -31,11 +31,12 @@
 #include <triqs/utility/macros.hpp>
 #include <triqs/utility/itertools.hpp>
 
-//#define SMALLEST_SEGMENT 4
-constexpr int smallest_segment = 4; // must be 2 or 4, beware.
-constexpr int verbose = 2; 
-
-
+constexpr int smallest_segment   = 4; // must be 2 or 4, beware.
+constexpr int verbose            = 1;
+constexpr bool remove_xoxo       = true; // new optimisation 1
+constexpr bool remove_not_finite = true; // new optimisation 2: do not calculate determinant of
+                                         // the remainder when one segment is equal to zero (double == 0.0).
+                                         // But it might be not as straightforward when doing this comparison for complex values.
 
 // check if an arch cross a point,
 //
@@ -48,8 +49,6 @@ constexpr int verbose = 2;
 //         a______b
 //
 bool segment_cross_p(int a, int b, int p) { return (a - p) * (b - p) < 0; }
-
-
 
 // check if two arches cross,
 //  i.e. if one end of one arch arrive in the middle of the other arch.
@@ -68,7 +67,6 @@ bool segment_cross_p(int a, int b, int p) { return (a - p) * (b - p) < 0; }
 //
 bool segment_cross(int a1, int b1, int a2, int b2) { return (a1 - a2) * (b1 - a2) * (b1 - b2) * (a1 - b2) < 0; }
 
-
 // check if an arch cross a point,
 //
 // example1: cross
@@ -81,7 +79,6 @@ bool segment_cross(int a1, int b1, int a2, int b2) { return (a1 - a2) * (b1 - a2
 //
 bool segment_cross_point(int a, int b, int point) { return (a - (point + 0.5)) * (b - (point + 0.5)) < 0.0; }
 
-
 // calculate n!
 //
 int factorial(int n) {
@@ -90,4 +87,3 @@ int factorial(int n) {
   else
     return 1;
 }
-

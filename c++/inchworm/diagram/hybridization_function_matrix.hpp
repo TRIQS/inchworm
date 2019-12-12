@@ -45,8 +45,8 @@ class hybridization_matrix {
   matrix_t mat;
   time_diagram_t diagram;
 
-  //hybridization_matrix(time_diagram_t const & diagram, hybridization_function_t const & hyb): mat(diagram.k_order(), diagram.k_order()), diagram{diagram}{
-  hybridization_matrix(time_diagram_t const &diagram) : mat(diagram.k_order(), diagram.k_order()), diagram{diagram} {
+  //hybridization_matrix(time_diagram_t const & diagram, hybridization_function_t const & hyb): mat(diagram.perturbation_order(), diagram.perturbation_order()),, diagram{diagram}{
+  hybridization_matrix(time_diagram_t const &diagram) : mat(diagram.perturbation_order(), diagram.perturbation_order()), diagram{diagram} {
 
     for (auto [i, c] : enumerate(diagram.c_list))
       for (auto [j, cdag] : enumerate(diagram.cdag_list)) {
@@ -54,26 +54,35 @@ class hybridization_matrix {
 
         double dtau = cdag.tau - c.tau;
         mat(i, j)   = hyb_function(dtau);
-        if (smallest_segment == 4) {
-          for (int k = 0; k < diagram.list.size() - 1; k++) {
-
-            if (std::any_of(begin(diagram.split_points), end(diagram.split_points), [k](int l) { return l == k+1; })) continue;
-
-            if (not diagram.list[k].dag and diagram.list[k + 1].dag) { // segment on length 2
-              int it          = diagram.list[k + 1].order_index;       /// ERROR: it seems that the definition of c and cdagger are inverted?
-              int it_dag      = diagram.list[k].order_index;
-              mat(it, it_dag) = 0.;
-            } else if (diagram.list[k].dag and not diagram.list[k + 1].dag) { // segment on length 2
-              int it_dag      = diagram.list[k + 1].order_index;
-              int it          = diagram.list[k].order_index;
-              mat(it, it_dag) = 0.;
-            }
-          }
-        }
         //put this below in hyb_funciton at some point:
         //        if(dtau>=0) mat(i,j) = hyb( dtau )( cdag.orb, c.orb );
         //        else mat(i,j) = -hyb( hyb.mesh().domain().beta + dtau )( cdag.orb, c.orb );
       }
+    if (smallest_segment == 4) {
+      for (int k = 0; k < diagram.op_list.size() - 1; k++) {
+
+        if (std::any_of(begin(diagram.split_points), end(diagram.split_points), [k](int l) { return l == k + 1; })) continue;
+
+        if (not diagram.op_list[k].dag and diagram.op_list[k + 1].dag) { // segment on length 2
+          int it          = diagram.op_list[k + 1].order_index;
+          int it_dag      = diagram.op_list[k].order_index;
+          mat(it, it_dag) = 0.;
+          //if constexpr (verbose) std::printf("order_indices  %d %d\n", diagram.op_list[k + 1].order_index, diagram.op_list[k].order_index);
+        } else if (diagram.op_list[k].dag and not diagram.op_list[k + 1].dag) { // segment on length 2
+          int it          = diagram.op_list[k].order_index;
+          int it_dag      = diagram.op_list[k + 1].order_index;
+          mat(it, it_dag) = 0.;
+          //if constexpr (verbose) std::printf("order_indices   %d %d\n", diagram.op_list[k].order_index, diagram.op_list[k+1].order_index);
+        }
+      }
+    }
+    if constexpr (verbose) {
+      std::printf("hybrid matrix\n");
+      for (int i = 0; i < diagram.perturbation_order(); i++) {
+        for (int j = 0; j < diagram.perturbation_order(); j++) std::printf("% 5.3f ", mat(i, j));
+        printf("\n");
+      }
+    }
   };
 
   hybridization_scalar_t det() { return determinant(mat); }
@@ -88,10 +97,10 @@ class hybridization_matrix {
 
     int i = 0, j = 0;
     for (auto idx : list_of_indices) {
-      if (diagram.list[idx].dag)
-        list_of_cdag[i++] = diagram.list[idx].order_index;
+      if (diagram.op_list[idx].dag)
+        list_of_cdag[i++] = diagram.op_list[idx].order_index;
       else
-        list_of_c[j++] = diagram.list[idx].order_index;
+        list_of_c[j++] = diagram.op_list[idx].order_index;
     }
 
     for (i = 0; i < N; i++) {
@@ -101,6 +110,3 @@ class hybridization_matrix {
     return determinant(m);
   }
 };
-
-
-
