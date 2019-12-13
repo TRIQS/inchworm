@@ -55,6 +55,7 @@ class time_diagram_t {
   std::vector<time_and_orbital_t> c_list, cdag_list; // list of c/cdag time ordered
   std::vector<int> pos_c;                            // position of c in the op_list
   std::vector<int> pos_cdag;                         // idem
+  bool is_trivial; // a diagram is considered trivial if no split_times are found between the minimum and maximum tau.
 
   int perturbation_order() const { return c_list.size(); }
 
@@ -90,7 +91,7 @@ class time_diagram_t {
     //}
 
     std::sort(op_list.begin(), op_list.end(), [](auto const &x, auto const &y) { return x.tau < y.tau; });
-    
+
     // check that no times are equal (might need to change at some point, rare event, but many Monte Carlo sampling...);
     for (int i = 0; i < op_list.size() - 1; i++) EXPECTS(op_list[i].tau != op_list[i + 1].tau);
 
@@ -103,11 +104,16 @@ class time_diagram_t {
 
     if constexpr (verbose) std::printf("split points:\n");
 
+    is_trivial = true; //start by assuming it is trivial and searching for at least one counter example.
     for (auto s_time : split_times) {
       int i = 0;
       for (; i < op_list.size(); i++) {
         EXPECTS(s_time != op_list[i].tau);
         if (s_time < op_list[i].tau) break;
+      }
+      if (i!=0 and i!=op_list.size()) {
+	is_trivial = false;
+        if constexpr (verbose) std::printf("diagram is not trivial\n");
       }
       split_points.push_back(i);
       if constexpr (verbose) std::printf("%d  % 4.3f\n", i, s_time);

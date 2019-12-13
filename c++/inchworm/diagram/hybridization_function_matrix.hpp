@@ -76,7 +76,7 @@ class hybridization_matrix {
         }
       }
     }
-    if constexpr (verbose) {
+    if constexpr (verbose>1) {
       std::printf("hybrid matrix\n");
       for (int i = 0; i < diagram.perturbation_order(); i++) {
         for (int j = 0; j < diagram.perturbation_order(); j++) std::printf("% 5.3f ", mat(i, j));

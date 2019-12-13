@@ -73,7 +73,8 @@ std::vector<segment_t> determine_segments(time_diagram_t const &diagram) {
 
       int Ndag = 0;
 
-      if constexpr (remove_xoxo) if (a == 4 and diagram.op_list[i].dag == diagram.op_list[i + 2].dag) continue;
+      if constexpr (remove_xoxo)
+        if (a == 4 and diagram.op_list[i].dag == diagram.op_list[i + 2].dag) continue;
 
       // count the number of dag, must be half of the lenght a:
       for (int j = i; j < i + a; j++)
@@ -229,14 +230,14 @@ void calculate_segment(int segment_numero,
     hybridization_scalar_t value = 1.0;
     std::vector<int> range_of_subvertex(range_of_vertex);
     int sign_of_parcollet_charlebois = 1;
-    bool is_finite = true;
+    bool is_finite                   = true;
 
     for (auto sub_segment_numero : subs.list) {
       segment_t seg = segments_list[sub_segment_numero];
       EXPECTS(seg.calculated);
-      
-      if (seg.value==0.0){ // somehow, this seems to happen often even if we consider float (does it still holds for complex numbers?)
-	is_finite=false;
+
+      if (seg.value == 0.0) { // somehow, this seems to happen often even if we consider float (does it still holds for complex numbers?)
+        is_finite = false;
         //std::printf("is not finite: %e \n", seg.value);
       }
       value *= -seg.value;
@@ -247,7 +248,9 @@ void calculate_segment(int segment_numero,
         if ((seg.pos2 - segments_list[segment_numero].pos1) % 2 == 1) sign_of_parcollet_charlebois *= -1;
     }
 
-    if constexpr (remove_not_finite) {if (not is_finite) continue;} // avoid determinant calculation.
+    if constexpr (remove_not_finite) {
+      if (not is_finite) continue;
+    } // avoid determinant calculation.
 
     if (range_of_subvertex.size() > 0) {
       hybridization_scalar_t det1 = hyb_mat.extract_det(range_of_subvertex);
@@ -286,6 +289,10 @@ void calculate_segment(int segment_numero,
 hybridization_scalar_t inclusion_exclusion(time_diagram_t const &diagram) {
 
   if constexpr (verbose) print_diag(diagram);
+  if(diagram.is_trivial){
+    return 0.0;
+  }
+
   std::vector<segment_t> segment_list = determine_segments(diagram);
   if constexpr (verbose) std::printf("\nsegment number = %lu\n\n", segment_list.size());
 

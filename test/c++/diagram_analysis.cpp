@@ -44,8 +44,43 @@ void compare_both_methods(std::vector<double> &tau1, std::vector<double> &tau2, 
   if constexpr (verbose) std::printf("proper-enum         c_k = % 4.6f\n", value_proper);
   if constexpr (verbose) std::printf("inclusion-exclusion c_k = % 4.6f\n\n", value_inclus);
 
-  //EXPECT_CLOSE(value_proper, value_inclus);
-  EXPECT_NEAR(value_proper, value_inclus, std::abs(1e-10 * value_proper));
+  EXPECT_NEAR(value_proper, value_inclus, std::max(1e-8, std::abs(1e-8 * value_proper))); //note: according to my random tests, 1e-9 was to strick in some extreme cases
+}
+
+std::vector<double> generate_random_vector(double beta, int n_tau) {
+  //double beta = 50.0;
+  std::vector<double> tau(n_tau);
+  std::generate(tau.begin(), tau.end(), [beta]() mutable { return beta * (double)rand() / RAND_MAX; });
+  return tau;
+}
+
+TEST(inchworm, benchmark_both_random) {
+  int N         = 20;
+  int sp_max    = 4;
+  int order_min = 2; //9;   // order 0 and 1 are special case that fails for now.
+  int order_max = 8; //10;
+  double beta   = 1.0;
+
+  for (int order = order_min; order <= order_max; order++)
+    for (int sp_number = 1; sp_number < sp_max; sp_number++)
+      for (int n = 0; n < N; n++) {
+
+        std::vector<double> tau1        = generate_random_vector(beta, order);
+        std::vector<double> tau2        = generate_random_vector(beta, order);
+        std::vector<double> split_times = generate_random_vector(beta, sp_number);
+
+        compare_both_methods(tau1, tau2, split_times);
+      }
+}
+
+/*
+TEST(inchworm, benchmark_both1) {
+
+  std::vector<double> tau1 = generate_random_vector(1.0, 7);
+  std::vector<double> tau2 = generate_random_vector(1.0, 7);
+  std::vector<double> split_times = generate_random_vector(1.0, 1);
+
+  compare_both_methods(tau1, tau2, split_times);
 }
 
 TEST(inchworm, benchmark_both1) {
