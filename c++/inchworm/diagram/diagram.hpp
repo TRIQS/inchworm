@@ -111,8 +111,8 @@ class time_diagram_t {
         EXPECTS(s_time != op_list[i].tau);
         if (s_time < op_list[i].tau) break;
       }
-      if (i!=0 and i!=op_list.size()) {
-	is_trivial = false;
+      if (i != 0 and i != op_list.size()) {
+        is_trivial = false;
         if constexpr (verbose) std::printf("diagram is not trivial\n");
       }
       split_points.push_back(i);

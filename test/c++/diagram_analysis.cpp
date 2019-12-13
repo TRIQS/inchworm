@@ -44,7 +44,8 @@ void compare_both_methods(std::vector<double> &tau1, std::vector<double> &tau2, 
   if constexpr (verbose) std::printf("proper-enum         c_k = % 4.6f\n", value_proper);
   if constexpr (verbose) std::printf("inclusion-exclusion c_k = % 4.6f\n\n", value_inclus);
 
-  EXPECT_NEAR(value_proper, value_inclus, std::max(1e-8, std::abs(1e-8 * value_proper))); //note: according to my random tests, 1e-9 was to strick in some extreme cases
+  EXPECT_NEAR(value_proper, value_inclus,
+              std::max(1e-8, std::abs(1e-8 * value_proper))); //note: according to my random tests, 1e-9 was too strick in some extreme cases
 }
 
 std::vector<double> generate_random_vector(double beta, int n_tau) {
