@@ -107,14 +107,17 @@ print len(t1), len(t2)
 t1 = [0.1, 0.2, 0.3, 0.5, 1.3, 1.4, 1.5, 3.6, 3.78]
 t2 = [0.0, 0.53, 0., 1.2, 1.8, 2.2, 2.3, 4.6, 4.7]
 
-t1 = [0.1, 0.2, 0.3, 0.5, 1.3, 1.4, 1.5]
-t2 = [0.0, 0.53, 0., 1.2, 1.8, 2.2, 2.3]
+t1 = [0.1, 0.2, 0.3, 0.5, 1.3, 1.4, 1.5, 3.6, 3.78, 3.88]
+t2 = [0.0, 0.53, 0., 1.2, 1.8, 2.2, 2.3, 4.6, 4.7, 4.9]
+
+#t1 = [0.1, 0.2, 0.3, 0.5, 1.3, 1.4, 1.5]
+#t2 = [0.0, 0.53, 0., 1.2, 1.8, 2.2, 2.3]
 
 #t1=[1.0,2.0,3.0,4.5];
 #t2=[1.2,1.8,4.6,4.7];
 
-doProper = 0
-split_point = 11
+doProper = 1
+split_point = 5
 verbose1=1
 SMALLEST_SEGMENT=4
 
@@ -236,7 +239,7 @@ def inclusion_exclusion(t1,t2,split_point):
   
   print diagramTime.order
   delta.prints(diagramTime)
-  exit()
+  #exit()
 
   kOrder = diagramTime.kOrder 
   diagram = diagramTime.order

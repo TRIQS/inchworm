@@ -55,11 +55,12 @@ std::vector<double> generate_random_vector(double beta, int n_tau) {
   return tau;
 }
 
+
 TEST(inchworm, benchmark_both_random) {
   int N         = 20;
   int sp_max    = 4;
   int order_min = 2; //9;   // order 0 and 1 are special case that fails for now.
-  int order_max = 8; //10;
+  int order_max = 8; //10;  // order 9 and above are quite slow
   double beta   = 1.0;
 
   for (int order = order_min; order <= order_max; order++)
