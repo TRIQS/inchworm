@@ -134,7 +134,7 @@ bool test_diagram_connection(const std::vector<int> &permutation, time_diagram_t
   }
 
   if constexpr (verbose > 2) {
-    std::printf("\n\n");
+    std::printf("\n");
     print_graph(permutation, cross_split_point, visited, diagram);
   }
 
@@ -155,6 +155,7 @@ bool test_diagram_connection(const std::vector<int> &permutation, time_diagram_t
 //
 hybridization_scalar_t proper_enum(time_diagram_t const &diagram) {
 
+  if constexpr (verbose) std::printf("\n\n##################\nPROPER-ENUMERATION:\n");
   auto hyb_mat     = hybridization_matrix{diagram};
   auto permutation = std::vector<int>(diagram.perturbation_order());
 
@@ -168,6 +169,11 @@ hybridization_scalar_t proper_enum(time_diagram_t const &diagram) {
     value      = 1.0;
     for (int i = 0; i < permutation.size(); i++) value *= hyb_mat.mat(permutation[i], i);
 
+    if constexpr (verbose > 2) {
+      std::printf("\ndiagram #%d:  permutation (", NN);
+      for (auto i : permutation) std::printf("%d ", i);
+      std::printf(")");
+    }
     if (test_diagram_connection(permutation, diagram)) {
       N_proper += 1;
       total_value += parity * value;

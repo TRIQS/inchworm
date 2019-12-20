@@ -186,6 +186,9 @@ std::vector<set_of_segments_t> combine_segments(std::vector<segment_t> const &se
       }
     }
   }
+  if(not search_disjoint) // if search adjacent erase the single segments (not necessary anymore)
+    set_list.erase(set_list.begin(),set_list.begin()+start_index_list[2]);
+
   return set_list;
 }
 
@@ -264,7 +267,7 @@ void calculate_segment(int segment_numero,
   for (auto cuts : set_adjacent_list) {
     if (segments_list[segment_numero].pos1 == cuts.pos1)
       if (segments_list[segment_numero].pos2 == cuts.pos2)
-        if (cuts.list.size() > 1) {
+       {
 
           hybridization_scalar_t value = 1.0;
 
@@ -288,11 +291,13 @@ void calculate_segment(int segment_numero,
 //
 hybridization_scalar_t inclusion_exclusion(time_diagram_t const &diagram) {
 
-  if constexpr (verbose) print_diag(diagram);
-  if(diagram.is_trivial){
-    return 0.0;
-  }
+  if (diagram.is_trivial) { return 0.0; }
 
+  if constexpr (verbose) {
+    std::printf("\n\n##################\nINCLUSION-EXCLUSION:\n");
+    std::printf("list of single segements:\n");
+    print_diag(diagram);
+  }
   std::vector<segment_t> segment_list = determine_segments(diagram);
   if constexpr (verbose) std::printf("\nsegment number = %lu\n\n", segment_list.size());
 
@@ -300,17 +305,17 @@ hybridization_scalar_t inclusion_exclusion(time_diagram_t const &diagram) {
   std::vector<set_of_segments_t> set_adjacent_list = combine_segments(segment_list, diagram, false);
 
   if constexpr (verbose > 1) {
-    std::printf("\n\nset of disjoint segments:\n\n");
+    std::printf("\n\nlist of set of disjoint segments:\n");
     print_diag(diagram);
     for (auto comb : set_disjoint_list) {
       print_set(segment_list, comb, diagram);
       std::printf("\n");
     }
-    std::printf("\n\nset of adjacent segments:\n\n");
+    std::printf("\n\nlist of set of adjacent segments:\n");
     print_diag(diagram);
     for (auto comb : set_adjacent_list) {
-      print_set(segment_list, comb, diagram);
-      std::printf("\n");
+        print_set(segment_list, comb, diagram);
+        std::printf("\n");
     }
   }
 

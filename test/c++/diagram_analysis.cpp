@@ -55,7 +55,7 @@ std::vector<double> generate_random_vector(double beta, int n_tau) {
   return tau;
 }
 
-
+/*
 TEST(inchworm, benchmark_both_random) {
   int N         = 20;
   int sp_max    = 4;
@@ -74,32 +74,16 @@ TEST(inchworm, benchmark_both_random) {
         compare_both_methods(tau1, tau2, split_times);
       }
 }
-
-/*
-TEST(inchworm, benchmark_both1) {
-
-  std::vector<double> tau1 = generate_random_vector(1.0, 7);
-  std::vector<double> tau2 = generate_random_vector(1.0, 7);
-  std::vector<double> split_times = generate_random_vector(1.0, 1);
-
-  compare_both_methods(tau1, tau2, split_times);
-}
-
-TEST(inchworm, benchmark_both1) {
-  std::vector<double> tau1        = {0.1, 0.3, 0.4344, 0.5, 0.75, 0.9};
-  std::vector<double> tau2        = {0, 0.21, 0.3452, 0.45, 0.69, 0.81};
-  std::vector<double> split_times = {0.8, 0.55, 0.34};
-  compare_both_methods(tau1, tau2, split_times);
-}
+//*/
 
 TEST(inchworm, benchmark_both2) {
-  std::vector<double> tau1        = {1.0, 2.0, 3.0, 4.5};
-  std::vector<double> tau2        = {1.2, 1.8, 4.6, 4.7};
-  std::vector<double> split_times = {1.9};
+  std::vector<double> tau1 = {0.1,   0.2,  0.3, 1.9};
+  std::vector<double> tau2 = {0.05, 0.15, 0.35, 2.0};
+  std::vector<double> split_times = {0.55};
   compare_both_methods(tau1, tau2, split_times);
 }
 
-//long test, comment if verbose > 1
+/*
 TEST(inchworm, benchmark_both3) {
   std::vector<double> tau1        = {0.1, 0.5, 0.6, 0.89, 1.3, 1.45, 1.78, 4.2};
   std::vector<double> tau2        = {0.0, 0.11, 0.51, 1.2, 1.8, 2.2, 2.3, 4.6};
@@ -112,7 +96,6 @@ TEST(inchworm, benchmark_both3) {
 }
 //
 
-//long test, comment if verbose > 1
 TEST(inchworm, benchmark_both4) {
   std::vector<double> tau1 = {0.1, 0.2, 0.3, 0.5, 1.3, 1.4, 1.5, 3.6};
   std::vector<double> tau2 = {0.0, 0.53, 0.54, 1.2, 1.8, 2.2, 2.3, 4.6};
@@ -150,6 +133,7 @@ TEST(inchworm, inclusion_exclusion_big_order1) {
 }
 //*/
 /*
+//long test, comment if verbose > 1
 TEST(inchworm, inclusion_exclusion_huge_order1) {
   std::vector<double> tau1={0.4344,0.1,0.3,0.5,0.92882,0.75,0.9,0.55,0.566,0.33,.4959594,.4494929,.12349512,.62343,0.123412444,0.2134444,.99949941,1.1,1.23,1.45,2.3,1.6,4.3,1.222,2.98,3.1244};
   std::vector<double> tau2={0,0.3452,0.21,0.45,0.9329,0.69,0.81,0.998,0.122,0.833,0.4934,.210342134,.210343,.02134,.0030404,.02142430,0.1111,1.2,1.3,1.4,3.4,2.34,3.11,2.9,1.99,3.098};
