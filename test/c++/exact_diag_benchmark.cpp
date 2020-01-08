@@ -58,9 +58,9 @@ uint64_t get_MSB(uint64_t a, int shift) { return (a >> shift); }
 uint64_t get_LSB(uint64_t a, int shift) { return (a % (1 << shift)); }
 
 // index: all indices above this index will be traced out.
-void print_partial_sum(triqs::atom_diag::atom_diag<false> const &ad, int index) {
-  printf("%d ", ad.get_full_hilbert_space_dim());
-  printf("%d \n", (1 << index));
+void print_partial_sum_propagator(triqs::atom_diag::atom_diag<false> const &ad, int index, double tau) {
+  //printf("%d ", ad.get_full_hilbert_space_dim());
+  //printf("%d \n", (1 << index));
   //exit(0);
   int dim_partial = (1 << index);
   int dim_full    = ad.get_full_hilbert_space_dim();
@@ -80,35 +80,20 @@ void print_partial_sum(triqs::atom_diag::atom_diag<false> const &ad, int index) 
     int size   = ad.get_subspace_dim(s);
     auto EUdag = dagger(es[s].unitary_matrix);
     for (int i = 0; i < size; i++)
-      for (int j = 0; j < size; j++) EUdag(i, j) *= (es[s].eigenvalues[i] + ad.get_gs_energy());
+      for (int j = 0; j < size; j++) EUdag(i, j) *= std::exp(-tau * (es[s].eigenvalues[i] + ad.get_gs_energy()));
     auto H = es[s].unitary_matrix * EUdag;
 
     for (int i = 0; i < size; i++) {
       uint64_t traced_idx1    = get_MSB(fs[s][i], index);
       uint64_t preserved_idx1 = get_LSB(fs[s][i], index);
 
-      //for(int r =0; r<n_subspaces; r++){
-      //int size2  = get_subspace_dim(r);
       for (int j = 0; j < size; j++) {
         uint64_t traced_idx2    = get_MSB(fs[s][j], index);
         uint64_t preserved_idx2 = get_LSB(fs[s][j], index);
-        if (traced_idx1 == traced_idx2) {
-	  partial_sum(preserved_idx1, preserved_idx2) += H(i, j)/factor;
-
-	}
+        if (traced_idx1 == traced_idx2) { partial_sum(preserved_idx1, preserved_idx2) += H(i, j) / factor; }
       }
-
-//      for (int j = 0; j < size; j++) {
-//        std::printf("% 2.3f ", H(i, j));
-
-        //partial_sum() += H(i, j) / factor;
-//      }
-//      std::printf("\n");
     }
-    //for (auto u : sp.unitary_matrix) { TRIQS_PRINT(u); }
-    //std::printf("\n\n");
   }
- // std::printf("\n");
 
   for (int i = 0; i < dim_partial; i++) {
     for (int j = 0; j < dim_partial; j++) { std::printf("% 2.3f ", partial_sum(i, j)); }
@@ -116,37 +101,11 @@ void print_partial_sum(triqs::atom_diag::atom_diag<false> const &ad, int index) 
   }
   std::printf("\n\n");
 
-  for (auto fock_sp : ad.get_fock_states()) {
-    for (auto l : fock_sp) { std::printf("%2d ", l); }
-    std::printf("\n");
-  }
-  std::printf("\n\n");
-}
-
-void print_H(triqs::atom_diag::atom_diag<false> const &ad) {
-  for (auto sp : ad.get_eigensystems()) {
-    auto EUdag = dagger(sp.unitary_matrix);
-    for (int i = 0; i < sp.eigenvalues.size(); i++)
-      for (int j = 0; j < sp.eigenvalues.size(); j++) EUdag(i, j) *= sp.eigenvalues[i];
-
-    //auto H = sp.unitary_matrix * dagger(sp.unitary_matrix);
-    auto H = sp.unitary_matrix * EUdag;
-    for (int i = 0; i < sp.eigenvalues.size(); i++) H(i, i) += ad.get_gs_energy();
-
-    for (int i = 0; i < sp.eigenvalues.size(); i++) {
-      for (int j = 0; j < sp.eigenvalues.size(); j++) { std::printf("% 2.3f ", H(i, j)); }
-      std::printf("\n");
-    }
-    //for (auto u : sp.unitary_matrix) { TRIQS_PRINT(u); }
-    std::printf("\n\n");
-  }
-  std::printf("\n");
-
-  for (auto fock_sp : ad.get_fock_states()) {
-    for (auto l : fock_sp) { std::printf("%2d ", l); }
-    std::printf("\n");
-  }
-  std::printf("\n\n");
+  //for (auto fock_sp : ad.get_fock_states()) {
+  //  for (auto l : fock_sp) { std::printf("%2d ", l); }
+  //  std::printf("\n");
+  //}
+  //std::printf("\n\n");
 }
 
 // Prepare funcdamental operator set
@@ -161,12 +120,12 @@ fundamental_operator_set make_fops(int N) {
 
 TEST(atom_diag_real, atom_diag) {
 
-  int n_bath             = 1;
-  double theta[n_bath]   = {0.5};
-  double epsilon[n_bath] = {0.1};
-  //int n_bath             = 2;
-  //double theta[n_bath]   = {0.5, 0.8};
-  //double epsilon[n_bath] = {0.1, -0.1};
+  //int n_bath             = 1;
+  //double theta[n_bath]   = {0.5};
+  //double epsilon[n_bath] = {0.1};
+  int n_bath             = 5;
+  double theta[n_bath]   = {0.5, 0.5, 0.5};
+  double epsilon[n_bath] = {0.1, 0.1, 0.1};
   double mu = 0.0;
   double U  = 8.0;
   auto fops = make_fops(n_bath + 1);
@@ -183,24 +142,7 @@ TEST(atom_diag_real, atom_diag) {
 
   auto ad = triqs::atom_diag::atom_diag<false>(h, fops);
   auto es = ad.get_eigensystems();
-  //print_eigensystems(ad);
-  //print_H(ad);
-  print_partial_sum(ad, 2);
-  //auto E = es.eigenvalues;
-  //auto V = es.unitary_matrix;
-  //TRIQS_PRINT(es);
-
-  // TRIQS_PRINT(ad.get_eigensystems());
-  /*
-
-  auto vac = ad.get_vacuum_state();
-  EXPECT_NEAR(1, dot(vac, vac), 1e-14);
-
-  std::vector<matrix<double>> V      = ad.get_unitary_matrices();
-  std::vector<std::vector<double>> E = ad.get_energies();
-
-  print_energies(E);
-  */
+  print_partial_sum_propagator(ad, 2, 0.4);
 }
 
 MAKE_MAIN;
