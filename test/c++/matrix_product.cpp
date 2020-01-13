@@ -1,0 +1,93 @@
+/*******************************************************************************
+ *
+ * inchworm: A TRIQS based impurity solver
+ *
+ * Copyright (c) 2019 The Simons foundation
+ *   authors: Nils Wentzell
+ *
+ * inchworm is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * inchworm is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * inchworm. If not, see <http://www.gnu.org/licenses/>.
+ *
+ ******************************************************************************/
+
+#include <numeric>
+#include <inchworm/solver_core.hpp>
+
+#include <triqs/gfs.hpp>
+//#include <triqs/h5.hpp>
+#include <triqs/test_tools/gfs.hpp>
+#include <triqs/hilbert_space/fundamental_operator_set.hpp>
+#include <triqs/atom_diag/atom_diag.hpp>
+//#include <triqs/arrays/blas_lapack/dot.hpp>
+
+using namespace inchworm;
+
+//block_gf =
+triqs::hilbert_space::gf_struct_t find_propagator_struct(triqs::atom_diag::atom_diag<false> const &ad) {
+  int n_sub = ad.n_subspaces();
+  triqs::hilbert_space::gf_struct_t propagator_struct;
+
+  //std::printf("%d: \n", n_sub);
+  for (int i = 0; i < n_sub; i++) {
+    //int sub_dim = ad.get_subspace_dim(i);
+    //std::printf("%d %s  ", sub_dim, std::to_string(i).c_str());
+
+    std::vector<std::variant<int, std::string>> l(ad.get_subspace_dim(i));
+    std::iota(l.begin(), l.end(), 0);
+    //for(auto t : l){
+    //  std::cout << t << " ";
+    //}
+    //std::printf("\n\n");
+    //auto test = std::make_pair( std::to_string(i), l);
+    //std::cout << test.second << " " << test.first << "\n";
+    propagator_struct.push_back(std::make_pair(std::to_string(i), l));
+  }
+  //std::printf("\n\n");
+
+  return propagator_struct;
+}
+
+//auto propagator = block_gf<imtime>{{p.beta, Fermion, 100}, p.gf_struct};
+
+TEST(inchworm, matrix_product) {
+
+  double beta = 10.0;
+  double mu   = 0.0;
+  double U    = 8.0;
+  double t    = 1.0;
+  fundamental_operator_set fops;
+  int n_site = 2;
+
+  auto h = 0 * (n("up", 0)); // 0 is the only interacting orbital
+  for (int i = 0; i < n_site; i++) {
+    fops.insert("up", i);
+    fops.insert("dn", i);
+
+    h += U * (n("up", i) * (n("dn", i)));
+    h -= mu * (n("up", i) + n("dn", i));
+    for (int j = 0; j < n_site; j++) {
+      if (i != j) h -= t * (c_dag("up", i) * (c("up", j)) + c_dag("dn", i) * (c("dn", j)));
+    }
+  }
+
+  auto ad                = triqs::atom_diag::atom_diag<false>(h, fops);
+  auto propagator_struct = find_propagator_struct(ad);
+
+  auto propagator = block_gf<imtime>{{beta, Fermion, 100}, propagator_struct};
+  //for (int i = 0; i < ad.n_subspaces(); i++) { std::cout << propagator[i] << "\n"; }
+  
+
+
+}
+
+MAKE_MAIN;

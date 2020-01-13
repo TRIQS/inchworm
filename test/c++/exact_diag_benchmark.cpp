@@ -123,7 +123,7 @@ TEST(atom_diag_real, atom_diag) {
   //int n_bath             = 1;
   //double theta[n_bath]   = {0.5};
   //double epsilon[n_bath] = {0.1};
-  int n_bath             = 5;
+  int n_bath             = 3;
   double theta[n_bath]   = {0.5, 0.5, 0.5};
   double epsilon[n_bath] = {0.1, 0.1, 0.1};
   double mu = 0.0;
