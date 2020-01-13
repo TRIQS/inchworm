@@ -31,16 +31,17 @@
 //#include <triqs/arrays/blas_lapack/dot.hpp>
 
 using namespace inchworm;
+using propagator_t = block_gf<imtime>;
 
 //block_gf =
 triqs::hilbert_space::gf_struct_t find_propagator_struct(triqs::atom_diag::atom_diag<false> const &ad) {
   int n_sub = ad.n_subspaces();
   triqs::hilbert_space::gf_struct_t propagator_struct;
 
-  //std::printf("%d: \n", n_sub);
+  std::printf("%d: \n", n_sub);
   for (int i = 0; i < n_sub; i++) {
     //int sub_dim = ad.get_subspace_dim(i);
-    //std::printf("%d %s  ", sub_dim, std::to_string(i).c_str());
+    std::printf("%d ", ad.get_subspace_dim(i));
 
     std::vector<std::variant<int, std::string>> l(ad.get_subspace_dim(i));
     std::iota(l.begin(), l.end(), 0);
@@ -57,7 +58,10 @@ triqs::hilbert_space::gf_struct_t find_propagator_struct(triqs::atom_diag::atom_
   return propagator_struct;
 }
 
-//auto propagator = block_gf<imtime>{{p.beta, Fermion, 100}, p.gf_struct};
+
+//propagator_t propagator_product()
+
+
 
 TEST(inchworm, matrix_product) {
 
@@ -68,7 +72,10 @@ TEST(inchworm, matrix_product) {
   fundamental_operator_set fops;
   int n_site = 2;
 
-  auto h = 0 * (n("up", 0)); // 0 is the only interacting orbital
+  auto qn_vector = std::vector<triqs::operators::many_body_operator_generic<double>>();
+  auto h         = 0 * (n("up", 0));
+  auto n_tot     = 0 * (n("up", 0));
+
   for (int i = 0; i < n_site; i++) {
     fops.insert("up", i);
     fops.insert("dn", i);
@@ -78,16 +85,16 @@ TEST(inchworm, matrix_product) {
     for (int j = 0; j < n_site; j++) {
       if (i != j) h -= t * (c_dag("up", i) * (c("up", j)) + c_dag("dn", i) * (c("dn", j)));
     }
+    n_tot += n("up", i) + n("dn", i);
   }
+  qn_vector.push_back(n_tot);
 
-  auto ad                = triqs::atom_diag::atom_diag<false>(h, fops);
+  auto ad                = triqs::atom_diag::atom_diag<false>(h, fops, qn_vector);
   auto propagator_struct = find_propagator_struct(ad);
 
   auto propagator = block_gf<imtime>{{beta, Fermion, 100}, propagator_struct};
   //for (int i = 0; i < ad.n_subspaces(); i++) { std::cout << propagator[i] << "\n"; }
   
-
-
 }
 
 MAKE_MAIN;
