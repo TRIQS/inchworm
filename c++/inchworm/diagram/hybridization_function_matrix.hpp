@@ -45,7 +45,7 @@ class hybridization_matrix {
   matrix_t mat;
   time_diagram_t diagram;
 
-  //hybridization_matrix(time_diagram_t const & diagram, hybridization_function_t const & hyb): mat(diagram.perturbation_order(), diagram.perturbation_order()),, diagram{diagram}{
+  //hybridization_matrix(time_diagram_t const & diagram, hybridization_function_t const & hyb): mat(diagram.perturbation_order(), diagram.perturbation_order()), diagram{diagram}{
   hybridization_matrix(time_diagram_t const &diagram) : mat(diagram.perturbation_order(), diagram.perturbation_order()), diagram{diagram} {
 
     for (auto [i, c] : enumerate(diagram.c_list))

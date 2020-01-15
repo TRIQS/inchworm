@@ -55,7 +55,7 @@ std::vector<double> generate_random_vector(double beta, int n_tau) {
   return tau;
 }
 
-/*
+
 TEST(inchworm, benchmark_both_random) {
   int N         = 20;
   int sp_max    = 4;
@@ -74,8 +74,9 @@ TEST(inchworm, benchmark_both_random) {
         compare_both_methods(tau1, tau2, split_times);
       }
 }
-//*/
 
+/*
+ 
 TEST(inchworm, benchmark_both2) {
   std::vector<double> tau1 = {0.1,   0.2,  0.3, 1.9};
   std::vector<double> tau2 = {0.05, 0.15, 0.35, 2.0};
@@ -83,7 +84,7 @@ TEST(inchworm, benchmark_both2) {
   compare_both_methods(tau1, tau2, split_times);
 }
 
-/*
+
 TEST(inchworm, benchmark_both3) {
   std::vector<double> tau1        = {0.1, 0.5, 0.6, 0.89, 1.3, 1.45, 1.78, 4.2};
   std::vector<double> tau2        = {0.0, 0.11, 0.51, 1.2, 1.8, 2.2, 2.3, 4.6};

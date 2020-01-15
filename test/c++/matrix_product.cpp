@@ -30,8 +30,11 @@
 #include <triqs/atom_diag/atom_diag.hpp>
 //#include <triqs/arrays/blas_lapack/dot.hpp>
 
+#include <inchworm/diagram/diagram.hpp>
+
 using namespace inchworm;
 using propagator_t = block_gf<imtime>;
+//using atom_diag = triqs::atom_diag::atom_diag<false>;
 
 //block_gf =
 triqs::hilbert_space::gf_struct_t find_propagator_struct(triqs::atom_diag::atom_diag<false> const &ad) {
@@ -53,15 +56,25 @@ triqs::hilbert_space::gf_struct_t find_propagator_struct(triqs::atom_diag::atom_
     //std::cout << test.second << " " << test.first << "\n";
     propagator_struct.push_back(std::make_pair(std::to_string(i), l));
   }
-  //std::printf("\n\n");
+  std::printf("\n\n");
 
   return propagator_struct;
 }
 
+void print_block_gf_first_time(block_gf<imtime> const &x) {
+  for (int i = 0; i < x.size(); i++) std::cout << x[i][0] << "\n";
+  std::printf("\n\n");
+}
 
-//propagator_t propagator_product()
-
-
+// todo:
+// create an intermediary object for a propagator U for calculation and result (tomorrow).
+void propagator_product(propagator_t const &U, triqs::atom_diag::atom_diag<false> const &ad, time_diagram_t const &diagram)
+{ 
+  for(auto const op: diagram.op_list){
+    std::cout << op.dag << "\n";
+  }
+  std::printf("\n\n");
+}
 
 TEST(inchworm, matrix_product) {
 
@@ -92,9 +105,16 @@ TEST(inchworm, matrix_product) {
   auto ad                = triqs::atom_diag::atom_diag<false>(h, fops, qn_vector);
   auto propagator_struct = find_propagator_struct(ad);
 
-  auto propagator = block_gf<imtime>{{beta, Fermion, 100}, propagator_struct};
+  auto propagator = block_gf<imtime>{{beta, Fermion, 2}, propagator_struct};
   //for (int i = 0; i < ad.n_subspaces(); i++) { std::cout << propagator[i] << "\n"; }
+  print_block_gf_first_time(propagator);
+
+  std::vector<time_and_orbital_t> c        = {{0.1,0}, {0.5,1},  {0.6,0}};
+  std::vector<time_and_orbital_t> cdag        = {{0.0,0}, {0.11,1}, {0.51,1}};
+  std::vector<double> split_times = {0.99};
+  time_diagram_t diagram(c, cdag, split_times);
   
+  propagator_product(U,ad,diagram);
 }
 
 MAKE_MAIN;
