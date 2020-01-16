@@ -62,34 +62,74 @@ void print_block_gf_first_time(block_gf<imtime> const &x) {
   std::printf("\n\n");
 }
 
-void print_eigensystems(triqs::atom_diag::atom_diag<false> const &ad) {
-  for (auto sp : ad.get_eigensystems()) {
-    for (auto l : sp.eigenvalues) { std::printf("% 2.3f ", l); }
-    std::printf("\n\n");
+struct propagator_frame {
+  std::vector<matrix<dcomplex>> matrices;
+  int acc_number;
 
-    for (int i = 0; i < sp.eigenvalues.size(); i++) {
-      for (int j = 0; j < sp.eigenvalues.size(); j++) { std::printf("% 2.3f ", sp.unitary_matrix(i, j)); }
-      std::printf("\n");
+  propagator_frame(triqs::atom_diag::atom_diag<false> const &ad) : matrices(ad.n_subspaces()), acc_number(0) {
+    for (int bl = 0; bl < ad.n_subspaces(); bl++) {
+      matrices[bl] = matrix<dcomplex>(ad.get_subspace_dim(bl), ad.get_subspace_dim(bl));
+      matrices[bl] = 0;
     }
-    //for (auto u : sp.unitary_matrix) { TRIQS_PRINT(u); }
-    std::printf("\n\n");
   }
-  std::printf("\n");
-}
+  propagator_frame &operator+=(propagator_frame U_frame) {
+    for (int bl = 0; bl < matrices.size(); bl++) matrices[bl] += U_frame.matrices[bl];
+    acc_number++;
+    return *this;
+  }
+  void assign(int bl, matrix<dcomplex> mat) {
+    if (acc_number > 1) {
+      std::printf("error: cannot assign in an accumalted frame.\n");
+      exit(0);
+    } else {
+      acc_number = 1;
+    }
+    matrices[bl] += mat;
+  }
+  void reset() {
+    for (int bl = 0; bl < matrices.size(); bl++) matrices[bl] = 0;
+  }
 
-void propagator_product(block_gf<imtime> const &U, triqs::atom_diag::atom_diag<false> const &ad, time_diagram_t const &diagram, double tau,
-                        bool use_bare_U) {
+  double frobenius_norm() {
+    double val = 0;
+    for (int bl = 0; bl < matrices.size(); bl++) {
+      for (int i = 0; i < first_dim(matrices[bl]); i++) {
+        for (int j = 0; j < second_dim(matrices[bl]); j++) {
 
-  EXPECTS(U.size() == ad.n_subspaces());
+          double elem = std::abs(matrices[bl](i, j));
+          val += elem * elem;
+        }
+      }
+      if (acc_number > 1) {
+        std::printf("error: frobenius_norm \n");
+        exit(0);
+      };
+    }
+    return std::sqrt(val);
+  }
+
+  friend std::ostream &operator<<(std::ostream &out, propagator_frame const &U_frame) {
+    out << "propagator_frame (size: " << U_frame.matrices.size() << ")\n";
+    for (int bl = 0; bl < U_frame.matrices.size(); bl++) { out << U_frame.matrices[bl] << "\n"; }
+    return out;
+  }
+};
+
+propagator_frame propagator_product(block_gf<imtime> const &U, triqs::atom_diag::atom_diag<false> const &ad, time_diagram_t const &diagram,
+                                    double tau, bool use_bare_U) {
+
+  if (not use_bare_U) {
+    EXPECTS(U.size() == ad.n_subspaces()); //??? this test does not seems to work????i
+  }
   //auto fs = ad.get_fock_states();
 
-  std::vector<matrix<dcomplex>> U_frame(ad.n_subspaces());
-  std::vector<int> occurence;
+  //std::vector<matrix<dcomplex>> U_frame(ad.n_subspaces());
+  propagator_frame U_frame(ad);
 
-  for (int initial_bl; initial_bl < ad.n_subspaces(); initial_bl++) {
-    int dim             = ad.get_subspace_dim(initial_bl);
-    U_frame[initial_bl] = matrix<dcomplex>(dim, dim);
-    U_frame[initial_bl] = 0;
+  for (int initial_bl = 0; initial_bl < ad.n_subspaces(); initial_bl++) {
+    int dim = ad.get_subspace_dim(initial_bl);
+    //U_frame[initial_bl] = matrix<dcomplex>(dim, dim);
+    //U_frame[initial_bl] = 0;
     //std::cout << "U_mat\n" << U_frame[initial_bl] << "\n\n";
 
     int new_bl = initial_bl;
@@ -106,7 +146,7 @@ void propagator_product(block_gf<imtime> const &U, triqs::atom_diag::atom_diag<f
 
     //for (int i = 0; i < diagram.size(); i++) {
     matrix<dcomplex> new_mat = matrix<dcomplex>(dim, dim);
-    new_mat = 0;
+    new_mat                  = 0;
     if (new_bl != -1) {
       new_bl = initial_bl;
 
@@ -149,13 +189,18 @@ void propagator_product(block_gf<imtime> const &U, triqs::atom_diag::atom_diag<f
           new_mat = matrix<dcomplex>{U[new_bl](dtau)} * new_mat;
         }
         std::cout << "mat:" << new_mat << "\n";
-        //std::cout << "after product"
-        //          << "\n";
       }
+      U_frame.assign(new_bl, new_mat);
     }
     std::cout << "mat:" << new_mat << "\n";
     std::printf("\n\n");
   }
+  return U_frame;
+}
+
+propagator_frame propagator_product(triqs::atom_diag::atom_diag<false> const &ad, time_diagram_t const &diagram, double tau, bool use_bare_U) {
+  block_gf<imtime> U;
+  return propagator_product(U, ad, diagram, tau, use_bare_U);
 }
 
 void print_bin(int v) { std::cout << std::bitset<4>(v); }
@@ -208,12 +253,13 @@ TEST(inchworm, matrix_product) {
   std::vector<double> split_times      = {0.99};
   time_diagram_t diagram(c, cdag, split_times);
 
-  print_ad(ad);
+  //print_ad(ad);
   //print_block_gf_first_time(propagator);
-  //print_eigensystems(ad);
-  propagator_product(propagator, ad, diagram, 0.6, true);
+  auto U_0 = propagator_product(ad, diagram, 0.6, true);
+  std::cout << U_0;
+  std::cout << U_0.frobenius_norm() << "\n";
   //propagator_product(8.0, ad, diagram, 0.4); //////////ATTENTION CA MARCHE (POURQUOI?)
   //print_block_gf_first_time(propagator);
 }
 
-MAKE_MAIN;
+MAKE_MAIN
