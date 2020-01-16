@@ -77,50 +77,20 @@ void print_eigensystems(triqs::atom_diag::atom_diag<false> const &ad) {
   std::printf("\n");
 }
 
-/*
-void propagator_product(triqs::atom_diag::atom_diag<false> const &ad, time_diagram_t const &diagram, double tau) {
-  std::vector<matrix_t> U_frame(ad.n_subspaces()) ;
+void propagator_product(block_gf<imtime> const &U, triqs::atom_diag::atom_diag<false> const &ad, time_diagram_t const &diagram, double tau,
+                        bool use_bare_U) {
 
-  for(int initial_bl; initial_bl < ad.n_subspaces(); initial_bl++) {
-    U_frame[initial_bl] = make_unit_matrix( ad.get_subspace_dim(initial_bl) );
-    int new_bl = initial_bl;
-    for (auto const op : diagram.op_list) {
-      new_bl = (op.dag ? ad.cdag_connection(op.linear_index, new_bl) : ad.c_connection(op.linear_index, new_bl));
-      if (new_bl == -1)
-        break; /// !!!!!!!!!! important because connection(*, -1) is not correct (should give -1). Need additional optimization. does not take into account consecutive c_i c_i, or cdag_i cdag_i
-    }
-    if (new_bl != -1) new_bl = initial_bl;
-    double dtau              = tau - diagram.max_tau();
-    matrix<dcomplex> new_mat = U[initial_bl](dtau);
+  EXPECTS(U.size() == ad.n_subspaces());
+  //auto fs = ad.get_fock_states();
 
-    for (int i = 0; i < diagram.size(); i++) {
-      //    for (auto const op : diagram.op_list) {
-      auto op = diagram.op_list[i];
-      new_bl  = (op.dag ? ad.cdag_connection(op.linear_index, new_bl) : ad.c_connection(op.linear_index, new_bl));
-      new_mat = (op.dag ? ad.cdag_matrix(op.linear_index, new_bl) * new_mat : ad.c_matrix(op.linear_index, new_bl) * new_mat);
-
-      if (i < diagram.size() - 1) {
-        dtau = op.tau - diagram.op_list[i + 1].tau;
-      } else {
-        dtau = op.tau;
-      }
-      new_mat = U[new_bl](dtau) * new_mat;
-    }
-    //std::printf("\n\n");
-  }
-}
-*/
-
-void propagator_product(block_gf<imtime> const &U, triqs::atom_diag::atom_diag<false> const &ad, time_diagram_t const &diagram, double tau) {
-  EXPECTS(U.size() == ad.n_subspaces()); // ??????? not sure why this does not work
-  //std::printf("size: %d --- %d ---\n\n", U.size(), ad.n_subspaces());
-  auto fs = ad.get_fock_states();
-
-  std::vector<matrix_t> U_frame(ad.n_subspaces());
+  std::vector<matrix<dcomplex>> U_frame(ad.n_subspaces());
   std::vector<int> occurence;
 
   for (int initial_bl; initial_bl < ad.n_subspaces(); initial_bl++) {
-    //U_frame[initial_bl] = make_unit_matrix(ad.get_subspace_dim(initial_bl));
+    int dim             = ad.get_subspace_dim(initial_bl);
+    U_frame[initial_bl] = matrix<dcomplex>(dim, dim);
+    U_frame[initial_bl] = 0;
+    //std::cout << "U_mat\n" << U_frame[initial_bl] << "\n\n";
 
     int new_bl = initial_bl;
     for (int i = diagram.size() - 1; i >= 0; i--) {
@@ -133,19 +103,27 @@ void propagator_product(block_gf<imtime> const &U, triqs::atom_diag::atom_diag<f
         break; /// !!!!!!!!!! important because connection(*, -1) is not correct (should give -1). Need additional optimization. does not take into account consecutive c_i c_i, or cdag_i cdag_i
     }
     //std::printf("bloc: %d, goes to: %d \n", initial_bl, new_bl);
-    double dtau = tau - diagram.max_tau();
-    //std::cout << "dtau:" << dtau << "\n"
-    //          << "tau:" << tau << "\n"
-    //          << "diagram.max_tau():" << diagram.max_tau() << "\n";
-
-    //std::cout << "before\n" << U[initial_bl](dtau) << "\n\n";
-    //matrix<dcomplex> new_mat = U[initial_bl][0];
-    matrix<dcomplex> new_mat = U[initial_bl](dtau);
-    //std::cout << "after\n" << new_mat << "\n\n";
 
     //for (int i = 0; i < diagram.size(); i++) {
+    matrix<dcomplex> new_mat = matrix<dcomplex>(dim, dim);
+    new_mat = 0;
     if (new_bl != -1) {
       new_bl = initial_bl;
+
+      double dtau = tau - diagram.max_tau();
+      //std::cout << "dtau:" << dtau << "\n"
+      //          << "tau:" << tau << "\n"
+      //          << "diagram.max_tau():" << diagram.max_tau() << "\n";
+      //std::cout << "before\n" << U[initial_bl](dtau) << "\n\n";
+      //matrix<dcomplex> new_mat = U[initial_bl][0];
+      if (use_bare_U) {
+        for (int j = 0; j < dim; j++)
+          new_mat(j, j) = std::exp(-dtau * ad.get_eigenvalue(initial_bl, j)); // Create time-evolution matrix e^-H(tau-tau_max)
+      } else {
+        new_mat = U[initial_bl](dtau);
+      }
+      //std::cout << "after\n" << new_mat << "\n\n";
+
       for (int i = diagram.size() - 1; i >= 0; i--) {
         // for (auto const op : diagram.op_list) {
         auto op = diagram.op_list[i];
@@ -164,12 +142,19 @@ void propagator_product(block_gf<imtime> const &U, triqs::atom_diag::atom_diag<f
         }
         //std::cout << "mat:" << matrix<dcomplex>{U[new_bl](dtau)} << "\n";
         //std::cout << "mat:" << new_mat << "\n";
-        new_mat = matrix<dcomplex>{U[new_bl](dtau)} * new_mat;
+        if (use_bare_U) {
+          auto _ = arrays::range();
+          for (int j = 0; j < dim; j++) new_mat(_, j) *= std::exp(-dtau * ad.get_eigenvalue(initial_bl, j)); // Time-evolution
+        } else {
+          new_mat = matrix<dcomplex>{U[new_bl](dtau)} * new_mat;
+        }
+        std::cout << "mat:" << new_mat << "\n";
         //std::cout << "after product"
         //          << "\n";
       }
     }
-    //std::printf("\n\n");
+    std::cout << "mat:" << new_mat << "\n";
+    std::printf("\n\n");
   }
 }
 
@@ -226,7 +211,7 @@ TEST(inchworm, matrix_product) {
   print_ad(ad);
   //print_block_gf_first_time(propagator);
   //print_eigensystems(ad);
-  propagator_product(propagator, ad, diagram, 0.6);
+  propagator_product(propagator, ad, diagram, 0.6, true);
   //propagator_product(8.0, ad, diagram, 0.4); //////////ATTENTION CA MARCHE (POURQUOI?)
   //print_block_gf_first_time(propagator);
 }
