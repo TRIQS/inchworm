@@ -43,10 +43,10 @@ class time_diagram_t {
   //basic information for an operator
   //
   struct op_t {
-    double tau      = 0.;    // time
-    bool dag        = false; // true if cdag, false if c
-    int orb         = 0;     // orbital index
-    int order_index = 0;     // index in the list of all c, cdag
+    double tau       = 0.;    // time
+    bool dag         = false; // true if cdag, false if c
+    int linear_index = 0;     // index in the list of fundamental_operator_set
+    int order_index  = 0;     // index in the list of all c, cdag
   };
 
   public:
@@ -58,6 +58,9 @@ class time_diagram_t {
   bool is_trivial; // a diagram is considered trivial if no split_times are found between the minimum and maximum tau.
 
   int perturbation_order() const { return c_list.size(); }
+  int size() const { return op_list.size(); }
+  double max_tau() const { return op_list.back().tau; } 
+  double min_tau() const { return op_list.front().tau; } 
 
   //
   time_diagram_t(std::vector<time_and_orbital_t> const &c, std::vector<time_and_orbital_t> const &cdag, std::vector<double> const &split_times)
@@ -72,15 +75,15 @@ class time_diagram_t {
     int order = c.size();
 
     for (int i = 0, j = order; i < order; i++, j++) {
-      op_list[i].tau         = c[i].tau;
-      op_list[i].orb         = c[i].orb;
-      op_list[i].dag         = false;
-      op_list[i].order_index = i;
+      op_list[i].tau          = c[i].tau;
+      op_list[i].linear_index = c[i].orb;
+      op_list[i].dag          = false;
+      op_list[i].order_index  = i;
 
-      op_list[j].tau         = cdag[i].tau;
-      op_list[j].orb         = cdag[i].orb;
-      op_list[j].dag         = true;
-      op_list[j].order_index = i;
+      op_list[j].tau          = cdag[i].tau;
+      op_list[j].linear_index = cdag[i].orb;
+      op_list[j].dag          = true;
+      op_list[j].order_index  = i;
     }
 
     //if constexpr (verbose) {dd

@@ -72,11 +72,12 @@ namespace inchworm {
   // Declare some placeholders for the rest of the code. Use anonymous namespace for proper linkage
   // in this code, all variables with trailing _ are placeholders by convention.
   namespace {
+    triqs::clef::placeholder<4> iw_;
+    /*
     triqs::clef::placeholder<0> i_;
     triqs::clef::placeholder<1> j_;
     triqs::clef::placeholder<2> k_;
     triqs::clef::placeholder<3> l_;
-    triqs::clef::placeholder<4> iw_;
     triqs::clef::placeholder<5> iw1_;
     triqs::clef::placeholder<6> iw2_;
     triqs::clef::placeholder<7> iw3_;
@@ -90,6 +91,7 @@ namespace inchworm {
     triqs::clef::placeholder<15> bl2_;
     triqs::clef::placeholder_prime<0> iW_;
     triqs::clef::placeholder_prime<1> iwp_;
+    */
   } // anonymous namespace
 
 } // namespace inchworm

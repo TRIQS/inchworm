@@ -21,20 +21,21 @@
  ******************************************************************************/
 
 #include <numeric>
-#include <inchworm/solver_core.hpp>
+#include <bitset>
 
+#include <inchworm/solver_core.hpp>
+#include <triqs/utility/macros.hpp>
 #include <triqs/gfs.hpp>
-//#include <triqs/h5.hpp>
 #include <triqs/test_tools/gfs.hpp>
 #include <triqs/hilbert_space/fundamental_operator_set.hpp>
 #include <triqs/atom_diag/atom_diag.hpp>
-//#include <triqs/arrays/blas_lapack/dot.hpp>
-
 #include <inchworm/diagram/diagram.hpp>
 
 using namespace inchworm;
-using propagator_t = block_gf<imtime>;
+//using propagator_t = block_gf<imtime>;
 //using atom_diag = triqs::atom_diag::atom_diag<false>;
+using scalar_t = double;
+using matrix_t = matrix<scalar_t>;
 
 //block_gf =
 triqs::hilbert_space::gf_struct_t find_propagator_struct(triqs::atom_diag::atom_diag<false> const &ad) {
@@ -48,12 +49,6 @@ triqs::hilbert_space::gf_struct_t find_propagator_struct(triqs::atom_diag::atom_
 
     std::vector<std::variant<int, std::string>> l(ad.get_subspace_dim(i));
     std::iota(l.begin(), l.end(), 0);
-    //for(auto t : l){
-    //  std::cout << t << " ";
-    //}
-    //std::printf("\n\n");
-    //auto test = std::make_pair( std::to_string(i), l);
-    //std::cout << test.second << " " << test.first << "\n";
     propagator_struct.push_back(std::make_pair(std::to_string(i), l));
   }
   std::printf("\n\n");
@@ -62,37 +57,152 @@ triqs::hilbert_space::gf_struct_t find_propagator_struct(triqs::atom_diag::atom_
 }
 
 void print_block_gf_first_time(block_gf<imtime> const &x) {
-  for (int i = 0; i < x.size(); i++) std::cout << x[i][0] << "\n";
+  std::cout << x.size() << "\n";
+  for (int i = 0; i < x.size(); i++) std::cout << x[i][1] << "\n";
   std::printf("\n\n");
 }
 
-// todo:
-// create an intermediary object for a propagator U for calculation and result (tomorrow).
-void propagator_product(propagator_t const &U, triqs::atom_diag::atom_diag<false> const &ad, time_diagram_t const &diagram)
-{ 
-  for(auto const op: diagram.op_list){
-    std::cout << op.dag << "\n";
+void print_eigensystems(triqs::atom_diag::atom_diag<false> const &ad) {
+  for (auto sp : ad.get_eigensystems()) {
+    for (auto l : sp.eigenvalues) { std::printf("% 2.3f ", l); }
+    std::printf("\n\n");
+
+    for (int i = 0; i < sp.eigenvalues.size(); i++) {
+      for (int j = 0; j < sp.eigenvalues.size(); j++) { std::printf("% 2.3f ", sp.unitary_matrix(i, j)); }
+      std::printf("\n");
+    }
+    //for (auto u : sp.unitary_matrix) { TRIQS_PRINT(u); }
+    std::printf("\n\n");
+  }
+  std::printf("\n");
+}
+
+/*
+void propagator_product(triqs::atom_diag::atom_diag<false> const &ad, time_diagram_t const &diagram, double tau) {
+  std::vector<matrix_t> U_frame(ad.n_subspaces()) ;
+
+  for(int initial_bl; initial_bl < ad.n_subspaces(); initial_bl++) {
+    U_frame[initial_bl] = make_unit_matrix( ad.get_subspace_dim(initial_bl) );
+    int new_bl = initial_bl;
+    for (auto const op : diagram.op_list) {
+      new_bl = (op.dag ? ad.cdag_connection(op.linear_index, new_bl) : ad.c_connection(op.linear_index, new_bl));
+      if (new_bl == -1)
+        break; /// !!!!!!!!!! important because connection(*, -1) is not correct (should give -1). Need additional optimization. does not take into account consecutive c_i c_i, or cdag_i cdag_i
+    }
+    if (new_bl != -1) new_bl = initial_bl;
+    double dtau              = tau - diagram.max_tau();
+    matrix<dcomplex> new_mat = U[initial_bl](dtau);
+
+    for (int i = 0; i < diagram.size(); i++) {
+      //    for (auto const op : diagram.op_list) {
+      auto op = diagram.op_list[i];
+      new_bl  = (op.dag ? ad.cdag_connection(op.linear_index, new_bl) : ad.c_connection(op.linear_index, new_bl));
+      new_mat = (op.dag ? ad.cdag_matrix(op.linear_index, new_bl) * new_mat : ad.c_matrix(op.linear_index, new_bl) * new_mat);
+
+      if (i < diagram.size() - 1) {
+        dtau = op.tau - diagram.op_list[i + 1].tau;
+      } else {
+        dtau = op.tau;
+      }
+      new_mat = U[new_bl](dtau) * new_mat;
+    }
+    //std::printf("\n\n");
+  }
+}
+*/
+
+void propagator_product(block_gf<imtime> const &U, triqs::atom_diag::atom_diag<false> const &ad, time_diagram_t const &diagram, double tau) {
+  EXPECTS(U.size() == ad.n_subspaces()); // ??????? not sure why this does not work
+  //std::printf("size: %d --- %d ---\n\n", U.size(), ad.n_subspaces());
+  auto fs = ad.get_fock_states();
+
+  std::vector<matrix_t> U_frame(ad.n_subspaces());
+  std::vector<int> occurence;
+
+  for (int initial_bl; initial_bl < ad.n_subspaces(); initial_bl++) {
+    //U_frame[initial_bl] = make_unit_matrix(ad.get_subspace_dim(initial_bl));
+
+    int new_bl = initial_bl;
+    for (int i = diagram.size() - 1; i >= 0; i--) {
+      //for (auto const op : diagram.op_list) {
+      auto op = diagram.op_list[i];
+      new_bl  = (op.dag ? ad.cdag_connection(op.linear_index, new_bl) : ad.c_connection(op.linear_index, new_bl));
+      //std::printf(" %d  %d   % 4.5f   ", op.linear_index, op.dag, op.tau);
+      //std::printf("  old: %d, new: %d \n", initial_bl, new_bl);
+      if (new_bl == -1)
+        break; /// !!!!!!!!!! important because connection(*, -1) is not correct (should give -1). Need additional optimization. does not take into account consecutive c_i c_i, or cdag_i cdag_i
+    }
+    //std::printf("bloc: %d, goes to: %d \n", initial_bl, new_bl);
+    double dtau = tau - diagram.max_tau();
+    //std::cout << "dtau:" << dtau << "\n"
+    //          << "tau:" << tau << "\n"
+    //          << "diagram.max_tau():" << diagram.max_tau() << "\n";
+
+    //std::cout << "before\n" << U[initial_bl](dtau) << "\n\n";
+    //matrix<dcomplex> new_mat = U[initial_bl][0];
+    matrix<dcomplex> new_mat = U[initial_bl](dtau);
+    //std::cout << "after\n" << new_mat << "\n\n";
+
+    //for (int i = 0; i < diagram.size(); i++) {
+    if (new_bl != -1) {
+      new_bl = initial_bl;
+      for (int i = diagram.size() - 1; i >= 0; i--) {
+        // for (auto const op : diagram.op_list) {
+        auto op = diagram.op_list[i];
+        //std::cout << "just_before\n" << new_mat << "\n\n";
+        //std::cout << "new_bl " << new_bl << "\n\n";
+        //std::cout << "c? " << ad.c_matrix(op.linear_index, new_bl) << "\n\n";
+        //std::cout << "cdag? " << ad.cdag_matrix(op.linear_index, new_bl) << "\n\n";
+        //std::cout << "op.dag " << (op.dag ? "true " : "false ") << "\n\n";
+        new_mat = (op.dag ? ad.cdag_matrix(op.linear_index, new_bl) * new_mat : ad.c_matrix(op.linear_index, new_bl) * new_mat);
+        new_bl  = (op.dag ? ad.cdag_connection(op.linear_index, new_bl) : ad.c_connection(op.linear_index, new_bl));
+
+        if (i < diagram.size() - 1) {
+          dtau = op.tau - diagram.op_list[i - 1].tau;
+        } else {
+          dtau = op.tau;
+        }
+        //std::cout << "mat:" << matrix<dcomplex>{U[new_bl](dtau)} << "\n";
+        //std::cout << "mat:" << new_mat << "\n";
+        new_mat = matrix<dcomplex>{U[new_bl](dtau)} * new_mat;
+        //std::cout << "after product"
+        //          << "\n";
+      }
+    }
+    //std::printf("\n\n");
+  }
+}
+
+void print_bin(int v) { std::cout << std::bitset<4>(v); }
+
+void print_ad(triqs::atom_diag::atom_diag<false> const &ad) {
+  printf("\n%d \n", ad.get_full_hilbert_space_dim());
+  for (auto fock_sp : ad.get_fock_states()) {
+    for (auto l : fock_sp) {
+      print_bin(l);
+      std::printf(" ");
+    }
+    std::printf("\n");
   }
   std::printf("\n\n");
 }
 
 TEST(inchworm, matrix_product) {
 
-  double beta = 10.0;
+  double beta = 1.0;
   double mu   = 0.0;
   double U    = 8.0;
   double t    = 1.0;
   fundamental_operator_set fops;
   int n_site = 2;
 
-  auto qn_vector = std::vector<triqs::operators::many_body_operator_generic<double>>();
+  auto qn_vector = std::vector<triqs::operators::many_body_operator_generic<scalar_t>>();
   auto h         = 0 * (n("up", 0));
   auto n_tot     = 0 * (n("up", 0));
 
   for (int i = 0; i < n_site; i++) {
     fops.insert("up", i);
     fops.insert("dn", i);
-
     h += U * (n("up", i) * (n("dn", i)));
     h -= mu * (n("up", i) + n("dn", i));
     for (int j = 0; j < n_site; j++) {
@@ -104,17 +214,21 @@ TEST(inchworm, matrix_product) {
 
   auto ad                = triqs::atom_diag::atom_diag<false>(h, fops, qn_vector);
   auto propagator_struct = find_propagator_struct(ad);
-
-  auto propagator = block_gf<imtime>{{beta, Fermion, 2}, propagator_struct};
+  auto propagator        = block_gf<imtime>{{beta, Fermion, 7}, propagator_struct};
   //for (int i = 0; i < ad.n_subspaces(); i++) { std::cout << propagator[i] << "\n"; }
-  print_block_gf_first_time(propagator);
+  //print_block_gf_first_time(propagator);
 
-  std::vector<time_and_orbital_t> c        = {{0.1,0}, {0.5,1},  {0.6,0}};
-  std::vector<time_and_orbital_t> cdag        = {{0.0,0}, {0.11,1}, {0.51,1}};
-  std::vector<double> split_times = {0.99};
+  std::vector<time_and_orbital_t> c    = {{0.1, 0}, {0.5, 1}};
+  std::vector<time_and_orbital_t> cdag = {{0.0, 0}, {0.11, 1}};
+  std::vector<double> split_times      = {0.99};
   time_diagram_t diagram(c, cdag, split_times);
-  
-  propagator_product(U,ad,diagram);
+
+  print_ad(ad);
+  //print_block_gf_first_time(propagator);
+  //print_eigensystems(ad);
+  propagator_product(propagator, ad, diagram, 0.6);
+  //propagator_product(8.0, ad, diagram, 0.4); //////////ATTENTION CA MARCHE (POURQUOI?)
+  //print_block_gf_first_time(propagator);
 }
 
 MAKE_MAIN;
