@@ -48,6 +48,9 @@ namespace inchworm {
   /// The structure of the gf : block_idx -> pair of block_name and index list (int/string)
   using triqs::hilbert_space::gf_struct_t;
 
+  /// Container type of the propagator
+  using u_tau_t = block_gf<imtime, matrix_valued>;
+
   /// Container type of one-particle Green and Vertex functions in imaginary times
   using g_tau_t = block_gf<imtime, matrix_valued>;
 
@@ -71,8 +74,7 @@ namespace inchworm {
 
   // Declare some placeholders for the rest of the code. Use anonymous namespace for proper linkage
   // in this code, all variables with trailing _ are placeholders by convention.
-  namespace {
-    triqs::clef::placeholder<4> iw_;
+  constexpr triqs::clef::placeholder<4> iw_;
     /*
     triqs::clef::placeholder<0> i_;
     triqs::clef::placeholder<1> j_;
@@ -92,6 +94,5 @@ namespace inchworm {
     triqs::clef::placeholder_prime<0> iW_;
     triqs::clef::placeholder_prime<1> iwp_;
     */
-  } // anonymous namespace
 
 } // namespace inchworm

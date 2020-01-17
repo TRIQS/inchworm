@@ -28,6 +28,9 @@ namespace inchworm {
   /// The collection of all output containers in solver_core
   struct container_set {
 
+    /// propagator in imaginary time
+    u_tau_t U_tau;
+
     /// Greens function in imaginary time
     g_tau_t G_tau;
 

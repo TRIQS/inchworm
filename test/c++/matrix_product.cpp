@@ -56,7 +56,7 @@ triqs::hilbert_space::gf_struct_t find_propagator_struct(triqs::atom_diag::atom_
   return propagator_struct;
 }
 
-void print_block_gf_first_time(block_gf<imtime> const &x) {
+void print_block_gf_first_time(u_tau_t const &x) {
   std::cout << x.size() << "\n";
   for (int i = 0; i < x.size(); i++) std::cout << x[i][1] << "\n";
   std::printf("\n\n");
@@ -115,7 +115,7 @@ struct propagator_frame {
   }
 };
 
-propagator_frame propagator_product(block_gf<imtime> const &U, triqs::atom_diag::atom_diag<false> const &ad, time_diagram_t const &diagram,
+propagator_frame propagator_product(u_tau_t const &U, triqs::atom_diag::atom_diag<false> const &ad, time_diagram_t const &diagram,
                                     double tau, bool use_bare_U) {
 
   if (not use_bare_U) {
@@ -199,7 +199,7 @@ propagator_frame propagator_product(block_gf<imtime> const &U, triqs::atom_diag:
 }
 
 propagator_frame propagator_product(triqs::atom_diag::atom_diag<false> const &ad, time_diagram_t const &diagram, double tau, bool use_bare_U) {
-  block_gf<imtime> U;
+  u_tau_t U;
   return propagator_product(U, ad, diagram, tau, use_bare_U);
 }
 
@@ -244,7 +244,7 @@ TEST(inchworm, matrix_product) {
 
   auto ad                = triqs::atom_diag::atom_diag<false>(h, fops, qn_vector);
   auto propagator_struct = find_propagator_struct(ad);
-  auto propagator        = block_gf<imtime>{{beta, Fermion, 7}, propagator_struct};
+  auto propagator        = u_tau_t{{beta, Fermion, 7}, propagator_struct};
   //for (int i = 0; i < ad.n_subspaces(); i++) { std::cout << propagator[i] << "\n"; }
   //print_block_gf_first_time(propagator);
 
@@ -262,14 +262,15 @@ TEST(inchworm, matrix_product) {
   //print_block_gf_first_time(propagator);
 }
 
+/*
 int dummy_function(block_gf<imtime> const &U){
   std::cout << "dummy\n";
+
 }
 
-    
 TEST(inchworm, wrong_argument) {
   auto U_0 = dummy_function(8.0);
 }
-
+*/
 
 MAKE_MAIN
