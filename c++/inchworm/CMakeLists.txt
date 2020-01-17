@@ -1,5 +1,5 @@
 file(GLOB_RECURSE sources *.cpp)
-add_library(inchworm_c ${sources})
+add_library(inchworm_c STATIC ${sources})
 
 # Link against triqs and enable warnings
 target_link_libraries(inchworm_c PUBLIC triqs PRIVATE project_warnings)
@@ -47,8 +47,11 @@ if(ANALYZE_SOURCES)
 	  --std=c++17
 	  --template=gcc
 	  --verbose
+	  --force
 	  --quiet
           ${sources}
+	WORKING_DIRECTORY
+	  ${CMAKE_CURRENT_SOURCE_DIR}
     )
   else()
     message(STATUS "cppcheck not found in $PATH. Please consider installing cppcheck for additional checks!")
@@ -63,12 +66,16 @@ option(ASAN OFF "Compile library and executables with LLVM Address Sanitizer")
 option(UBSAN OFF "Compile library and executables with LLVM Undefined Behavior Sanitizer")
 
 if(ASAN)
-  find_package(sanitizer REQUIRED "asan")
+  if(NOT TARGET asan)
+    find_package(sanitizer REQUIRED "asan")
+  endif()
   target_link_libraries(inchworm_c PUBLIC asan)
   install(TARGETS asan EXPORT inchworm-targets)
 endif()
 if(UBSAN)
-  find_package(sanitizer REQUIRED "ubsan")
+  if(NOT TARGET ubsan)
+    find_package(sanitizer REQUIRED "ubsan")
+  endif()
   target_link_libraries(inchworm_c PUBLIC ubsan)
   install(TARGETS ubsan EXPORT inchworm-targets)
 endif()

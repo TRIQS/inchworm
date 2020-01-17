@@ -262,15 +262,5 @@ TEST(inchworm, matrix_product) {
   //print_block_gf_first_time(propagator);
 }
 
-/*
-int dummy_function(block_gf<imtime> const &U){
-  std::cout << "dummy\n";
-
-}
-
-TEST(inchworm, wrong_argument) {
-  auto U_0 = dummy_function(8.0);
-}
-*/
 
 MAKE_MAIN
