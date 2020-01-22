@@ -18,7 +18,10 @@
 \usepackage{fancyhdr}				% pour faire des beaux headers
 \usepackage[pdftex,plainpages=false,colorlinks=true,linkcolor=blue, citecolor=blue, urlcolor=blue]{hyperref}
 \usepackage{fancyvrb}
+\usepackage{natbib}
 %\usepackage{titlesec}
+\usepackage{blkarray}
+
 
 \setlength{\parskip}{\baselineskip}%
 \setlength{\parindent}{0pt}%
@@ -370,7 +373,7 @@ a(S) &=\sum_{j} \prod_{i}\left[-c(A^j_{i})\right]
 \end{align}
 where $D^j_{i}$ represent the $i^{th}$ individual segment in the $j^{th}$ \Verb#set_of_disjoint_segments#, $A^j_{i}$  represent the $i^{th}$ individual segment in the $j^{th}$ \Verb#set_of_adjacent_segments#, and finally $R^j = S \backslash \bigcup_{i} D^j_{i}$ is the remainder of the of the vertices in the segment $S$ that are not included in any segment $D^j_{i}$ for the $j^{th}$ \Verb#set_of_disjoint_segments#. $v(R^j)$ is the determinant of the hybridization difference matrix of the remainding indices $R^j$.
 
-Note that the sign $ (-1)^{P(R^j)}$ is important and missing from the paper of Boag et al. 2018. This sign is non trivial. The number $P(R^j)$ corresponds to the number of permutations that would be required to reunite all the indices in $R^j$ into a continuous segment at the rightmost position of the segment $S$.
+Note that the sign $ (-1)^{P(R^j)}$ is important and missing from the paper of~\cite{boag_inclusion-exclusion_2018}. This sign is non trivial. The number $P(R^j)$ corresponds to the number of permutations that would be required to reunite all the indices in $R^j$ into a continuous segment at the rightmost position of the segment $S$.
 
 Let's take an example of a specific segment: the third segment of the first list (shown above), since it is long and non trivial. This segment define the range $[0,6[$. 
 
@@ -414,12 +417,21 @@ Here the signs shown on the left of the set of segments represent the product of
 
 We iterate the calculation of every segments that are in the list of single segment until the end, using this method. The last (full segment) is somewhat a little different since we do not exclude the last vertex. Indeed, what we want to find here is not the fully connected full segment, it is somewhat different. Hence we need to consider every segment in the vector of \Verb#set_of_disjoint_segments# above. The ``connectivity'' is given by the fact that no individual segment cross the split point. In other words, the final full segment, after the inclusion-exclusion procedure, will only contain ``diagrams'' that are proper by the definition of the Sec.~\ref{sec::proper}
 
+\subsection{Optimizations}
+
+The algorithm presented here already contain one optimization, the first one presented in the paper of ~\cite{boag_inclusion-exclusion_2018}. Indeed, we already expressed everything in terms of adjacent segments only here, in order to simplify the formalism. In this same paper, there is one addiitonnal optimization is presented, a simple one. We can note that $c(S)$ is always zero for segment of length $2$. In that case, we can simply replace in Eq.~\eqref{eq::hyb_mat} the elements that describe adjacent points (segment of length two) by zero. If we do so, we can ignore every segment of length 2, thus the number of combination of segments is greatly reduced. 
+
+A third optimization is to remove the segment of length $4$ of the type \Verb#x-o-x-o# and  \Verb#o-x-o-x#, as they never can be fully connected, hence will always give zero. The proof is given to the reader, but essentially we just need to enumerate the possible diagrams (only 2), and see that only one hybridization line can cross the split point if it is just before the last vertex.
+
+A fourth optimization is to check, just before calculating a new determinant $v(R^j)$ if any of the previously calculated $D^j_{i}$ are zero. If this is the case, we can just skip the determinant calculation of $v(R^j)$.
+
 \section{Monte Carlo}
 
 Suppose an hybridization matrix $\Delta$ of the form:
 \begin{equation}
 \Delta = \left(\begin{array}{ccc}{\Delta_{a_{1} b_{1}}\left(\tau_{1}, \tau_{1}^{\prime}\right)} &  {\cdots} & {\Delta_{a_{1} b_{k}}\left(\tau_{1}, \tau_{k}^{\prime}\right)}  \\ {\vdots} & {\ddots} & {\vdots} \\ {\Delta_{a_{k} b_{1}}\left(\tau_{k}, \tau_{1}^{\prime}\right)} & {\cdots} & {\Delta_{a_{k} b_{k}}\left(\tau_{k}, \tau_{k}^{\prime}\right)}
 \end{array}\right)
+\label{eq::hyb_mat}
 \end{equation}
 
 The Leibniz formula for the determinant of an $\Delta$ matrix (size $n \times n$, here $n=k$, but the notation $S_n$ usually denote the permutation group of size $n$) is:
@@ -539,7 +551,252 @@ $U(\tau,\tau^\prime)$ is block diagonal. A first implementation is to take \Verb
 
 \section{Exact diagonalization benchmark}
 
-TBD
+A good benchmark is to calculate the exact propagator we would get with exact diagonalization. The most basic example we can show here is a single interacting site connected to a single bath site. 
+
+{\centering
+\begin{minipage}{0.3\textwidth}
+  \centering
+  \vspace{1.5em}
+  \includegraphics[width=2.5cm]{figures/c2_v1.pdf}
+  \captionof{figure}[Minimal model]{Simple model and its corresponding normal order.}
+  \label{amas_site_bain}
+\end{minipage}
+\begin{minipage}{0.7\textwidth}
+  \centering
+  \begin{align}
+  \ket{i}
+  \equiv
+  \ket{
+  n_{a\downarrow}
+  n_{a\uparrow} 
+  n_{\downarrow}
+  n_{\uparrow}
+  } 
+  &= 
+  (a_{\downarrow}^{\dag})^{n_{a\downarrow}}
+  (a_{\uparrow}^{\dag})^{n_{a\uparrow}} 
+  (c_{\downarrow}^{\dag})^{n_{\downarrow}}
+  (c_{\uparrow}^{\dag})^{n_{\uparrow}} 
+ \ket{0}
+ \\
+   &= 
+  (a_{\downarrow}^{\dag})^{n_{a\downarrow}}
+  (a_{\uparrow}^{\dag})^{n_{a\uparrow}}
+  (c_{\downarrow}^{\dag})^{n_{\downarrow}}
+  (c_{\uparrow}^{\dag})^{n_{\uparrow}} 
+ \ket{0}_B \otimes 
+ \ket{0}_c
+ \\
+   &= 
+  (a_{\downarrow}^{\dag})^{n_{a\downarrow}}
+  (a_{\uparrow}^{\dag})^{n_{a\uparrow}}
+ \ket{0}_B \otimes 
+  (c_{\downarrow}^{\dag})^{n_{\downarrow}}
+  (c_{\uparrow}^{\dag})^{n_{\uparrow}} 
+ \ket{0}_c
+ \\
+   &=  
+  \ket{
+  n_{a\downarrow}
+  n_{a\uparrow} 
+  }_B \otimes
+  \ket{
+  n_{\downarrow}
+  n_{\uparrow}
+  }_c
+  \\
+  &\equiv \ket{i_a} \otimes \ket{i_c}
+  \label{ordrenormal0}
+  \end{align}
+  \vspace{-2em}
+  %\captionof*{table}{Ordre des opérateurs de créations}
+\end{minipage}
+}
+
+In its most simple form, a many body Hamiltonian can be expressed as:
+\begin{align}
+H &= \sum_{ij} \ket{i} \bra{j} H_{ij}
+%H &= \sum_{ij} \ket{n_{a\downarrow}  n_{a\uparrow}  n_{\downarrow}  n_{\uparrow}} \bra{ n^{\prime}_{a\downarrow}  n^{\prime}_{a\uparrow}  n^{\prime}_{\downarrow}  n^{\prime}_{\uparrow}} H_{ij}
+\label{eq::H_example}
+\end{align}
+
+For example, let's take a simple Anderson Impurity Model for this 2 sites model:
+\begin{align}\label{AIM1}
+H =&~U n_{\uparrow }n_{\downarrow}
+- \theta \sum_{\sigma} (c_{\sigma }^{\dag}a_{\sigma} + a_{\sigma}^{\dag}c_{\sigma}
+) 
++ \epsilon \sum_{\sigma} a_{\sigma }^{\dag}a_{\sigma}.
+\end{align}
+
+The matrix decomposion in Eq.~\eqref{eq::H_example} will give a big (16 by 16) matrix with a lot of zeros. If we permute rows and columns, we will obtain sectors (smaller matrices). The sectors found using this approach is:
+
+\begin{align}
+\begin{blockarray}{ccccc}
+& \ket{0011} & \ket{0110} & \ket{1001} & \ket{1100} \\
+\begin{block}{c(cccc)}
+\bra{0011} & U & -\theta & \theta & 0\\
+\bra{0110} & -\theta & \epsilon & 0 & -\theta\\
+\bra{1001} & \theta & 0 & \epsilon & \theta\\
+\bra{1100} & 0 & -\theta & \theta & 2\epsilon\\
+\end{block}
+\end{blockarray}
+\end{align}
+
+\begin{align}
+\begin{blockarray}{cccc}
+& & \ket{0001} & \ket{0100} \\ 
+& & \ket{0010} & \ket{1000} \\
+\begin{block}{cc(cc)}
+\bra{0001}& \bra{0010} & 0 & \theta \\
+\bra{0100}& \bra{1000} & \theta & \epsilon\\
+\end{block}
+\end{blockarray}
+&&
+\begin{blockarray}{cccc}
+& & \ket{0111} & \ket{1101} \\ 
+& & \ket{1011} & \ket{1110} \\
+\begin{block}{cc(cc)}
+\bra{0111}& \bra{1011} & U +\epsilon & -\theta \\
+\bra{1101}& \bra{1110} & -\theta & 2\epsilon\\
+\end{block}
+\end{blockarray}
+\end{align}
+
+\begin{align}
+\begin{blockarray}{cc}
+& \ket{0000} \\
+\begin{block}{c(c)}
+\bra{0000} & 0\\
+\end{block}
+\end{blockarray}
+&&
+\begin{blockarray}{ccc}
+& & \ket{1010} \\
+& & \ket{0101} \\
+\begin{block}{cc(c)}
+\bra{1010} & \bra{0101} & 0\\
+\end{block}
+\end{blockarray}
+&&
+\begin{blockarray}{cc}
+& \ket{1111} \\
+\begin{block}{c(c)}
+\bra{1111} & U + 2\epsilon \\
+\end{block}
+\end{blockarray}
+\end{align}
+
+This sector notation is similar to the information stored in TRIQS \Verb#atom_diag# function, except that in \Verb#atom_diag#, the matrices are not stored, but only their associated eigensystem.
+
+Tracing over the bath of this Hamiltonian $H$ can be expressed as:
+\begin{align}
+\text Tr_B (H)
+&= \sum_{k_a l_a} \sum_{ij} \braket{k_a}{i} \braket{j}{l_a} H_{ij}
+%\\
+%&= \sum_{k_a l_a} \sum_{ij} \braket{k_a}{i_a}\otimes\ket{i_c} \bra{j_c}\otimes \braket{j_a}{l_a}    H_{ij}
+\\
+&= \sum_{k_a l_a} \sum_{ij} \braket{k_a}{i_a}\braket{j_a}{l_a}    H_{ij} \ket{i_c} \bra{j_c}  
+\end{align}
+
+For the example here, this then give:
+\begin{align}
+\begin{blockarray}{ccccc}
+& \ket{00}_c & \ket{01}_c & \ket{10}_c & \ket{10}_c \\
+\begin{block}{c(cccc)}
+\bra{00}_c & 4\epsilon &  &  & \\
+\bra{01}_c &  & 4\epsilon &  & \\ 
+\bra{10}_c &  &  & 4\epsilon & \\ 
+\bra{11}_c &  &  &  & 4(U+\epsilon) \\ 
+\end{block}
+\end{blockarray}
+\end{align}
+
+({\color{red} Disclaimer: i am not sure about this factor 4, I think I miss a $\frac{1}{2^{N_{traced}} }$ somewhere.  My reasoning is that whatever the amount of baths that we consider here, the result should be similar.}) 
+
+Now the extension for the propagator is straight forward. 
+
+\begin{align}
+U(\Delta\tau)
+=
+\text Tr_B (e^{-\Delta\tau H})
+\end{align}
+
+Of course, to take the exponential, we need first to diagonalize each block, take the exponential of the spectrum, reexpress the result in the original basis, then take the partial trace. 
+
+This benchmark, although a little too simple, can be easily generalized to a bigger system. This is implemented in the new function $???$. The fundamental operator set should be defined such that the $N_?$ are not considere in the bath, and the parameter ??? will select up until with fundamental operator the system is not in the bath, the rest are, and will be traced out. 
+
+
+
+
+%\bibliographystyle{apsrev4-1}
+%\bibliography{inclus}
+
+
+
+%merlin.mbs apsrev4-1.bst 2010-07-25 4.21a (PWD, AO, DPC) hacked
+%Control: key (0)
+%Control: author (72) initials jnrlst
+%Control: editor formatted (1) identically to author
+%Control: production of article title (-1) disabled
+%Control: page (0) single
+%Control: year (1) truncated
+%Control: production of eprint (0) enabled
+\begin{thebibliography}{1}%
+\makeatletter
+\providecommand \@ifxundefined [1]{%
+ \@ifx{#1\undefined}
+}%
+\providecommand \@ifnum [1]{%
+ \ifnum #1\expandafter \@firstoftwo
+ \else \expandafter \@secondoftwo
+ \fi
+}%
+\providecommand \@ifx [1]{%
+ \ifx #1\expandafter \@firstoftwo
+ \else \expandafter \@secondoftwo
+ \fi
+}%
+\providecommand \natexlab [1]{#1}%
+\providecommand \enquote  [1]{``#1''}%
+\providecommand \bibnamefont  [1]{#1}%
+\providecommand \bibfnamefont [1]{#1}%
+\providecommand \citenamefont [1]{#1}%
+\providecommand \href@noop [0]{\@secondoftwo}%
+\providecommand \href [0]{\begingroup \@sanitize@url \@href}%
+\providecommand \@href[1]{\@@startlink{#1}\@@href}%
+\providecommand \@@href[1]{\endgroup#1\@@endlink}%
+\providecommand \@sanitize@url [0]{\catcode `\\12\catcode `\$12\catcode
+  `\&12\catcode `\#12\catcode `\^12\catcode `\_12\catcode `\%12\relax}%
+\providecommand \@@startlink[1]{}%
+\providecommand \@@endlink[0]{}%
+\providecommand \url  [0]{\begingroup\@sanitize@url \@url }%
+\providecommand \@url [1]{\endgroup\@href {#1}{\urlprefix }}%
+\providecommand \urlprefix  [0]{URL }%
+\providecommand \Eprint [0]{\href }%
+\providecommand \doibase [0]{http://dx.doi.org/}%
+\providecommand \selectlanguage [0]{\@gobble}%
+\providecommand \bibinfo  [0]{\@secondoftwo}%
+\providecommand \bibfield  [0]{\@secondoftwo}%
+\providecommand \translation [1]{[#1]}%
+\providecommand \BibitemOpen [0]{}%
+\providecommand \bibitemStop [0]{}%
+\providecommand \bibitemNoStop [0]{.\EOS\space}%
+\providecommand \EOS [0]{\spacefactor3000\relax}%
+\providecommand \BibitemShut  [1]{\csname bibitem#1\endcsname}%
+\let\auto@bib@innerbib\@empty
+%</preamble>
+\bibitem [{\citenamefont {Boag}\ \emph {et~al.}()\citenamefont {Boag},
+  \citenamefont {Gull},\ and\ \citenamefont
+  {Cohen}}]{boag_inclusion-exclusion_2018}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {A.}~\bibnamefont
+  {Boag}}, \bibinfo {author} {\bibfnamefont {E.}~\bibnamefont {Gull}}, \ and\
+  \bibinfo {author} {\bibfnamefont {G.}~\bibnamefont {Cohen}},\ }\href
+  {\doibase 10.1103/PhysRevB.98.115152} {\ \textbf {\bibinfo {volume} {98}},\
+  \bibinfo {pages} {115152}}\BibitemShut {NoStop}%
+\end{thebibliography}%
+
+
 
 \end{document}
 
