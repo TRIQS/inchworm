@@ -29,7 +29,7 @@ namespace inchworm {
   struct constr_params_t {
 
     /// Number of tau points
-    int n_tau = 5001;
+    int n_tau = 501;
 
     /// Number of Matsubara frequencies
     int n_iw = 500;
@@ -66,9 +66,6 @@ namespace inchworm {
     many_body_operator h_int;
 
     // ----------- QMC Specific -----------
-
-    /// Number of auxiliary spins
-    int n_s = 1;
 
     /// Number of MC cycles
     int n_cycles;
