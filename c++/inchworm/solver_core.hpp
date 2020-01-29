@@ -30,6 +30,20 @@ namespace inchworm {
   class solver_core : public container_set {
 
     private:
+    double beta;           // inverse temperature
+    atom_diag h_diag;      // diagonalization of the local problem
+    gf_struct_t gf_struct; // Block structure of the Green function FIXME
+    many_body_op_t _h_loc; // The local Hamiltonian = h_int + h0
+
+    mpi::communicator _comm;   // define the communicator, here MPI_COMM_WORLD
+    mc_weight_t _average_sign; // average sign of the QMC
+    int _solve_status;         // Status of the solve upon exit: 0 for clean termination, > 0 otherwise.
+
+    // Single-particle Green's function containers
+    g_iw_t _G0_iw;                                 // Non-interacting Matsubara Green's function
+    g_tau_t _Delta_tau;                            // Imaginary-time Hybridization function
+    std::vector<matrix<dcomplex>> Delta_infty_vec; // Quadratic instantaneous part of G0_iw
+
     // Mpi Communicator
     mpi::communicator world;
 

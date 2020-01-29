@@ -20,10 +20,14 @@
  *
  ******************************************************************************/
 
+//#include <inchworm/solver_core.hpp>
+#include <inchworm/impurity_product.hpp>
+using namespace inchworm;
+
+/*
 #include <numeric>
 #include <bitset>
 
-#include <inchworm/solver_core.hpp>
 #include <triqs/utility/macros.hpp>
 #include <triqs/gfs.hpp>
 #include <triqs/test_tools/gfs.hpp>
@@ -37,7 +41,7 @@ using namespace inchworm;
 using scalar_t = double;
 using matrix_t = matrix<scalar_t>;
 
-//block_gf =
+// Necessary to use atom_diag block structure for the propagator.
 triqs::hilbert_space::gf_struct_t find_propagator_struct(triqs::atom_diag::atom_diag<false> const &ad) {
   int n_sub = ad.n_subspaces();
   triqs::hilbert_space::gf_struct_t propagator_struct;
@@ -56,11 +60,6 @@ triqs::hilbert_space::gf_struct_t find_propagator_struct(triqs::atom_diag::atom_
   return propagator_struct;
 }
 
-void print_block_gf_first_time(u_tau_t const &x) {
-  std::cout << x.size() << "\n";
-  for (int i = 0; i < x.size(); i++) std::cout << x[i][1] << "\n";
-  std::printf("\n\n");
-}
 
 struct propagator_frame {
   std::vector<matrix<dcomplex>> matrices;
@@ -115,8 +114,8 @@ struct propagator_frame {
   }
 };
 
-propagator_frame propagator_product(u_tau_t const &U, triqs::atom_diag::atom_diag<false> const &ad, time_diagram_t const &diagram,
-                                    double tau, bool use_bare_U) {
+propagator_frame propagator_product(u_tau_t const &U, triqs::atom_diag::atom_diag<false> const &ad, time_diagram_t const &diagram, double tau,
+                                    bool use_bare_U) {
 
   if (not use_bare_U) {
     EXPECTS(U.size() == ad.n_subspaces()); //??? this test does not seems to work????i
@@ -202,6 +201,7 @@ propagator_frame propagator_product(triqs::atom_diag::atom_diag<false> const &ad
   u_tau_t U;
   return propagator_product(U, ad, diagram, tau, use_bare_U);
 }
+*/
 
 void print_bin(int v) { std::cout << std::bitset<4>(v); }
 
@@ -219,6 +219,7 @@ void print_ad(triqs::atom_diag::atom_diag<false> const &ad) {
 
 TEST(inchworm, matrix_product) {
 
+  int n_times = 4;
   double beta = 1.0;
   double mu   = 0.0;
   double U    = 8.0;
@@ -244,23 +245,39 @@ TEST(inchworm, matrix_product) {
 
   auto ad                = triqs::atom_diag::atom_diag<false>(h, fops, qn_vector);
   auto propagator_struct = find_propagator_struct(ad);
-  auto propagator        = u_tau_t{{beta, Fermion, 7}, propagator_struct};
+  auto propagator        = u_tau_t{{beta, Fermion, n_times}, propagator_struct};
   //for (int i = 0; i < ad.n_subspaces(); i++) { std::cout << propagator[i] << "\n"; }
   //print_block_gf_first_time(propagator);
 
-  std::vector<time_and_orbital_t> c    = {{0.1, 0}, {0.5, 1}};
-  std::vector<time_and_orbital_t> cdag = {{0.0, 0}, {0.11, 1}};
+  //print_ad(ad);
+  //print_block_gf_first_time(propagator);
+  std::vector<time_and_indices_t> c    = {{0.00, 0}, {0.05, 0}};
+  std::vector<time_and_indices_t> cdag = {{0.01, 0}, {0.08, 0}};
   std::vector<double> split_times      = {0.99};
   time_diagram_t diagram(c, cdag, split_times);
 
-  //print_ad(ad);
-  //print_block_gf_first_time(propagator);
-  auto U_0 = propagator_product(ad, diagram, 0.6, true);
-  std::cout << U_0;
-  std::cout << U_0.frobenius_norm() << "\n";
-  //propagator_product(8.0, ad, diagram, 0.4); //////////ATTENTION CA MARCHE (POURQUOI?)
-  //print_block_gf_first_time(propagator);
-}
+  auto U_frame = propagator_product(ad, diagram, 0.1);
+  std::cout << U_frame;
+  std::cout << U_frame.frobenius_norm() << "\n";
 
+  assign_identity_to_propagator(propagator,0);
+  assign_frame_to_propagator(propagator, U_frame, 1);
+  std::cout << U_frame;
+  std::cout << U_frame.frobenius_norm() << "\n";
+
+  U_frame = propagator_product(propagator, ad, diagram, 0.2);
+  assign_frame_to_propagator(propagator, U_frame, 2);
+  std::cout << U_frame;
+  std::cout << U_frame.frobenius_norm() << "\n";
+
+  U_frame = propagator_product(propagator, ad, diagram, 0.3);
+  assign_frame_to_propagator(propagator, U_frame, 3);
+  std::cout << U_frame;
+  std::cout << U_frame.frobenius_norm() << "\n";
+
+/* 
+  //propagator_product(8.0, ad, diagram, 0.4); //////////ATTENTION CA MARCHE (POURQUOI?)
+*/  //print_block_gf_first_time(propagator);
+}
 
 MAKE_MAIN

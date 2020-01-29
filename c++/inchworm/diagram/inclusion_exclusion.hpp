@@ -19,7 +19,7 @@
  * inchworm. If not, see <http://www.gnu.org/licenses/>.
  *
  ******************************************************************************/
-
+#pragma once
 #include "./hybridization_function_matrix.hpp"
 #include "./print.hpp"
 

@@ -32,27 +32,27 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   // System Parameters
   double U  = 1.0;
   double mu = U / 2;
-  double h  = 0.1;
+  //double h  = 0.1;
 
   // Construct Parameters
   constr_params_t cp;
   cp.beta      = 10.0;
   cp.gf_struct = {{"up", {0}}, {"dn", {0}}};
-  cp.n_tau     = 10000;
-  cp.n_iw      = 500;
+  cp.n_tau     = 1;
+  cp.n_iw      = 1;
 
   // Set up the Solver
   solver_core S(cp);
   int up = 0, dn = 1;
-  S.G0_iw[up](iw_) << 1.0 / (iw_ + mu + h);
-  S.G0_iw[dn](iw_) << 1.0 / (iw_ + mu - h);
+  S.G0_iw[up](iw_) << 1.0 / (iw_ + mu);
+  S.G0_iw[dn](iw_) << 1.0 / (iw_ + mu);
 
   // Solve Parameters
   solve_params_t sp;
   sp.h_int           = U * n("up", 0) * n("down", 0);
-  sp.n_cycles        = 100000;
-  sp.length_cycle    = 50;
-  sp.n_warmup_cycles = 5000;
+  sp.n_cycles        = 100;
+  sp.length_cycle    = 5;
+  sp.n_warmup_cycles = 50;
   sp.max_time        = -1;
   sp.verbosity       = 3;
   sp.post_process    = true;
@@ -71,4 +71,4 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   // h5diff("hubbard.out.h5", "hubbard.ref.h5")
 }
 
-MAKE_MAIN;
+MAKE_MAIN

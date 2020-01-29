@@ -27,6 +27,9 @@
 #include <triqs/hilbert_space/fundamental_operator_set.hpp>
 #include <triqs/utility/macros.hpp>
 
+#include <triqs/atom_diag/atom_diag.hpp>
+#include <triqs/utility/time_pt.hpp>
+
 #include <mpi/mpi.hpp>
 
 #include <iostream>
@@ -72,10 +75,35 @@ namespace inchworm {
   /// Type of the Monte-Carlo weight. Either double or dcomplex
   using mc_weight_t = g_tau_t::g_t::scalar_t;
 
+  // Defined by Maxime, need comments
+  using scalar_t     = double;
+  using matrix_t     = matrix<scalar_t>;
+  using det_scalar_t = scalar_t;
+
+#ifdef HYBRIDISATION_IS_COMPLEX
+  using delta_target_t = matrix_valued;
+#else
+  using delta_target_t                      = matrix_real_valued;
+#endif
+
+#ifdef LOCAL_HAMILTONIAN_IS_COMPLEX
+  using h_scalar_t                          = dcomplex; // type of scalar for H_loc: double or complex.
+  static constexpr bool is_h_scalar_complex = true;
+#else
+  using h_scalar_t                          = double; // type of scalar for H_loc: double or complex.
+  static constexpr bool is_h_scalar_complex = false;
+#endif
+
+  using atom_diag = triqs::atom_diag::atom_diag<is_h_scalar_complex>;
+  using triqs::hilbert_space::gf_struct_t;
+  using triqs::utility::time_pt;
+  using op_t         = std::pair<time_pt, int>;
+  using indices_type = triqs::operators::indices_t;
+
   // Declare some placeholders for the rest of the code. Use anonymous namespace for proper linkage
   // in this code, all variables with trailing _ are placeholders by convention.
   constexpr triqs::clef::placeholder<4> iw_;
-    /*
+  /*
     triqs::clef::placeholder<0> i_;
     triqs::clef::placeholder<1> j_;
     triqs::clef::placeholder<2> k_;

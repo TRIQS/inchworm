@@ -92,8 +92,6 @@ c.add_method("""void solve (**inchworm::solve_params_t)""",
 +=================+======================================+=========================================+==================================================+
 | h_int           | triqs::operators::many_body_operator | --                                      | Interaction Hamiltonian                          |
 +-----------------+--------------------------------------+-----------------------------------------+--------------------------------------------------+
-| n_s             | int                                  | 1                                       | Number of auxiliary spins                        |
-+-----------------+--------------------------------------+-----------------------------------------+--------------------------------------------------+
 | n_cycles        | int                                  | --                                      | Number of MC cycles                              |
 +-----------------+--------------------------------------+-----------------------------------------+--------------------------------------------------+
 | length_cycle    | int                                  | 50                                      | Length of a MC cycles                            |
@@ -134,11 +132,6 @@ c.add_member(c_name = "h_int",
              c_type = "triqs::operators::many_body_operator",
              initializer = """  """,
              doc = r"""Interaction Hamiltonian""")
-
-c.add_member(c_name = "n_s",
-             c_type = "int",
-             initializer = """ 1 """,
-             doc = r"""Number of auxiliary spins""")
 
 c.add_member(c_name = "n_cycles",
              c_type = "int",

@@ -29,12 +29,14 @@
 
 // Degrees of freedom of an creation (annihilation) operator:
 //
-struct time_and_orbital_t {
-  double tau = 0.;
-  int orb    = 0;
+struct time_and_indices_t {
+  double tau       = 0.;
+  int linear_index = 0; // index as defined in fundamental operators set
 };
 
-inline bool operator<(time_and_orbital_t const &t1, time_and_orbital_t const &t2) { return (t1.tau < t2.tau); }
+inline bool operator<(time_and_indices_t const &t1, time_and_indices_t const &t2) { return (t1.tau < t2.tau); }
+
+auto sort_tau = [](auto const &x, auto const &y) { return x.tau < y.tau; };
 
 // Configuration of c(tau) and cdag(tau') and the split points
 //
@@ -45,30 +47,55 @@ class time_diagram_t {
   struct op_t {
     double tau       = 0.;    // time
     bool dag         = false; // true if cdag, false if c
-    int linear_index = 0;     // index in the list of fundamental_operator_set
-    int order_index  = 0;     // index in the list of all c, cdag
+    int linear_index = 0;     // index as defined in fundamental operators set
+    int order_index  = 0;     // index of the order in time in the list of all c, cdag
   };
 
   public:
   std::vector<op_t> op_list;                         // list of all operator time ordered
   std::vector<int> split_points;                     // position of split points
-  std::vector<time_and_orbital_t> c_list, cdag_list; // list of c/cdag time ordered
+  std::vector<time_and_indices_t> c_list, cdag_list; // list of c/cdag time ordered
   std::vector<int> pos_c;                            // position of c in the op_list
   std::vector<int> pos_cdag;                         // idem
-  bool is_trivial; // a diagram is considered trivial if no split_times are found between the minimum and maximum tau.
+  bool is_trivial = true; // a diagram is considered trivial if no split_times are found between the minimum and maximum tau.
 
   int perturbation_order() const { return c_list.size(); }
   int size() const { return op_list.size(); }
-  double max_tau() const { return op_list.back().tau; } 
-  double min_tau() const { return op_list.front().tau; } 
+  double max_tau() const { return op_list.back().tau; }
+  double min_tau() const { return op_list.front().tau; }
 
+  /*
+  bool try_insert_vertices(time_and_indices_t c, time_and_indices_t cdag) {
+    // check if different times
+    for (int i = 0; i < op_list.size() - 1; i++)
+      if ((op_list[i].tau == c.tau) or (op_list[i].tau == cdag.tau)) return false;
+
+    c_list.push_back({c.tau, c.linear_index});
+    cdag_list.push_back({cdag.tau, cdag.linear_index});
+
+    std::sort(c_list.begin(), c_list.end(), [](auto const &x, auto const &y) { return x.tau < y.tau; });
+    std::sort(cdag_list.begin(), cdag_list.end(), [](auto const &x, auto const &y) { return x.tau < y.tau; });
+
+    reorder();
+    return true;
+  }
+
+  bool try_insert_split_point() {
+     
+  }
+
+  time_diagram_t() {}
+*/
   //
-  time_diagram_t(std::vector<time_and_orbital_t> const &c, std::vector<time_and_orbital_t> const &cdag, std::vector<double> const &split_times)
+  time_diagram_t(std::vector<time_and_indices_t> const &c, std::vector<time_and_indices_t> const &cdag, std::vector<double> const &split_times)
      : op_list(2 * c.size()), c_list{c}, cdag_list{cdag} {
-
-    EXPECTS(std::is_sorted(c.begin(), c.end()));
-    EXPECTS(std::is_sorted(cdag.begin(), cdag.end()));
-    EXPECTS(c.size() == cdag.size());
+//     reorder();
+//     }
+  
+//  bool reorder_op_list() {
+    EXPECTS(std::is_sorted(c_list.begin(), c_list.end()));
+    EXPECTS(std::is_sorted(cdag_list.begin(), cdag_list.end()));
+    EXPECTS(c_list.size() == cdag_list.size());
 
     split_points.reserve(split_times.size());
 
@@ -76,12 +103,12 @@ class time_diagram_t {
 
     for (int i = 0, j = order; i < order; i++, j++) {
       op_list[i].tau          = c[i].tau;
-      op_list[i].linear_index = c[i].orb;
+      op_list[i].linear_index = c[i].linear_index;
       op_list[i].dag          = false;
       op_list[i].order_index  = i;
 
       op_list[j].tau          = cdag[i].tau;
-      op_list[j].linear_index = cdag[i].orb;
+      op_list[j].linear_index = cdag[i].linear_index;
       op_list[j].dag          = true;
       op_list[j].order_index  = i;
     }

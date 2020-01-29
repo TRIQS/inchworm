@@ -22,14 +22,17 @@
 #pragma once
 
 #include "./types.hpp"
+#include <triqs/operators/many_body_operator.hpp>
 
 namespace inchworm {
+
+  using many_body_op_t = triqs::operators::many_body_operator_generic<h_scalar_t>; // Operator with real or complex value
 
   /// The parameters for the solver construction
   struct constr_params_t {
 
     /// Number of tau points
-    int n_tau = 501;
+    int n_tau = 101;
 
     /// Number of Matsubara frequencies
     int n_iw = 500;
@@ -64,6 +67,15 @@ namespace inchworm {
 
     /// Interaction Hamiltonian
     many_body_operator h_int;
+
+    /// Partition method
+    /// type: str
+    std::string partition_method = "autopartition";
+
+    /// Quantum numbers
+    /// type: list(Operator)
+    /// default: []
+    std::vector<many_body_op_t> quantum_numbers = std::vector<many_body_op_t>{};
 
     // ----------- QMC Specific -----------
 

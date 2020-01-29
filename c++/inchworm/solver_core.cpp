@@ -30,7 +30,7 @@
 
 namespace inchworm {
 
-  solver_core::solver_core(constr_params_t const &p) : constr_params(p) {
+  solver_core::solver_core(constr_params_t const &p) : constr_params(p), gf_struct(p.gf_struct) {
 
     // Initialize the non-interacting Green function
     G0_iw = block_gf<imfreq>{{p.beta, Fermion, p.n_iw}, p.gf_struct};
@@ -49,10 +49,40 @@ namespace inchworm {
 
     // http://patorjk.com/software/taag/#p=testall&f=Calvin%20S&t=TRIQS%20inchworm%0A
     if (world.rank() == 0)
-      std::cout << "\n"	
+      std::cout << "\n"
                    "╔╦╗╦═╗╦╔═╗ ╔═╗  ┬┌┐┌┌─┐┬ ┬┬ ┬┌─┐┬─┐┌┬┐\n"
                    " ║ ╠╦╝║║═╬╗╚═╗  │││││  ├─┤││││ │├┬┘│││\n"
                    " ╩ ╩╚═╩╚═╝╚╚═╝  ┴┘└┘└─┘┴ ┴└┴┘└─┘┴└─┴ ┴\n";
+
+    // determine basis of operators to use
+    fundamental_operator_set fops;
+    for (auto const &bl : gf_struct) {
+      for (auto const &a : bl.second) { fops.insert(bl.first, a); }
+    }
+
+    // setup the linear index map
+    std::map<std::pair<int, int>, int> linindex;
+    int block_index = 0;
+    for (auto const &bl : gf_struct) {
+      int inner_index = 0;
+      for (auto const &a : bl.second) {
+        linindex[std::make_pair(block_index, inner_index)] = fops[{bl.first, a}];
+        inner_index++;
+      }
+      block_index++;
+    }
+
+    // Make list of block sizes
+    std::vector<int> n_inner;
+    for (auto const &bl : gf_struct) { n_inner.push_back(bl.second.size()); }
+
+    // ==== Compute Delta from G0_iw ====
+
+    auto G0_iw_inv = map([](gf_const_view<imfreq> x) { return triqs::gfs::inverse(x); }, _G0_iw);
+    auto Delta_iw  = G0_iw_inv;
+
+    for (auto &Delta_iw_bl : Delta_iw)
+      for (auto const &iw : Delta_iw[0].mesh()) Delta_iw_bl[iw] = iw - Delta_iw_bl[iw];
 
     // Assert hermiticity of the given Weiss field
     if (!is_gf_hermitian(G0_iw)) TRIQS_RUNTIME_ERROR << "Please make sure that G0_iw fullfills the hermiticity relation G_ij[iw] = G_ji[-iw]*";
@@ -66,13 +96,16 @@ namespace inchworm {
     // Construct the generic Monte-Carlo solver
     triqs::mc_tools::mc_generic<mc_weight_t> mc(params.random_name, params.random_seed, params.verbosity);
 
+    // test
+    h_diag = {_h_loc, fops, params.quantum_numbers};
+
     // Capture random number generator
     auto &rng = mc.get_rng();
 
     // Create Monte-Carlo configuration
-    qmc_config_t qmc_config{params};
+    qmc_config_t qmc_config{params,h_diag,linindex,_Delta_tau,n_inner};
 
-    mc.add_move(moves::insert{qmc_config, rng}, "simple move");
+    mc.add_move(moves::insert{qmc_config, rng}, "insert move");
 
     // Register all measurements
     if (params.measure_simple) mc.add_measure(measures::simple{params, qmc_config, result_set()}, "simple measure");
