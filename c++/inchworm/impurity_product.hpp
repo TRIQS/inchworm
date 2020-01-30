@@ -29,10 +29,10 @@
 
 //#include <inchworm/solver_core.hpp>
 #include <triqs/gfs.hpp>
-#include <triqs/test_tools/gfs.hpp>
 #include <triqs/hilbert_space/fundamental_operator_set.hpp>
 #include <triqs/atom_diag/atom_diag.hpp>
 #include <triqs/utility/macros.hpp>
+#include <triqs/arrays.hpp>
 
 namespace inchworm {
 
@@ -229,7 +229,7 @@ namespace inchworm {
           //std::cout << "mat:" << matrix<dcomplex>{U[new_bl](dtau)} << "\n";
           //std::cout << "mat:" << new_mat << "\n";
           if (use_bare_U) {
-            auto _ = arrays::range();
+            auto _ = triqs::arrays::range();
             for (int j = 0; j < dim; j++) new_mat(_, j) *= std::exp(-dtau * ad.get_eigenvalue(initial_bl, j)); // Time-evolution
           } else {
             new_mat = matrix<dcomplex>{U[new_bl](dtau)} * new_mat;

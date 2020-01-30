@@ -28,8 +28,8 @@ void compare_both_methods(std::vector<double> &tau1, std::vector<double> &tau2, 
 
   std::sort(tau1.begin(), tau1.end());
   std::sort(tau2.begin(), tau2.end());
- 
-  std::vector<time_and_indices_t> c, cdag;
+
+  std::vector<time_and_index_t> c, cdag;
   for (auto t : tau1) c.push_back({t, 0});
   for (auto t : tau2) cdag.push_back({t, 0});
   time_diagram_t diagram(c, cdag, split_times);
@@ -55,16 +55,15 @@ std::vector<double> generate_random_vector(double beta, int n_tau) {
   return tau;
 }
 
-
 TEST(inchworm, benchmark_both_random) {
   int N         = 20;
   int sp_max    = 4;
-  int order_min = 2; //9;   // order 0 and 1 are special case that fails for now.
+  int order_min = 1; //9;   // order 0 is a special case that fails for now.
   int order_max = 8; //10;  // order 9 and above are quite slow
   double beta   = 1.0;
 
   for (int order = order_min; order <= order_max; order++)
-    for (int sp_number = 1; sp_number < sp_max; sp_number++)
+    for (int sp_number = 0; sp_number < sp_max; sp_number++)
       for (int n = 0; n < N; n++) {
 
         std::vector<double> tau1        = generate_random_vector(beta, order);
@@ -76,11 +75,10 @@ TEST(inchworm, benchmark_both_random) {
 }
 
 /*
- 
 TEST(inchworm, benchmark_both2) {
-  std::vector<double> tau1 = {0.1,   0.2,  0.3, 1.9};
-  std::vector<double> tau2 = {0.05, 0.15, 0.35, 2.0};
-  std::vector<double> split_times = {0.55};
+  std::vector<double> tau1 = {0.1};
+  std::vector<double> tau2 = {0.05};
+  std::vector<double> split_times = {0.04};
   compare_both_methods(tau1, tau2, split_times);
 }
 
@@ -122,7 +120,7 @@ TEST(inchworm, inclusion_exclusion_big_order1) {
   std::sort(tau1.begin(), tau1.end());
   std::sort(tau2.begin(), tau2.end());
 
-  std::vector<time_and_indices_t> c, cdag;
+  std::vector<time_and_index_t> c, cdag;
   for (auto t : tau1) c.push_back({t, 0});
   for (auto t : tau2) cdag.push_back({t, 0});
   time_diagram_t diagram(c, cdag, split_times);
@@ -153,7 +151,7 @@ TEST(inchworm, inclusion_exclusion_huge_order1) {
   std::sort(tau1.begin(), tau1.end());
   std::sort(tau2.begin(), tau2.end());
 
-  std::vector<time_and_indices_t> c, cdag;
+  std::vector<time_and_index_t> c, cdag;
   for (auto t : tau1) c.push_back({t, 0});
   for (auto t : tau2) cdag.push_back({t, 0});
   time_diagram_t diagram(c, cdag, split_times);

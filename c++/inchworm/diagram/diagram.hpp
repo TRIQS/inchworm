@@ -29,12 +29,12 @@
 
 // Degrees of freedom of an creation (annihilation) operator:
 //
-struct time_and_indices_t {
+struct time_and_index_t {
   double tau       = 0.;
   int linear_index = 0; // index as defined in fundamental operators set
 };
 
-inline bool operator<(time_and_indices_t const &t1, time_and_indices_t const &t2) { return (t1.tau < t2.tau); }
+inline bool operator<(time_and_index_t const &t1, time_and_index_t const &t2) { return (t1.tau < t2.tau); }
 
 auto sort_tau = [](auto const &x, auto const &y) { return x.tau < y.tau; };
 
@@ -52,12 +52,12 @@ class time_diagram_t {
   };
 
   public:
-  std::vector<op_t> op_list;                         // list of all operator time ordered
-  std::vector<int> split_points;                     // position of split points
-  std::vector<time_and_indices_t> c_list, cdag_list; // list of c/cdag time ordered
-  std::vector<int> pos_c;                            // position of c in the op_list
-  std::vector<int> pos_cdag;                         // idem
-  bool is_trivial = true; // a diagram is considered trivial if no split_times are found between the minimum and maximum tau.
+  std::vector<op_t> op_list;                       // list of all operator time ordered
+  std::vector<int> split_points;                   // position of split points
+  std::vector<time_and_index_t> c_list, cdag_list; // list of c/cdag time ordered
+  std::vector<int> pos_c;                          // position of c in the op_list
+  std::vector<int> pos_cdag;                       // idem
+  bool is_trivial = true;                          // a diagram is considered trivial if no split_times are found between the minimum and maximum tau.
 
   int perturbation_order() const { return c_list.size(); }
   int size() const { return op_list.size(); }
@@ -65,7 +65,7 @@ class time_diagram_t {
   double min_tau() const { return op_list.front().tau; }
 
   /*
-  bool try_insert_vertices(time_and_indices_t c, time_and_indices_t cdag) {
+  bool try_insert_vertices(time_and_index_t c, time_and_index_t cdag) {
     // check if different times
     for (int i = 0; i < op_list.size() - 1; i++)
       if ((op_list[i].tau == c.tau) or (op_list[i].tau == cdag.tau)) return false;
@@ -87,19 +87,22 @@ class time_diagram_t {
   time_diagram_t() {}
 */
   //
-  time_diagram_t(std::vector<time_and_indices_t> const &c, std::vector<time_and_indices_t> const &cdag, std::vector<double> const &split_times)
+  time_diagram_t(std::vector<time_and_index_t> const &c, std::vector<time_and_index_t> const &cdag, std::vector<double> const &split_times)
      : op_list(2 * c.size()), c_list{c}, cdag_list{cdag} {
-//     reorder();
-//     }
-  
-//  bool reorder_op_list() {
-    EXPECTS(std::is_sorted(c_list.begin(), c_list.end()));
-    EXPECTS(std::is_sorted(cdag_list.begin(), cdag_list.end()));
+    //     reorder();
+    //     }
+
+    //  bool reorder_op_list() {
+    //std::sort(c_list.begin(), c_list.end(), [](auto const &x, auto const &y) { return x.tau < y.tau; });
+    std::sort(cdag_list.begin(), cdag_list.end(), [](auto const &x, auto const &y) { return x.tau < y.tau; });
+
+    //EXPECTS(std::is_sorted(c_list.begin(), c_list.end()));
+    //EXPECTS(std::is_sorted(cdag_list.begin(), cdag_list.end()));
     EXPECTS(c_list.size() == cdag_list.size());
 
     split_points.reserve(split_times.size());
 
-    int order = c.size();
+    int order = c_list.size();
 
     for (int i = 0, j = order; i < order; i++, j++) {
       op_list[i].tau          = c[i].tau;

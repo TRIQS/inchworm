@@ -35,7 +35,7 @@ namespace inchworm {
     int n_tau = 101;
 
     /// Number of Matsubara frequencies
-    int n_iw = 500;
+    int n_iw = 5;
 
     /// Inverse temperature
     double beta;
@@ -70,7 +70,7 @@ namespace inchworm {
 
     /// Partition method
     /// type: str
-    std::string partition_method = "autopartition";
+    std::string partition_method = "quantum_numbers";
 
     /// Quantum numbers
     /// type: list(Operator)

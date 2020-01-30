@@ -1,76 +1,51 @@
-#include "./update.hpp"
+#include "./insert.hpp"
 
 namespace inchworm::moves {
 
   mc_weight_t insert::attempt() {
 
     // Pick up the value of alpha and choose the operators
-    //auto rs1 = rng(block_size), rs2 = rng(block_size);
-
-    int bl1 = rng(qmc_config.n_inner.size());
-    int bl2 = rng(qmc_config.n_inner.size()); //at some point, should be equal to bl1.
-
-    int rs1 = rng(qmc_config.n_inner[bl1]);
-    int rs2 = rng(qmc_config.n_inner[bl2]);
+    int n_fops = qmc_config.h_diag.get_fops().size();
+    int li1    = rng(n_fops);
+    int li2    = rng(n_fops);
 
     // Choice of times for insertion. Find the time as double and them put them on the grid.
-    auto tau1 = qmc_config.tau_seg.get_random_pt(rng);
-    auto tau2 = qmc_config.tau_seg.get_random_pt(rng);
-    // FIXME need to check if any tau is already included in the config.
+    auto tau1 = double(qmc_config.tau_seg.get_random_pt(rng));
+    auto tau2 = double(qmc_config.tau_seg.get_random_pt(rng));
 
-    // record the length of the proposed insertion
-    auto dtau = double(tau2 - tau1);
-    //if (histo_proposed) *histo_proposed << dtau;
+    int N        = qmc_config.size();
+    bool success = false;
+    while (not success) success = qmc_config.insert(tau1, li1, tau2, li2);
 
-    // Computation of det ratio
-    //auto det_ratio = det.try_insert(num_c_dag, num_c, {tau1, op1.inner_index}, {tau2, op2.inner_index});
+    if (qmc_config.use_bare_propagator) {
+      new_w_hyb   = determinant(qmc_config.get_time_diagram());
+      new_U_frame = propagator_product(qmc_config.h_diag, qmc_config.get_time_diagram(), qmc_config.tau_max());
+    } else {
+      std::vector<double> split_times = {qmc_config.tau_split()};
+      new_w_hyb                       = inclusion_exclusion(qmc_config.get_time_diagram(split_times));
+      new_U_frame                     = propagator_product(qmc_config.U_tau, qmc_config.h_diag, qmc_config.get_time_diagram(), qmc_config.tau_max());
+    }
+
+    auto w_hyb_ratio = new_w_hyb / qmc_config.last_accepted_w_hyb;
+
+    // atomic weight
+    new_w_loc        = new_U_frame.frobenius_norm();
+    auto w_loc_ratio = new_w_loc / qmc_config.last_accepted_w_loc;
 
     // proposition probability
-    //mc_weight_t t_ratio = std::pow(block_size * config.beta() / double(det.size() + 1), 2);
-
-    return 0;
+    auto t_ratio = std::pow(qmc_config.tau_max() / (N + 1), 2);
+    return t_ratio * w_loc_ratio * w_hyb_ratio;
   }
 
   mc_weight_t insert::accept() {
-    /*
-    // insert in the tree
-    data.imp_trace.confirm_insert();
 
-    // insert in the configuration
-    config.insert(tau1, op1);
-    config.insert(tau2, op2);
-    config.finalize();
+    qmc_config.last_accepted_w_hyb   = new_w_hyb;
+    qmc_config.last_accepted_w_loc   = new_w_loc;
+    qmc_config.last_accepted_U_frame = new_U_frame;
 
-    // insert in the determinant
-    data.dets[block_index].complete_operation();
-    data.update_sign();
-    data.atomic_weight      = new_atomic_weight;
-    data.atomic_reweighting = new_atomic_reweighting;
-    if (histo_accepted) *histo_accepted << dtau;
-
-#ifdef EXT_DEBUG
-    std::cerr << "* Move move_insert_c_cdag accepted" << std::endl;
-    std::cerr << "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<" << std::endl;
-    check_det_sequence(data.dets[block_index], config.get_id());
-#endif
-
-    return data.current_sign / data.old_sign;
-*/
-    return {};
+    return 1;
   }
 
-  void insert::reject() {
-    /*
-    config.finalize();
-    data.imp_trace.cancel_insert();
-    data.dets[block_index].reject_last_try();
-
-#ifdef EXT_DEBUG
-    std::cerr << "* Move move_insert_c_cdag rejected" << std::endl;
-    std::cerr << "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<" << std::endl;
-    check_det_sequence(data.dets[block_index], config.get_id());
-#endif
-*/
-  }
+  void insert::reject() { qmc_config.erase_last(); }
 
 } // namespace inchworm::moves

@@ -186,8 +186,8 @@ std::vector<set_of_segments_t> combine_segments(std::vector<segment_t> const &se
       }
     }
   }
-  if(not search_disjoint) // if search adjacent erase the single segments (not necessary anymore)
-    set_list.erase(set_list.begin(),set_list.begin()+start_index_list[2]);
+  if (not search_disjoint) // if search adjacent erase the single segments (not necessary anymore)
+    set_list.erase(set_list.begin(), set_list.begin() + start_index_list[2]);
 
   return set_list;
 }
@@ -266,19 +266,18 @@ void calculate_segment(int segment_numero,
 
   for (auto cuts : set_adjacent_list) {
     if (segments_list[segment_numero].pos1 == cuts.pos1)
-      if (segments_list[segment_numero].pos2 == cuts.pos2)
-       {
+      if (segments_list[segment_numero].pos2 == cuts.pos2) {
 
-          hybridization_scalar_t value = 1.0;
+        hybridization_scalar_t value = 1.0;
 
-          for (auto sub_segment_numero : cuts.list) {
-            segment_t seg = segments_list[sub_segment_numero];
-            EXPECTS(seg.calculated);
+        for (auto sub_segment_numero : cuts.list) {
+          segment_t seg = segments_list[sub_segment_numero];
+          EXPECTS(seg.calculated);
 
-            value *= -seg.value_without_cuts;
-          }
-          segments_list[segment_numero].value -= value;
+          value *= -seg.value_without_cuts;
         }
+        segments_list[segment_numero].value -= value;
+      }
   }
   if constexpr (verbose > 1)
     std::printf("   % 15.8f      % 15.8f\n", segments_list[segment_numero].value, segments_list[segment_numero].value_without_cuts);
@@ -291,7 +290,15 @@ void calculate_segment(int segment_numero,
 //
 hybridization_scalar_t inclusion_exclusion(time_diagram_t const &diagram) {
 
-  if (diagram.is_trivial) { return 0.0; }
+  hybridization_matrix hyb_mat(diagram);
+
+  if (diagram.is_trivial) { return 0; } // return 0 or det??
+  if (diagram.perturbation_order() == 1) {
+    if (std::any_of(begin(diagram.split_points), end(diagram.split_points), [](int i) { return i == 1; }))
+      return hyb_mat.det();
+    else
+      return 0.0;
+  };
 
   if constexpr (verbose) {
     std::printf("\n\n##################\nINCLUSION-EXCLUSION:\n");
@@ -314,12 +321,10 @@ hybridization_scalar_t inclusion_exclusion(time_diagram_t const &diagram) {
     std::printf("\n\nlist of set of adjacent segments:\n");
     print_diag(diagram);
     for (auto comb : set_adjacent_list) {
-        print_set(segment_list, comb, diagram);
-        std::printf("\n");
+      print_set(segment_list, comb, diagram);
+      std::printf("\n");
     }
   }
-
-  hybridization_matrix hyb_mat(diagram);
 
   for (int length = smallest_segment; length <= 2 * diagram.perturbation_order(); length += 2) {
     if constexpr (verbose > 1) std::printf("\n############\nsegment length = %d\n", length);
@@ -341,4 +346,9 @@ hybridization_scalar_t inclusion_exclusion(time_diagram_t const &diagram) {
   }
 
   return segment_list.back().value;
+}
+
+hybridization_scalar_t determinant(time_diagram_t const &diagram) {
+  hybridization_matrix hyb_mat(diagram);
+  return hyb_mat.det();
 }

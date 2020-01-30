@@ -20,7 +20,6 @@
  *
  ******************************************************************************/
 #pragma once
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <algorithm>
@@ -30,6 +29,7 @@
 #include <triqs/gfs.hpp>
 #include <triqs/utility/macros.hpp>
 #include <triqs/utility/itertools.hpp>
+
 
 constexpr int verbose = 1;
 
@@ -50,7 +50,7 @@ constexpr bool remove_not_finite = true; // new optimisation 2: do not calculate
 //     p.
 //         a______b
 //
-bool segment_cross_p(int a, int b, int p) { return (a - p) * (b - p) < 0; }
+inline bool segment_cross_p(int a, int b, int p) { return (a - p) * (b - p) < 0; }
 
 // check if two arches cross,
 //  i.e. if one end of one arch arrive in the middle of the other arch.
@@ -67,7 +67,7 @@ bool segment_cross_p(int a, int b, int p) { return (a - p) * (b - p) < 0; }
 //           ___
 //         ________
 //
-bool segment_cross(int a1, int b1, int a2, int b2) { return (a1 - a2) * (b1 - a2) * (b1 - b2) * (a1 - b2) < 0; }
+inline bool segment_cross(int a1, int b1, int a2, int b2) { return (a1 - a2) * (b1 - a2) * (b1 - b2) * (a1 - b2) < 0; }
 
 // check if an arch cross a point,
 //
@@ -79,11 +79,11 @@ bool segment_cross(int a1, int b1, int a2, int b2) { return (a1 - a2) * (b1 - a2
 //     |
 //         ________
 //
-bool segment_cross_point(int a, int b, int point) { return (a - (point + 0.5)) * (b - (point + 0.5)) < 0.0; }
+inline bool segment_cross_point(int a, int b, int point) { return (a - (point + 0.5)) * (b - (point + 0.5)) < 0.0; }
 
 // calculate n!
 //
-int factorial(int n) {
+inline int factorial(int n) {
   if (n > 1)
     return n * factorial(n - 1);
   else

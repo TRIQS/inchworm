@@ -39,6 +39,7 @@ namespace inchworm {
     G_tau    = block_gf<imtime>{{p.beta, Fermion, p.n_tau}, p.gf_struct};
     G_iw     = G0_iw;
     Sigma_iw = G0_iw;
+
   }
 
   // -------------------------------------------------------------------------------
@@ -56,20 +57,12 @@ namespace inchworm {
 
     // determine basis of operators to use
     fundamental_operator_set fops;
+    int n_fops = 0;
     for (auto const &bl : gf_struct) {
-      for (auto const &a : bl.second) { fops.insert(bl.first, a); }
-    }
-
-    // setup the linear index map
-    std::map<std::pair<int, int>, int> linindex;
-    int block_index = 0;
-    for (auto const &bl : gf_struct) {
-      int inner_index = 0;
       for (auto const &a : bl.second) {
-        linindex[std::make_pair(block_index, inner_index)] = fops[{bl.first, a}];
-        inner_index++;
+        fops.insert(bl.first, a);
+        n_fops++;
       }
-      block_index++;
     }
 
     // Make list of block sizes
@@ -96,14 +89,16 @@ namespace inchworm {
     // Construct the generic Monte-Carlo solver
     triqs::mc_tools::mc_generic<mc_weight_t> mc(params.random_name, params.random_seed, params.verbosity);
 
-    // test
+    //
+    if (params.partition_method != "quantum_numbers") TRIQS_RUNTIME_ERROR << "Please use total number for quantum number and use quantum numbers methods for partition of atom_diag";
+    //
     h_diag = {_h_loc, fops, params.quantum_numbers};
 
     // Capture random number generator
     auto &rng = mc.get_rng();
 
     // Create Monte-Carlo configuration
-    qmc_config_t qmc_config{params,h_diag,linindex,_Delta_tau,n_inner};
+    qmc_config_t qmc_config{params, h_diag, _Delta_tau};
 
     mc.add_move(moves::insert{qmc_config, rng}, "insert move");
 

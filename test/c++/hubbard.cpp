@@ -38,7 +38,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   constr_params_t cp;
   cp.beta      = 10.0;
   cp.gf_struct = {{"up", {0}}, {"dn", {0}}};
-  cp.n_tau     = 1;
+  cp.n_tau     = 3;
   cp.n_iw      = 1;
 
   // Set up the Solver
@@ -46,6 +46,10 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   int up = 0, dn = 1;
   S.G0_iw[up](iw_) << 1.0 / (iw_ + mu);
   S.G0_iw[dn](iw_) << 1.0 / (iw_ + mu);
+
+  std::vector<many_body_op_t> qn;
+  qn.resize(1);
+  qn[0] += n("up", 0) + n("dn", 0);
 
   // Solve Parameters
   solve_params_t sp;
@@ -57,6 +61,9 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   sp.verbosity       = 3;
   sp.post_process    = true;
   sp.measure_simple  = true;
+  sp.quantum_numbers = qn;
+
+  //auto U_tau = u_tau_t{{beta, Fermion, n_times}, propagator_struct}; // THE propagator.
 
   // Solve the impurity model
   S.solve(sp);
