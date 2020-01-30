@@ -15,9 +15,10 @@ namespace inchworm {
   /// The Monte-Carlo Configuration Class
   struct qmc_config_t {
 
-    std::vector<time_and_index_t> c_list, cdag_list; // list of c/cdag not time ordered, but different
-    double tau_max_;                                 // similar to beta, but configuration here does not always goes up to beta. 0 < tau_max_ <= beta
-    double tau_split_;                               // should be the tau_max_ of the previous inching.  0 < tau_split_ <= tau_max_
+    std::vector<time_and_index_t> c_list, cdag_list;                             // list of c/cdag not time ordered, but different
+    std::vector<time_and_index_t> last_accepted_c_list, last_accepted_cdag_list; // last accepted list of c/cdag not time ordered, but different
+    double tau_max_;   // similar to beta, but configuration here does not always goes up to beta. 0 < tau_max_ <= beta
+    double tau_split_; // should be the tau_max_ of the previous inching.  0 < tau_split_ <= tau_max_
 
     //configuration config;    // Configuration
     atom_diag const &h_diag; // Diagonalization of the atomic problem
@@ -39,9 +40,9 @@ namespace inchworm {
     double tau_split();
     int size();
 
-    bool insert(double tau, int linear_index, double tau_dag, int linear_index_dag);
-    bool erase(int i, int i_dag);
-    bool erase_last();
+    bool try_insert(double tau, int linear_index, double tau_dag, int linear_index_dag);
+    bool try_erase(int i, int i_dag);
+    void update_lists();
     void clear();
 
     time_diagram_t get_time_diagram(std::vector<double> const &split_times);

@@ -23,7 +23,8 @@
 
 #include "./post_process.hpp"
 #include "./measures/simple.hpp"
-#include "./moves/update.hpp"
+#include "./moves/insert.hpp"
+#include "./moves/remove.hpp"
 
 #include <triqs/utility/callbacks.hpp>
 #include <triqs/mc_tools/mc_generic.hpp>

@@ -17,24 +17,24 @@ namespace inchworm {
   double qmc_config_t::tau_split() { return tau_split_; }
   int qmc_config_t::size() { return c_list.size(); }
 
-  bool qmc_config_t::insert(double tau, int linear_index, double tau_dag, int linear_index_dag) {
+  bool qmc_config_t::try_insert(double tau, int linear_index, double tau_dag, int linear_index_dag) {
+    update_lists();
     for (int i = 0; i < size() - 1; i++)
       if ((c_list[i].tau == tau) or (cdag_list[i].tau == tau_dag)) return false;
     c_list.push_back({tau, linear_index});
     cdag_list.push_back({tau_dag, linear_index_dag});
     return true;
   }
-  bool qmc_config_t::erase(int i, int i_dag) {
+  bool qmc_config_t::try_erase(int i, int i_dag) {
+    update_lists();
     if ((size() <= i) or (size() <= i_dag)) return false;
     c_list.erase(c_list.begin() + i);
     cdag_list.erase(cdag_list.begin() + i_dag);
     return true;
   }
-  bool qmc_config_t::erase_last() {
-    if (size() < 1) return false;
-    c_list.pop_back();
-    cdag_list.pop_back();
-    return true;
+  void qmc_config_t::update_lists() {
+    c_list = last_accepted_c_list;
+    cdag_list = last_accepted_cdag_list;
   }
   void qmc_config_t::clear() {
     c_list.clear();

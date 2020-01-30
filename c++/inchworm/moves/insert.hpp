@@ -10,7 +10,7 @@ namespace inchworm::moves {
   struct insert {
 
     /// The Monte-Carlo configuration
-    qmc_config_t *data;
+    qmc_config_t &data;
 
     /// The random number generator
     triqs::mc_tools::random_generator &rng;

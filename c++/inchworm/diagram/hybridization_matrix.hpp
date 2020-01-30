@@ -27,26 +27,33 @@
 #include <vector>
 #include <numeric>
 
-#include "./diagram.hpp"
+#include "diagram.hpp"
 
-///////////////////////////////////
-////////// PRINT //////////////////
-///////////////////////////////////
+using hybridization_scalar_t = double;
+//using hybridization_function_t = triqs::gfs::gf<triqs::gfs::imtime,triqs::gfs::matrix_real_valued>;
+using triqs::utility::enumerate;
 
-void print_vector(std::vector<int> const &v);
+hybridization_scalar_t hyb_function(hybridization_scalar_t dtau);
 
-// print diagram and its split point above.
-//
-void print_diag(time_diagram_t const &diagram);
+class hybridization_matrix {
 
-void print_configuration(time_diagram_t const &diagram);
+  public:
+  using matrix_t = triqs::arrays::matrix<hybridization_scalar_t>;
 
-// print one line of segments:
-//
-void printLine(std::vector<int> const &segments_vector);
+  matrix_t mat;
+  time_diagram_t diagram;
 
-std::string diagram_string(time_diagram_t const &diagram);
+  /// Constructor
+  hybridization_matrix(time_diagram_t const &diagram);
 
-// print the arch from a to b with different character.
-//
-void printArch(int a, int b, int k_order, char char1 = '.');
+  /// Set the value of adjacent vertex to zero in the matrix. (segment of length 2 optimization)
+  void optimize_inclusion_exclusion();
+
+  /// Return determinant of full matrix
+  hybridization_scalar_t det();
+
+  /// Extract a determinant of sub indices of the matrix
+  hybridization_scalar_t extract_det(std::vector<int> const &list_of_indices) const;
+
+  void print();
+};

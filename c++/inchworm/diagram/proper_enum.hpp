@@ -33,7 +33,7 @@
 #include "diagram.hpp"
 #include "utilities.hpp"
 #include "print.hpp"
-#include "hybridization_function_matrix.hpp"
+#include "hybridization_matrix.hpp"
 
 // find parity of a permutation by evaluating
 // by evaluating the parity of all cycle (or orbits)
