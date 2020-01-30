@@ -58,12 +58,15 @@ class hybridization_matrix {
         //        if(dtau>=0) mat(i,j) = hyb( dtau )( cdag.orb, c.orb );
         //        else mat(i,j) = -hyb( hyb.mesh().domain().beta + dtau )( cdag.orb, c.orb );
       }
+  }
+
+  void optimize_inclusion_exclusion() {
     if (smallest_segment == 4) {
       for (int k = 0; k < diagram.op_list.size() - 1; k++) {
 
         if (std::any_of(begin(diagram.split_points), end(diagram.split_points), [k](int l) { return l == k + 1; })) continue;
 
-        if (not diagram.op_list[k].dag and diagram.op_list[k + 1].dag) { // segment on length 2
+        if (not diagram.op_list[k].dag and diagram.op_list[k + 1].dag) { // segment of length 2
           int it          = diagram.op_list[k + 1].order_index;
           int it_dag      = diagram.op_list[k].order_index;
           mat(it, it_dag) = 0.;
@@ -76,13 +79,7 @@ class hybridization_matrix {
         }
       }
     }
-    if constexpr (verbose>1) {
-      std::printf("\n\nhybrid matrix\n");
-      for (int i = 0; i < diagram.perturbation_order(); i++) {
-        for (int j = 0; j < diagram.perturbation_order(); j++) std::printf("% 5.3f ", mat(i, j));
-        printf("\n");
-      }
-    }
+    if constexpr (verbose > 1) print();
   };
 
   hybridization_scalar_t det() { return determinant(mat); }
@@ -108,5 +105,14 @@ class hybridization_matrix {
     }
 
     return determinant(m);
+  }
+
+  void print() {
+    std::printf("\nhybridization mat: \n");
+    for (int i = 0; i < diagram.perturbation_order(); i++) {
+      for (int j = 0; j < diagram.perturbation_order(); j++) { std::printf("% 2.3f ", mat(i, j)); }
+      std::printf("\n");
+    }
+    std::printf("\ndet: %e\n", det());
   }
 };

@@ -4,7 +4,6 @@
 #include "./util.hpp"
 #include "./diagram/diagram.hpp"
 #include "./impurity_product.hpp"
-#include <triqs/utility/time_pt.hpp>
 #include <triqs/atom_diag/atom_diag.hpp>
 #include <triqs/atom_diag/functions.hpp>
 #include <triqs/utility/serialization.hpp>
@@ -21,7 +20,6 @@ namespace inchworm {
     double tau_split_;                               // should be the tau_max_ of the previous inching.  0 < tau_split_ <= tau_max_
 
     //configuration config;    // Configuration
-    time_segment tau_seg;    // discretized time segment
     atom_diag const &h_diag; // Diagonalization of the atomic problem
     block_gf<imtime> delta;  // Hybridization function
 
@@ -37,39 +35,17 @@ namespace inchworm {
 
     qmc_config_t(params_t const &params, atom_diag const &h_diag, block_gf_const_view<imtime> delta);
 
-    double tau_max() const { return tau_max_; }
-    double tau_split() const { return tau_split_; }
-    int size() const { return c_list.size(); }
+    double tau_max();
+    double tau_split();
+    int size();
 
-    bool insert(double tau, int linear_index, double tau_dag, int linear_index_dag) {
-      for (int i = 0; i < c_list.size() - 1; i++)
-        if ((c_list[i].tau == tau) or (cdag_list[i].tau == tau_dag)) return false;
+    bool insert(double tau, int linear_index, double tau_dag, int linear_index_dag);
+    bool erase(int i, int i_dag);
+    bool erase_last();
+    void clear();
 
-      c_list.push_back({tau, linear_index});
-      cdag_list.push_back({tau_dag, linear_index_dag});
-      return true;
-    }
-    bool erase(int i, int i_dag) {
-      if ((size() <= i) or (size() <= i_dag)) return false;
-      c_list.erase(c_list.begin() + i);
-      cdag_list.erase(cdag_list.begin() + i_dag);
-    }
-    bool erase_last() {
-      if (size() < 1) return false;
-      c_list.pop_back();
-      cdag_list.pop_back();
-      return true;
-    }
-    void clear() {
-      c_list.clear();
-      cdag_list.clear();
-    }
+    time_diagram_t get_time_diagram(std::vector<double> const &split_times);
 
-    time_diagram_t get_time_diagram(std::vector<double> const &split_times) { return time_diagram_t(c_list, cdag_list, split_times); }
-
-    time_diagram_t get_time_diagram() {
-      std::vector<double> split_times{};
-      return time_diagram_t(c_list, cdag_list, split_times);
-    }
+    time_diagram_t get_time_diagram();
   };
 } // namespace inchworm

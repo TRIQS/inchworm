@@ -291,7 +291,7 @@ void calculate_segment(int segment_numero,
 hybridization_scalar_t inclusion_exclusion(time_diagram_t const &diagram) {
 
   hybridization_matrix hyb_mat(diagram);
-
+  hyb_mat.optimize_inclusion_exclusion(); // put some values to zero in hyb matrix (segment of length 2)
   if (diagram.is_trivial) { return 0; } // return 0 or det??
   if (diagram.perturbation_order() == 1) {
     if (std::any_of(begin(diagram.split_points), end(diagram.split_points), [](int i) { return i == 1; }))
@@ -350,5 +350,6 @@ hybridization_scalar_t inclusion_exclusion(time_diagram_t const &diagram) {
 
 hybridization_scalar_t determinant(time_diagram_t const &diagram) {
   hybridization_matrix hyb_mat(diagram);
+  hyb_mat.print();
   return hyb_mat.det();
 }

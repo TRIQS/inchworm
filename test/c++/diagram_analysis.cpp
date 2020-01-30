@@ -34,6 +34,8 @@ void compare_both_methods(std::vector<double> &tau1, std::vector<double> &tau2, 
   for (auto t : tau2) cdag.push_back({t, 0});
   time_diagram_t diagram(c, cdag, split_times);
 
+  hybridization_scalar_t value_det = determinant(diagram);
+
   //int N_proper = find_proper_diagrams(diagram);
   hybridization_scalar_t value_proper = proper_enum(diagram);
   if constexpr (verbose) std::printf("c_k = % 4.6f\n", value_proper);
@@ -53,6 +55,13 @@ std::vector<double> generate_random_vector(double beta, int n_tau) {
   std::vector<double> tau(n_tau);
   std::generate(tau.begin(), tau.end(), [beta]() mutable { return beta * (double)rand() / RAND_MAX; });
   return tau;
+}
+
+TEST(inchworm, benchmark_both2) {
+  std::vector<double> tau1 = {0.1};
+  std::vector<double> tau2 = {0.05};
+  std::vector<double> split_times = {0.04};
+  compare_both_methods(tau1, tau2, split_times);
 }
 
 TEST(inchworm, benchmark_both_random) {
@@ -75,14 +84,6 @@ TEST(inchworm, benchmark_both_random) {
 }
 
 /*
-TEST(inchworm, benchmark_both2) {
-  std::vector<double> tau1 = {0.1};
-  std::vector<double> tau2 = {0.05};
-  std::vector<double> split_times = {0.04};
-  compare_both_methods(tau1, tau2, split_times);
-}
-
-
 TEST(inchworm, benchmark_both3) {
   std::vector<double> tau1        = {0.1, 0.5, 0.6, 0.89, 1.3, 1.45, 1.78, 4.2};
   std::vector<double> tau2        = {0.0, 0.11, 0.51, 1.2, 1.8, 2.2, 2.3, 4.6};

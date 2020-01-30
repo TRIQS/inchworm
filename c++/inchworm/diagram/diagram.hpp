@@ -64,28 +64,6 @@ class time_diagram_t {
   double max_tau() const { return op_list.back().tau; }
   double min_tau() const { return op_list.front().tau; }
 
-  /*
-  bool try_insert_vertices(time_and_index_t c, time_and_index_t cdag) {
-    // check if different times
-    for (int i = 0; i < op_list.size() - 1; i++)
-      if ((op_list[i].tau == c.tau) or (op_list[i].tau == cdag.tau)) return false;
-
-    c_list.push_back({c.tau, c.linear_index});
-    cdag_list.push_back({cdag.tau, cdag.linear_index});
-
-    std::sort(c_list.begin(), c_list.end(), [](auto const &x, auto const &y) { return x.tau < y.tau; });
-    std::sort(cdag_list.begin(), cdag_list.end(), [](auto const &x, auto const &y) { return x.tau < y.tau; });
-
-    reorder();
-    return true;
-  }
-
-  bool try_insert_split_point() {
-     
-  }
-
-  time_diagram_t() {}
-*/
   //
   time_diagram_t(std::vector<time_and_index_t> const &c, std::vector<time_and_index_t> const &cdag, std::vector<double> const &split_times)
      : op_list(2 * c.size()), c_list{c}, cdag_list{cdag} {
@@ -135,7 +113,7 @@ class time_diagram_t {
     //  std::printf("\n");
     //}
 
-    if constexpr (verbose) std::printf("split points:\n");
+    if constexpr (verbose>3) std::printf("split points:\n");
 
     is_trivial = true; //start by assuming it is trivial and searching for at least one counter example.
     for (auto s_time : split_times) {
@@ -146,10 +124,10 @@ class time_diagram_t {
       }
       if (i != 0 and i != op_list.size()) {
         is_trivial = false;
-        if constexpr (verbose) std::printf("diagram is not trivial\n");
+        if constexpr (verbose>3) std::printf("diagram is not trivial\n");
       }
       split_points.push_back(i);
-      if constexpr (verbose) std::printf("%d  % 4.3f\n", i, s_time);
+      if constexpr (verbose>3) std::printf("%d  % 4.3f\n", i, s_time);
     }
 
     // posc[i] is the position of the i^th c in op_list (inverse table of order_index)
