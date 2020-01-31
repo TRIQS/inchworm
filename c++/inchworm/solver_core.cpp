@@ -42,6 +42,7 @@ namespace inchworm {
     G_iw     = G0_iw;
     Sigma_iw = G0_iw;
 
+    std::printf("Finishing initilization of solver_core.\n");
   }
 
   // -------------------------------------------------------------------------------
@@ -65,6 +66,19 @@ namespace inchworm {
         fops.insert(bl.first, a);
         n_fops++;
       }
+    }
+
+    // setup the linear index map
+    std::map<std::pair<int, int>, int> linindex;
+    int block_index = 0;
+    for (auto const &bl : gf_struct) {
+      int inner_index = 0;
+      for (auto const &a : bl.second) {
+        printf("salut: %d\n", fops[{bl.first, a}]);
+        linindex[std::make_pair(block_index, inner_index)] = fops[{bl.first, a}];
+        inner_index++;
+      }
+      block_index++;
     }
 
     // Make list of block sizes
@@ -92,7 +106,8 @@ namespace inchworm {
     triqs::mc_tools::mc_generic<mc_weight_t> mc(params.random_name, params.random_seed, params.verbosity);
 
     //
-    if (params.partition_method != "quantum_numbers") TRIQS_RUNTIME_ERROR << "Please use total number for quantum number and use quantum numbers methods for partition of atom_diag";
+    if (params.partition_method != "quantum_numbers")
+      TRIQS_RUNTIME_ERROR << "Please use total number for quantum number and use quantum numbers methods for partition of atom_diag";
     //
     h_diag = {_h_loc, fops, params.quantum_numbers};
 
@@ -106,7 +121,7 @@ namespace inchworm {
     mc.add_move(moves::remove{qmc_config, rng}, "remove move");
 
     // Register all measurements
-    mc.add_measure(measures::U_frame{params, qmc_config, result_set()}, "propagator measurement"); // we have to measure this (not a choice)
+    //mc.add_measure(measures::U_frame{params, qmc_config, result_set()}, "propagator measurement"); // we have to measure this (not a choice)
     if (params.measure_sign) mc.add_measure(measures::sign{params, qmc_config, result_set()}, "sign measurement");
 
     // Perform QMC run and collect results

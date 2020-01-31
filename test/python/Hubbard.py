@@ -59,7 +59,7 @@ class test_hubbard(unittest.TestCase):
     sp["max_time"] = -1
     sp["verbosity"] = 3
     sp["post_process"] = True
-    sp["measure_simple"] = True
+    sp["measure_sign"] = True
 
     # Solve the impurity model
     S.solve(**sp)

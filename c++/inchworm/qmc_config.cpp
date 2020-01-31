@@ -35,11 +35,11 @@ namespace inchworm {
     return true;
   }
   void qmc_config_t::update_lists() {
-    c_list = last_accepted_c_list;
+    c_list    = last_accepted_c_list;
     cdag_list = last_accepted_cdag_list;
   }
   void qmc_config_t::update_accepted_lists() {
-    last_accepted_c_list = c_list;
+    last_accepted_c_list    = c_list;
     last_accepted_cdag_list = cdag_list;
   }
   void qmc_config_t::clear() {
@@ -53,4 +53,7 @@ namespace inchworm {
     std::vector<double> split_times{};
     return time_diagram_t(c_list, cdag_list, split_times);
   }
+
+  //hyb_scalar_t qmc_config_t::hyb_fct() { return 1; }
+
 } // namespace inchworm

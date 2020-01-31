@@ -25,7 +25,7 @@ namespace inchworm::moves {
     void reject();
 
     /// w_hyb of proposed remove
-    hybridization_scalar_t new_w_hyb = 1.0;
+    hyb_scalar_t new_w_hyb = 1.0;
 
     /// w_loc of proposed remove
     double new_w_loc = 1.0;

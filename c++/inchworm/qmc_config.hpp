@@ -54,7 +54,7 @@ struct qmc_config_t {
     void clear();
 
     time_diagram_t get_time_diagram(std::vector<double> const &split_times);
-
     time_diagram_t get_time_diagram();
+    //hyb_scalar_t hyb_fct();
   };
 } // namespace inchworm

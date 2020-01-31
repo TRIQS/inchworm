@@ -29,31 +29,31 @@
 
 #include "diagram.hpp"
 
-using hybridization_scalar_t = double;
+using hyb_scalar_t = double;
 //using hybridization_function_t = triqs::gfs::gf<triqs::gfs::imtime,triqs::gfs::matrix_real_valued>;
 using triqs::utility::enumerate;
 
-//hybridization_scalar_t hyb_function(hybridization_scalar_t dtau);
+//hyb_scalar_t hyb_function(hyb_scalar_t dtau);
 
 class hybridization_matrix {
 
   public:
-  using matrix_t = triqs::arrays::matrix<hybridization_scalar_t>;
+  using matrix_t = triqs::arrays::matrix<hyb_scalar_t>;
 
   matrix_t mat;
   time_diagram_t diagram;
 
   /// Constructor
-  hybridization_matrix(time_diagram_t const &diagram, std::function<hybridization_scalar_t(double)>);
+  hybridization_matrix(time_diagram_t const &diagram, std::function<hyb_scalar_t(double)>);
 
   /// Set the value of adjacent vertex to zero in the matrix. (segment of length 2 optimization)
   void optimize_inclusion_exclusion();
 
   /// Return determinant of full matrix
-  hybridization_scalar_t det();
+  hyb_scalar_t det();
 
   /// Extract a determinant of sub indices of the matrix
-  hybridization_scalar_t extract_det(std::vector<int> const &list_of_indices) const;
+  hyb_scalar_t extract_det(std::vector<int> const &list_of_indices) const;
 
   void print();
 };

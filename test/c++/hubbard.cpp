@@ -63,8 +63,6 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   sp.measure_sign    = true;
   sp.quantum_numbers = qn;
 
-  //auto U_tau = u_tau_t{{beta, Fermion, n_times}, propagator_struct}; // THE propagator.
-
   // Solve the impurity model
   S.solve(sp);
 

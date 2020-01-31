@@ -22,11 +22,12 @@
 #include "hybridization_matrix.hpp"
 #include <iomanip>
 
-//hybridization_scalar_t hyb_function(hybridization_scalar_t dtau) { // to be changed in the future
-//  return (1.0/(0.1*dtau-0.5) );
+//hyb_scalar_t hyb_function(hyb_scalar_t dtau) { // to be changed in the future
+//  return (1.0 / (0.1 * dtau - 0.5));
 //}
 
-hybridization_matrix::hybridization_matrix(time_diagram_t const &diagram, std::function<hybridization_scalar_t(double)> hyb_function)
+hybridization_matrix::hybridization_matrix(time_diagram_t const &diagram, std::function<hyb_scalar_t(double)> hyb_function)
+//hybridization_matrix::hybridization_matrix(time_diagram_t const &diagram)
    : mat(diagram.perturbation_order(), diagram.perturbation_order()), diagram{diagram} {
 
   for (auto [i, c] : enumerate(diagram.c_list))
@@ -40,6 +41,23 @@ hybridization_matrix::hybridization_matrix(time_diagram_t const &diagram, std::f
       //        else mat(i,j) = -hyb( hyb.mesh().domain().beta + dtau )( cdag.orb, c.orb );
     }
 }
+
+/*
+hybridization_matrix::hybridization_matrix(time_diagram_t const &diagram, std::function<hyb_scalar_t(double, int, int)> hyb_function_in)
+   : mat(diagram.perturbation_order(), diagram.perturbation_order()), diagram{diagram} {
+
+  for (auto [i, c] : enumerate(diagram.c_list))
+    for (auto [j, cdag] : enumerate(diagram.cdag_list)) {
+
+      double dtau = cdag.tau - c.tau;
+      //mat(i, j)   = hyb_function(dtau);
+      if (dtau >= 0)
+        mat(i, j) = hyb_function_in(dtau)(cdag.linear_index, c.linear_index);
+      else
+        mat(i, j) = -hyb_function_in(hyb.mesh().domain().beta + dtau)(cdag.linear_index, c.linear_index);
+    }
+}
+*/
 
 void hybridization_matrix::optimize_inclusion_exclusion() {
   if (smallest_segment == 4) {
@@ -63,9 +81,9 @@ void hybridization_matrix::optimize_inclusion_exclusion() {
   if constexpr (verbose > 1) print();
 }
 
-hybridization_scalar_t hybridization_matrix::det() { return determinant(mat); }
+hyb_scalar_t hybridization_matrix::det() { return determinant(mat); }
 
-hybridization_scalar_t hybridization_matrix::extract_det(std::vector<int> const &list_of_indices) const {
+hyb_scalar_t hybridization_matrix::extract_det(std::vector<int> const &list_of_indices) const {
 
   int N = list_of_indices.size() / 2;
   EXPECTS(list_of_indices.size() % 2 == 0);
@@ -97,5 +115,3 @@ void hybridization_matrix::print() {
   std::cout << std::setprecision(10) << mat;
   std::printf("\ndet: %e\n", det());
 }
-
-

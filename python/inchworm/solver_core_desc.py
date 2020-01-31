@@ -106,7 +106,7 @@ c.add_method("""void solve (**inchworm::solve_params_t)""",
 +-----------------+--------------------------------------+-----------------------------------------+--------------------------------------------------+
 | verbosity       | int                                  | mpi::communicator().rank()==0?3:0       | Verbosity                                        |
 +-----------------+--------------------------------------+-----------------------------------------+--------------------------------------------------+
-| measure_simple  | bool                                 | true                                    | Measure the MC sign                              |
+| measure_sign  | bool                                 | true                                    | Measure the MC sign                              |
 +-----------------+--------------------------------------+-----------------------------------------+--------------------------------------------------+
 | post_process    | bool                                 | true                                    | Perform post processing                          |
 +-----------------+--------------------------------------+-----------------------------------------+--------------------------------------------------+
@@ -168,7 +168,7 @@ c.add_member(c_name = "verbosity",
              initializer = """ mpi::communicator().rank()==0?3:0 """,
              doc = r"""Verbosity""")
 
-c.add_member(c_name = "measure_simple",
+c.add_member(c_name = "measure_sign",
              c_type = "bool",
              initializer = """ true """,
              doc = r"""Measure the MC sign""")

@@ -153,7 +153,7 @@ bool test_diagram_connection(const std::vector<int> &permutation, time_diagram_t
 // for a given diagram definition. We can use the function
 // "test_diagram_connection" to define if a diagram is proper or not.
 //
-hybridization_scalar_t proper_enum(time_diagram_t const &diagram, std::function<hybridization_scalar_t(double)> hyb_function) {
+hyb_scalar_t proper_enum(time_diagram_t const &diagram, std::function<hyb_scalar_t(double)> hyb_function) {
 
   if constexpr (verbose) std::printf("\n\n##################\nPROPER-ENUMERATION:\n");
   auto hyb_mat     = hybridization_matrix{diagram, hyb_function};
@@ -162,7 +162,7 @@ hybridization_scalar_t proper_enum(time_diagram_t const &diagram, std::function<
   for (int i = 0; i < diagram.perturbation_order(); i++) permutation[i] = i;
 
   int NN = 0, N_proper = 0;
-  hybridization_scalar_t total_value = 0.0, value = 1.0;
+  hyb_scalar_t total_value = 0.0, value = 1.0;
   do {
     NN += 1;
     int parity = find_parity(permutation);

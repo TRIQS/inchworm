@@ -201,7 +201,7 @@ void calculate_segment(int segment_numero,
         and ((segments_list[segment_numero].pos1 == subs.pos1) and (segments_list[segment_numero].pos2 == subs.pos2)))
       continue; // this is tricky, might have to change this at some point
 
-    hybridization_scalar_t value = 1.0;
+    hyb_scalar_t value = 1.0;
     std::vector<int> range_of_subvertex(range_of_vertex);
     int sign_of_parcollet_charlebois = 1;
     bool is_finite                   = true;
@@ -227,7 +227,7 @@ void calculate_segment(int segment_numero,
     } // avoid determinant calculation.
 
     if (range_of_subvertex.size() > 0) {
-      hybridization_scalar_t det1 = hyb_mat.extract_det(range_of_subvertex);
+      hyb_scalar_t det1 = hyb_mat.extract_det(range_of_subvertex);
       value *= sign_of_parcollet_charlebois * det1;
     }
     segments_list[segment_numero].value += value;
@@ -239,7 +239,7 @@ void calculate_segment(int segment_numero,
     if (segments_list[segment_numero].pos1 == cuts.pos1)
       if (segments_list[segment_numero].pos2 == cuts.pos2) {
 
-        hybridization_scalar_t value = 1.0;
+        hyb_scalar_t value = 1.0;
 
         for (auto sub_segment_numero : cuts.list) {
           segment_t seg = segments_list[sub_segment_numero];
@@ -259,7 +259,7 @@ void calculate_segment(int segment_numero,
 // them into two lists: one fully disjoint (except for split points)
 // and another fully adjacent.
 //
-hybridization_scalar_t inclusion_exclusion(time_diagram_t const &diagram, std::function<hybridization_scalar_t(double)> hyb_function) {
+hyb_scalar_t inclusion_exclusion(time_diagram_t const &diagram, std::function<hyb_scalar_t(double)> hyb_function) {
 
   hybridization_matrix hyb_mat(diagram,hyb_function);
   hyb_mat.optimize_inclusion_exclusion(); // put some values to zero in hyb matrix (segment of length 2)
@@ -319,7 +319,7 @@ hybridization_scalar_t inclusion_exclusion(time_diagram_t const &diagram, std::f
   return segment_list.back().value;
 }
 
-hybridization_scalar_t determinant(time_diagram_t const &diagram, std::function<hybridization_scalar_t(double)> hyb_function) {
+hyb_scalar_t determinant(time_diagram_t const &diagram, std::function<hyb_scalar_t(double)> hyb_function) {
   hybridization_matrix hyb_mat(diagram,hyb_function);
   //hyb_mat.print();
   return hyb_mat.det();
