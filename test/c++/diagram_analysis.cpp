@@ -38,13 +38,13 @@ void compare_both_methods(std::vector<double> &tau1, std::vector<double> &tau2, 
 
   //int N_proper = find_proper_diagrams(diagram);
   hybridization_scalar_t value_proper = proper_enum(diagram);
-  if constexpr (verbose) std::printf("c_k = % 4.6f\n", value_proper);
+  if constexpr (verbose) std::printf("c_k = % 4.6e\n", value_proper);
 
   hybridization_scalar_t value_inclus = inclusion_exclusion(diagram);
-  if constexpr (verbose) std::printf("c_k = % 4.6f\n\n\n", value_inclus);
+  if constexpr (verbose) std::printf("c_k = % 4.6e\n\n\n", value_inclus);
 
-  if constexpr (verbose) std::printf("proper-enum         c_k = % 4.6f\n", value_proper);
-  if constexpr (verbose) std::printf("inclusion-exclusion c_k = % 4.6f\n\n", value_inclus);
+  if constexpr (verbose) std::printf("proper-enum         c_k = % 4.6e\n", value_proper);
+  if constexpr (verbose) std::printf("inclusion-exclusion c_k = % 4.6e\n\n", value_inclus);
 
   EXPECT_NEAR(value_proper, value_inclus,
               std::max(1e-8, std::abs(1e-8 * value_proper))); //note: according to my random tests, 1e-9 was too strick in some extreme cases

@@ -4,11 +4,11 @@
 
 namespace inchworm::measures {
 
-  /// A simple measurement
-  struct simple {
+  /// U_frame measurement
+  struct U_frame {
 
     // Constructor
-    simple(params_t const &params, qmc_config_t const &qmc_config_, container_set &results);
+    sign(params_t const &params, qmc_config_t const &qmc_config_);
 
     // Invoke a single measurement
     void accumulate(mc_weight_t sign);
@@ -19,6 +19,9 @@ namespace inchworm::measures {
     private:
     // The Monte-Carlo configuration
     qmc_config_t const &qmc_config;
+
+    mc_weight_t average_sign_; 
+    propagator_frame U_frame_;
   };
 
 } // namespace inchworm::measures

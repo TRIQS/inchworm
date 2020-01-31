@@ -22,7 +22,8 @@
 #include "./solver_core.hpp"
 
 #include "./post_process.hpp"
-#include "./measures/simple.hpp"
+#include "./measures/sign.hpp"
+#include "./measures/U_frame.hpp"
 #include "./moves/insert.hpp"
 #include "./moves/remove.hpp"
 
@@ -102,9 +103,11 @@ namespace inchworm {
     qmc_config_t qmc_config{params, h_diag, _Delta_tau};
 
     mc.add_move(moves::insert{qmc_config, rng}, "insert move");
+    mc.add_move(moves::remove{qmc_config, rng}, "remove move");
 
     // Register all measurements
-    if (params.measure_simple) mc.add_measure(measures::simple{params, qmc_config, result_set()}, "simple measure");
+    mc.add_measure(measures::U_frame{params, qmc_config}, "propagator measurement"); // we have to measure this (not a choice)
+    if (params.measure_sign) mc.add_measure(measures::sign{params, qmc_config}, "sign measurement");
 
     // Perform QMC run and collect results
     mc.warmup_and_accumulate(params.n_warmup_cycles, params.n_cycles, params.length_cycle, triqs::utility::clock_callback(params.max_time));

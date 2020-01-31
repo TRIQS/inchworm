@@ -15,19 +15,19 @@ namespace inchworm::moves {
     /// The random number generator
     triqs::mc_tools::random_generator &rng;
 
-    /// Attempt vertex insertion
+    /// Attempt vertex removing
     mc_weight_t attempt();
 
-    /// Accept vertex insertion
+    /// Accept vertex removing
     mc_weight_t accept();
 
-    /// Reject vertex insertion
+    /// Reject vertex removing
     void reject();
 
-    /// w_hyb of proposed insert
+    /// w_hyb of proposed remove
     hybridization_scalar_t new_w_hyb = 1.0;
 
-    /// w_loc of proposed insert
+    /// w_loc of proposed remove
     double new_w_loc = 1.0;
   };
 

@@ -19,6 +19,7 @@ namespace inchworm {
 
   bool qmc_config_t::try_insert(double tau, int linear_index, double tau_dag, int linear_index_dag) {
     update_lists();
+    //std::printf("try_erase? %d   %2.4f %d  %2.4f %d \n", size(),  tau, linear_index, tau_dag, linear_index_dag);
     for (int i = 0; i < size() - 1; i++)
       if ((c_list[i].tau == tau) or (cdag_list[i].tau == tau_dag)) return false;
     c_list.push_back({tau, linear_index});
@@ -27,6 +28,7 @@ namespace inchworm {
   }
   bool qmc_config_t::try_erase(int i, int i_dag) {
     update_lists();
+    //std::printf("try_erase? %d   %d %d \n", size(), i, i_dag);
     if ((size() <= i) or (size() <= i_dag)) return false;
     c_list.erase(c_list.begin() + i);
     cdag_list.erase(cdag_list.begin() + i_dag);
@@ -35,6 +37,10 @@ namespace inchworm {
   void qmc_config_t::update_lists() {
     c_list = last_accepted_c_list;
     cdag_list = last_accepted_cdag_list;
+  }
+  void qmc_config_t::update_accepted_lists() {
+    last_accepted_c_list = c_list;
+    last_accepted_cdag_list = cdag_list;
   }
   void qmc_config_t::clear() {
     c_list.clear();

@@ -321,6 +321,6 @@ hybridization_scalar_t inclusion_exclusion(time_diagram_t const &diagram) {
 
 hybridization_scalar_t determinant(time_diagram_t const &diagram) {
   hybridization_matrix hyb_mat(diagram);
-  hyb_mat.print();
+  //hyb_mat.print();
   return hyb_mat.det();
 }

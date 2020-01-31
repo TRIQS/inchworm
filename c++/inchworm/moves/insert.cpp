@@ -4,6 +4,8 @@
 namespace inchworm::moves {
 
   mc_weight_t insert::attempt() {
+
+    //print_diag(data.get_time_diagram());
     int n_fops = (data.h_diag.get_fops()).size();
     int li1    = rng(n_fops);
     int li2    = rng(n_fops);
@@ -14,12 +16,14 @@ namespace inchworm::moves {
       double tau1 = rng(data.tau_max());
       double tau2 = rng(data.tau_max());
       success     = data.try_insert(tau1, li1, tau2, li2);
+      //std::printf("success? %d \n", success);
     }
     int N = data.size();
 
+    //std::printf("\ninserting:");
     if (data.use_bare_propagator) {
       auto diagram = data.get_time_diagram();
-      print_configuration(diagram);
+      //print_configuration(diagram);
       new_w_hyb        = determinant(diagram);
       auto new_U_frame = propagator_product(data.h_diag, diagram, data.tau_max());
       new_w_loc        = new_U_frame.frobenius_norm();
@@ -32,14 +36,12 @@ namespace inchworm::moves {
       new_w_loc = new_U_frame.frobenius_norm();
     }
 
-    if (std::abs(new_w_hyb) < 1e-10) exit(0);
-
     auto w_hyb_ratio = new_w_hyb / data.last_accepted_w_hyb;
     auto w_loc_ratio = new_w_loc / data.last_accepted_w_loc;
     auto t_ratio     = std::pow(data.tau_max() / (N + 1), 2);
 
     //printf("salut0:  %f  \n", t_ratio * w_loc_ratio * w_hyb_ratio);
-    if (verbose > 1) {
+    if (false) {
       printf("new_w_hyb, new_w_loc, last_w_hyb, last_w_loc, t_ratio:  %f %f   %f %f   %f\n", new_w_hyb, new_w_loc, data.last_accepted_w_hyb,
              data.last_accepted_w_loc, t_ratio);
       fflush(stdout);
@@ -48,16 +50,15 @@ namespace inchworm::moves {
   }
 
   mc_weight_t insert::accept() {
-
-    data.last_accepted_w_hyb     = new_w_hyb;
-    data.last_accepted_w_loc     = new_w_loc;
-    data.last_accepted_c_list    = data.c_list;
-    data.last_accepted_cdag_list = data.cdag_list;
-    //data.last_accepted_U_frame = new_U_frame;
+    std::printf("yes\n");
+    print_configuration(data.get_time_diagram());
+    data.last_accepted_w_hyb = new_w_hyb;
+    data.last_accepted_w_loc = new_w_loc;
+    data.update_accepted_lists();
 
     return 1;
   }
 
-  void insert::reject() { }
+  void insert::reject() {}
 
 } // namespace inchworm::moves

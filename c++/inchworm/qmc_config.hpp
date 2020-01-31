@@ -10,8 +10,11 @@
 #include <triqs/det_manip.hpp>
 
 namespace inchworm {
-  using triqs::utility::time_segment;
+  //using triqs::utility::time_segment;
 
+  struct result_frame { //will be used in futur 
+    double sign;
+  };
   /// The Monte-Carlo Configuration Class
   struct qmc_config_t {
 
@@ -24,11 +27,14 @@ namespace inchworm {
     atom_diag const &h_diag; // Diagonalization of the atomic problem
     block_gf<imtime> delta;  // Hybridization function
 
-    int current_sign, old_sign;     // Permutation prefactor
+    //results
+    mc_weight_t sign;   
+    u_tau_t U_tau; // THE propagator
+   
+
     h_scalar_t last_accepted_w_loc; // atomic weight (Frobenius norm of the current propagator frame)
     h_scalar_t last_accepted_w_hyb; // value of the determinant in cthyb or its equivalent for the inchworm
     propagator_frame last_accepted_U_frame;
-    u_tau_t U_tau; // THE propagator
 
     bool use_bare_propagator; //true only for the first iteration of the inchworm calculation
 
@@ -43,6 +49,7 @@ namespace inchworm {
     bool try_insert(double tau, int linear_index, double tau_dag, int linear_index_dag);
     bool try_erase(int i, int i_dag);
     void update_lists();
+    void update_accepted_lists();
     void clear();
 
     time_diagram_t get_time_diagram(std::vector<double> const &split_times);

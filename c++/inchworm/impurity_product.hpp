@@ -42,6 +42,7 @@ namespace inchworm {
    * @return The gf_struct necessary to call u_tau_t.
    */
   triqs::hilbert_space::gf_struct_t find_propagator_struct(atom_diag const &ad);
+
   struct propagator_frame {
     std::vector<matrix<dcomplex>> matrices; // The different matrices of the blocks.
     int acc_number;                         // Number of sample accumlated here
@@ -60,7 +61,7 @@ namespace inchworm {
     }
 
     void assign(int bl, matrix<dcomplex> mat);
-   
+
     // Set the values to zero
     void reset();
 

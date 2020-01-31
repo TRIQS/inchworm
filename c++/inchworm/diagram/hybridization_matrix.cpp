@@ -20,9 +20,11 @@
  *
  ******************************************************************************/
 #include "hybridization_matrix.hpp"
+#include <iomanip>
 
 hybridization_scalar_t hyb_function(hybridization_scalar_t dtau) { // to be changed in the future
-  return (2.2 + dtau + 0.7 * dtau * dtau + 0.1 * dtau * dtau * dtau);
+  return (1.0/(0.1*dtau-0.5) );
+  //return (2.2 + dtau + 0.7 * dtau * dtau + 0.1 * dtau * dtau * dtau +0.01 * dtau * dtau * dtau * dtau);
 }
 
 hybridization_matrix::hybridization_matrix(time_diagram_t const &diagram)
@@ -93,6 +95,7 @@ void hybridization_matrix::print() {
     for (int j = 0; j < diagram.perturbation_order(); j++) { std::printf("% 2.3f ", mat(i, j)); }
     std::printf("\n");
   }
+  std::cout << std::setprecision(10) << mat;
   std::printf("\ndet: %e\n", det());
 }
 

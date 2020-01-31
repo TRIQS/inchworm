@@ -134,6 +134,7 @@ namespace inchworm {
                                       bool use_bare_U) {
 
     if (not use_bare_U) {
+      EXPECTS(false);
       EXPECTS(U.size() == ad.n_subspaces()); //??? this test does not seems to work????
     }
     //auto fs = ad.get_fock_states();
@@ -141,9 +142,19 @@ namespace inchworm {
     propagator_frame U_frame(ad);
 
     for (int initial_bl = 0; initial_bl < ad.n_subspaces(); initial_bl++) {
-      int dim = ad.get_subspace_dim(initial_bl);
+      int dim                  = ad.get_subspace_dim(initial_bl);
+      int new_bl               = initial_bl;
+      matrix<dcomplex> new_mat = matrix<dcomplex>(dim, dim);
+      new_mat                  = 0;
 
-      int new_bl = initial_bl;
+      //std::printf("bl %d \n", initial_bl);
+      if (diagram.size() == 0) { // if order is zero, use bare propagator and skip the rest of the function
+        for (int j = 0; j < dim; j++) {
+          new_mat(j, j) = std::exp(-(0-tau) * ad.get_eigenvalue(initial_bl, j));
+        }
+        U_frame.assign(new_bl, new_mat);
+        continue;
+      }
 
       for (int i = diagram.size() - 1; i >= 0; i--) {
         //std::printf("i %d \n", i);
@@ -156,8 +167,6 @@ namespace inchworm {
       }
       //std::printf("bloc: %d, goes to: %d \n", initial_bl, new_bl);
 
-      matrix<dcomplex> new_mat = matrix<dcomplex>(dim, dim);
-      new_mat                  = 0;
       if (new_bl != -1) {
         new_bl = initial_bl;
 
@@ -209,7 +218,7 @@ namespace inchworm {
     }
     //std::cout << "U_frame_end\n" << U_frame << "\n\n";
     return U_frame;
-  }
+  } // namespace inchworm
 
   /// If the user do not provide the propagator, use bare propagator instead.
   propagator_frame propagator_product(triqs::atom_diag::atom_diag<false> const &ad, time_diagram_t const &diagram, double tau) {
