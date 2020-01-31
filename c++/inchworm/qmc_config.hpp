@@ -16,7 +16,7 @@ namespace inchworm {
     double sign;
   };
   /// The Monte-Carlo Configuration Class
-  struct qmc_config_t {
+struct qmc_config_t {
 
     std::vector<time_and_index_t> c_list, cdag_list;                             // list of c/cdag not time ordered, but different
     std::vector<time_and_index_t> last_accepted_c_list, last_accepted_cdag_list; // last accepted list of c/cdag not time ordered, but different
@@ -28,8 +28,9 @@ namespace inchworm {
     block_gf<imtime> delta;  // Hybridization function
 
     //results
-    mc_weight_t sign;   
+    //mc_weight_t sign;   
     u_tau_t U_tau; // THE propagator
+    int inch_step;
    
 
     h_scalar_t last_accepted_w_loc; // atomic weight (Frobenius norm of the current propagator frame)

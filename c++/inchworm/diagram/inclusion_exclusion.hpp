@@ -104,6 +104,6 @@ void calculate_segment(int segment_numero,
 // them into two lists: one fully disjoint (except for split points)
 // and another fully adjacent.
 //
-hybridization_scalar_t inclusion_exclusion(time_diagram_t const &diagram);
+hybridization_scalar_t inclusion_exclusion(time_diagram_t const &diagram, std::function<hybridization_scalar_t(double)>);
 
-hybridization_scalar_t determinant(time_diagram_t const &diagram);
+hybridization_scalar_t determinant(time_diagram_t const &diagram, std::function<hybridization_scalar_t(double)>);

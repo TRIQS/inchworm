@@ -60,7 +60,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   sp.max_time        = -1;
   sp.verbosity       = 3;
   sp.post_process    = true;
-  sp.measure_simple  = true;
+  sp.measure_sign    = true;
   sp.quantum_numbers = qn;
 
   //auto U_tau = u_tau_t{{beta, Fermion, n_times}, propagator_struct}; // THE propagator.

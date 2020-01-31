@@ -33,7 +33,7 @@ using hybridization_scalar_t = double;
 //using hybridization_function_t = triqs::gfs::gf<triqs::gfs::imtime,triqs::gfs::matrix_real_valued>;
 using triqs::utility::enumerate;
 
-hybridization_scalar_t hyb_function(hybridization_scalar_t dtau);
+//hybridization_scalar_t hyb_function(hybridization_scalar_t dtau);
 
 class hybridization_matrix {
 
@@ -44,7 +44,7 @@ class hybridization_matrix {
   time_diagram_t diagram;
 
   /// Constructor
-  hybridization_matrix(time_diagram_t const &diagram);
+  hybridization_matrix(time_diagram_t const &diagram, std::function<hybridization_scalar_t(double)>);
 
   /// Set the value of adjacent vertex to zero in the matrix. (segment of length 2 optimization)
   void optimize_inclusion_exclusion();

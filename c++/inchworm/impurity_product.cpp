@@ -100,11 +100,11 @@ namespace inchworm {
 
   void assign_frame_to_propagator(u_tau_t &U, propagator_frame const &U_frame, int frame) {
     if (U_frame.acc_number < 1) {
-      std::printf("error: acc_number = 0.");
+      std::printf("error: acc_number = 0.\n");
       exit(1);
     }
     if (U_frame.matrices.size() != U.size()) {
-      std::printf("error: different sizes.");
+      std::printf("assignment error: different sizes.\n");
       exit(1);
     }
 

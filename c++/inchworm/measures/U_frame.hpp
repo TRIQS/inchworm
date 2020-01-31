@@ -8,7 +8,7 @@ namespace inchworm::measures {
   struct U_frame {
 
     // Constructor
-    sign(params_t const &params, qmc_config_t const &qmc_config_);
+    U_frame(params_t const &params, qmc_config_t const &qmc_config_, container_set &results_);
 
     // Invoke a single measurement
     void accumulate(mc_weight_t sign);
@@ -19,6 +19,7 @@ namespace inchworm::measures {
     private:
     // The Monte-Carlo configuration
     qmc_config_t const &qmc_config;
+    container_set &results;
 
     mc_weight_t average_sign_; 
     propagator_frame U_frame_;

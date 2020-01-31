@@ -103,7 +103,7 @@ namespace inchworm {
     // ----------- Measurements -----------
 
     /// Measure the MC sign
-    bool measure_simple = true;
+    bool measure_sign = true;
 
     /// Perform post processing
     bool post_process = true;

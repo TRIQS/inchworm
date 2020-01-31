@@ -60,6 +60,13 @@ namespace inchworm {
       return *this;
     }
 
+    // Function to add them, and accumulate.
+    propagator_frame &operator+(propagator_frame U_frame) {
+      for (int bl = 0; bl < matrices.size(); bl++) matrices[bl] += U_frame.matrices[bl];
+      acc_number++;
+      return *this;
+    }
+
     void assign(int bl, matrix<dcomplex> mat);
 
     // Set the values to zero

@@ -34,13 +34,15 @@ void compare_both_methods(std::vector<double> &tau1, std::vector<double> &tau2, 
   for (auto t : tau2) cdag.push_back({t, 0});
   time_diagram_t diagram(c, cdag, split_times);
 
-  hybridization_scalar_t value_det = determinant(diagram);
+  std::function<hybridization_scalar_t(double)> hyb_function = [](double dtau) { return (1.0 / (0.1 * dtau - 0.5)); };
+
+  hybridization_scalar_t value_det = determinant(diagram, hyb_function);
 
   //int N_proper = find_proper_diagrams(diagram);
-  hybridization_scalar_t value_proper = proper_enum(diagram);
+  hybridization_scalar_t value_proper = proper_enum(diagram, hyb_function);
   if constexpr (verbose) std::printf("c_k = % 4.6e\n", value_proper);
 
-  hybridization_scalar_t value_inclus = inclusion_exclusion(diagram);
+  hybridization_scalar_t value_inclus = inclusion_exclusion(diagram, hyb_function);
   if constexpr (verbose) std::printf("c_k = % 4.6e\n\n\n", value_inclus);
 
   if constexpr (verbose) std::printf("proper-enum         c_k = % 4.6e\n", value_proper);
@@ -58,8 +60,8 @@ std::vector<double> generate_random_vector(double beta, int n_tau) {
 }
 
 TEST(inchworm, benchmark_both2) {
-  std::vector<double> tau1 = {0.1};
-  std::vector<double> tau2 = {0.05};
+  std::vector<double> tau1        = {0.1};
+  std::vector<double> tau2        = {0.05};
   std::vector<double> split_times = {0.04};
   compare_both_methods(tau1, tau2, split_times);
 }
@@ -67,12 +69,12 @@ TEST(inchworm, benchmark_both2) {
 TEST(inchworm, benchmark_both_random) {
   int N         = 20;
   int sp_max    = 4;
-  int order_min = 1; //9;   // order 0 is a special case that fails for now.
-  int order_max = 8; //10;  // order 9 and above are quite slow
+  int order_min = 9;  // order 0 is a special case that fails for now.
+  int order_max = 11; // order 9 and above are quite slow
   double beta   = 1.0;
 
   for (int order = order_min; order <= order_max; order++)
-    for (int sp_number = 0; sp_number < sp_max; sp_number++)
+    for (int sp_number = 1; sp_number < sp_max; sp_number++)
       for (int n = 0; n < N; n++) {
 
         std::vector<double> tau1        = generate_random_vector(beta, order);

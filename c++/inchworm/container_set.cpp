@@ -25,7 +25,7 @@ namespace inchworm {
 
   void h5_write(triqs::h5::group h5group, std::string subgroup_name, container_set const &c) {
     auto grp = h5group.create_group(subgroup_name);
-    h5_write(grp, "U_tau", c.U_tau);
+    //h5_write(grp, "U_tau", c.U_tau);
     h5_write(grp, "G_tau", c.G_tau);
     h5_write(grp, "G_iw", c.G_iw);
     h5_write(grp, "Sigma_iw", c.Sigma_iw);
@@ -33,7 +33,7 @@ namespace inchworm {
 
   void h5_read(triqs::h5::group h5group, std::string subgroup_name, container_set &c) {
     auto grp = h5group.open_group(subgroup_name);
-    h5_read(grp, "U_tau", c.U_tau);
+    //h5_read(grp, "U_tau", c.U_tau);
     h5_read(grp, "G_tau", c.G_tau);
     h5_read(grp, "G_iw", c.G_iw);
     h5_read(grp, "Sigma_iw", c.Sigma_iw);

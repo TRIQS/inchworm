@@ -106,8 +106,8 @@ namespace inchworm {
     mc.add_move(moves::remove{qmc_config, rng}, "remove move");
 
     // Register all measurements
-    mc.add_measure(measures::U_frame{params, qmc_config}, "propagator measurement"); // we have to measure this (not a choice)
-    if (params.measure_sign) mc.add_measure(measures::sign{params, qmc_config}, "sign measurement");
+    mc.add_measure(measures::U_frame{params, qmc_config, result_set()}, "propagator measurement"); // we have to measure this (not a choice)
+    if (params.measure_sign) mc.add_measure(measures::sign{params, qmc_config, result_set()}, "sign measurement");
 
     // Perform QMC run and collect results
     mc.warmup_and_accumulate(params.n_warmup_cycles, params.n_cycles, params.length_cycle, triqs::utility::clock_callback(params.max_time));

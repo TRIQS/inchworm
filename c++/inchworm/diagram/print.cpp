@@ -54,7 +54,7 @@ void print_configuration(time_diagram_t const &diagram) {
   print_diag(diagram);
   for (int j = 0; j < diagram.op_list.size(); j++) {
     if (diagram.op_list[j].dag)
-      std::printf(" c^+(%2.3f)_%d", diagram.op_list[j].tau, diagram.op_list[j].linear_index);
+      std::printf(" a(%2.3f)_%d", diagram.op_list[j].tau, diagram.op_list[j].linear_index);
     else
       std::printf(" c(%2.3f)_%d", diagram.op_list[j].tau, diagram.op_list[j].linear_index);
   }

@@ -22,12 +22,11 @@
 #include "hybridization_matrix.hpp"
 #include <iomanip>
 
-hybridization_scalar_t hyb_function(hybridization_scalar_t dtau) { // to be changed in the future
-  return (1.0/(0.1*dtau-0.5) );
-  //return (2.2 + dtau + 0.7 * dtau * dtau + 0.1 * dtau * dtau * dtau +0.01 * dtau * dtau * dtau * dtau);
-}
+//hybridization_scalar_t hyb_function(hybridization_scalar_t dtau) { // to be changed in the future
+//  return (1.0/(0.1*dtau-0.5) );
+//}
 
-hybridization_matrix::hybridization_matrix(time_diagram_t const &diagram)
+hybridization_matrix::hybridization_matrix(time_diagram_t const &diagram, std::function<hybridization_scalar_t(double)> hyb_function)
    : mat(diagram.perturbation_order(), diagram.perturbation_order()), diagram{diagram} {
 
   for (auto [i, c] : enumerate(diagram.c_list))

@@ -259,9 +259,9 @@ void calculate_segment(int segment_numero,
 // them into two lists: one fully disjoint (except for split points)
 // and another fully adjacent.
 //
-hybridization_scalar_t inclusion_exclusion(time_diagram_t const &diagram) {
+hybridization_scalar_t inclusion_exclusion(time_diagram_t const &diagram, std::function<hybridization_scalar_t(double)> hyb_function) {
 
-  hybridization_matrix hyb_mat(diagram);
+  hybridization_matrix hyb_mat(diagram,hyb_function);
   hyb_mat.optimize_inclusion_exclusion(); // put some values to zero in hyb matrix (segment of length 2)
   if (diagram.is_trivial) { return 0; }   // return 0 or det??
   if (diagram.perturbation_order() == 1) {
@@ -319,8 +319,8 @@ hybridization_scalar_t inclusion_exclusion(time_diagram_t const &diagram) {
   return segment_list.back().value;
 }
 
-hybridization_scalar_t determinant(time_diagram_t const &diagram) {
-  hybridization_matrix hyb_mat(diagram);
+hybridization_scalar_t determinant(time_diagram_t const &diagram, std::function<hybridization_scalar_t(double)> hyb_function) {
+  hybridization_matrix hyb_mat(diagram,hyb_function);
   //hyb_mat.print();
   return hyb_mat.det();
 }
