@@ -25,7 +25,7 @@ namespace inchworm::moves {
     void reject() {}
 
     /// Constructor:
-    remove(qmc_data_t &data, triqs::mc_tools::random_generator &rng) : data(data), rng(rng), new_u_frame(data.h_diag) {}
+    remove(qmc_data_t &data, triqs::mc_tools::random_generator &rng) : data(data), rng(rng) { new_u_frame = init_propagator_frame(data.h_diag); }
 
     private:
     /// w_hyb of proposed remove

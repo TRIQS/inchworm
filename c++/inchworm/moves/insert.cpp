@@ -25,15 +25,14 @@ namespace inchworm::moves {
     if (data.use_bare_propagator) {
       auto diagram = diagram::time_diagram_t{new_config.c_list, new_config.cdag_list, {}}; // make a free function (not member of data)
       //print_configuration(diagram);
-      new_w._hyb       = 0; // diagram::determinant(diagram);
-      auto new_u_frame = propagator_product(data.h_diag, diagram, data.tau_max);
-      new_w_loc        = new_u_frame.frobenius_norm();
+      new_w._hyb  = 0; // diagram::determinant(diagram);
+      new_u_frame = propagator_product(data.h_diag, diagram, data.tau_max);
     } else {
       auto diagram = diagram::time_diagram_t{new_config.c_list, new_config.cdag_list, {data.tau_split}}; // make a free function (not member of data)
       new_w._hyb   = 0;                                                                                  //diagram::inclusion_exclusion(diagram);
-      auto new_u_frame = propagator_product(data.u_tau, data.h_diag, diagram, data.tau_max);
-      new_w_loc        = new_u_frame.frobenius_norm();
+      new_u_frame  = propagator_product(data.u_tau, data.h_diag, diagram, data.tau_max);
     }
+    new_w_loc = frobenius_norm(new_u_frame);
 
     auto w_hyb_ratio = new_w._hyb / data.w._hyb;
     auto w_loc_ratio = new_w._loc / data.w._loc;

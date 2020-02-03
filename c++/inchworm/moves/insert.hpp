@@ -25,7 +25,7 @@ namespace inchworm::moves {
     void reject() {}
 
     /// Constructor
-    insert(qmc_data_t &data, triqs::mc_tools::random_generator &rng) : data(data), rng(rng), new_u_frame(data.h_diag) {}
+    insert(qmc_data_t &data, triqs::mc_tools::random_generator &rng) : data(data), rng(rng) { new_u_frame = init_propagator_frame(data.h_diag); }
 
     private:
     /// w_hyb of proposed insert
@@ -42,7 +42,6 @@ namespace inchworm::moves {
 
     /// container of the calculated time frame of the propagator
     u_frame_t new_u_frame;
-
   };
 
 } // namespace inchworm::moves

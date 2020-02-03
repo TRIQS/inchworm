@@ -1,24 +1,3 @@
-/*******************************************************************************
- *
- * inchworm: A TRIQS based impurity solver
- *
- * Copyright (c) 2019 The Simons foundation
- *   authors: Nils Wentzell
- *
- * inchworm is free software: you can redistribute it and/or modify it under the
- * terms of the GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option) any later
- * version.
- *
- * inchworm is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- *
- * You should have received a copy of the GNU General Public License along with
- * inchworm. If not, see <http://www.gnu.org/licenses/>.
- *
- ******************************************************************************/
 #include "./impurity_product.hpp"
 
 namespace inchworm {
@@ -41,17 +20,36 @@ namespace inchworm {
     return propagator_struct;
   }
 
-  // Constructor
-  u_frame_t::u_frame_t(triqs::atom_diag::atom_diag<false> const &ad) : matrices(ad.n_subspaces()), acc_number(0) {
+  u_frame_t init_propagator_frame(triqs::atom_diag::atom_diag<false> const &ad) {
+    u_frame_t u_frame{ad.n_subspaces()};
+
     for (int bl = 0; bl < ad.n_subspaces(); bl++) {
-      matrices[bl] = matrix<dcomplex>(ad.get_subspace_dim(bl), ad.get_subspace_dim(bl));
-      matrices[bl] = 0;
+      u_frame(bl) = matrix<dcomplex>(ad.get_subspace_dim(bl), ad.get_subspace_dim(bl));
+      u_frame(bl) = 0;
     }
   }
 
+  // Calculate the Frobenius norm of the u_frame block diagonal matrix:
+  double frobenius_norm(u_frame_t u_frame) {
+    double val = 0;
+    for (int bl = 0; bl < u_frame.size(); bl++) {
+      for (int i = 0; i < first_dim(u_frame(bl)); i++) {
+        for (int j = 0; j < second_dim(u_frame(bl)); j++) {
+
+          double elem = std::abs(u_frame(bl)(i, j));
+          val += elem * elem;
+        }
+      }
+    }
+    return std::sqrt(val);
+  }
+
+
+/*
+  // Constructor
   // Function to add them, and accumulate.
-  // u_frame_t::u_frame_t &operator+=(u_frame_t U_frame) {
-  //  for (int bl = 0; bl < matrices.size(); bl++) matrices[bl] += U_frame.matrices[bl];
+  // u_frame_t::u_frame_t &operator+=(u_frame_t u_frame) {
+  //  for (int bl = 0; bl < matrices.size(); bl++) matrices[bl] += u_frame.matrices[bl];
   //  acc_number++;
   //  return *this;
   //}
@@ -92,35 +90,19 @@ namespace inchworm {
   }
 
   // Printing function.
-  std::ostream &operator<<(std::ostream &out, u_frame_t const &U_frame) {
-    out << "u_frame_t (size: " << U_frame.matrices.size() << ")\n";
-    for (int bl = 0; bl < U_frame.matrices.size(); bl++) { out << U_frame.matrices[bl] << "\n"; }
+  std::ostream &operator<<(std::ostream &out, u_frame_t const &u_frame) {
+    out << "u_frame_t (size: " << u_frame.matrices.size() << ")\n";
+    for (int bl = 0; bl < u_frame.matrices.size(); bl++) { out << u_frame.matrices[bl] << "\n"; }
     return out;
   }
+*/
 
-  void assign_frame_to_propagator(u_tau_t &U, u_frame_t const &U_frame, int frame) {
-    if (U_frame.acc_number < 1) {
-      std::printf("error: acc_number = 0.\n");
-      exit(1);
-    }
-    if (U_frame.matrices.size() != U.size()) {
-      std::printf("assignment error: different sizes.\n");
-      exit(1);
-    }
-
-    //EXPECTS(1 == 2); //??? this test does not seems to work????
-
-    for (int bl = 0; bl < U_frame.matrices.size(); bl++) U[bl][frame] = (U_frame.matrices[bl] / U_frame.acc_number);
+  void init_propagator(u_tau_t &u_tau) { // this assign identity to the first frame (or time) of the propagator.
+    for (int bl = 0; bl < u_tau.size(); bl++) u_tau[bl][0] = make_unit_matrix<dcomplex>(first_dim(u_tau[bl][0]));
     return;
   }
 
-  void assign_identity_to_propagator(u_tau_t &U, int frame) {
-    for (int bl = 0; bl < U.size(); bl++) U[bl][frame] = make_unit_matrix<dcomplex>(first_dim(U[bl][frame]));
-    //U << 1;
-    return;
-  }
-
-  /// Function that calculate the product: U_frame = U(tau_0) op U(tau_1-tau_0) op U(tau_2-tau_1) op U(tau_3-tau_2) ... op U(tau-tau_n)
+  /// Function that calculate the product: u_frame = U(tau_0) op U(tau_1-tau_0) op U(tau_2-tau_1) op U(tau_3-tau_2) ... op U(tau-tau_n)
   /// where op is either c_dag or c operator, depending on the configuration
   /** 
    * @param U Full propagator calculated up until this point.
@@ -139,7 +121,7 @@ namespace inchworm {
     }
     //auto fs = ad.get_fock_states();
 
-    u_frame_t U_frame(ad);
+    u_frame_t u_frame = init_propagator_frame(ad);
 
     for (int initial_bl = 0; initial_bl < ad.n_subspaces(); initial_bl++) {
       int dim                  = ad.get_subspace_dim(initial_bl);
@@ -152,7 +134,7 @@ namespace inchworm {
         for (int j = 0; j < dim; j++) {
           new_mat(j, j) = std::exp(-(0-tau) * ad.get_eigenvalue(initial_bl, j));
         }
-        U_frame.assign(new_bl, new_mat);
+        u_frame(new_bl) = new_mat;
         continue;
       }
 
@@ -210,14 +192,14 @@ namespace inchworm {
           }
           //std::cout << "mat:" << new_mat << "\n";
         }
-        U_frame.assign(new_bl, new_mat);
+        u_frame(new_bl) = new_mat;
       }
       //std::cout << "mat3:" << new_mat << "\n";
       //std::printf("\n\n");
-      //std::cout << "U_frame\n" << U_frame << "\n\n";
+      //std::cout << "u_frame\n" << u_frame << "\n\n";
     }
-    //std::cout << "U_frame_end\n" << U_frame << "\n\n";
-    return U_frame;
+    //std::cout << "u_frame_end\n" << u_frame << "\n\n";
+    return u_frame;
   } // namespace inchworm
 
   /// If the user do not provide the propagator, use bare propagator instead.

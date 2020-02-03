@@ -44,26 +44,33 @@ namespace inchworm {
    */
   triqs::hilbert_space::gf_struct_t find_propagator_struct(atom_diag const &ad);
 
+  using u_frame_t = triqs::arrays::array<matrix<dcomplex>, 1>;
+
+  u_frame_t make_zero_propagator_frame(atom_diag const &ad);
+
+  double frobenius_norm(u_frame_t const &u_frame);
+
+  /*
   struct u_frame_t {
     std::vector<matrix<dcomplex>> matrices; // The different matrices of the blocks.
     int acc_number;                         // Number of sample accumlated here
 
     // Constructor
-    u_frame_t(triqs::atom_diag::atom_diag<false> const &ad);
+    u_frame_t(atom_diag const &ad);
 
     // Function to add them, and accumulate.
-    // u_frame_t &operator+=(u_frame_t U_frame);
+    // u_frame_t &operator+=(u_frame_t u_frame);
 
     // Function to add them, and accumulate.
-    u_frame_t &operator+=(u_frame_t U_frame) {
-      for (int bl = 0; bl < matrices.size(); bl++) matrices[bl] += U_frame.matrices[bl];
+    u_frame_t &operator+=(u_frame_t u_frame) {
+      for (int bl = 0; bl < matrices.size(); bl++) matrices[bl] += u_frame.matrices[bl];
       acc_number++;
       return *this;
     }
 
     // Function to add them, and accumulate.
-    u_frame_t &operator+(u_frame_t U_frame) {
-      for (int bl = 0; bl < matrices.size(); bl++) matrices[bl] += U_frame.matrices[bl];
+    u_frame_t &operator+(u_frame_t u_frame) {
+      for (int bl = 0; bl < matrices.size(); bl++) matrices[bl] += u_frame.matrices[bl];
       acc_number++;
       return *this;
     }
@@ -77,13 +84,15 @@ namespace inchworm {
     double frobenius_norm();
 
     // Printing function.
-    friend std::ostream &operator<<(std::ostream &out, u_frame_t const &U_frame);
+    friend std::ostream &operator<<(std::ostream &out, u_frame_t const &u_frame);
   };
+*/
 
-  void assign_frame_to_propagator(u_tau_t &U, u_frame_t const &U_frame, int frame);
-  void assign_identity_to_propagator(u_tau_t &U, int frame);
+  //void init_propagator_frame(u_tau_t &U, u_frame_t const &u_frame, int frame); // faire un constructeur (struct)
 
-  /// Function that calculate the product: U_frame = U(tau_0) op U(tau_1-tau_0) op U(tau_2-tau_1) op U(tau_3-tau_2) ... op U(tau-tau_n)
+  void init_propagator(u_tau_t &U); //meme
+
+  /// Function that calculate the product: u_frame = U(tau_0) op U(tau_1-tau_0) op U(tau_2-tau_1) op U(tau_3-tau_2) ... op U(tau-tau_n)
   /// where op is either c_dag or c operator, depending on the configuration
   /** 
    * @param U Full propagator calculated up until this point.
@@ -93,10 +102,9 @@ namespace inchworm {
    * @param use_bare_U If true, calculate the same product using only the bare propagators. 
    * @return u_frame_t, at time tau, resulting from this product.
    */
-  u_frame_t propagator_product(u_tau_t const &U, triqs::atom_diag::atom_diag<false> const &ad, time_diagram_t const &diagram, double tau,
-                               bool use_bare_U = false);
+  u_frame_t propagator_product(u_tau_t const &U, atom_diag const &ad, time_diagram_t const &diagram, double tau, bool use_bare_U = false);
 
   /// If the user do not provide the propagator, use bare propagator instead.
-  u_frame_t propagator_product(triqs::atom_diag::atom_diag<false> const &ad, time_diagram_t const &diagram, double tau);
+  u_frame_t propagator_product(atom_diag const &ad, time_diagram_t const &diagram, double tau);
 
 } // namespace inchworm

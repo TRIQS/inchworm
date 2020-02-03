@@ -4,11 +4,11 @@
 
 namespace inchworm::measures {
 
-  /// U_frame measurement
-  struct U_frame {
+  /// u_frame measurement
+  struct u_frame {
 
     // Constructor
-    U_frame(params_t const &params, qmc_data_t const &qmc_data_, container_set &results_);
+    u_frame(params_t const &params, qmc_data_t const &qmc_data_, container_set &results_);
 
     // Invoke a single measurement
     void accumulate(mc_weight_t sign);
@@ -22,7 +22,7 @@ namespace inchworm::measures {
     container_set &results;
 
     mc_weight_t average_sign_; 
-    u_frame_t U_frame_;
+    u_frame_t u_frame_;
   };
 
 } // namespace inchworm::measures

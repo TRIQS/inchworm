@@ -23,7 +23,7 @@
 
 #include "./post_process.hpp"
 #include "./measures/sign.hpp"
-#include "./measures/U_frame.hpp"
+//#include "./measures/u_frame.hpp"
 #include "./moves/insert.hpp"
 #include "./moves/remove.hpp"
 
@@ -117,7 +117,9 @@ namespace inchworm {
     // Build the propagator
     auto propagator_struct = find_propagator_struct(h_diag);
     u_tau                  = u_tau_t{{params.beta, Fermion, params.n_tau}, propagator_struct};
-    auto u_frame = u_frame_t{h_diag};
+    //auto u_frame = u_frame_t{h_diag};
+    u_frame_t u_frame = init_propagator_frame(h_diag);
+
     assign_identity_to_propagator(u_tau, 0); // assign identity matrices to the frame 0 of u_tau
 
     // Create Monte-Carlo configuration
@@ -127,7 +129,7 @@ namespace inchworm {
     mc.add_move(moves::remove{qmc_data, rng}, "remove move");
 
     // Register all measurements
-    //mc.add_measure(measures::U_frame{params, qmc_data, result_set()}, "propagator measurement"); // we have to measure this (not a choice)
+    //mc.add_measure(measures::u_frame{params, qmc_data, result_set()}, "propagator measurement"); // we have to measure this (not a choice)
     //if (params.measure_sign) mc.add_measure(measures::sign{params, qmc_data, result_set()}, "sign measurement");
 
     // Perform QMC run and collect results
