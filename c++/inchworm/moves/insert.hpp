@@ -22,8 +22,9 @@ namespace inchworm::moves {
     mc_weight_t accept();
 
     /// Reject vertex insertion
-    void reject();
+    void reject() {}
 
+    private:
     /// w_hyb of proposed insert
     hyb_scalar_t new_w_hyb = 1.0;
 

@@ -35,7 +35,7 @@ struct qmc_config_t {
 
     h_scalar_t last_accepted_w_loc; // atomic weight (Frobenius norm of the current propagator frame)
     h_scalar_t last_accepted_w_hyb; // value of the determinant in cthyb or its equivalent for the inchworm
-    propagator_frame last_accepted_U_frame;
+    propagator_frame_t last_accepted_U_frame;
 
     bool use_bare_propagator; //true only for the first iteration of the inchworm calculation
 
@@ -49,12 +49,7 @@ struct qmc_config_t {
 
     bool try_insert(double tau, int linear_index, double tau_dag, int linear_index_dag);
     bool try_erase(int i, int i_dag);
-    void update_lists();
-    void update_accepted_lists();
-    void clear();
+    //void clear();
 
-    time_diagram_t get_time_diagram(std::vector<double> const &split_times);
-    time_diagram_t get_time_diagram();
-    //hyb_scalar_t hyb_fct();
   };
 } // namespace inchworm

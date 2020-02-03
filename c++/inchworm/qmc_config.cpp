@@ -13,19 +13,20 @@ namespace inchworm {
     last_accepted_w_hyb = 1.0;
   }
 
-  double qmc_config_t::tau_max() { return tau_max_; }
+  double qmc_config_t::tau_max() { return tau_max_; }  //mettre dans hpp
   double qmc_config_t::tau_split() { return tau_split_; }
   int qmc_config_t::size() { return c_list.size(); }
 
+  //
   bool qmc_config_t::try_insert(double tau, int linear_index, double tau_dag, int linear_index_dag) {
-    update_lists();
     //std::printf("try_erase? %d   %2.4f %d  %2.4f %d \n", size(),  tau, linear_index, tau_dag, linear_index_dag);
     for (int i = 0; i < size() - 1; i++)
       if ((c_list[i].tau == tau) or (cdag_list[i].tau == tau_dag)) return false;
-    c_list.push_back({tau, linear_index});
+    c_list.push_back({tau, linear_index}); // upper_bound ordering
     cdag_list.push_back({tau_dag, linear_index_dag});
     return true;
   }
+
   bool qmc_config_t::try_erase(int i, int i_dag) {
     update_lists();
     //std::printf("try_erase? %d   %d %d \n", size(), i, i_dag);
@@ -34,26 +35,5 @@ namespace inchworm {
     cdag_list.erase(cdag_list.begin() + i_dag);
     return true;
   }
-  void qmc_config_t::update_lists() {
-    c_list    = last_accepted_c_list;
-    cdag_list = last_accepted_cdag_list;
-  }
-  void qmc_config_t::update_accepted_lists() {
-    last_accepted_c_list    = c_list;
-    last_accepted_cdag_list = cdag_list;
-  }
-  void qmc_config_t::clear() {
-    c_list.clear();
-    cdag_list.clear();
-  }
-
-  time_diagram_t qmc_config_t::get_time_diagram(std::vector<double> const &split_times) { return time_diagram_t(c_list, cdag_list, split_times); }
-
-  time_diagram_t qmc_config_t::get_time_diagram() {
-    std::vector<double> split_times{};
-    return time_diagram_t(c_list, cdag_list, split_times);
-  }
-
-  //hyb_scalar_t qmc_config_t::hyb_fct() { return 1; }
 
 } // namespace inchworm

@@ -35,8 +35,7 @@ namespace inchworm {
     gf_struct_t gf_struct; // Block structure of the Green function FIXME
     many_body_op_t _h_loc; // The local Hamiltonian = h_int + h0
 
-    mpi::communicator _comm;   // define the communicator, here MPI_COMM_WORLD
-    mc_weight_t _average_sign; // average sign of the QMC
+    //mpi::communicator _comm;   // define the communicator, here MPI_COMM_WORLD
     int _solve_status;         // Status of the solve upon exit: 0 for clean termination, > 0 otherwise.
 
     // Single-particle Green's function containers

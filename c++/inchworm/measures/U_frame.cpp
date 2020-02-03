@@ -15,7 +15,7 @@ namespace inchworm::measures {
 
   void U_frame::collect_results(mpi::communicator const &comm) {
     average_sign_ = mpi::all_reduce(average_sign_, comm);
-    //U_frame_      = mpi::all_reduce(U_frame_, comm);  ???????
+    U_frame_      = mpi::all_reduce(U_frame_, comm);  //???????
 
     //assign_frame_to_propagator(results.U_tau, U_frame_, qmc_config.inch_step);
   }
