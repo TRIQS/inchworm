@@ -75,8 +75,8 @@ TEST(inchworm, matrix_product) {
 
   //print_ad(ad);
   //print_block_gf_first_time(propagator);
-  std::vector<time_and_index_t> c    = {{0.00, 0}, {0.05, 0}};
-  std::vector<time_and_index_t> cdag = {{0.01, 0}, {0.08, 0}};
+  std::vector<diagram::time_and_index_t> c    = {{0.00, 0}, {0.05, 0}};
+  std::vector<diagram::time_and_index_t> cdag = {{0.01, 0}, {0.08, 0}};
   std::vector<double> split_times    = {};
   time_diagram_t diagram(c, cdag, split_times);
 

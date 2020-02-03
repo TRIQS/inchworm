@@ -28,32 +28,34 @@
 #include <numeric>
 
 #include "diagram.hpp"
+#include "../types.hpp"
 
-using hyb_scalar_t = double;
-//using hybridization_function_t = triqs::gfs::gf<triqs::gfs::imtime,triqs::gfs::matrix_real_valued>;
-using triqs::utility::enumerate;
+namespace inchworm::diagram {
+  //using hybridization_function_t = triqs::gfs::gf<triqs::gfs::imtime,triqs::gfs::matrix_real_valued>;
+  using triqs::utility::enumerate;
 
-//hyb_scalar_t hyb_function(hyb_scalar_t dtau);
+  //hyb_scalar_t hyb_function(hyb_scalar_t dtau);
 
-class hybridization_matrix {
+  class hybridization_matrix {
 
-  public:
-  using matrix_t = triqs::arrays::matrix<hyb_scalar_t>;
+    public:
+    using matrix_t = triqs::arrays::matrix<hyb_scalar_t>;
 
-  matrix_t mat;
-  time_diagram_t diagram;
+    matrix_t mat;
+    time_diagram_t diagram;
 
-  /// Constructor
-  hybridization_matrix(time_diagram_t const &diagram, std::function<hyb_scalar_t(double)>);
+    /// Constructor
+    hybridization_matrix(time_diagram_t const &diagram, std::function<hyb_scalar_t(double)>);
 
-  /// Set the value of adjacent vertex to zero in the matrix. (segment of length 2 optimization)
-  void optimize_inclusion_exclusion();
+    /// Set the value of adjacent vertex to zero in the matrix. (segment of length 2 optimization)
+    void optimize_inclusion_exclusion();
 
-  /// Return determinant of full matrix
-  hyb_scalar_t det();
+    /// Return determinant of full matrix
+    hyb_scalar_t det();
 
-  /// Extract a determinant of sub indices of the matrix
-  hyb_scalar_t extract_det(std::vector<int> const &list_of_indices) const;
+    /// Extract a determinant of sub indices of the matrix
+    hyb_scalar_t extract_det(std::vector<int> const &list_of_indices) const;
 
-  void print();
-};
+    void print();
+  };
+} // namespace inchworm::diagram

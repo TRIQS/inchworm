@@ -23,6 +23,11 @@
 #include <triqs/test_tools/gfs.hpp>
 #include <inchworm/diagram/proper_enum.hpp>
 #include <inchworm/diagram/inclusion_exclusion.hpp>
+#include <inchworm/types.hpp>
+
+
+using namespace inchworm::diagram;
+using namespace inchworm;
 
 void compare_both_methods(std::vector<double> &tau1, std::vector<double> &tau2, std::vector<double> &split_times) {
 
@@ -69,8 +74,8 @@ TEST(inchworm, benchmark_both2) {
 TEST(inchworm, benchmark_both_random) {
   int N         = 20;
   int sp_max    = 4;
-  int order_min = 9;  // order 0 is a special case that fails for now.
-  int order_max = 11; // order 9 and above are quite slow
+  int order_min = 1;  // order 0 is a special case that fails for now.
+  int order_max = 8; // order 9 and above are quite slow
   double beta   = 1.0;
 
   for (int order = order_min; order <= order_max; order++)

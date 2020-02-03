@@ -33,20 +33,22 @@
 ////////// PRINT //////////////////
 ///////////////////////////////////
 
-void print_vector(std::vector<int> const &v);
+namespace inchworm::diagram {
+  void print_vector(std::vector<int> const &v);
 
-// print diagram and its split point above.
-//
-void print_diag(time_diagram_t const &diagram);
+  // print diagram and its split point above.
+  //
+  void print_diag(time_diagram_t const &diagram);
 
-void print_configuration(time_diagram_t const &diagram);
+  void print_configuration(time_diagram_t const &diagram);
 
-// print one line of segments:
-//
-void printLine(std::vector<int> const &segments_vector);
+  // print one line of segments:
+  //
+  void printLine(std::vector<int> const &segments_vector);
 
-std::string diagram_string(time_diagram_t const &diagram);
+  std::string diagram_string(time_diagram_t const &diagram);
 
-// print the arch from a to b with different character.
-//
-void printArch(int a, int b, int k_order, char char1 = '.');
+  // print the arch from a to b with different character.
+  //
+  void printArch(int a, int b, int k_order, char char1 = '.');
+} // namespace inchworm::diagram

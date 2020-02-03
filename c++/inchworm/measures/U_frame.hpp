@@ -1,5 +1,5 @@
 #pragma once
-#include "../qmc_config.hpp"
+#include "../qmc_data.hpp"
 #include "../container_set.hpp"
 
 namespace inchworm::measures {
@@ -8,7 +8,7 @@ namespace inchworm::measures {
   struct U_frame {
 
     // Constructor
-    U_frame(params_t const &params, qmc_config_t const &qmc_config_, container_set &results_);
+    U_frame(params_t const &params, qmc_data_t const &qmc_data_, container_set &results_);
 
     // Invoke a single measurement
     void accumulate(mc_weight_t sign);
@@ -18,11 +18,11 @@ namespace inchworm::measures {
 
     private:
     // The Monte-Carlo configuration
-    qmc_config_t const &qmc_config;
+    qmc_data_t const &qmc_data;
     container_set &results;
 
     mc_weight_t average_sign_; 
-    propagator_frame U_frame_;
+    u_frame_t U_frame_;
   };
 
 } // namespace inchworm::measures

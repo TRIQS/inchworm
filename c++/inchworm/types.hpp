@@ -72,18 +72,14 @@ namespace inchworm {
   /// A const_view to a g_iw_t
   using g_iw_cvt = g_iw_t::const_view_type;
 
-  /// Type of the Monte-Carlo weight. Either double or dcomplex
-  using mc_weight_t = g_tau_t::g_t::scalar_t;
-
   // Defined by Maxime, need comments
-  using scalar_t     = double;
-  using matrix_t     = matrix<scalar_t>;
-  using det_scalar_t = scalar_t;
+  using scalar_t = double;
+  using matrix_t = matrix<scalar_t>;
 
 #ifdef HYBRIDISATION_IS_COMPLEX
-  using delta_target_t = matrix_valued;
+  using hyb_scalar_t = dcomplex;
 #else
-  using delta_target_t                      = matrix_real_valued;
+  using hyb_scalar_t                        = double;
 #endif
 
 #ifdef LOCAL_HAMILTONIAN_IS_COMPLEX
@@ -94,9 +90,13 @@ namespace inchworm {
   static constexpr bool is_h_scalar_complex = false;
 #endif
 
-  using atom_diag = triqs::atom_diag::atom_diag<is_h_scalar_complex>;
+  /// Type of the Monte-Carlo weight. Either double or dcomplex
+  //using mc_weight_t = g_tau_t::g_t::scalar_t;
+  using mc_weight_t = decltype(h_scalar_t{} * hyb_scalar_t{}); // complex iif either is complex
+
+  using atom_diag   = triqs::atom_diag::atom_diag<is_h_scalar_complex>;
   using triqs::hilbert_space::gf_struct_t;
-  using triqs::utility::time_pt;
+  //using triqs::utility::time_pt;
   using op_t         = std::pair<time_pt, int>;
   using indices_type = triqs::operators::indices_t;
 

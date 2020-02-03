@@ -42,7 +42,7 @@ namespace inchworm {
   }
 
   // Constructor
-  propagator_frame::propagator_frame(triqs::atom_diag::atom_diag<false> const &ad) : matrices(ad.n_subspaces()), acc_number(0) {
+  u_frame_t::u_frame_t(triqs::atom_diag::atom_diag<false> const &ad) : matrices(ad.n_subspaces()), acc_number(0) {
     for (int bl = 0; bl < ad.n_subspaces(); bl++) {
       matrices[bl] = matrix<dcomplex>(ad.get_subspace_dim(bl), ad.get_subspace_dim(bl));
       matrices[bl] = 0;
@@ -50,13 +50,13 @@ namespace inchworm {
   }
 
   // Function to add them, and accumulate.
-  //propagator_frame::propagator_frame &operator+=(propagator_frame U_frame) {
+  // u_frame_t::u_frame_t &operator+=(u_frame_t U_frame) {
   //  for (int bl = 0; bl < matrices.size(); bl++) matrices[bl] += U_frame.matrices[bl];
   //  acc_number++;
   //  return *this;
   //}
 
-  void propagator_frame::assign(int bl, matrix<dcomplex> mat) {
+  void u_frame_t::assign(int bl, matrix<dcomplex> mat) {
     if (acc_number > 1) {
       std::printf("error: cannot assign in an accumalted frame.\n");
       exit(0);
@@ -67,13 +67,13 @@ namespace inchworm {
   }
 
   // Set the values to zero
-  void propagator_frame::reset() {
+  void u_frame_t::reset() {
     for (int bl = 0; bl < matrices.size(); bl++) matrices[bl] = 0;
     acc_number = 0;
   }
 
   // Calculate the Frobenius norm of the matrix
-  double propagator_frame::frobenius_norm() {
+  double u_frame_t::frobenius_norm() {
     double val = 0;
     for (int bl = 0; bl < matrices.size(); bl++) {
       for (int i = 0; i < first_dim(matrices[bl]); i++) {
@@ -92,13 +92,13 @@ namespace inchworm {
   }
 
   // Printing function.
-  std::ostream &operator<<(std::ostream &out, propagator_frame const &U_frame) {
-    out << "propagator_frame (size: " << U_frame.matrices.size() << ")\n";
+  std::ostream &operator<<(std::ostream &out, u_frame_t const &U_frame) {
+    out << "u_frame_t (size: " << U_frame.matrices.size() << ")\n";
     for (int bl = 0; bl < U_frame.matrices.size(); bl++) { out << U_frame.matrices[bl] << "\n"; }
     return out;
   }
 
-  void assign_frame_to_propagator(u_tau_t &U, propagator_frame const &U_frame, int frame) {
+  void assign_frame_to_propagator(u_tau_t &U, u_frame_t const &U_frame, int frame) {
     if (U_frame.acc_number < 1) {
       std::printf("error: acc_number = 0.\n");
       exit(1);
@@ -108,7 +108,7 @@ namespace inchworm {
       exit(1);
     }
 
-    EXPECTS(1 == 2); //??? this test does not seems to work????
+    //EXPECTS(1 == 2); //??? this test does not seems to work????
 
     for (int bl = 0; bl < U_frame.matrices.size(); bl++) U[bl][frame] = (U_frame.matrices[bl] / U_frame.acc_number);
     return;
@@ -126,20 +126,20 @@ namespace inchworm {
    * @param U Full propagator calculated up until this point.
    * @param ad atom_diag of the system considered here.
    * @param diagram Configuration of the n operators (op) of the present Monte Carlo step.
-   * @param tau Time of the propagator_frame calculated here. tau must be greater than any times
+   * @param tau Time of the u_frame_t calculated here. tau must be greater than any times
    * @param use_bare_U If true, calculate the same product using only the bare propagators. 
-   * @return propagator_frame, at time tau, resulting from this product.
+   * @return u_frame_t, at time tau, resulting from this product.
    */
-  propagator_frame propagator_product(u_tau_t const &U, triqs::atom_diag::atom_diag<false> const &ad, time_diagram_t const &diagram, double tau,
+  u_frame_t propagator_product(u_tau_t const &U, triqs::atom_diag::atom_diag<false> const &ad, time_diagram_t const &diagram, double tau,
                                       bool use_bare_U) {
 
     if (not use_bare_U) {
-      EXPECTS(false);
+      //EXPECTS(false);
       EXPECTS(U.size() == ad.n_subspaces()); //??? this test does not seems to work????
     }
     //auto fs = ad.get_fock_states();
 
-    propagator_frame U_frame(ad);
+    u_frame_t U_frame(ad);
 
     for (int initial_bl = 0; initial_bl < ad.n_subspaces(); initial_bl++) {
       int dim                  = ad.get_subspace_dim(initial_bl);
@@ -221,7 +221,7 @@ namespace inchworm {
   } // namespace inchworm
 
   /// If the user do not provide the propagator, use bare propagator instead.
-  propagator_frame propagator_product(triqs::atom_diag::atom_diag<false> const &ad, time_diagram_t const &diagram, double tau) {
+  u_frame_t propagator_product(triqs::atom_diag::atom_diag<false> const &ad, time_diagram_t const &diagram, double tau) {
     u_tau_t U;
     return propagator_product(U, ad, diagram, tau, true);
   }

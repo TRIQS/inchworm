@@ -1,5 +1,5 @@
 #pragma once
-#include "./../qmc_config.hpp"
+#include "../qmc_data.hpp"
 
 #include <triqs/mc_tools/random_generator.hpp>
 #include <inchworm/diagram/inclusion_exclusion.hpp>
@@ -10,7 +10,7 @@ namespace inchworm::moves {
   struct insert {
 
     /// The Monte-Carlo configuration
-    qmc_config_t &data;
+    qmc_data_t &data;
 
     /// The random number generator
     triqs::mc_tools::random_generator &rng;
@@ -24,12 +24,25 @@ namespace inchworm::moves {
     /// Reject vertex insertion
     void reject() {}
 
+    /// Constructor
+    insert(qmc_data_t &data, triqs::mc_tools::random_generator &rng) : data(data), rng(rng), new_u_frame(data.h_diag) {}
+
     private:
     /// w_hyb of proposed insert
     hyb_scalar_t new_w_hyb = 1.0;
 
     /// w_loc of proposed insert
     double new_w_loc = 1.0;
+
+    /// c/cdag lists of proposed insert
+    config_t new_config; // proposed configuration of c and cdag
+
+    /// weights of the proposed configuration
+    weights_t new_w;
+
+    /// container of the calculated time frame of the propagator
+    u_frame_t new_u_frame;
+
   };
 
 } // namespace inchworm::moves

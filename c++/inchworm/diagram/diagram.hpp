@@ -27,41 +27,43 @@
 
 #include "./utilities.hpp"
 
-// Degrees of freedom of an creation (annihilation) operator:
-//
-struct time_and_index_t {
-  double tau       = 0.;
-  int linear_index = 0; // index as defined in fundamental operators set
-};
-
-inline bool operator<(time_and_index_t const &t1, time_and_index_t const &t2);
-
-// Configuration of c(tau) and cdag(tau') and the split points
-//
-class time_diagram_t {
-
-  //basic information for an operator
+namespace inchworm::diagram {
+  // Degrees of freedom of an creation (annihilation) operator:
   //
-  struct op_t {
-    double tau       = 0.;    // time
-    bool dag         = false; // true if cdag, false if c
-    int linear_index = 0;     // index as defined in fundamental operators set
-    int order_index  = 0;     // index of the order in time in the list of all c, cdag
+  struct time_and_index_t {
+    double tau       = 0.;
+    int linear_index = 0; // index as defined in fundamental operators set
   };
 
-  public:
-  std::vector<op_t> op_list;                       // list of all operator time ordered
-  std::vector<int> split_points;                   // position of split points
-  std::vector<time_and_index_t> c_list, cdag_list; // list of c/cdag time ordered
-  std::vector<int> pos_c;                          // position of c in the op_list
-  std::vector<int> pos_cdag;                       // idem
-  bool is_trivial = true;                          // a diagram is considered trivial if no split_times are found between the minimum and maximum tau.
+  inline bool operator<(time_and_index_t const &t1, time_and_index_t const &t2);
 
-  int perturbation_order() const;
-  int size() const;
-  double max_tau() const;
-  double min_tau() const;
+  // Configuration of c(tau) and cdag(tau') and the split points
+  //
+  class time_diagram_t {
 
-  // Constructor
-  time_diagram_t(std::vector<time_and_index_t> const &c, std::vector<time_and_index_t> const &cdag, std::vector<double> const &split_times);
-};
+    //basic information for an operator
+    //
+    struct op_t {
+      double tau       = 0.;    // time
+      bool dag         = false; // true if cdag, false if c
+      int linear_index = 0;     // index as defined in fundamental operators set
+      int order_index  = 0;     // index of the order in time in the list of all c, cdag
+    };
+
+    public:
+    std::vector<op_t> op_list;                       // list of all operator time ordered
+    std::vector<int> split_points;                   // position of split points
+    std::vector<time_and_index_t> c_list, cdag_list; // list of c/cdag time ordered
+    std::vector<int> pos_c;                          // position of c in the op_list
+    std::vector<int> pos_cdag;                       // idem
+    bool is_trivial = true; // a diagram is considered trivial if no split_times are found between the minimum and maximum tau.
+
+    int perturbation_order() const;
+    int size() const;
+    double max_tau() const;
+    double min_tau() const;
+
+    // Constructor
+    time_diagram_t(std::vector<time_and_index_t> const &c, std::vector<time_and_index_t> const &cdag, std::vector<double> const &split_times);
+  };
+} // namespace inchworm::diagram

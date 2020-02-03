@@ -2,8 +2,8 @@
 
 namespace inchworm::measures {
 
-  sign::sign(params_t const &params, qmc_config_t const &qmc_config_, container_set &results_)
-     : qmc_config(qmc_config_), results(results_), average_sign_(0.0), count(0) {}
+  sign::sign(params_t const &params, qmc_data_t const &qmc_data_, container_set &results_)
+     : qmc_data(qmc_data_), results(results_), average_sign_(0.0), count(0) {}
 
   void sign::accumulate(mc_weight_t sign) {
     average_sign_ += sign;
@@ -15,7 +15,7 @@ namespace inchworm::measures {
     count         = mpi::all_reduce(count, comm);
     average_sign_ = average_sign_ / count;
 
-    results.average_sign[qmc_config.inch_step] = average_sign_;
+    results.average_sign[qmc_data.inch_step] = average_sign_;
   }
 
 } // namespace inchworm::measures

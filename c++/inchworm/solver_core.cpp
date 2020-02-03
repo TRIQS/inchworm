@@ -113,16 +113,22 @@ namespace inchworm {
 
     // Capture random number generator
     auto &rng = mc.get_rng();
+    
+    // Build the propagator
+    auto propagator_struct = find_propagator_struct(h_diag);
+    u_tau                  = u_tau_t{{params.beta, Fermion, params.n_tau}, propagator_struct};
+    auto u_frame = u_frame_t{h_diag};
+    assign_identity_to_propagator(u_tau, 0); // assign identity matrices to the frame 0 of u_tau
 
     // Create Monte-Carlo configuration
-    qmc_config_t qmc_config{params, h_diag, _Delta_tau};
+    qmc_data_t qmc_data{params, h_diag, u_tau, _Delta_tau};
 
-    mc.add_move(moves::insert{qmc_config, rng}, "insert move");
-    mc.add_move(moves::remove{qmc_config, rng}, "remove move");
+    mc.add_move(moves::insert{qmc_data, rng}, "insert move");
+    mc.add_move(moves::remove{qmc_data, rng}, "remove move");
 
     // Register all measurements
-    //mc.add_measure(measures::U_frame{params, qmc_config, result_set()}, "propagator measurement"); // we have to measure this (not a choice)
-    if (params.measure_sign) mc.add_measure(measures::sign{params, qmc_config, result_set()}, "sign measurement");
+    //mc.add_measure(measures::U_frame{params, qmc_data, result_set()}, "propagator measurement"); // we have to measure this (not a choice)
+    //if (params.measure_sign) mc.add_measure(measures::sign{params, qmc_data, result_set()}, "sign measurement");
 
     // Perform QMC run and collect results
     mc.warmup_and_accumulate(params.n_warmup_cycles, params.n_cycles, params.length_cycle, triqs::utility::clock_callback(params.max_time));

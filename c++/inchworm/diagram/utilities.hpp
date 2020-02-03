@@ -30,62 +30,64 @@
 #include <triqs/utility/macros.hpp>
 #include <triqs/utility/itertools.hpp>
 
+namespace inchworm::diagram {
+  constexpr int verbose = 1;
 
-constexpr int verbose = 1;
+  // optimization:
+  constexpr int smallest_segment   = 2;     // must be 2 or 4, beware.
+  constexpr bool remove_xoxo       = false; // new optimisation 1: IMPORTANT, only works with the option smallest_segment = 4;
+  constexpr bool remove_not_finite = false; // new optimisation 2: do not calculate determinant of
+                                            // the remainder when one segment is equal to zero (double == 0.0).
+                                            // But it might be not as straightforward when doing this comparison for complex values.
 
-// optimization:
-constexpr int smallest_segment   = 2;    // must be 2 or 4, beware.
-constexpr bool remove_xoxo       = false; // new optimisation 1: IMPORTANT, only works with the option smallest_segment = 4;
-constexpr bool remove_not_finite = false; // new optimisation 2: do not calculate determinant of
-                                         // the remainder when one segment is equal to zero (double == 0.0).
-                                         // But it might be not as straightforward when doing this comparison for complex values.
+  // check if an arch cross a point,
+  //
+  // example1: cross
+  //             p.
+  //         a______b
+  //
+  // example2: do not cross
+  //     p.
+  //         a______b
+  //
+  inline bool segment_cross_p(int a, int b, int p) { return (a - p) * (b - p) < 0; }
 
-// check if an arch cross a point,
-//
-// example1: cross
-//             p.
-//         a______b
-//
-// example2: do not cross
-//     p.
-//         a______b
-//
-inline bool segment_cross_p(int a, int b, int p) { return (a - p) * (b - p) < 0; }
+  // check if two arches cross,
+  //  i.e. if one end of one arch arrive in the middle of the other arch.
+  //
+  // example1: cross
+  // ____________
+  //         ________
+  //
+  // example2: do not cross
+  // ___
+  //         ________
+  //
+  // example3: do not cross
+  //           ___
+  //         ________
+  //
+  inline bool segment_cross(int a1, int b1, int a2, int b2) { return (a1 - a2) * (b1 - a2) * (b1 - b2) * (a1 - b2) < 0; }
 
-// check if two arches cross,
-//  i.e. if one end of one arch arrive in the middle of the other arch.
-//
-// example1: cross
-// ____________
-//         ________
-//
-// example2: do not cross
-// ___
-//         ________
-//
-// example3: do not cross
-//           ___
-//         ________
-//
-inline bool segment_cross(int a1, int b1, int a2, int b2) { return (a1 - a2) * (b1 - a2) * (b1 - b2) * (a1 - b2) < 0; }
+  // check if an arch cross a point,
+  //
+  // example1: cross
+  //             |
+  //         ________
+  //
+  // example2: do not cross
+  //     |
+  //         ________
+  //
+  inline bool segment_cross_point(int a, int b, int point) { return (a - (point + 0.5)) * (b - (point + 0.5)) < 0.0; }
 
-// check if an arch cross a point,
-//
-// example1: cross
-//             |
-//         ________
-//
-// example2: do not cross
-//     |
-//         ________
-//
-inline bool segment_cross_point(int a, int b, int point) { return (a - (point + 0.5)) * (b - (point + 0.5)) < 0.0; }
+  // calculate n!
+  //
+  inline int factorial(int n) {
+    if (n > 1)
+      return n * factorial(n - 1);
+    else
+      return 1;
+  }
 
-// calculate n!
-//
-inline int factorial(int n) {
-  if (n > 1)
-    return n * factorial(n - 1);
-  else
-    return 1;
-}
+} // namespace inchworm::diagram

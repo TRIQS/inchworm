@@ -29,7 +29,7 @@ namespace inchworm {
   struct container_set {
 
     /// propagator in imaginary time
-    u_tau_t U_tau;
+    u_tau_t u_tau;
 
     /// Greens function in imaginary time
     g_tau_t G_tau;
