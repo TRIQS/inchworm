@@ -24,7 +24,7 @@ namespace inchworm {
   };
 
   /// The Monte-Carlo Configuration Class
-  struct qmc_data_t {
+  struct qmc_config_data_t {
 
     // last accepted paraemeters
     config_t config;   // last accepted configuration of c and cdag
@@ -42,7 +42,7 @@ namespace inchworm {
     double tau_split;         // should be the tau_max_ of the previous inching.  0 < tau_split_ <= tau_max_
     bool use_bare_propagator; // true only for the first iteration of the inchworm calculation
 
-    qmc_data_t(params_t const &params, atom_diag const &h_diag, u_tau_t const &u_tau, block_gf_const_view<imtime> delta);
+    qmc_config_data_t(params_t const &params, atom_diag const &h_diag, u_tau_t const &u_tau, block_gf_const_view<imtime> delta);
     int size() { return config.size(); }
   };
 } // namespace inchworm

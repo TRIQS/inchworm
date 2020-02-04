@@ -26,8 +26,8 @@ namespace inchworm {
     u_frame_t u_frame{ad.n_subspaces()};
 
     for (int bl = 0; bl < ad.n_subspaces(); bl++) {
-      u_frame(bl) = matrix_t(ad.get_subspace_dim(bl), ad.get_subspace_dim(bl)); //  use zeros<> ?? check
-      u_frame(bl) = 0;
+      u_frame[bl] = matrix_t(ad.get_subspace_dim(bl), ad.get_subspace_dim(bl)); //  use zeros<> ?? check
+      u_frame[bl] = 0;
     }
     return u_frame;
   }
@@ -51,7 +51,17 @@ namespace inchworm {
     //auto u_frame = u_frame_t{h_diag};
 
     for (auto &block : u_tau) block[0] = 1; //make_unit_matrix<scalar_t>(first_dim(u_tau[bl][0])); // for auto
+    return u_tau;
   }
+
+//  void assign_frame_to_propagator(u_tau_t &u_tau, u_frame_t const &u_frame, int frame) {
+//    EXPECTS(u_frame.size() != u_tau.size());
+
+//    EXPECTS(1 == 2); //??? this test does not seems to work????
+
+//    for (int bl = 0; bl < u_frame.size(); bl++) u_tau[bl][frame] = u_frame.matrices[bl];
+//    return;
+//  }
 
   //
   u_frame_t propagator_product(atom_diag const &ad, time_diagram_t const &diagram, double tau, u_tau_t const *const u_tau_p) {
@@ -68,7 +78,7 @@ namespace inchworm {
         new_mat = matrix_t(dim, dim); //zeros?
         new_mat = 0;
         for (int j = 0; j < dim; j++) new_mat(j, j) = std::exp(-tau * ad.get_eigenvalue(initial_bl, j));
-        u_frame(new_bl) = new_mat;
+        u_frame[new_bl] = new_mat;
         continue;
       }
 
@@ -82,8 +92,8 @@ namespace inchworm {
       new_bl = initial_bl;
 
       double dtau = tau - diagram.max_tau();
-      if (u_tau_p) 1 == 1;
-      //new_mat = (*u_tau_p)[initial_bl](dtau);
+      if (u_tau_p)
+        new_mat = (*u_tau_p)[initial_bl](dtau);
       else {
         new_mat = matrix_t(dim, dim); //zeros?
         new_mat = 0;
@@ -98,14 +108,14 @@ namespace inchworm {
         new_bl         = (op.dag ? ad.cdag_connection(op.linear_index, new_bl) : ad.c_connection(op.linear_index, new_bl));
 
         dtau = op.tau - (i == 0 ? 0 : diagram.op_list[i - 1].tau);
-        if (u_tau_p) 1 == 1;
-        //new_mat = (*u_tau_p)[new_bl](dtau) * new_mat; // (interpolation)
+        if (u_tau_p)
+          new_mat = (*u_tau_p)[new_bl](dtau) * new_mat; // (interpolation)
         else {
           auto _ = triqs::arrays::range();
           for (int j = 0; j < dim; j++) new_mat(_, j) *= std::exp(-dtau * ad.get_eigenvalue(initial_bl, j)); // Time-evolution
         }
       }
-      u_frame(new_bl) = new_mat;
+      u_frame[new_bl] = new_mat;
     }
     return u_frame;
   }

@@ -45,14 +45,26 @@ namespace inchworm {
   using namespace triqs::hilbert_space;
   using namespace triqs::utility;
   using namespace triqs::h5;
-
   using namespace itertools;
+
+  // Defined by Maxime, need comments
+#ifdef HYBRIDISATION_IS_COMPLEX
+  using scalar_t                            = dcomplex;
+  static constexpr bool is_h_scalar_complex = true;
+  using hyb_target_t                        = matrix_valued;
+#else
+  using scalar_t                            = double;
+  static constexpr bool is_h_scalar_complex = false;
+  using hyb_target_t                        = matrix_real_valued;
+#endif
+  using matrix_t = matrix<scalar_t>;
 
   /// The structure of the gf : block_idx -> pair of block_name and index list (int/string)
   using triqs::hilbert_space::gf_struct_t;
 
   /// Container type of the propagator
-  using u_tau_t = block_gf<imtime, matrix_valued>;
+  using u_tau_t   = block_gf<imtime, hyb_target_t>;
+  using u_frame_t = std::vector<matrix_t>;
 
   /// Container type of one-particle Green and Vertex functions in imaginary times
   using g_tau_t = block_gf<imtime, matrix_valued>;
@@ -72,23 +84,14 @@ namespace inchworm {
   /// A const_view to a g_iw_t
   using g_iw_cvt = g_iw_t::const_view_type;
 
-  // Defined by Maxime, need comments
-#ifdef HYBRIDISATION_IS_COMPLEX
-  using scalar_t                            = dcomplex;
-  static constexpr bool is_h_scalar_complex = true;
-#else
-  using scalar_t                            = double;
-  static constexpr bool is_h_scalar_complex = false;
-#endif
-  using matrix_t = matrix<scalar_t>;
-
   /// Type of the Monte-Carlo weight. Either double or dcomplex
   //using scalar_t = scalar_t
 
   using atom_diag = triqs::atom_diag::atom_diag<is_h_scalar_complex>;
+
   using triqs::hilbert_space::gf_struct_t;
   //using triqs::utility::time_pt;
-  using op_t         = std::pair<time_pt, int>;
+  //using op_t         = std::pair<time_pt, int>;
   using indices_type = triqs::operators::indices_t;
 
   // Declare some placeholders for the rest of the code. Use anonymous namespace for proper linkage

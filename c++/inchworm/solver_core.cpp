@@ -118,7 +118,7 @@ namespace inchworm {
     u_tau = make_propagator(h_diag, params.n_tau); 
 
     // Create Monte-Carlo configuration
-    qmc_data_t qmc_data{params, h_diag, u_tau, _Delta_tau};
+    qmc_config_data_t qmc_data{params, h_diag, u_tau, _Delta_tau};
 
     mc.add_move(moves::insert{qmc_data, rng}, "insert move");
     mc.add_move(moves::remove{qmc_data, rng}, "remove move");

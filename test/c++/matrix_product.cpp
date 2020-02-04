@@ -22,6 +22,7 @@
 
 //#include <inchworm/solver_core.hpp>
 #include <inchworm/impurity_product.hpp>
+#include <inchworm/types.hpp>
 #include <triqs/test_tools/gfs.hpp>
 
 using namespace inchworm;
@@ -66,10 +67,10 @@ TEST(inchworm, matrix_product) {
   }
   qn_vector.push_back(n_tot);
 
-  auto ad                = triqs::atom_diag::atom_diag<false>(h, fops, qn_vector);
-  auto propagator_struct = find_propagator_struct(ad);
-  auto U_tau             = u_tau_t{{beta, Fermion, n_times}, propagator_struct};
-  assign_identity_to_propagator(U_tau, 0);
+  inchworm::atom_diag ad = {h, fops, qn_vector};
+  //auto propagator_struct = find_propagator_struct(ad);
+  //auto u_tau             = u_tau_t{{beta, Fermion, n_times}, propagator_struct};
+  u_tau_t u_tau = make_propagator(ad, n_times);
   //for (int i = 0; i < ad.n_subspaces(); i++) { std::cout << propagator[i] << "\n"; }
   //print_block_gf_first_time(propagator);
 
@@ -77,23 +78,26 @@ TEST(inchworm, matrix_product) {
   //print_block_gf_first_time(propagator);
   std::vector<diagram::time_and_index_t> c    = {{0.00, 0}, {0.05, 0}};
   std::vector<diagram::time_and_index_t> cdag = {{0.01, 0}, {0.08, 0}};
-  std::vector<double> split_times    = {};
+  std::vector<double> split_times             = {};
   time_diagram_t diagram(c, cdag, split_times);
 
-  auto U_frame = propagator_product(ad, diagram, 0.1);
-  assign_frame_to_propagator(U_tau, U_frame, 1);
-  std::cout << U_frame;
-  std::cout << U_frame.frobenius_norm() << "\n";
+  u_frame_t u_frame = make_zero_propagator_frame(ad);
+  u_frame = propagator_product(ad, diagram, 0.1);
+  for (int bl = 0; bl < u_frame.size(); bl++) u_tau[bl][1] = u_frame[bl];
+  std::cout << u_frame;
+  std::cout << frobenius_norm(u_frame) << "\n";
 
-  U_frame = propagator_product(U_tau, ad, diagram, 0.2);
-  assign_frame_to_propagator(U_tau, U_frame, 2);
-  std::cout << U_frame;
-  std::cout << U_frame.frobenius_norm() << "\n";
+  u_frame = propagator_product(ad, diagram, 0.2, &u_tau);
+  for (int bl = 0; bl < u_frame.size(); bl++) u_tau[bl][2] = u_frame[bl];
+  //assign_frame_to_propagator(u_tau, u_frame, 2);
+  std::cout << u_frame;
+  std::cout << frobenius_norm(u_frame) << "\n";
 
-  U_frame = propagator_product(U_tau, ad, diagram, 0.3);
-  assign_frame_to_propagator(U_tau, U_frame, 3);
-  std::cout << U_frame;
-  std::cout << U_frame.frobenius_norm() << "\n";
+  u_frame = propagator_product(ad, diagram, 0.3, &u_tau);
+  for (int bl = 0; bl < u_frame.size(); bl++) u_tau[bl][3] = u_frame[bl];
+  //assign_frame_to_propagator(u_tau, u_frame, 3);
+  std::cout << u_frame;
+  std::cout << frobenius_norm(u_frame) << "\n";
 
   //propagator_product(8.0, ad, diagram, 0.4); //////////ATTENTION CA MARCHE (POURQUOI?)
 }

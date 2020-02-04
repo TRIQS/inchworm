@@ -42,9 +42,7 @@ namespace inchworm {
    * @param ad atom_diag of the system considered here.
    * @return The gf_struct necessary to call u_tau_t.
    */
-  triqs::hilbert_space::gf_struct_t find_propagator_struct(atom_diag const &ad);
-
-  using u_frame_t = triqs::arrays::array<matrix<dcomplex>, 1>;
+  gf_struct_t find_propagator_struct(atom_diag const &ad);
 
   u_frame_t make_zero_propagator_frame(atom_diag const &ad);
 
@@ -63,6 +61,11 @@ namespace inchworm {
    * @param u_tau Full propagator calculated up until this point.
    * @return u_frame_t, at time tau, resulting from this product.
    */
-  u_frame_t propagator_product(atom_diag const &ad, time_diagram_t const &diagram, double tau, u_tau_t const *const u_tau_p = nullptr); 
+  u_frame_t propagator_product(atom_diag const &ad, time_diagram_t const &diagram, double tau, u_tau_t const *const u_tau_p = nullptr);
 
+  inline std::ostream &operator<<(std::ostream &out, u_frame_t const &u_frame) {
+    out << "propagator_frame (size: " << u_frame.size() << ")\n";
+    for (int bl = 0; bl < u_frame.size(); bl++) { out << u_frame[bl] << "\n"; }
+    return out;
+  }
 } // namespace inchworm

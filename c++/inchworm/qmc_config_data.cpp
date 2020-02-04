@@ -1,4 +1,4 @@
-#include "./qmc_data.hpp"
+#include "./qmc_config_data.hpp"
 #include "impurity_product.hpp"
 
 namespace inchworm {
@@ -20,7 +20,7 @@ namespace inchworm {
     return true;
   }
 
-  qmc_data_t::qmc_data_t(params_t const &params, atom_diag const &h_diag, u_tau_t const &u_tau, block_gf_const_view<imtime> delta)
+  qmc_config_data_t::qmc_config_data_t(params_t const &params, atom_diag const &h_diag, u_tau_t const &u_tau, block_gf_const_view<imtime> delta)
      : w{1.0, 1.0}, tau_max(params.beta), h_diag(h_diag), delta(delta), u_tau(u_tau) {
 
     u_frame_t u_frame = make_zero_propagator_frame(h_diag);

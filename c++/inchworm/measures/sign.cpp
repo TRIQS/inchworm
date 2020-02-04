@@ -2,7 +2,7 @@
 
 namespace inchworm::measures {
 
-  sign::sign(params_t const &params, qmc_data_t const &qmc_data_, container_set &results_)
+  sign::sign(params_t const &params, qmc_config_data_t const &qmc_data_, container_set &results_)
      : qmc_data(qmc_data_), results(results_), average_sign_(0.0), count(0) {}
 
   void sign::accumulate(scalar_t sign) {
