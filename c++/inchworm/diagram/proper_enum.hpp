@@ -33,7 +33,7 @@
 #include "diagram.hpp"
 #include "utilities.hpp"
 #include "print.hpp"
-#include "hybridization_matrix.hpp"
+#include "hyb_matrix.hpp"
 
 namespace inchworm::diagram {
   // find parity of a permutation by evaluating
@@ -154,7 +154,7 @@ std::vector<int> find_positions(std::string const &str, char c) {
   // for a given diagram definition. We can use the function
   // "test_diagram_connection" to define if a diagram is proper or not.
   //
-  hyb_scalar_t proper_enum(time_diagram_t const &diagram, std::function<hyb_scalar_t(double)> hyb_function) {
+  scalar_t proper_enum(time_diagram_t const &diagram, std::function<scalar_t(double)> hyb_function) {
 
     if constexpr (verbose) std::printf("\n\n##################\nPROPER-ENUMERATION:\n");
     auto hyb_mat     = hybridization_matrix{diagram, hyb_function};
@@ -163,7 +163,7 @@ std::vector<int> find_positions(std::string const &str, char c) {
     for (int i = 0; i < diagram.perturbation_order(); i++) permutation[i] = i;
 
     int NN = 0, N_proper = 0;
-    hyb_scalar_t total_value = 0.0, value = 1.0;
+    scalar_t total_value = 0.0, value = 1.0;
     do {
       NN += 1;
       int parity = find_parity(permutation);

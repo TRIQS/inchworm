@@ -7,7 +7,7 @@ namespace inchworm::measures {
     //u_frame_.reset();
   }
 
-  void u_frame::accumulate(mc_weight_t sign) {
+  void u_frame::accumulate(scalar_t sign) {
     u_frame_ += qmc_data.u_frame;
     average_sign_ += sign;
     //++count;

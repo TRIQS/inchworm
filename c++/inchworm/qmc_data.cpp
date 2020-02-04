@@ -23,7 +23,7 @@ namespace inchworm {
   qmc_data_t::qmc_data_t(params_t const &params, atom_diag const &h_diag, u_tau_t const &u_tau, block_gf_const_view<imtime> delta)
      : w{1.0, 1.0}, tau_max(params.beta), h_diag(h_diag), delta(delta), u_tau(u_tau) {
 
-    u_frame_t u_frame = init_propagator_frame(h_diag);
+    u_frame_t u_frame = make_zero_propagator_frame(h_diag);
     //auto propagator_struct = find_propagator_struct(h_diag);
     //u_tau                  = u_tau_t{{params.beta, Fermion, params.n_tau}, propagator_struct};
     //assign_identity_to_propagator(u_tau, 0); // assign identity matrices to the frame 0 of u_tau

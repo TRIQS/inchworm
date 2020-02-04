@@ -5,7 +5,7 @@ namespace inchworm::measures {
   sign::sign(params_t const &params, qmc_data_t const &qmc_data_, container_set &results_)
      : qmc_data(qmc_data_), results(results_), average_sign_(0.0), count(0) {}
 
-  void sign::accumulate(mc_weight_t sign) {
+  void sign::accumulate(scalar_t sign) {
     average_sign_ += sign;
     ++count;
   }

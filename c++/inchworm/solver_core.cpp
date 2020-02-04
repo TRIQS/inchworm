@@ -103,7 +103,7 @@ namespace inchworm {
     container_set::operator=(container_set{});
 
     // Construct the generic Monte-Carlo solver
-    triqs::mc_tools::mc_generic<mc_weight_t> mc(params.random_name, params.random_seed, params.verbosity);
+    triqs::mc_tools::mc_generic<scalar_t> mc(params.random_name, params.random_seed, params.verbosity);
 
     //
     if (params.partition_method != "quantum_numbers")
@@ -113,14 +113,9 @@ namespace inchworm {
 
     // Capture random number generator
     auto &rng = mc.get_rng();
-    
-    // Build the propagator
-    auto propagator_struct = find_propagator_struct(h_diag);
-    u_tau                  = u_tau_t{{params.beta, Fermion, params.n_tau}, propagator_struct};
-    //auto u_frame = u_frame_t{h_diag};
-    u_frame_t u_frame = init_propagator_frame(h_diag);
 
-    assign_identity_to_propagator(u_tau, 0); // assign identity matrices to the frame 0 of u_tau
+    u_frame_t u_frame = make_zero_propagator_frame(h_diag);
+    u_tau = make_propagator(h_diag, params.n_tau); 
 
     // Create Monte-Carlo configuration
     qmc_data_t qmc_data{params, h_diag, u_tau, _Delta_tau};

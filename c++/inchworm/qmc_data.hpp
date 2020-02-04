@@ -12,8 +12,8 @@
 namespace inchworm {
 
   struct weights_t {
-    h_scalar_t _loc; // atomic weight (Frobenius norm of the current propagator frame)
-    h_scalar_t _hyb; // value of the determinant in cthyb or its equivalent for the inchworm
+    scalar_t loc; // atomic weight (Frobenius norm of the current propagator frame)
+    scalar_t hyb; // value of the determinant in cthyb or its equivalent for the inchworm
   };
 
   struct config_t {

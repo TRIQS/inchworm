@@ -19,11 +19,11 @@
  * inchworm. If not, see <http://www.gnu.org/licenses/>.
  *
  ******************************************************************************/
-#include "hybridization_matrix.hpp"
+#include "hyb_matrix.hpp"
 #include <iomanip>
 
 namespace inchworm::diagram {
-  hyb_scalar_t hyb_function_dummy(hyb_scalar_t dtau) { // to be changed in the future
+  scalar_t hyb_function_dummy(double dtau) { // to be changed in the future
     return (1.0 / (0.1 * dtau - 0.5));
   }
 
@@ -40,7 +40,7 @@ namespace inchworm::diagram {
   }
 */
 
-  hybridization_matrix::hybridization_matrix(time_diagram_t const &diagram, std::function<hyb_scalar_t(double)> hyb_function)
+  hybridization_matrix::hybridization_matrix(time_diagram_t const &diagram, std::function<scalar_t(double)> hyb_function)
      //hybridization_matrix::hybridization_matrix(time_diagram_t const &diagram)
      : mat(diagram.perturbation_order(), diagram.perturbation_order()), diagram{diagram} {
 
@@ -56,7 +56,7 @@ namespace inchworm::diagram {
       }
   }
 /*
-  hybridization_matrix::hybridization_matrix(time_diagram_t const &diagram, std::function<hyb_scalar_t(double, int, int)> hyb_function_in)
+  hybridization_matrix::hybridization_matrix(time_diagram_t const &diagram, std::function<scalar_t(double, int, int)> hyb_function_in)
      : mat(diagram.perturbation_order(), diagram.perturbation_order()), diagram{diagram} {
 
     for (auto [i, c] : enumerate(diagram.c_list))
@@ -93,9 +93,9 @@ namespace inchworm::diagram {
     if constexpr (verbose > 1) print();
   }
 
-  hyb_scalar_t hybridization_matrix::det() { return determinant(mat); }
+  scalar_t hybridization_matrix::det() { return determinant(mat); }
 
-  hyb_scalar_t hybridization_matrix::extract_det(std::vector<int> const &list_of_indices) const {
+  scalar_t hybridization_matrix::extract_det(std::vector<int> const &list_of_indices) const {
 
     int N = list_of_indices.size() / 2;
     EXPECTS(list_of_indices.size() % 2 == 0);
@@ -121,7 +121,7 @@ namespace inchworm::diagram {
   void hybridization_matrix::print() {
     std::printf("\nhybridization mat: \n");
     for (int i = 0; i < diagram.perturbation_order(); i++) {
-      for (int j = 0; j < diagram.perturbation_order(); j++) { std::printf("% 2.3f ", mat(i, j)); }
+      for (int j = 0; j < diagram.perturbation_order(); j++) { std::printf("% 2.5f ", mat(i, j)); }
       std::printf("\n");
     }
     std::cout << std::setprecision(10) << mat;

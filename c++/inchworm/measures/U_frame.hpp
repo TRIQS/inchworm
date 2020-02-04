@@ -11,7 +11,7 @@ namespace inchworm::measures {
     u_frame(params_t const &params, qmc_data_t const &qmc_data_, container_set &results_);
 
     // Invoke a single measurement
-    void accumulate(mc_weight_t sign);
+    void accumulate(scalar_t sign);
 
     // Finalize
     void collect_results(mpi::communicator const &comm);
@@ -21,7 +21,7 @@ namespace inchworm::measures {
     qmc_data_t const &qmc_data;
     container_set &results;
 
-    mc_weight_t average_sign_; 
+    scalar_t average_sign_; 
     u_frame_t u_frame_;
   };
 

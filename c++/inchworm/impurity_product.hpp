@@ -50,61 +50,19 @@ namespace inchworm {
 
   double frobenius_norm(u_frame_t const &u_frame);
 
-  /*
-  struct u_frame_t {
-    std::vector<matrix<dcomplex>> matrices; // The different matrices of the blocks.
-    int acc_number;                         // Number of sample accumlated here
-
-    // Constructor
-    u_frame_t(atom_diag const &ad);
-
-    // Function to add them, and accumulate.
-    // u_frame_t &operator+=(u_frame_t u_frame);
-
-    // Function to add them, and accumulate.
-    u_frame_t &operator+=(u_frame_t u_frame) {
-      for (int bl = 0; bl < matrices.size(); bl++) matrices[bl] += u_frame.matrices[bl];
-      acc_number++;
-      return *this;
-    }
-
-    // Function to add them, and accumulate.
-    u_frame_t &operator+(u_frame_t u_frame) {
-      for (int bl = 0; bl < matrices.size(); bl++) matrices[bl] += u_frame.matrices[bl];
-      acc_number++;
-      return *this;
-    }
-
-    void assign(int bl, matrix<dcomplex> mat);
-
-    // Set the values to zero
-    void reset();
-
-    // Calculate the Frobenius norm of the matrix
-    double frobenius_norm();
-
-    // Printing function.
-    friend std::ostream &operator<<(std::ostream &out, u_frame_t const &u_frame);
-  };
-*/
-
   //void init_propagator_frame(u_tau_t &U, u_frame_t const &u_frame, int frame); // faire un constructeur (struct)
 
-  void init_propagator(u_tau_t &U); //meme
+  u_tau_t make_propagator(atom_diag const &h_diag, int n_tau);
 
   /// Function that calculate the product: u_frame = U(tau_0) op U(tau_1-tau_0) op U(tau_2-tau_1) op U(tau_3-tau_2) ... op U(tau-tau_n)
   /// where op is either c_dag or c operator, depending on the configuration
   /** 
-   * @param U Full propagator calculated up until this point.
    * @param ad atom_diag of the system considered here.
    * @param diagram Configuration of the n operators (op) of the present Monte Carlo step.
    * @param tau Time of the u_frame_t calculated here. tau must be greater than any times
-   * @param use_bare_U If true, calculate the same product using only the bare propagators. 
+   * @param u_tau Full propagator calculated up until this point.
    * @return u_frame_t, at time tau, resulting from this product.
    */
-  u_frame_t propagator_product(u_tau_t const &U, atom_diag const &ad, time_diagram_t const &diagram, double tau, bool use_bare_U = false);
-
-  /// If the user do not provide the propagator, use bare propagator instead.
-  u_frame_t propagator_product(atom_diag const &ad, time_diagram_t const &diagram, double tau);
+  u_frame_t propagator_product(atom_diag const &ad, time_diagram_t const &diagram, double tau, u_tau_t const *const u_tau_p = nullptr); 
 
 } // namespace inchworm

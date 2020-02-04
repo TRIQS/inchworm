@@ -2,7 +2,8 @@
 
 namespace inchworm {
 
-  triqs::hilbert_space::gf_struct_t find_propagator_struct(triqs::atom_diag::atom_diag<false> const &ad) {
+  //
+  triqs::hilbert_space::gf_struct_t find_propagator_struct(atom_diag const &ad) {
     int n_sub = ad.n_subspaces();
     triqs::hilbert_space::gf_struct_t propagator_struct;
 
@@ -20,192 +21,93 @@ namespace inchworm {
     return propagator_struct;
   }
 
-  u_frame_t init_propagator_frame(triqs::atom_diag::atom_diag<false> const &ad) {
+  //
+  u_frame_t make_zero_propagator_frame(atom_diag const &ad) {
     u_frame_t u_frame{ad.n_subspaces()};
 
     for (int bl = 0; bl < ad.n_subspaces(); bl++) {
-      u_frame(bl) = matrix<dcomplex>(ad.get_subspace_dim(bl), ad.get_subspace_dim(bl));
+      u_frame(bl) = matrix_t(ad.get_subspace_dim(bl), ad.get_subspace_dim(bl)); //  use zeros<> ?? check
       u_frame(bl) = 0;
     }
+    return u_frame;
   }
 
   // Calculate the Frobenius norm of the u_frame block diagonal matrix:
-  double frobenius_norm(u_frame_t u_frame) {
+  double frobenius_norm(u_frame_t const &u_frame) {
     double val = 0;
-    for (int bl = 0; bl < u_frame.size(); bl++) {
-      for (int i = 0; i < first_dim(u_frame(bl)); i++) {
-        for (int j = 0; j < second_dim(u_frame(bl)); j++) {
-
-          double elem = std::abs(u_frame(bl)(i, j));
-          val += elem * elem;
-        }
-      }
+    for (auto const &B : u_frame) {
+      double norm = frobenius_norm(B);
+      val += norm * norm;
     }
     return std::sqrt(val);
   }
 
+  // mettre dans une classe
+  u_tau_t make_propagator(atom_diag const &h_diag, int n_tau) {
+    // this assign identity to the first frame (or time) of the propagator.
+    // Build the propagator
+    auto propagator_struct = find_propagator_struct(h_diag);
+    auto u_tau             = u_tau_t{{1, Fermion, n_tau}, propagator_struct};
+    //auto u_frame = u_frame_t{h_diag};
 
-/*
-  // Constructor
-  // Function to add them, and accumulate.
-  // u_frame_t::u_frame_t &operator+=(u_frame_t u_frame) {
-  //  for (int bl = 0; bl < matrices.size(); bl++) matrices[bl] += u_frame.matrices[bl];
-  //  acc_number++;
-  //  return *this;
-  //}
-
-  void u_frame_t::assign(int bl, matrix<dcomplex> mat) {
-    if (acc_number > 1) {
-      std::printf("error: cannot assign in an accumalted frame.\n");
-      exit(0);
-    } else {
-      acc_number = 1;
-    }
-    matrices[bl] = mat;
+    for (auto &block : u_tau) block[0] = 1; //make_unit_matrix<scalar_t>(first_dim(u_tau[bl][0])); // for auto
   }
 
-  // Set the values to zero
-  void u_frame_t::reset() {
-    for (int bl = 0; bl < matrices.size(); bl++) matrices[bl] = 0;
-    acc_number = 0;
-  }
+  //
+  u_frame_t propagator_product(atom_diag const &ad, time_diagram_t const &diagram, double tau, u_tau_t const *const u_tau_p) {
 
-  // Calculate the Frobenius norm of the matrix
-  double u_frame_t::frobenius_norm() {
-    double val = 0;
-    for (int bl = 0; bl < matrices.size(); bl++) {
-      for (int i = 0; i < first_dim(matrices[bl]); i++) {
-        for (int j = 0; j < second_dim(matrices[bl]); j++) {
-
-          double elem = std::abs(matrices[bl](i, j));
-          val += elem * elem;
-        }
-      }
-      if (acc_number > 1) {
-        std::printf("error: frobenius_norm...\n");
-        exit(0);
-      };
-    }
-    return std::sqrt(val);
-  }
-
-  // Printing function.
-  std::ostream &operator<<(std::ostream &out, u_frame_t const &u_frame) {
-    out << "u_frame_t (size: " << u_frame.matrices.size() << ")\n";
-    for (int bl = 0; bl < u_frame.matrices.size(); bl++) { out << u_frame.matrices[bl] << "\n"; }
-    return out;
-  }
-*/
-
-  void init_propagator(u_tau_t &u_tau) { // this assign identity to the first frame (or time) of the propagator.
-    for (int bl = 0; bl < u_tau.size(); bl++) u_tau[bl][0] = make_unit_matrix<dcomplex>(first_dim(u_tau[bl][0]));
-    return;
-  }
-
-  /// Function that calculate the product: u_frame = U(tau_0) op U(tau_1-tau_0) op U(tau_2-tau_1) op U(tau_3-tau_2) ... op U(tau-tau_n)
-  /// where op is either c_dag or c operator, depending on the configuration
-  /** 
-   * @param U Full propagator calculated up until this point.
-   * @param ad atom_diag of the system considered here.
-   * @param diagram Configuration of the n operators (op) of the present Monte Carlo step.
-   * @param tau Time of the u_frame_t calculated here. tau must be greater than any times
-   * @param use_bare_U If true, calculate the same product using only the bare propagators. 
-   * @return u_frame_t, at time tau, resulting from this product.
-   */
-  u_frame_t propagator_product(u_tau_t const &U, triqs::atom_diag::atom_diag<false> const &ad, time_diagram_t const &diagram, double tau,
-                                      bool use_bare_U) {
-
-    if (not use_bare_U) {
-      //EXPECTS(false);
-      EXPECTS(U.size() == ad.n_subspaces()); //??? this test does not seems to work????
-    }
-    //auto fs = ad.get_fock_states();
-
-    u_frame_t u_frame = init_propagator_frame(ad);
+    u_frame_t u_frame = make_zero_propagator_frame(ad);
 
     for (int initial_bl = 0; initial_bl < ad.n_subspaces(); initial_bl++) {
-      int dim                  = ad.get_subspace_dim(initial_bl);
-      int new_bl               = initial_bl;
-      matrix<dcomplex> new_mat = matrix<dcomplex>(dim, dim);
-      new_mat                  = 0;
+      int dim      = ad.get_subspace_dim(initial_bl);
+      int new_bl   = initial_bl;
+      auto new_mat = matrix_t{};
 
       //std::printf("bl %d \n", initial_bl);
-      if (diagram.size() == 0) { // if order is zero, use bare propagator and skip the rest of the function
-        for (int j = 0; j < dim; j++) {
-          new_mat(j, j) = std::exp(-(0-tau) * ad.get_eigenvalue(initial_bl, j));
-        }
+      if (diagram.size() == 0) {      // if order is zero, use bare propagator and skip the rest of the function
+        new_mat = matrix_t(dim, dim); //zeros?
+        new_mat = 0;
+        for (int j = 0; j < dim; j++) new_mat(j, j) = std::exp(-tau * ad.get_eigenvalue(initial_bl, j));
         u_frame(new_bl) = new_mat;
         continue;
       }
 
-      for (int i = diagram.size() - 1; i >= 0; i--) {
-        //std::printf("i %d \n", i);
-        auto op = diagram.op_list[i];
-        new_bl  = (op.dag ? ad.cdag_connection(op.linear_index, new_bl) : ad.c_connection(op.linear_index, new_bl));
-        //std::printf(" %d  %d   % 4.5f   ", op.linear_index, op.dag, op.tau);
-        //std::printf("  old: %d, new: %d \n", initial_bl, new_bl);
-        if (new_bl == -1)
-          break; /// !!!!!!!!!! important because connection(*, -1) is not correct (should give -1). Need additional optimization. does not take into account consecutive c_i c_i, or cdag_i cdag_i
+      for (int i = diagram.size() - 1; (i >= 0) and (new_bl != -1); i--) {
+        auto const &op = diagram.op_list[i];
+        new_bl         = (op.dag ? ad.cdag_connection(op.linear_index, new_bl) : ad.c_connection(op.linear_index, new_bl));
       }
       //std::printf("bloc: %d, goes to: %d \n", initial_bl, new_bl);
 
-      if (new_bl != -1) {
-        new_bl = initial_bl;
+      if (new_bl == -1) continue;
+      new_bl = initial_bl;
 
-        double dtau = tau - diagram.max_tau();
-        //std::cout << "dtau:" << dtau << "\n"
-        //          << "tau:" << tau << "\n"
-        //          << "diagram.max_tau():" << diagram.max_tau() << "\n";
-        //std::cout << "before\n" << U[initial_bl](dtau) << "\n\n";
-        //matrix<dcomplex> new_mat = U[initial_bl][0];
-        if (use_bare_U) {
-          for (int j = 0; j < dim; j++)
-            new_mat(j, j) = std::exp(-dtau * ad.get_eigenvalue(initial_bl, j)); // Create time-evolution matrix e^-H(tau-tau_max)
-        } else {
-          new_mat = U[initial_bl](dtau);
-        }
-        //std::cout << "after\n" << new_mat << "\n\n";
-
-        for (int i = diagram.size() - 1; i >= 0; i--) {
-          // for (auto const op : diagram.op_list) {
-          auto op = diagram.op_list[i];
-          //std::cout << "just_before\n" << new_mat << "\n\n";
-          //std::cout << "new_bl " << new_bl << "\n\n";
-          //std::cout << "c? " << ad.c_matrix(op.linear_index, new_bl) << "\n\n";
-          //std::cout << "cdag? " << ad.cdag_matrix(op.linear_index, new_bl) << "\n\n";
-          //std::cout << "op.dag " << (op.dag ? "true " : "false ") << "\n\n";
-          new_mat = (op.dag ? ad.cdag_matrix(op.linear_index, new_bl) * new_mat : ad.c_matrix(op.linear_index, new_bl) * new_mat);
-          new_bl  = (op.dag ? ad.cdag_connection(op.linear_index, new_bl) : ad.c_connection(op.linear_index, new_bl));
-
-          if (i < diagram.size() - 1) {
-            dtau = op.tau - diagram.op_list[i - 1].tau;
-          } else {
-            dtau = op.tau;
-          }
-          //std::cout << "mat:" << matrix<dcomplex>{U[new_bl](dtau)} << "\n";
-          //std::cout << "mat:" << new_mat << "\n";
-          if (use_bare_U) {
-            auto _ = triqs::arrays::range();
-            for (int j = 0; j < dim; j++) new_mat(_, j) *= std::exp(-dtau * ad.get_eigenvalue(initial_bl, j)); // Time-evolution
-          } else {
-            new_mat = matrix<dcomplex>{U[new_bl](dtau)} * new_mat;
-          }
-          //std::cout << "mat:" << new_mat << "\n";
-        }
-        u_frame(new_bl) = new_mat;
+      double dtau = tau - diagram.max_tau();
+      if (u_tau_p) 1 == 1;
+      //new_mat = (*u_tau_p)[initial_bl](dtau);
+      else {
+        new_mat = matrix_t(dim, dim); //zeros?
+        new_mat = 0;
+        for (int j = 0; j < dim; j++)
+          new_mat(j, j) = std::exp(-dtau * ad.get_eigenvalue(initial_bl, j)); // Create time-evolution matrix e^-H(tau-tau_max)
       }
-      //std::cout << "mat3:" << new_mat << "\n";
-      //std::printf("\n\n");
-      //std::cout << "u_frame\n" << u_frame << "\n\n";
-    }
-    //std::cout << "u_frame_end\n" << u_frame << "\n\n";
-    return u_frame;
-  } // namespace inchworm
+      //std::cout << "after\n" << new_mat << "\n\n";
 
-  /// If the user do not provide the propagator, use bare propagator instead.
-  u_frame_t propagator_product(triqs::atom_diag::atom_diag<false> const &ad, time_diagram_t const &diagram, double tau) {
-    u_tau_t U;
-    return propagator_product(U, ad, diagram, tau, true);
+      for (int i = diagram.size() - 1; i >= 0; i--) {
+        auto const &op = diagram.op_list[i];
+        new_mat        = (op.dag ? ad.cdag_matrix(op.linear_index, new_bl) : ad.c_matrix(op.linear_index, new_bl)) * new_mat;
+        new_bl         = (op.dag ? ad.cdag_connection(op.linear_index, new_bl) : ad.c_connection(op.linear_index, new_bl));
+
+        dtau = op.tau - (i == 0 ? 0 : diagram.op_list[i - 1].tau);
+        if (u_tau_p) 1 == 1;
+        //new_mat = (*u_tau_p)[new_bl](dtau) * new_mat; // (interpolation)
+        else {
+          auto _ = triqs::arrays::range();
+          for (int j = 0; j < dim; j++) new_mat(_, j) *= std::exp(-dtau * ad.get_eigenvalue(initial_bl, j)); // Time-evolution
+        }
+      }
+      u_frame(new_bl) = new_mat;
+    }
+    return u_frame;
   }
 
 } // namespace inchworm

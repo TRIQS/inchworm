@@ -41,7 +41,7 @@ namespace inchworm {
     g_iw_t Sigma_iw;
 
     /// vector of average sign
-    std::vector<mc_weight_t> average_sign;
+    std::vector<scalar_t> average_sign;
 
     /// Function that writes all containers to hdf5 file
     friend void h5_write(triqs::h5::group h5group, std::string subgroup_name, container_set const &c);

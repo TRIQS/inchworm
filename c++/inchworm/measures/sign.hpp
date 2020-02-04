@@ -12,7 +12,7 @@ namespace inchworm::measures {
     sign(params_t const &params, qmc_data_t const &qmc_data_, container_set &results);
 
     // Invoke a single measurement
-    void accumulate(mc_weight_t sign);
+    void accumulate(scalar_t sign);
 
     // Finalize
     void collect_results(mpi::communicator const &comm);
@@ -23,7 +23,7 @@ namespace inchworm::measures {
 
     container_set &results;
 
-    mc_weight_t average_sign_;
+    scalar_t average_sign_;
 
     long count;
   };

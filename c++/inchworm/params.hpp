@@ -26,7 +26,7 @@
 
 namespace inchworm {
 
-  using many_body_op_t = triqs::operators::many_body_operator_generic<h_scalar_t>; // Operator with real or complex value
+  using many_body_op_t = triqs::operators::many_body_operator_generic<scalar_t>; // Operator with real or complex value
 
   /// The parameters for the solver construction
   struct constr_params_t {
