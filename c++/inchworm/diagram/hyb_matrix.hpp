@@ -36,7 +36,7 @@ namespace inchworm::diagram {
 
   //scalar_t hyb_function(scalar_t dtau);
 
-  struct hybridization_matrix {
+  struct hyb_matrix_t {
 
     using matrix_t = triqs::arrays::matrix<scalar_t>;
 
@@ -44,7 +44,7 @@ namespace inchworm::diagram {
     time_diagram_t const &diagram;
 
     /// Constructor
-    hybridization_matrix(time_diagram_t const &diagram, std::function<scalar_t(double)>);
+    hyb_matrix_t(time_diagram_t const &diagram, std::function<scalar_t(double)>);
 
     /// Set the value of adjacent vertex to zero in the matrix. (segment of length 2 optimization)
     void optimize_inclusion_exclusion();

@@ -28,7 +28,7 @@ namespace inchworm::diagram {
   }
 
   /*
-  hybridization_matrix::hybridization_matrix(time_diagram_t const &diagram)
+  hyb_matrix_t::hyb_matrix_t(time_diagram_t const &diagram)
      : mat(diagram.perturbation_order(), diagram.perturbation_order()), diagram{diagram} {
 
     for (auto [i, c] : enumerate(diagram.c_list))
@@ -40,8 +40,8 @@ namespace inchworm::diagram {
   }
 */
 
-  hybridization_matrix::hybridization_matrix(time_diagram_t const &diagram, std::function<scalar_t(double)> hyb_function)
-     //hybridization_matrix::hybridization_matrix(time_diagram_t const &diagram)
+  hyb_matrix_t::hyb_matrix_t(time_diagram_t const &diagram, std::function<scalar_t(double)> hyb_function)
+     //hyb_matrix_t::hyb_matrix_t(time_diagram_t const &diagram)
      : mat(diagram.perturbation_order(), diagram.perturbation_order()), diagram{diagram} {
 
     for (auto [i, c] : enumerate(diagram.c_list))
@@ -55,8 +55,10 @@ namespace inchworm::diagram {
         //        else mat(i,j) = -hyb( hyb.mesh().domain().beta + dtau )( cdag.orb, c.orb );
       }
   }
-/*
-  hybridization_matrix::hybridization_matrix(time_diagram_t const &diagram, std::function<scalar_t(double, int, int)> hyb_function_in)
+
+  /*
+  hyb_matrix_t::hyb_matrix_t(time_diagram_t const &diagram,  g_tau_t :q
+  Delta_tau, )
      : mat(diagram.perturbation_order(), diagram.perturbation_order()), diagram{diagram} {
 
     for (auto [i, c] : enumerate(diagram.c_list))
@@ -70,8 +72,9 @@ namespace inchworm::diagram {
           mat(i, j) = -hyb_function_in(hyb.mesh().domain().beta + dtau)(cdag.linear_index, c.linear_index);
       }
   }
-*/
-  void hybridization_matrix::optimize_inclusion_exclusion() {
+  */
+
+  void hyb_matrix_t::optimize_inclusion_exclusion() {
     if (smallest_segment == 4) {
       for (int k = 0; k < diagram.op_list.size() - 1; k++) {
 
@@ -93,9 +96,9 @@ namespace inchworm::diagram {
     if constexpr (verbose > 1) print();
   }
 
-  scalar_t hybridization_matrix::det() { return determinant(mat); }
+  scalar_t hyb_matrix_t::det() { return determinant(mat); }
 
-  scalar_t hybridization_matrix::extract_det(std::vector<int> const &list_of_indices) const {
+  scalar_t hyb_matrix_t::extract_det(std::vector<int> const &list_of_indices) const {
 
     int N = list_of_indices.size() / 2;
     EXPECTS(list_of_indices.size() % 2 == 0);
@@ -118,7 +121,7 @@ namespace inchworm::diagram {
     return determinant(m);
   }
 
-  void hybridization_matrix::print() {
+  void hyb_matrix_t::print() {
     std::printf("\nhybridization mat: \n");
     for (int i = 0; i < diagram.perturbation_order(); i++) {
       for (int j = 0; j < diagram.perturbation_order(); j++) { std::printf("% 2.5f ", mat(i, j)); }

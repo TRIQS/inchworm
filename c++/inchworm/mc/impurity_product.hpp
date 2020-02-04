@@ -20,9 +20,9 @@
  *
  ******************************************************************************/
 #pragma once
-#include "./types.hpp"
-#include "./params.hpp"
-#include "./diagram/diagram.hpp"
+#include "../types.hpp"
+#include "../params.hpp"
+#include "../diagram/diagram.hpp"
 
 #include <numeric>
 #include <bitset>

@@ -1,5 +1,4 @@
 #include "./insert.hpp"
-#include "../diagram/print.hpp"
 
 namespace inchworm::moves {
 

@@ -98,7 +98,7 @@ namespace inchworm::diagram {
   void calculate_segment(int segment_numero,
                          std::vector<segment_t> &segments_list, // not const: modified
                          std::vector<set_of_segments_t> const &set_disjoint_list, std::vector<set_of_segments_t> const &set_adjacent_list,
-                         hybridization_matrix const &hyb_mat, time_diagram_t const &diagram, bool special = false);
+                         hyb_matrix_t const &hyb_mat, time_diagram_t const &diagram, bool special = false);
 
   // inclusion_exclusion algo based on Boag et al. PRB (2018) (with few changes)
   // We first determine the independent segments. We then combine

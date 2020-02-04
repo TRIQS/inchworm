@@ -22,10 +22,10 @@
 #include "./solver_core.hpp"
 
 #include "./post_process.hpp"
-#include "./measures/sign.hpp"
-//#include "./measures/u_frame.hpp"
-#include "./moves/insert.hpp"
-#include "./moves/remove.hpp"
+#include "./mc/measures/sign.hpp"
+//#include "./mc/measures/u_frame.hpp"
+#include "./mc/moves/insert.hpp"
+#include "./mc/moves/remove.hpp"
 
 #include <triqs/utility/callbacks.hpp>
 #include <triqs/mc_tools/mc_generic.hpp>
@@ -69,16 +69,23 @@ namespace inchworm {
     }
 
     // setup the linear index map
-    std::map<std::pair<int, int>, int> linindex;
+    //std::map<std::pair<int, int>, int> linindex;
+    std::map<int, std::pair<int, int>> linindex2;
     int block_index = 0;
     for (auto const &bl : gf_struct) {
       int inner_index = 0;
       for (auto const &a : bl.second) {
-        printf("salut: %d\n", fops[{bl.first, a}]);
-        linindex[std::make_pair(block_index, inner_index)] = fops[{bl.first, a}];
+        //linindex[std::make_pair(block_index, inner_index)] = fops[{bl.first, a}];
+        linindex2[fops[{bl.first, a}]] = std::make_pair(block_index, inner_index);
         inner_index++;
+        ///printf("salut: %d\n", fops[{bl.first, a}]);
       }
       block_index++;
+    }
+
+    for (int i = 0; i < 2; i++) {
+      auto [tmp1, tmp2] = linindex2[i];
+      std::cout << tmp1 << " " << tmp2 << "\n";
     }
 
     // Make list of block sizes
@@ -115,17 +122,17 @@ namespace inchworm {
     auto &rng = mc.get_rng();
 
     u_frame_t u_frame = make_zero_propagator_frame(h_diag);
-    u_tau = make_propagator(h_diag, params.n_tau); 
+    u_tau             = make_propagator(h_diag, params.n_tau);
 
     // Create Monte-Carlo configuration
-    qmc_config_data_t qmc_data{params, h_diag, u_tau, _Delta_tau};
+    qmc_config_data_t qmc_config_data{params, h_diag, u_tau, _Delta_tau, linindex2};
 
-    mc.add_move(moves::insert{qmc_data, rng}, "insert move");
-    mc.add_move(moves::remove{qmc_data, rng}, "remove move");
+    mc.add_move(moves::insert{qmc_config_data, rng}, "insert move");
+    mc.add_move(moves::remove{qmc_config_data, rng}, "remove move");
 
     // Register all measurements
-    //mc.add_measure(measures::u_frame{params, qmc_data, result_set()}, "propagator measurement"); // we have to measure this (not a choice)
-    //if (params.measure_sign) mc.add_measure(measures::sign{params, qmc_data, result_set()}, "sign measurement");
+    //mc.add_measure(measures::u_frame{params, qmc_config_data, result_set()}, "propagator measurement"); // we have to measure this (not a choice)
+    //if (params.measure_sign) mc.add_measure(measures::sign{params, qmc_config_data, result_set()}, "sign measurement");
 
     // Perform QMC run and collect results
     mc.warmup_and_accumulate(params.n_warmup_cycles, params.n_cycles, params.length_cycle, triqs::utility::clock_callback(params.max_time));

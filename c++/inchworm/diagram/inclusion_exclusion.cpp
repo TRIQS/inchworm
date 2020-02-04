@@ -185,7 +185,7 @@ namespace inchworm::diagram {
   void calculate_segment(int segment_numero,
                          std::vector<segment_t> &segments_list, // not const: modified
                          std::vector<set_of_segments_t> const &set_disjoint_list, std::vector<set_of_segments_t> const &set_adjacent_list,
-                         hybridization_matrix const &hyb_mat, time_diagram_t const &diagram, bool special) {
+                         hyb_matrix_t const &hyb_mat, time_diagram_t const &diagram, bool special) {
 
     segments_list[segment_numero].calculated = true;
     if constexpr (verbose > 1) { print_segment(segments_list[segment_numero], diagram); }
@@ -261,7 +261,7 @@ namespace inchworm::diagram {
   //
   scalar_t inclusion_exclusion(time_diagram_t const &diagram, std::function<scalar_t(double)> hyb_function) {
 
-    hybridization_matrix hyb_mat(diagram, hyb_function);
+    hyb_matrix_t hyb_mat(diagram, hyb_function);
     hyb_mat.optimize_inclusion_exclusion(); // put some values to zero in hyb matrix (segment of length 2)
     if (diagram.is_trivial) { return 0; }   // return 0 or det??
     if (diagram.perturbation_order() == 1) {
@@ -320,7 +320,7 @@ namespace inchworm::diagram {
   }
 
   scalar_t determinant(time_diagram_t const &diagram, std::function<scalar_t(double)> hyb_function) {
-    hybridization_matrix hyb_mat(diagram, hyb_function);
+    hyb_matrix_t hyb_mat(diagram, hyb_function);
     //hyb_mat.print();
     return hyb_mat.det();
   }

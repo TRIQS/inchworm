@@ -1,5 +1,6 @@
 #pragma once
 #include "../qmc_config_data.hpp"
+#include "../../diagram/print.hpp"
 
 #include <triqs/mc_tools/random_generator.hpp>
 #include <inchworm/diagram/inclusion_exclusion.hpp>
@@ -7,19 +8,19 @@
 namespace inchworm::moves {
 
   /// A simple Monte-Carlo move
-  struct insert {
+  struct remove {
 
-    /// Attempt vertex insertion
+    /// Attempt vertex removing
     scalar_t attempt();
 
-    /// Accept vertex insertion
+    /// Accept vertex removing
     scalar_t accept();
 
-    /// Reject vertex insertion
+    /// Reject vertex removing
     void reject() {}
 
-    /// Constructor
-    insert(qmc_config_data_t &data, triqs::mc_tools::random_generator &rng) : data(data), rng(rng) {}
+    /// Constructor:
+    remove(qmc_config_data_t &data, triqs::mc_tools::random_generator &rng) : data(data), rng(rng) {}
 
     private:
     /// The Monte-Carlo configuration
@@ -28,7 +29,7 @@ namespace inchworm::moves {
     /// The random number generator
     triqs::mc_tools::random_generator &rng;
 
-    /// c/cdag lists of proposed insert
+    /// c/cdag lists of proposed remove
     config_t proposed_config; // proposed configuration of c and cdag
 
     /// weights of the proposed configuration

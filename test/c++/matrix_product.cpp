@@ -21,7 +21,7 @@
  ******************************************************************************/
 
 //#include <inchworm/solver_core.hpp>
-#include <inchworm/impurity_product.hpp>
+#include <inchworm/mc/impurity_product.hpp>
 #include <inchworm/types.hpp>
 #include <triqs/test_tools/gfs.hpp>
 
