@@ -29,6 +29,7 @@
 
 #include "diagram.hpp"
 #include "../types.hpp"
+#include "../mc/qmc_config_data.hpp"
 
 namespace inchworm::diagram {
   //using hybridization_function_t = triqs::gfs::gf<triqs::gfs::imtime,triqs::gfs::matrix_real_valued>;
@@ -43,8 +44,9 @@ namespace inchworm::diagram {
     matrix_t mat;
     time_diagram_t const &diagram;
 
-    /// Constructor
+    /// Constructors
     hyb_matrix_t(time_diagram_t const &diagram, std::function<scalar_t(double)>);
+    hyb_matrix_t(time_diagram_t const &diagram, hyb_adaptor_t const &hyb_tau);
 
     /// Set the value of adjacent vertex to zero in the matrix. (segment of length 2 optimization)
     void optimize_inclusion_exclusion();

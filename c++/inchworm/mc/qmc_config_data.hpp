@@ -39,13 +39,13 @@ namespace inchworm {
   };
 
   struct hyb_adaptor_t {
-    h_tau_t hyb_tau; // make a copy.
-    std::map<int, std::pair<int, int>> linindex;
+    h_tau_t const &hyb_tau; // make a copy.
+    std::map<int, std::pair<int, int>> const &linindex;
 
     hyb_adaptor_t(h_tau_t const &hyb_tau, std::map<int, std::pair<int, int>> const &linindex)
        : hyb_tau(std::move(hyb_tau)), linindex(std::move(linindex)) {}
 
-    scalar_t operator()(double tau, int li, double tau_dag, int li_dag) {
+    scalar_t operator()(double tau, int li, double tau_dag, int li_dag) const {
       auto [bl, in]         = linindex[li];
       auto [bl_dag, in_dag] = linindex[li_dag];
 
