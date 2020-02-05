@@ -84,7 +84,7 @@ namespace inchworm {
     }
 
     for (int i = 0; i < 2; i++) {
-      auto [tmp1, tmp2] = linindex2[i];
+      auto [tmp1, tmp2] = linindex2.at(i);
       std::cout << tmp1 << " " << tmp2 << "\n";
     }
 

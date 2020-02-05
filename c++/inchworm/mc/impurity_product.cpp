@@ -23,7 +23,7 @@ namespace inchworm {
 
   //
   u_frame_t make_zero_propagator_frame(atom_diag const &ad) {
-    u_frame_t u_frame{ad.n_subspaces()};
+    u_frame_t u_frame(ad.n_subspaces());
 
     for (int bl = 0; bl < ad.n_subspaces(); bl++) {
       u_frame[bl] = matrix_t(ad.get_subspace_dim(bl), ad.get_subspace_dim(bl)); //  use zeros<> ?? check
@@ -53,15 +53,6 @@ namespace inchworm {
     for (auto &block : u_tau) block[0] = 1; //make_unit_matrix<scalar_t>(first_dim(u_tau[bl][0])); // for auto
     return u_tau;
   }
-
-//  void assign_frame_to_propagator(u_tau_t &u_tau, u_frame_t const &u_frame, int frame) {
-//    EXPECTS(u_frame.size() != u_tau.size());
-
-//    EXPECTS(1 == 2); //??? this test does not seems to work????
-
-//    for (int bl = 0; bl < u_frame.size(); bl++) u_tau[bl][frame] = u_frame.matrices[bl];
-//    return;
-//  }
 
   //
   u_frame_t propagator_product(atom_diag const &ad, time_diagram_t const &diagram, double tau, u_tau_t const *const u_tau_p) {

@@ -46,8 +46,8 @@ namespace inchworm {
        : hyb_tau(std::move(hyb_tau)), linindex(std::move(linindex)) {}
 
     scalar_t operator()(double tau, int li, double tau_dag, int li_dag) const {
-      auto [bl, in]         = linindex[li];
-      auto [bl_dag, in_dag] = linindex[li_dag];
+      auto [bl, in]         = linindex.at(li);
+      auto [bl_dag, in_dag] = linindex.at(li_dag);
 
       EXPECTS(bl == bl_dag);
       double dtau = tau_dag - tau;

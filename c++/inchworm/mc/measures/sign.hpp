@@ -9,7 +9,7 @@ namespace inchworm::measures {
 
     // Constructor
     // sign(params_t const &params, qmc_config_data_t &qmc_config_data_);
-    sign(params_t const &params, qmc_config_data_t const &qmc_config_data_, container_set &results);
+    sign(params_t const &, qmc_config_data_t const &qmc_config_data_, container_set &results);
 
     // Invoke a single measurement
     void accumulate(scalar_t sign);
