@@ -12,9 +12,6 @@ namespace inchworm::moves {
     int i_dag = rng(N);
     if (not proposed_config.try_erase(i, i_dag)) return 0; //data is not modified in this case
 
-    //std::printf("success? %d \n", success);
-    //}
-
     //std::printf("\nremoving:");
     if (params.use_bare_propagator) {
       auto diagram = diagram::time_diagram_t{proposed_config.c_list, proposed_config.cdag_list, {}}; // make a free function (not member of data)
@@ -24,7 +21,7 @@ namespace inchworm::moves {
     } else {
       auto diagram =
          diagram::time_diagram_t{proposed_config.c_list, proposed_config.cdag_list, {params.tau_split}}; // make a free function (not member of data)
-      proposed_w.hyb   = 0;                                                                            //diagram::inclusion_exclusion(diagram);
+      proposed_w.hyb   = 0;                                                                              //diagram::inclusion_exclusion(diagram);
       proposed_u_frame = propagator_product(params.h_diag, diagram, params.tau_max, &params.u_tau);
     }
     proposed_w.loc = frobenius_norm(proposed_u_frame);
@@ -34,7 +31,7 @@ namespace inchworm::moves {
     auto t_ratio     = std::pow(N / params.tau_max, 2);
 
     if (false) {
-      printf("proposed_w_hyb, proposed_w_loc, last_w_hyb, last_w_loc, t_ratio:  %f %f   %f %f   %f\n", proposed_w.hyb, proposed_w.loc, data.w.hyb,
+      std::printf("proposed_w_hyb, proposed_w_loc, last_w_hyb, last_w_loc, t_ratio:  %f %f   %f %f   %f\n", proposed_w.hyb, proposed_w.loc, data.w.hyb,
              data.w.loc, t_ratio);
       fflush(stdout);
     }
@@ -47,7 +44,7 @@ namespace inchworm::moves {
     //print_configuration(data.get_time_diagram()  );
     data.w.hyb = proposed_w.hyb;
     data.w.loc = proposed_w.loc;
-    // SWAP
+    std::swap(proposed_u_frame, data.u_frame);
     return 1;
   }
 

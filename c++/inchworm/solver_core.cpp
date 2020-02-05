@@ -32,7 +32,7 @@
 
 namespace inchworm {
 
-  solver_core::solver_core(constr_params_t const &p) : constr_params(p), gf_struct(p.gf_struct) {
+  solver_core::solver_core(constr_params_t const &p) :  gf_struct(p.gf_struct), constr_params(p) {
 
     // Initialize the non-interacting Green function
     G0_iw = block_gf<imfreq>{{p.beta, Fermion, p.n_iw}, p.gf_struct};
@@ -153,7 +153,7 @@ namespace inchworm {
 
   // -------------------------------------------------------------------------------
 
-  void solver_core::post_process(params_t const &p) {
+  void solver_core::post_process(params_t const &) {
 
     if (world.rank() == 0)
       std::cout << "\n"

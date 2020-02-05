@@ -2,7 +2,7 @@
 
 namespace inchworm::measures {
 
-  u_frame::u_frame(params_t const &params, qmc_config_data_t const &qmc_config_data_, container_set &results_)
+  u_frame::u_frame(params_t const &, qmc_config_data_t const &qmc_config_data_, container_set &results_)
      : qmc_config_data(qmc_config_data_), results(results_), average_sign_(0.0), u_frame_(qmc_config_data.u_frame) {
     //u_frame.reset();
   }

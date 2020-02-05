@@ -44,10 +44,10 @@ void print_ad(triqs::atom_diag::atom_diag<false> const &ad) {
 TEST(inchworm, matrix_product) {
 
   int n_times = 4;
-  double beta = 1.0;
-  double mu   = 0.0;
-  double U    = 8.0;
-  double t    = 1.0;
+  //  double beta = 1.0;
+  double mu = 0.0;
+  double U  = 8.0;
+  double t  = 1.0;
   fundamental_operator_set fops;
   int n_site = 2;
 
@@ -82,7 +82,7 @@ TEST(inchworm, matrix_product) {
   time_diagram_t diagram(c, cdag, split_times);
 
   u_frame_t u_frame = make_zero_propagator_frame(ad);
-  u_frame = propagator_product(ad, diagram, 0.1);
+  u_frame           = propagator_product(ad, diagram, 0.1);
   for (int bl = 0; bl < u_frame.size(); bl++) u_tau[bl][1] = u_frame[bl];
   std::cout << u_frame;
   std::cout << frobenius_norm(u_frame) << "\n";
