@@ -56,9 +56,9 @@ namespace inchworm::diagram {
       }
   }
 
-  /*
-  hyb_matrix_t::hyb_matrix_t(time_diagram_t const &diagram,  g_tau_t :q
-  Delta_tau, )
+    /*
+  hyb_matrix_t::hyb_matrix_t(time_diagram_t const &diagram, delta_block_adaptor g_tau_t
+                             : q Delta_tau, )
      : mat(diagram.perturbation_order(), diagram.perturbation_order()), diagram{diagram} {
 
     for (auto [i, c] : enumerate(diagram.c_list))
@@ -71,8 +71,7 @@ namespace inchworm::diagram {
         else
           mat(i, j) = -hyb_function_in(hyb.mesh().domain().beta + dtau)(cdag.linear_index, c.linear_index);
       }
-  }
-  */
+  }*/
 
   void hyb_matrix_t::optimize_inclusion_exclusion() {
     if (smallest_segment == 4) {

@@ -125,10 +125,19 @@ namespace inchworm {
     u_tau             = make_propagator(h_diag, params.n_tau);
 
     // Create Monte-Carlo configuration
-    qmc_config_data_t qmc_config_data{params, h_diag, u_tau, _Delta_tau, linindex2};
+    qmc_config_data_t qmc_config_data{h_diag};
 
-    mc.add_move(moves::insert{qmc_config_data, rng}, "insert move");
-    mc.add_move(moves::remove{qmc_config_data, rng}, "remove move");
+    // Create Monte-Carlo params
+    int inch_step =1;
+    double tau_max = params.beta;
+    double tau_split = params.beta/2.;
+    bool use_bare_propagator = true;
+
+    qmc_params_t qmc_params{ _Delta_tau, linindex2, h_diag, u_tau, inch_step, tau_max, tau_split, use_bare_propagator};
+    //params, h_diag, u_tau, _Delta_tau, linindex2};
+
+    mc.add_move(moves::insert{qmc_config_data, qmc_params, rng}, "insert move");
+    mc.add_move(moves::remove{qmc_config_data, qmc_params, rng}, "remove move");
 
     // Register all measurements
     //mc.add_measure(measures::u_frame{params, qmc_config_data, result_set()}, "propagator measurement"); // we have to measure this (not a choice)

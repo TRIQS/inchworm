@@ -40,7 +40,7 @@ namespace inchworm {
 
     // Single-particle Green's function containers
     g_iw_t _G0_iw;                                 // Non-interacting Matsubara Green's function
-    g_tau_t _Delta_tau;                            // Imaginary-time Hybridization function
+    h_tau_t _Delta_tau;                            // Imaginary-time Hybridization function
     std::vector<matrix<dcomplex>> Delta_infty_vec; // Quadratic instantaneous part of G0_iw
 
     // Mpi Communicator

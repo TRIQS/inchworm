@@ -67,6 +67,9 @@ namespace inchworm {
   using u_frame_t = std::vector<matrix_t>;
 
   /// Container type of one-particle Green and Vertex functions in imaginary times
+  using h_tau_t = block_gf<imtime, hyb_target_t>;
+
+  /// Container type of one-particle Green and Vertex functions in imaginary times
   using g_tau_t = block_gf<imtime, matrix_valued>;
 
   /// A view to a g_tau_t

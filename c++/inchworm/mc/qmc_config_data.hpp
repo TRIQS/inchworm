@@ -28,31 +28,59 @@ namespace inchworm {
 
     // last accepted paraemeters
     config_t config;   // last accepted configuration of c and cdag
-    weights_t w;       // last accepted weight values
-    u_frame_t u_frame; // last accepted frame: just one time frame of a propagator
+    weights_t w;       // weight values of the last accepted configuration
+    u_frame_t u_frame; // frame of the last accepted configuraiton: just one time frame of a propagator
 
-    qmc_config_data_t(params_t const &params, atom_diag const &h_diag, u_tau_t const &u_tau, block_gf_const_view<imtime> delta,
-                      std::map<int, std::pair<int, int>> linindex);
+    qmc_config_data_t(atom_diag const &h_diag) : w{1., 1.} { u_frame = make_zero_propagator_frame(h_diag); }
+
+    //qmc_config_data_t(params_t const &params, atom_diag const &h_diag, u_tau_t const &u_tau, block_gf_const_view<imtime> delta,
+    //                  std::map<int, std::pair<int, int>> linindex);
     //int size() { return config.size(); }
-    //};
+  };
 
-    //struct qmc_params_t {
+  struct hyb_adaptor_t {
+    h_tau_t hyb_tau; // make a copy.
+    std::map<int, std::pair<int, int>> linindex;
+
+    hyb_adaptor_t(h_tau_t const &hyb_tau, std::map<int, std::pair<int, int>> const &linindex)
+       : hyb_tau(std::move(hyb_tau)), linindex(std::move(linindex)) {}
+
+    scalar_t operator()(double tau, int li, double tau_dag, int li_dag) {
+      auto [bl, in]         = linindex[li];
+      auto [bl_dag, in_dag] = linindex[li_dag];
+
+      EXPECTS(bl == bl_dag);
+      double dtau = tau_dag - tau;
+      if (dtau >= 0)
+        return (hyb_tau[bl])(dtau)(in_dag, in);
+      else
+        return -(hyb_tau[bl])(hyb_tau[bl].domain().beta + dtau)(in_dag, in);
+    }
+  };
+
+  struct qmc_params_t {
 
     // same for every inch step:
+    hyb_adaptor_t hyb_adaptor;
     atom_diag const &h_diag; // Diagonalization of the atomic problem
-                             //delta_adaptor_t delta_adaptor;
-
-    block_gf<imtime> delta; // Hybridization function
-    std::map<int, std::pair<int, int>>
-       linindex; // structure that link the linear index from fops to the block/inner indices of the delta block function
 
     // updated at every inch step:
     u_tau_t const &u_tau; // THE propagator
 
-    // changed at every inch step:
+    // different at every inch step:
     int inch_step;
     double tau_max;           // similar to beta, but configuration here does not always goes up to beta. 0 < tau_max <= beta
     double tau_split;         // in the inchworm, this should be the tau_max of the previous inching. 0 < tau_split <= tau_max
     bool use_bare_propagator; // true only for the first iteration of the inchworm calculation
+
+    qmc_params_t(h_tau_t const &hyb_tau, std::map<int, std::pair<int, int>> const &linindex, atom_diag const &h_diag, u_tau_t const &u_tau,
+                 int inch_step, double tau_max, double tau_split, bool use_bare_propagator)
+       : hyb_adaptor(hyb_tau, linindex),
+         h_diag(h_diag),
+         u_tau(u_tau),
+         inch_step(inch_step),
+         tau_max(tau_max),
+         tau_split(tau_split),
+         use_bare_propagator(use_bare_propagator) {}
   };
 } // namespace inchworm
