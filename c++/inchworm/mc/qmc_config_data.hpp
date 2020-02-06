@@ -68,17 +68,15 @@ namespace inchworm {
     u_tau_t const &u_tau; // THE propagator
 
     // different at every inch step:
-    int inch_step;
     double tau_max;           // similar to beta, but configuration here does not always goes up to beta. 0 < tau_max <= beta
     double tau_split;         // in the inchworm, this should be the tau_max of the previous inching. 0 < tau_split <= tau_max
     bool use_bare_propagator; // true only for the first iteration of the inchworm calculation
 
     qmc_params_t(h_tau_t const &hyb_tau, std::map<int, std::pair<int, int>> const &linindex, atom_diag const &h_diag, u_tau_t const &u_tau,
-                 int inch_step, double tau_max, double tau_split, bool use_bare_propagator)
+                 double tau_max, double tau_split, bool use_bare_propagator)
        : hyb_adaptor(hyb_tau, linindex),
          h_diag(h_diag),
          u_tau(u_tau),
-         inch_step(inch_step),
          tau_max(tau_max),
          tau_split(tau_split),
          use_bare_propagator(use_bare_propagator) {}

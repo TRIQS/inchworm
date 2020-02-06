@@ -44,8 +44,9 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   // Set up the Solver
   solver_core S(cp);
   int up = 0, dn = 1;
-  S.G0_iw[up](iw_) << 1.0 / (iw_ + mu);
-  S.G0_iw[dn](iw_) << 1.0 / (iw_ + mu);
+
+  S.Delta_tau[up](tau_) << (tau_ + mu);
+  S.Delta_tau[dn](tau_) << 1.0 / (tau_ + mu);
 
   std::vector<many_body_op_t> qn;
   qn.resize(1);

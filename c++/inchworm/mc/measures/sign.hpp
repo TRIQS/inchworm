@@ -9,7 +9,7 @@ namespace inchworm::measures {
 
     // Constructor
     // sign(params_t const &params, qmc_config_data_t &qmc_config_data_);
-    sign(params_t const &, qmc_config_data_t const &qmc_config_data_, container_set &results);
+    sign(params_t const &, qmc_config_data_t const &qmc_config_data_, single_step_results_t &results_);
 
     // Invoke a single measurement
     void accumulate(scalar_t sign);
@@ -21,11 +21,11 @@ namespace inchworm::measures {
     // The Monte-Carlo configuration
     qmc_config_data_t const &qmc_config_data;
 
-    container_set &results;
+    single_step_results_t &results;
 
-    scalar_t average_sign_;
+    scalar_t average_sign = 0;
 
-    long count;
+    long count = 0;
   };
 
 } // namespace inchworm::measures

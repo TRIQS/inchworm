@@ -99,25 +99,11 @@ namespace inchworm {
 
   // Declare some placeholders for the rest of the code. Use anonymous namespace for proper linkage
   // in this code, all variables with trailing _ are placeholders by convention.
-  constexpr triqs::clef::placeholder<4> iw_;
-  /*
-    triqs::clef::placeholder<0> i_;
-    triqs::clef::placeholder<1> j_;
-    triqs::clef::placeholder<2> k_;
-    triqs::clef::placeholder<3> l_;
-    triqs::clef::placeholder<5> iw1_;
-    triqs::clef::placeholder<6> iw2_;
-    triqs::clef::placeholder<7> iw3_;
-    triqs::clef::placeholder<8> iw4_;
-    triqs::clef::placeholder<9> t_;
-    triqs::clef::placeholder<10> t1_;
-    triqs::clef::placeholder<11> t2_;
-    triqs::clef::placeholder<12> t3_;
-    triqs::clef::placeholder<13> bl_;
-    triqs::clef::placeholder<14> bl1_;
-    triqs::clef::placeholder<15> bl2_;
-    triqs::clef::placeholder_prime<0> iW_;
-    triqs::clef::placeholder_prime<1> iwp_;
-    */
+  constexpr triqs::clef::placeholder<0> iw_;
+  constexpr triqs::clef::placeholder<1> tau_;
+  struct single_step_results_t {
+    u_frame_t u_frame;
+    double average_sign;
+  };
 
 } // namespace inchworm

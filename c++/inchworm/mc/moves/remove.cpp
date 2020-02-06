@@ -31,8 +31,8 @@ namespace inchworm::moves {
     auto t_ratio     = std::pow(N / params.tau_max, 2);
 
     if (false) {
-      std::printf("proposed_w_hyb, proposed_w_loc, last_w_hyb, last_w_loc, t_ratio:  %f %f   %f %f   %f\n", proposed_w.hyb, proposed_w.loc, data.w.hyb,
-             data.w.loc, t_ratio);
+      std::printf("proposed_w_hyb, proposed_w_loc, last_w_hyb, last_w_loc, t_ratio:  %f %f   %f %f   %f\n", proposed_w.hyb, proposed_w.loc,
+                  data.w.hyb, data.w.loc, t_ratio);
       fflush(stdout);
     }
     return t_ratio * w_loc_ratio * w_hyb_ratio;
@@ -42,8 +42,7 @@ namespace inchworm::moves {
   scalar_t remove::accept() {
     //std::printf("yes\n");
     //print_configuration(data.get_time_diagram()  );
-    data.w.hyb = proposed_w.hyb;
-    data.w.loc = proposed_w.loc;
+    std::swap(data.w, proposed_w);
     std::swap(proposed_u_frame, data.u_frame);
     return 1;
   }

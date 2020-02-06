@@ -8,7 +8,7 @@ namespace inchworm::measures {
   struct u_frame {
 
     // Constructor
-    u_frame(params_t const &params, qmc_config_data_t const &qmc_config_data_, container_set &results_);
+    u_frame(params_t const &params, qmc_config_data_t const &qmc_config_data_, single_step_results_t &results_);
 
     // Invoke a single measurement
     void accumulate(scalar_t sign);
@@ -19,10 +19,9 @@ namespace inchworm::measures {
     private:
     // The Monte-Carlo configuration
     qmc_config_data_t const &qmc_config_data;
-    container_set &results;
+    single_step_results_t &results;
 
-    scalar_t average_sign_; 
-    u_frame_t u_frame_;
+    scalar_t average_sign = 0;
   };
 
 } // namespace inchworm::measures

@@ -1,24 +1,3 @@
-/*******************************************************************************
- *
- * inchworm: A TRIQS based impurity solver
- *
- * Copyright (c) 2019 The Simons foundation
- *   authors: Nils Wentzell
- *
- * inchworm is free software: you can redistribute it and/or modify it under the
- * terms of the GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option) any later
- * version.
- *
- * inchworm is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- *
- * You should have received a copy of the GNU General Public License along with
- * inchworm. If not, see <http://www.gnu.org/licenses/>.
- *
- ******************************************************************************/
 #pragma once
 #include "./container_set.hpp"
 #include "./params.hpp"
@@ -34,14 +13,15 @@ namespace inchworm {
     atom_diag h_diag;      // diagonalization of the local problem
     gf_struct_t gf_struct; // Block structure of the Green function FIXME
     many_body_op_t _h_loc; // The local Hamiltonian = h_int + h0
+    std::map<int, std::pair<int, int>> map_lin_idx_to_block_inner;
+    fundamental_operator_set fops;
 
     //mpi::communicator _comm;   // define the communicator, here MPI_COMM_WORLD
-    int _solve_status;         // Status of the solve upon exit: 0 for clean termination, > 0 otherwise.
+    int _solve_status; // Status of the solve upon exit: 0 for clean termination, > 0 otherwise.
 
     // Single-particle Green's function containers
-    g_iw_t _G0_iw;                                 // Non-interacting Matsubara Green's function
-    h_tau_t _Delta_tau;                            // Imaginary-time Hybridization function
-    std::vector<matrix<dcomplex>> Delta_infty_vec; // Quadratic instantaneous part of G0_iw
+    // g_iw_t _G0_iw;      // Non-interacting Matsubara Green's function
+    // std::vector<matrix<dcomplex>> Delta_infty_vec; // Quadratic instantaneous part of G0_iw
 
     // Mpi Communicator
     mpi::communicator world;
@@ -79,11 +59,15 @@ namespace inchworm {
     // Struct containing the parameters relevant for the solver construction
     constr_params_t constr_params;
 
+    void init(solve_params_t const &solve_params);
+    single_step_results_t single_step(solve_params_t const &solve_params, double tau_split, double tau_max, bool use_bare_propagator);
+    void solve_single_step(solve_params_t const &solve_params);
+
     // Struct containing the parameters relevant for the solve process
     std::optional<solve_params_t> last_solve_params;
 
-    /// Noninteracting Green Function in Matsubara frequencies
-    g_iw_t G0_iw;
+    // Imaginary-time Hybridization function
+    h_tau_t Delta_tau;
 
     // Allow the user to retrigger post-processing with the last set of parameters
     void post_process() {

@@ -32,34 +32,17 @@
 
 namespace inchworm {
 
-  solver_core::solver_core(constr_params_t const &p) :  gf_struct(p.gf_struct), constr_params(p) {
+  solver_core::solver_core(constr_params_t const &p) : gf_struct(p.gf_struct), constr_params(p) {
 
     // Initialize the non-interacting Green function
-    G0_iw = block_gf<imfreq>{{p.beta, Fermion, p.n_iw}, p.gf_struct};
+    //G0_iw = block_gf<imfreq>{{p.beta, Fermion, p.n_iw}, p.gf_struct};
 
     // Initialize the result containers
-    G_tau    = block_gf<imtime>{{p.beta, Fermion, p.n_tau}, p.gf_struct};
-    G_iw     = G0_iw;
-    Sigma_iw = G0_iw;
-
-    std::printf("Finishing initilization of solver_core.\n");
-  }
-
-  // -------------------------------------------------------------------------------
-
-  void solver_core::solve(solve_params_t const &solve_params) {
-
-    last_solve_params = solve_params;
-
-    // http://patorjk.com/software/taag/#p=testall&f=Calvin%20S&t=TRIQS%20inchworm%0A
-    if (world.rank() == 0)
-      std::cout << "\n"
-                   "╔╦╗╦═╗╦╔═╗ ╔═╗  ┬┌┐┌┌─┐┬ ┬┬ ┬┌─┐┬─┐┌┬┐\n"
-                   " ║ ╠╦╝║║═╬╗╚═╗  │││││  ├─┤││││ │├┬┘│││\n"
-                   " ╩ ╩╚═╩╚═╝╚╚═╝  ┴┘└┘└─┘┴ ┴└┴┘└─┘┴└─┴ ┴\n";
+    Delta_tau = h_tau_t{{p.beta, Fermion, p.n_tau}, p.gf_struct};
+    //G_iw  = G0_iw;
 
     // determine basis of operators to use
-    fundamental_operator_set fops;
+    //fundamental_operator_set fops;
     int n_fops = 0;
     for (auto const &bl : gf_struct) {
       for (auto const &a : bl.second) {
@@ -70,85 +53,94 @@ namespace inchworm {
 
     // setup the linear index map
     //std::map<std::pair<int, int>, int> linindex;
-    std::map<int, std::pair<int, int>> linindex2;
     int block_index = 0;
     for (auto const &bl : gf_struct) {
       int inner_index = 0;
       for (auto const &a : bl.second) {
         //linindex[std::make_pair(block_index, inner_index)] = fops[{bl.first, a}];
-        linindex2[fops[{bl.first, a}]] = std::make_pair(block_index, inner_index);
+        map_lin_idx_to_block_inner[fops[{bl.first, a}]] = std::make_pair(block_index, inner_index);
         inner_index++;
         ///printf("salut: %d\n", fops[{bl.first, a}]);
       }
       block_index++;
     }
 
-    for (int i = 0; i < 2; i++) {
-      auto [tmp1, tmp2] = linindex2.at(i);
-      std::cout << tmp1 << " " << tmp2 << "\n";
-    }
+    //Sigma_iw = G0_iw;
+  }
 
-    // Make list of block sizes
-    std::vector<int> n_inner;
-    for (auto const &bl : gf_struct) { n_inner.push_back(bl.second.size()); }
+  // -------------------------------------------------------------------------------
 
-    // ==== Compute Delta from G0_iw ====
-
-    auto G0_iw_inv = map([](gf_const_view<imfreq> x) { return triqs::gfs::inverse(x); }, _G0_iw);
-    auto Delta_iw  = G0_iw_inv;
-
-    for (auto &Delta_iw_bl : Delta_iw)
-      for (auto const &iw : Delta_iw[0].mesh()) Delta_iw_bl[iw] = iw - Delta_iw_bl[iw];
-
-    // Assert hermiticity of the given Weiss field
-    if (!is_gf_hermitian(G0_iw)) TRIQS_RUNTIME_ERROR << "Please make sure that G0_iw fullfills the hermiticity relation G_ij[iw] = G_ji[-iw]*";
-
-    // Merge constr_params and solve_params
-    params_t params(constr_params, solve_params);
+  void solver_core::init(solve_params_t const &solve_params) {
 
     // Reset the results
     container_set::operator=(container_set{});
 
-    // Construct the generic Monte-Carlo solver
-    triqs::mc_tools::mc_generic<scalar_t> mc(params.random_name, params.random_seed, params.verbosity);
+    // http://patorjk.com/software/taag/#p=testall&f=Calvin%20S&t=TRIQS%20inchworm%0A
+    if (world.rank() == 0)
+      std::cout << "\n"
+                   "╔╦╗╦═╗╦╔═╗ ╔═╗  ┬┌┐┌┌─┐┬ ┬┬ ┬┌─┐┬─┐┌┬┐\n"
+                   " ║ ╠╦╝║║═╬╗╚═╗  │││││  ├─┤││││ │├┬┘│││\n"
+                   " ╩ ╩╚═╩╚═╝╚╚═╝  ┴┘└┘└─┘┴ ┴└┴┘└─┘┴└─┴ ┴\n";
 
     //
-    if (params.partition_method != "quantum_numbers")
+    if (solve_params.partition_method != "quantum_numbers")
       TRIQS_RUNTIME_ERROR << "Please use total number for quantum number and use quantum numbers methods for partition of atom_diag";
     //
-    h_diag = {_h_loc, fops, params.quantum_numbers};
+    h_diag = {_h_loc, fops, solve_params.quantum_numbers};
+    u_tau  = make_propagator(h_diag, constr_params.n_tau);
+  }
+
+  void solver_core::solve(solve_params_t const &solve_params) {
+
+    // Merge constr_params and solve_params
+    last_solve_params = solve_params;
+    init(solve_params);
+    //for
+    single_step(solve_params, constr_params.beta / 2, constr_params.beta, false);
+  }
+
+  void solver_core::solve_single_step(solve_params_t const &solve_params) {
+
+    // Merge constr_params and solve_params
+    last_solve_params = solve_params;
+    init(solve_params);
+    single_step(solve_params, constr_params.beta / 2, constr_params.beta, false);
+  }
+
+  //------------------------------
+  single_step_results_t solver_core::single_step(solve_params_t const &solve_params, double tau_split, double tau_max, bool use_bare_propagator) {
+
+    params_t params(constr_params, solve_params);
+    // Construct the generic Monte-Carlo solver
+    triqs::mc_tools::mc_generic<scalar_t> mc(params.random_name, params.random_seed, params.verbosity);
 
     // Capture random number generator
     auto &rng = mc.get_rng();
 
     u_frame_t u_frame = make_zero_propagator_frame(h_diag);
-    u_tau             = make_propagator(h_diag, params.n_tau);
 
     // Create Monte-Carlo configuration
     qmc_config_data_t qmc_config_data{h_diag};
 
     // Create Monte-Carlo params
-    int inch_step =1;
-    double tau_max = params.beta;
-    double tau_split = params.beta/2.;
-    bool use_bare_propagator = true;
-
-    qmc_params_t qmc_params{ _Delta_tau, linindex2, h_diag, u_tau, inch_step, tau_max, tau_split, use_bare_propagator};
-    //params, h_diag, u_tau, _Delta_tau, linindex2};
+    qmc_params_t qmc_params{Delta_tau, map_lin_idx_to_block_inner, h_diag, u_tau, tau_max, tau_split, use_bare_propagator};
+    //params, h_diag, u_tau, _Delta_tau, map_lin_idx_to_block_inner};
 
     mc.add_move(moves::insert{qmc_config_data, qmc_params, rng}, "insert move");
     mc.add_move(moves::remove{qmc_config_data, qmc_params, rng}, "remove move");
 
+    single_step_results_t results;
     // Register all measurements
-    //mc.add_measure(measures::u_frame{params, qmc_config_data, result_set()}, "propagator measurement"); // we have to measure this (not a choice)
-    //if (params.measure_sign) mc.add_measure(measures::sign{params, qmc_config_data, result_set()}, "sign measurement");
+    //mc.add_measure(measures::u_frame{params, qmc_config_data, results}, "propagator measurement"); // we have to measure this (not a choice)
+    //if (params.measure_sign) mc.add_measure(measures::sign{params, qmc_config_data, results}, "sign measurement");
 
     // Perform QMC run and collect results
     mc.warmup_and_accumulate(params.n_warmup_cycles, params.n_cycles, params.length_cycle, triqs::utility::clock_callback(params.max_time));
     mc.collect_results(world);
 
     // Post Processing
-    if (params.post_process) { post_process(params); }
+    //if (params.post_process) { post_process(params); }
+    return results;
   }
 
   // -------------------------------------------------------------------------------
@@ -170,7 +162,7 @@ namespace inchworm {
     h5_write(grp, "", s.result_set());
     h5_write(grp, "constr_params", s.constr_params);
     h5_write(grp, "last_solve_params", s.last_solve_params);
-    h5_write(grp, "G0_iw", s.G0_iw);
+    //h5_write(grp, "G0_iw", s.G0_iw);
   }
 
   solver_core solver_core::h5_read_construct(triqs::h5::group h5group, std::string subgroup_name) {
@@ -179,7 +171,7 @@ namespace inchworm {
     auto s             = solver_core{constr_params};
     h5_read(grp, "", s.result_set());
     h5_read(grp, "last_solve_params", s.last_solve_params);
-    h5_read(grp, "G0_iw", s.G0_iw);
+    //h5_read(grp, "G0_iw", s.G0_iw);
     return s;
   }
 
