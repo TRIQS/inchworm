@@ -21,8 +21,9 @@
  ******************************************************************************/
 
 #include <triqs/test_tools/gfs.hpp>
-#include <inchworm/diagram/proper_enum.hpp>
 #include <inchworm/diagram/inclusion_exclusion.hpp>
+#include <inchworm/diagram/proper_enum.hpp>
+#include <inchworm/diagram/hyb_matrix.hpp>
 #include <inchworm/types.hpp>
 
 using namespace inchworm::diagram;
@@ -37,16 +38,17 @@ void compare_both_methods(std::vector<double> &tau1, std::vector<double> &tau2, 
   for (auto t : tau1) c.push_back({t, 0});
   for (auto t : tau2) cdag.push_back({t, 0});
   time_diagram_t diagram(c, cdag, split_times);
+  auto hyb_mat = hyb_matrix_t(diagram);
 
-  std::function<scalar_t(double)> hyb_function = [](double dtau) { return (1.0 / (0.1 * dtau - 0.5)); };
+  //std::function<scalar_t(double)> hyb_function = [](double dtau) { return (1.0 / (0.1 * dtau - 0.5)); };
 
   //scalar_t value_det = determinant(diagram, hyb_function);
 
   //int N_proper = find_proper_diagrams(diagram);
-  scalar_t value_proper = proper_enum(diagram, hyb_function);
+  scalar_t value_proper = proper_enum(diagram, hyb_mat);
   if constexpr (verbose) std::printf("c_k = % 4.6e\n", value_proper);
 
-  scalar_t value_inclus = inclusion_exclusion(diagram, hyb_function);
+  scalar_t value_inclus = inclusion_exclusion(diagram, hyb_mat);
   if constexpr (verbose) std::printf("c_k = % 4.6e\n\n\n", value_inclus);
 
   if constexpr (verbose) std::printf("proper-enum         c_k = % 4.6e\n", value_proper);

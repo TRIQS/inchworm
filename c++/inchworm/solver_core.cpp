@@ -23,7 +23,7 @@
 
 #include "./post_process.hpp"
 #include "./mc/measures/sign.hpp"
-//#include "./mc/measures/u_frame.hpp"
+#include "./mc/measures/u_frame.hpp"
 #include "./mc/moves/insert.hpp"
 #include "./mc/moves/remove.hpp"
 
@@ -104,7 +104,10 @@ namespace inchworm {
     // Merge constr_params and solve_params
     last_solve_params = solve_params;
     init(solve_params);
-    single_step(solve_params, constr_params.beta / 2, constr_params.beta, false);
+    auto res = single_step(solve_params, constr_params.beta / 2, constr_params.beta, false);
+
+    std::printf("salut %ld\n", res.u_frame.size());
+    for (auto const &B : res.u_frame) std::cout << B;
   }
 
   //------------------------------
@@ -117,8 +120,6 @@ namespace inchworm {
     // Capture random number generator
     auto &rng = mc.get_rng();
 
-    u_frame_t u_frame = make_zero_propagator_frame(h_diag);
-
     // Create Monte-Carlo configuration
     qmc_config_data_t qmc_config_data{h_diag};
 
@@ -129,10 +130,10 @@ namespace inchworm {
     mc.add_move(moves::insert{qmc_config_data, qmc_params, rng}, "insert move");
     mc.add_move(moves::remove{qmc_config_data, qmc_params, rng}, "remove move");
 
-    single_step_results_t results;
+    single_step_results_t results(h_diag);
     // Register all measurements
-    //mc.add_measure(measures::u_frame{params, qmc_config_data, results}, "propagator measurement"); // we have to measure this (not a choice)
-    //if (params.measure_sign) mc.add_measure(measures::sign{params, qmc_config_data, results}, "sign measurement");
+    if (params.measure_sign) mc.add_measure(measures::sign{params, qmc_config_data, results}, "sign measurement");
+    mc.add_measure(measures::u_frame{params, qmc_config_data, results}, "propagator measurement"); // we have to measure this (not a choice)
 
     // Perform QMC run and collect results
     mc.warmup_and_accumulate(params.n_warmup_cycles, params.n_cycles, params.length_cycle, triqs::utility::clock_callback(params.max_time));

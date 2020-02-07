@@ -39,7 +39,7 @@ namespace inchworm {
   };
 
   struct hyb_adaptor_t {
-    h_tau_t const &hyb_tau; // make a copy.
+    h_tau_t const hyb_tau; 
     std::map<int, std::pair<int, int>> const &linindex;
 
     hyb_adaptor_t(h_tau_t const &hyb_tau, std::map<int, std::pair<int, int>> const &linindex)

@@ -68,4 +68,11 @@ namespace inchworm {
     for (int bl = 0; bl < u_frame.size(); bl++) { out << u_frame[bl] << "\n"; }
     return out;
   }
+
+  struct single_step_results_t {
+    u_frame_t u_frame;
+    double average_sign;
+    single_step_results_t(atom_diag const &h_diag) : average_sign{0.0} { u_frame = make_zero_propagator_frame(h_diag); };
+  };
+
 } // namespace inchworm

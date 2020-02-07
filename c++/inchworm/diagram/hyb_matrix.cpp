@@ -23,36 +23,17 @@
 #include <iomanip>
 
 namespace inchworm::diagram {
-  //scalar_t hyb_function_dummy(double dtau) { // to be changed in the future
-  //  return (1.0 / (0.1 * dtau - 0.5));
-  //}
-
-  /*
-  hyb_matrix_t::hyb_matrix_t(time_diagram_t const &diagram)
-     : mat(diagram.perturbation_order(), diagram.perturbation_order()), diagram{diagram} {
-
-    for (auto [i, c] : enumerate(diagram.c_list))
-      for (auto [j, cdag] : enumerate(diagram.cdag_list)) {
-
-        double dtau = cdag.tau - c.tau;
-        mat(i, j)   = hyb_function(dtau);
-      }
+  scalar_t hyb_function_dummy(double dtau) { // for tests purpose only
+    return (1.0 / (0.1 * dtau - 0.5));
   }
-*/
 
-  hyb_matrix_t::hyb_matrix_t(time_diagram_t const &diagram, std::function<scalar_t(double)> hyb_function)
-     //hyb_matrix_t::hyb_matrix_t(time_diagram_t const &diagram)
-     : mat(diagram.perturbation_order(), diagram.perturbation_order()), diagram{diagram} {
+  hyb_matrix_t::hyb_matrix_t(time_diagram_t const &diagram) : mat(diagram.perturbation_order(), diagram.perturbation_order()), diagram{diagram} {
 
     for (auto [i, c] : enumerate(diagram.c_list))
       for (auto [j, cdag] : enumerate(diagram.cdag_list)) {
-        //for(auto const & cdag : diagram.cdag_list){
 
         double dtau = cdag.tau - c.tau;
-        mat(i, j)   = hyb_function(dtau);
-        //put this below in hyb_funciton at some point:
-        //        if(dtau>=0) mat(i,j) = hyb( dtau )( cdag.orb, c.orb );
-        //        else mat(i,j) = -hyb( hyb.mesh().domain().beta + dtau )( cdag.orb, c.orb );
+        mat(i, j)   = hyb_function_dummy(dtau);
       }
   }
 

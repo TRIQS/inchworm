@@ -44,6 +44,11 @@ namespace inchworm::diagram {
 
     int order = c_list.size();
 
+    if (c.size() == 0) {
+      //std::printf("warning: zero lenght! \n");
+      //fflush(stdout);
+      return;
+    }
     for (int i = 0, j = order; i < order; i++, j++) {
       op_list[i].tau          = c[i].tau;
       op_list[i].linear_index = c[i].linear_index;

@@ -2,6 +2,7 @@
 #include "./container_set.hpp"
 #include "./params.hpp"
 #include "./types.hpp"
+#include "./mc/impurity_product.hpp"
 
 namespace inchworm {
 
@@ -20,7 +21,6 @@ namespace inchworm {
     int _solve_status; // Status of the solve upon exit: 0 for clean termination, > 0 otherwise.
 
     // Single-particle Green's function containers
-    // g_iw_t _G0_iw;      // Non-interacting Matsubara Green's function
     // std::vector<matrix<dcomplex>> Delta_infty_vec; // Quadratic instantaneous part of G0_iw
 
     // Mpi Communicator
@@ -69,6 +69,8 @@ namespace inchworm {
     // Imaginary-time Hybridization function
     h_tau_t Delta_tau;
 
+    g_iw_t G0_iw; // Non-interacting Matsubara Green's function
+    
     // Allow the user to retrigger post-processing with the last set of parameters
     void post_process() {
       if (not last_solve_params) TRIQS_RUNTIME_ERROR << "You need to run the solver once before you post-process";

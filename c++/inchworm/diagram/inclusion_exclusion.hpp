@@ -28,9 +28,9 @@ namespace inchworm::diagram {
   //
   struct segment_t {
 
-    int pos1                        = 0;
-    int pos2                        = 0; // note: by definition here, segment goes from index pos1 to pos2-1
-    int size                        = 0;
+    int pos1                    = 0;
+    int pos2                    = 0; // note: by definition here, segment goes from index pos1 to pos2-1
+    int size                    = 0;
     scalar_t value              = 0.;
     scalar_t value_without_cuts = 0.;
 
@@ -105,7 +105,10 @@ namespace inchworm::diagram {
   // them into two lists: one fully disjoint (except for split points)
   // and another fully adjacent.
   //
-  scalar_t inclusion_exclusion(time_diagram_t const &diagram, std::function<scalar_t(double)>);
+  //scalar_t inclusion_exclusion(time_diagram_t const &diagram, hyb_adaptor_t const &hyb_tau);
+  //scalar_t inclusion_exclusion(time_diagram_t const &diagram, std::function<scalar_t(double)>);
 
-  scalar_t determinant(time_diagram_t const &diagram, std::function<scalar_t(double)>);
+  //scalar_t determinant(time_diagram_t const &diagram, hyb_adaptor_t const &hyb_tau);
+  //scalar_t determinant(time_diagram_t const &diagram, std::function<scalar_t(double)>);
+  scalar_t inclusion_exclusion(time_diagram_t const &diagram, hyb_matrix_t hyb_mat);
 } // namespace inchworm::diagram

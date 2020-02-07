@@ -36,17 +36,28 @@ TEST(inchworm, HubbardAtom) { // NOLINT
 
   // Construct Parameters
   constr_params_t cp;
-  cp.beta      = 10.0;
+  cp.beta      = 1.0;
   cp.gf_struct = {{"up", {0}}, {"dn", {0}}};
   cp.n_tau     = 3;
   cp.n_iw      = 1;
 
   // Set up the Solver
   solver_core S(cp);
-  int up = 0, dn = 1;
+  //int up = 0, dn = 1;
+  int n_bath       = 1;
+  double theta[]   = {0.5};
+  double epsilon[] = {0.1};
 
-  S.Delta_tau[up](tau_) << (tau_ + mu);
-  S.Delta_tau[dn](tau_) << 1.0 / (tau_ + mu);
+  for (auto const &tau : S.Delta_tau[0].mesh()) {
+    for (int i = 0; i < 2; i++) {
+      S.Delta_tau[i][tau] = 0.0;
+      for (int n = 0; n < 2; n++) {
+        S.Delta_tau[i][tau] -= theta[n] * theta[n] * (std::exp(-tau * epsilon[n]) / (1 + std::exp(-cp.beta * epsilon[n])));
+      }
+    }
+  }
+
+  std::cout << S.Delta_tau[0];
 
   std::vector<many_body_op_t> qn;
   qn.resize(1);
@@ -55,9 +66,9 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   // Solve Parameters
   solve_params_t sp;
   sp.h_int           = U * n("up", 0) * n("down", 0);
-  sp.n_cycles        = 10;
-  sp.length_cycle    = 5;
-  sp.n_warmup_cycles = 50;
+  sp.n_cycles        = 1000;
+  sp.length_cycle    = 500;
+  sp.n_warmup_cycles = 500;
   sp.max_time        = -1;
   sp.verbosity       = 3;
   sp.post_process    = true;
@@ -65,7 +76,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   sp.quantum_numbers = qn;
 
   // Solve the impurity model
-  S.solve(sp);
+  S.solve_single_step(sp);
 
   // Store the Result
   {

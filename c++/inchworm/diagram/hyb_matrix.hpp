@@ -45,7 +45,8 @@ namespace inchworm::diagram {
     time_diagram_t const &diagram;
 
     /// Constructors
-    hyb_matrix_t(time_diagram_t const &diagram, std::function<scalar_t(double)>);
+    //hyb_matrix_t(time_diagram_t const &diagram, std::function<scalar_t(double)>);
+    hyb_matrix_t(time_diagram_t const &diagram);
     hyb_matrix_t(time_diagram_t const &diagram, hyb_adaptor_t const &hyb_tau);
 
     /// Set the value of adjacent vertex to zero in the matrix. (segment of length 2 optimization)

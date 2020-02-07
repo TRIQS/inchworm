@@ -83,7 +83,7 @@ namespace inchworm {
       new_bl = initial_bl;
 
       double dtau = tau - diagram.max_tau();
-      if (u_tau_p)
+      if (u_tau_p != nullptr)
         new_mat = (*u_tau_p)[initial_bl](dtau);
       else {
         new_mat = matrix_t(dim, dim); //zeros?
@@ -99,7 +99,7 @@ namespace inchworm {
         new_bl         = (op.dag ? ad.cdag_connection(op.linear_index, new_bl) : ad.c_connection(op.linear_index, new_bl));
 
         dtau = op.tau - (i == 0 ? 0 : diagram.op_list[i - 1].tau);
-        if (u_tau_p)
+        if (u_tau_p != nullptr)
           new_mat = (*u_tau_p)[new_bl](dtau) * new_mat; // (interpolation)
         else {
           auto _ = triqs::arrays::range();

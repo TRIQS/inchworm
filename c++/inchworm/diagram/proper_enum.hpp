@@ -154,10 +154,10 @@ std::vector<int> find_positions(std::string const &str, char c) {
   // for a given diagram definition. We can use the function
   // "test_diagram_connection" to define if a diagram is proper or not.
   //
-  scalar_t proper_enum(time_diagram_t const &diagram, std::function<scalar_t(double)> hyb_function) {
+  scalar_t proper_enum(time_diagram_t const &diagram, hyb_matrix_t const &hyb_mat) {
 
     if constexpr (verbose) std::printf("\n\n##################\nPROPER-ENUMERATION:\n");
-    auto hyb_mat     = hyb_matrix_t{diagram, hyb_function};
+    //auto hyb_mat     = hyb_matrix_t{diagram, hyb_function};
     auto permutation = std::vector<int>(diagram.perturbation_order());
 
     for (int i = 0; i < diagram.perturbation_order(); i++) permutation[i] = i;

@@ -13,15 +13,19 @@ namespace inchworm::moves {
     if (not proposed_config.try_erase(i, i_dag)) return 0; //data is not modified in this case
 
     //std::printf("\nremoving:");
-    if (params.use_bare_propagator) {
-      auto diagram = diagram::time_diagram_t{proposed_config.c_list, proposed_config.cdag_list, {}}; // make a free function (not member of data)
+    
+    
+    if (true){ //params.use_bare_propagator) {
+      auto diagram = diagram::time_diagram_t(proposed_config.c_list, proposed_config.cdag_list, {}); // make a free function (not member of data)
       //print_configuration(diagram);
-      proposed_w.hyb   = 0; // diagram::determinant(diagram);
+      auto hyb_mat     = diagram::hyb_matrix_t(diagram);
+      proposed_w.hyb   = hyb_mat.det();
       proposed_u_frame = propagator_product(params.h_diag, diagram, params.tau_max);
     } else {
       auto diagram =
          diagram::time_diagram_t{proposed_config.c_list, proposed_config.cdag_list, {params.tau_split}}; // make a free function (not member of data)
-      proposed_w.hyb   = 0;                                                                              //diagram::inclusion_exclusion(diagram);
+      auto hyb_mat     = diagram::hyb_matrix_t(diagram);
+      proposed_w.hyb   = diagram::inclusion_exclusion(diagram, hyb_mat);
       proposed_u_frame = propagator_product(params.h_diag, diagram, params.tau_max, &params.u_tau);
     }
     proposed_w.loc = frobenius_norm(proposed_u_frame);
@@ -42,8 +46,9 @@ namespace inchworm::moves {
   scalar_t remove::accept() {
     //std::printf("yes\n");
     //print_configuration(data.get_time_diagram()  );
-    std::swap(data.w, proposed_w);
-    std::swap(proposed_u_frame, data.u_frame);
+    data.w = proposed_w;
+    data.u_frame = proposed_u_frame;
+    data.config = proposed_config;
     return 1;
   }
 
