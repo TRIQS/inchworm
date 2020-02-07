@@ -31,6 +31,20 @@
 #include <triqs/mc_tools/mc_generic.hpp>
 
 namespace inchworm {
+  void print_eigensystems(triqs::atom_diag::atom_diag<false> const &ad) {
+    for (auto sp : ad.get_eigensystems()) {
+      for (auto l : sp.eigenvalues) { std::printf("% 2.3f ", l); }
+      std::printf("\n\n");
+
+      for (int i = 0; i < sp.eigenvalues.size(); i++) {
+        for (int j = 0; j < sp.eigenvalues.size(); j++) { std::printf("% 2.3f ", sp.unitary_matrix(i, j)); }
+        std::printf("\n");
+      }
+      //for (auto u : sp.unitary_matrix) { TRIQS_PRINT(u); }
+      std::printf("\n\n");
+    }
+    std::printf("\n");
+  }
 
   solver_core::solver_core(constr_params_t const &p) : gf_struct(p.gf_struct), constr_params(p) {
 
@@ -86,8 +100,10 @@ namespace inchworm {
     if (solve_params.partition_method != "quantum_numbers")
       TRIQS_RUNTIME_ERROR << "Please use total number for quantum number and use quantum numbers methods for partition of atom_diag";
     //
+    _h_loc = solve_params.h_int;
     h_diag = {_h_loc, fops, solve_params.quantum_numbers};
     u_tau  = make_propagator(h_diag, constr_params.n_tau);
+    print_eigensystems(h_diag);
   }
 
   void solver_core::solve(solve_params_t const &solve_params) {
@@ -96,7 +112,7 @@ namespace inchworm {
     last_solve_params = solve_params;
     init(solve_params);
     //for
-    single_step(solve_params, constr_params.beta / 2, constr_params.beta, false);
+    single_step(solve_params, constr_params.beta / 2, constr_params.beta, true);
   }
 
   void solver_core::solve_single_step(solve_params_t const &solve_params) {
@@ -104,9 +120,9 @@ namespace inchworm {
     // Merge constr_params and solve_params
     last_solve_params = solve_params;
     init(solve_params);
-    auto res = single_step(solve_params, constr_params.beta / 2, constr_params.beta, false);
+    auto res = single_step(solve_params, constr_params.beta / 2, constr_params.beta, true);
 
-    std::printf("salut %ld\n", res.u_frame.size());
+    //std::printf("salut %ld\n", res.u_frame.size());
     for (auto const &B : res.u_frame) std::cout << B;
   }
 

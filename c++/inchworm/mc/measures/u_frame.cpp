@@ -10,8 +10,8 @@ namespace inchworm::measures {
     //u_frame += qmc_config_data.u_frame;
     for (int bl = 0; bl < results.u_frame.size(); bl++) results.u_frame[bl] += qmc_config_data.u_frame[bl];
     average_sign += sign;
-    std::cout << "\n" << average_sign << "\n";
-    for (auto const &B : results.u_frame) std::cout << B << "\n";
+    //std::cout << "\n\n" << average_sign << "";
+    //for (auto const &B : qmc_config_data.u_frame) std::cout << B << "";
     //++count;
   }
 

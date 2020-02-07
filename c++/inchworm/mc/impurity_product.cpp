@@ -1,7 +1,6 @@
 #include "./impurity_product.hpp"
 
 namespace inchworm {
-
   //
   triqs::hilbert_space::gf_struct_t find_propagator_struct(atom_diag const &ad) {
     int n_sub = ad.n_subspaces();
@@ -83,7 +82,7 @@ namespace inchworm {
       new_bl = initial_bl;
 
       double dtau = tau - diagram.max_tau();
-      if (u_tau_p != nullptr)
+      if (u_tau_p)
         new_mat = (*u_tau_p)[initial_bl](dtau);
       else {
         new_mat = matrix_t(dim, dim); //zeros?
@@ -95,16 +94,20 @@ namespace inchworm {
 
       for (int i = diagram.size() - 1; i >= 0; i--) {
         auto const &op = diagram.op_list[i];
-        new_mat        = (op.dag ? ad.cdag_matrix(op.linear_index, new_bl) : ad.c_matrix(op.linear_index, new_bl)) * new_mat;
-        new_bl         = (op.dag ? ad.cdag_connection(op.linear_index, new_bl) : ad.c_connection(op.linear_index, new_bl));
+        //std::cout << "new_mat 1: " << new_bl << " \n" << new_mat << "\n\n";
+        //std::cout << (op.dag ? ad.cdag_matrix(op.linear_index, new_bl) : ad.c_matrix(op.linear_index, new_bl)) << "\n\n";
+        new_mat = (op.dag ? ad.cdag_matrix(op.linear_index, new_bl) : ad.c_matrix(op.linear_index, new_bl)) * new_mat;
+        new_bl  = (op.dag ? ad.cdag_connection(op.linear_index, new_bl) : ad.c_connection(op.linear_index, new_bl));
 
+        //std::cout << "new_mat 2: " << new_bl << " \n" << new_mat << "\n\n";
         dtau = op.tau - (i == 0 ? 0 : diagram.op_list[i - 1].tau);
-        if (u_tau_p != nullptr)
+        if (u_tau_p)
           new_mat = (*u_tau_p)[new_bl](dtau) * new_mat; // (interpolation)
         else {
           auto _ = triqs::arrays::range();
-          for (int j = 0; j < dim; j++) new_mat(_, j) *= std::exp(-dtau * ad.get_eigenvalue(initial_bl, j)); // Time-evolution
+          for (int j = 0; j < dim; j++) new_mat(_, j) *= std::exp(-dtau * ad.get_eigenvalue(new_bl, j)); // Time-evolution
         }
+        //std::cout << "new_mat 3: " << new_bl << " \n" << new_mat << "\n\n\n\n";
       }
       u_frame[new_bl] = new_mat;
     }

@@ -65,10 +65,10 @@ TEST(inchworm, HubbardAtom) { // NOLINT
 
   // Solve Parameters
   solve_params_t sp;
-  sp.h_int           = U * n("up", 0) * n("down", 0);
-  sp.n_cycles        = 1000;
-  sp.length_cycle    = 500;
-  sp.n_warmup_cycles = 500;
+  sp.h_int           = U * n("up", 0) * n("dn", 0);
+  sp.n_cycles        = 10000;
+  sp.length_cycle    = 20;
+  sp.n_warmup_cycles = 20;
   sp.max_time        = -1;
   sp.verbosity       = 3;
   sp.post_process    = true;

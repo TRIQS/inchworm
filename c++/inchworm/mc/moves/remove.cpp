@@ -13,9 +13,8 @@ namespace inchworm::moves {
     if (not proposed_config.try_erase(i, i_dag)) return 0; //data is not modified in this case
 
     //std::printf("\nremoving:");
-    
-    
-    if (true){ //params.use_bare_propagator) {
+
+    if (params.use_bare_propagator) {
       auto diagram = diagram::time_diagram_t(proposed_config.c_list, proposed_config.cdag_list, {}); // make a free function (not member of data)
       //print_configuration(diagram);
       auto hyb_mat     = diagram::hyb_matrix_t(diagram);
@@ -46,9 +45,9 @@ namespace inchworm::moves {
   scalar_t remove::accept() {
     //std::printf("yes\n");
     //print_configuration(data.get_time_diagram()  );
-    data.w = proposed_w;
+    data.w       = proposed_w;
     data.u_frame = proposed_u_frame;
-    data.config = proposed_config;
+    data.config  = proposed_config;
     return 1;
   }
 

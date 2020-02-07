@@ -17,7 +17,7 @@ namespace inchworm::moves {
     if (not proposed_config.try_insert(tau, li, tau_dag, li_dag)) return 0;
 
     //std::printf("\ninserting:");
-    if (true) {                                                                                      //params.use_bare_propagator) {
+    if (params.use_bare_propagator) {
       auto diagram = diagram::time_diagram_t{proposed_config.c_list, proposed_config.cdag_list, {}}; // make a free function (not member of data)
       auto hyb_mat = diagram::hyb_matrix_t(diagram);
       //print_configuration(diagram);
@@ -48,9 +48,9 @@ namespace inchworm::moves {
   scalar_t insert::accept() {
     //std::printf("yes\n");
     //print_configuration(data.get_time_diagram()  );
-    data.w = proposed_w;
+    data.w       = proposed_w;
     data.u_frame = proposed_u_frame;
-    data.config = proposed_config;
+    data.config  = proposed_config;
     //std::swap(proposed_w, data.w);
     //std::swap(proposed_u_frame, data.u_frame);
     //std::swap(proposed_config, data.config);

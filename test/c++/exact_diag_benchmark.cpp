@@ -77,11 +77,11 @@ TEST(inchworm, partial_trace) {
   //int n_bath             = 1;
   //double theta[n_bath]   = {0.5};
   //double epsilon[n_bath] = {0.1};
-  int n_bath       = 1;
-  double theta[]   = {0.5};
-  double epsilon[] = {0.1};
+  int n_bath       = 2;
+  double theta[]   = {0.5, 0.5, 0.5};
+  double epsilon[] = {0.1, 0.1, 0.1};
   double mu        = 0.0;
-  double U         = 8.0;
+  double U         = 1.0;
   auto fops        = make_fops(n_bath + 1);
   double dtau      = 0.4;
 
@@ -95,22 +95,28 @@ TEST(inchworm, partial_trace) {
     h -= mu * (n("up", i + 1) + n("dn", i + 1));
   }
 
-  auto ad = triqs::atom_diag::atom_diag<false>(h, fops);
+  std::vector<many_body_op_t> qn;
+  qn.resize(1);
+  qn[0] += n("up", 0) + n("dn", 0);
+
+  auto ad = triqs::atom_diag::atom_diag<false>(h, fops, qn);
   auto es = ad.get_eigensystems();
 
+  //print_eigensystems(ad);
+  /*
   triqs::arrays::matrix<double> expected_partial_sum(4, 4);
   expected_partial_sum = 0;
   for (int i = 0; i < 4; i++) expected_partial_sum(i, i) = epsilon[0];
   expected_partial_sum(3, 3) += U;
   print_matrix(expected_partial_sum);
+  */
 
-  auto ps = partial_sum(ad, 2, [](double x) { return x; });
+  //auto ps = partial_sum(ad, 2, [](double x) { return x; });
+  //print_matrix(ps);
+  //std::cout << "Are they equal?\n" << (expected_partial_sum != ps) << "\n"; // this is weird, this should be equal, something I do not get for now
+
+  auto ps = partial_sum(ad, 2, [dtau](double x) { return std::exp(-dtau * x); });
   print_matrix(ps);
-  std::cout << "Are they equal?\n" << (expected_partial_sum != ps) << "\n"; // this is weird, this should be equal, something I do not get for now
-
-
-
-  partial_sum(ad, 2, [dtau](double x) { return std::exp(-dtau * x); });
 }
 
 MAKE_MAIN
