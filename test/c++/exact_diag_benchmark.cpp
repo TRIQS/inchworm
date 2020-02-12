@@ -77,20 +77,20 @@ TEST(inchworm, partial_trace) {
   //int n_bath             = 1;
   //double theta[n_bath]   = {0.5};
   //double epsilon[n_bath] = {0.1};
-  int n_bath       = 2;
+  int n_bath       = 1;
   double theta[]   = {0.5, 0.5, 0.5};
   double epsilon[] = {0.1, 0.1, 0.1};
   double mu        = 0.0;
   double U         = 1.0;
   auto fops        = make_fops(n_bath + 1);
-  double dtau      = 0.4;
+  double dtau      = 1.0;
 
   auto h = U * (n("up", 0) * (n("dn", 0))); // 0 is the only interacting orbital
   h -= mu * (n("up", 0) + n("dn", 0));
 
   for (int i = 0; i < n_bath; i++) {
-    h += theta[i] * (c_dag("up", 0) * c("up", i + 1) + c_dag("up", i + 1) * c("up", 0));
-    h += theta[i] * (c_dag("dn", 0) * c("dn", i + 1) + c_dag("dn", i + 1) * c("dn", 0));
+    h += 10000*theta[i] * (c_dag("up", 0) * c("up", i + 1) + c_dag("up", i + 1) * c("up", 0));
+    h += 10000*theta[i] * (c_dag("dn", 0) * c("dn", i + 1) + c_dag("dn", i + 1) * c("dn", 0));
     h += epsilon[i] * (n("up", i + 1) + n("dn", i + 1));
     h -= mu * (n("up", i + 1) + n("dn", i + 1));
   }

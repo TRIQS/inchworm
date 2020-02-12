@@ -45,6 +45,7 @@ namespace inchworm {
   gf_struct_t find_propagator_struct(atom_diag const &ad);
 
   u_frame_t make_zero_propagator_frame(atom_diag const &ad);
+  u_frame_t make_bare_propagator_frame(atom_diag const &ad, double tau);
 
   double frobenius_norm(u_frame_t const &u_frame);
 
@@ -72,7 +73,8 @@ namespace inchworm {
   struct single_step_results_t {
     u_frame_t u_frame;
     double average_sign;
-    single_step_results_t(atom_diag const &h_diag) : average_sign{0.0} { u_frame = make_zero_propagator_frame(h_diag); };
+    double average_k;
+    single_step_results_t(atom_diag const &h_diag) : average_sign{0.0}, average_k{0.0} { u_frame = make_zero_propagator_frame(h_diag); };
   };
 
 } // namespace inchworm

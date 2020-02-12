@@ -58,10 +58,14 @@ namespace inchworm::diagram {
     std::vector<int> pos_cdag;                       // idem
     bool is_trivial = true; // a diagram is considered trivial if no split_times are found between the minimum and maximum tau.
 
-    int perturbation_order() const;
+    int perturbation_order() const; 
     int size() const;
     double max_tau() const;
     double min_tau() const;
+
+    // Simple function to find the sign of the diagram. 
+    // Note: this result is the opposite same if we use pos_cdag
+    int sign() const;
 
     // Constructor
     time_diagram_t(std::vector<time_and_index_t> const &c, std::vector<time_and_index_t> const &cdag, std::vector<double> const &split_times);

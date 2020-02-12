@@ -18,7 +18,7 @@ namespace inchworm {
 
   struct config_t {
     std::vector<diagram::time_and_index_t> c_list, cdag_list; // list of c/cdag not time ordered, but different
-    int size() { return c_list.size(); }
+    int size() const { return c_list.size(); }
     bool try_insert(double tau, int linear_index, double tau_dag, int linear_index_dag);
     bool try_erase(int i, int i_dag);
   };
@@ -31,7 +31,7 @@ namespace inchworm {
     weights_t w;       // weight values of the last accepted configuration
     u_frame_t u_frame; // frame of the last accepted configuraiton: just one time frame of a propagator
 
-    qmc_config_data_t(atom_diag const &h_diag) : w{1., 1.} { u_frame = make_zero_propagator_frame(h_diag); }
+    qmc_config_data_t(atom_diag const &h_diag, double tau_max) : w{1., 1.} { u_frame = make_bare_propagator_frame(h_diag, tau_max); }
 
     //qmc_config_data_t(params_t const &params, atom_diag const &h_diag, u_tau_t const &u_tau, block_gf_const_view<imtime> delta,
     //                  std::map<int, std::pair<int, int>> linindex);
@@ -39,7 +39,7 @@ namespace inchworm {
   };
 
   struct hyb_adaptor_t {
-    h_tau_t const hyb_tau; 
+    h_tau_t const hyb_tau;
     std::map<int, std::pair<int, int>> const &linindex;
 
     hyb_adaptor_t(h_tau_t const &hyb_tau, std::map<int, std::pair<int, int>> const &linindex)

@@ -17,18 +17,21 @@ namespace inchworm::moves {
     if (not proposed_config.try_insert(tau, li, tau_dag, li_dag)) return 0;
 
     //std::printf("\ninserting:");
+    int sign;
     if (params.use_bare_propagator) {
-      auto diagram = diagram::time_diagram_t{proposed_config.c_list, proposed_config.cdag_list, {}}; // make a free function (not member of data)
-      auto hyb_mat = diagram::hyb_matrix_t(diagram);
-      //print_configuration(diagram);
+      auto diagram     = diagram::time_diagram_t{proposed_config.c_list, proposed_config.cdag_list, {}}; // make a free function (not member of data)
+      auto hyb_mat     = diagram::hyb_matrix_t(diagram, params.hyb_adaptor);
+      //std::printf("\n\nsize=%d,   det=% 4.5e\n", proposed_config.size(), hyb_mat.det());
+      
       proposed_w.hyb   = hyb_mat.det();
       proposed_u_frame = propagator_product(params.h_diag, diagram, params.tau_max);
+      sign             = diagram.sign();
     } else {
       auto diagram =
          diagram::time_diagram_t{proposed_config.c_list, proposed_config.cdag_list, {params.tau_split}}; // make a free function (not member of data)
-      auto hyb_mat     = diagram::hyb_matrix_t(diagram);
-      proposed_w.hyb   = diagram::inclusion_exclusion(diagram, hyb_mat);
-      proposed_u_frame = propagator_product(params.h_diag, diagram, params.tau_max, &params.u_tau);
+      auto hyb_mat   = diagram::hyb_matrix_t(diagram, params.hyb_adaptor);
+      proposed_w.hyb = diagram::inclusion_exclusion(diagram, hyb_mat);
+      sign           = diagram.sign();
     }
     proposed_w.loc = frobenius_norm(proposed_u_frame);
 
@@ -41,13 +44,14 @@ namespace inchworm::moves {
                   data.w.hyb, data.w.loc, t_ratio);
       fflush(stdout);
     }
-    return t_ratio * w_loc_ratio * w_hyb_ratio;
+    return sign * t_ratio * w_loc_ratio * w_hyb_ratio;
   }
 
   //
   scalar_t insert::accept() {
     //std::printf("yes\n");
-    //print_configuration(data.get_time_diagram()  );
+    //std::printf("\n\nsize=%d\n", proposed_config.size());
+    //for (auto const &B : proposed_u_frame) std::cout << B;
     data.w       = proposed_w;
     data.u_frame = proposed_u_frame;
     data.config  = proposed_config;

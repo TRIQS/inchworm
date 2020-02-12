@@ -44,8 +44,7 @@ namespace triqs {
      * @param fct Function to be applied to eigenvalues in atom_diag.
      * @return The partial sum matrix of a function the Hamiltonian.
      */
-    triqs::arrays::matrix<double> partial_sum(triqs::atom_diag::atom_diag<false> const &ad, int linear_index,
-                                                               std::function<double(double)> fct) {
+    triqs::arrays::matrix<double> partial_sum(triqs::atom_diag::atom_diag<false> const &ad, int linear_index, std::function<double(double)> fct) {
       //TODO: incorporate in atom_diag and make it a member function.
       int dim_partial = (1 << linear_index);
       int dim_full    = ad.get_full_hilbert_space_dim();
@@ -65,7 +64,7 @@ namespace triqs {
         int size    = ad.get_subspace_dim(s);
         auto E_Udag = dagger(es[s].unitary_matrix);
         for (int i = 0; i < size; i++)
-          for (int j = 0; j < size; j++) E_Udag(i, j) *= fct(es[s].eigenvalues[i] + ad.get_gs_energy());
+          for (int j = 0; j < size; j++) E_Udag(i, j) *= fct(es[s].eigenvalues[i]); // + ad.get_gs_energy());
         auto H = es[s].unitary_matrix * E_Udag;
 
         for (int i = 0; i < size; i++) {
@@ -79,6 +78,7 @@ namespace triqs {
           }
         }
       }
+      std::printf("factor = %d, dim_full= %d, dim_partial= %d\n", factor, dim_full, dim_partial);
       return partial_sum;
     }
 

@@ -31,6 +31,19 @@ namespace inchworm {
     return u_frame;
   }
 
+  //
+  u_frame_t make_bare_propagator_frame(atom_diag const &ad, double tau) {
+    u_frame_t u_frame(ad.n_subspaces());
+
+    for (int bl = 0; bl < ad.n_subspaces(); bl++) {
+      int dim     = ad.get_subspace_dim(bl);
+      u_frame[bl] = matrix_t(dim, dim); //  use zeros<> ?? check
+      u_frame[bl] = 0;
+      for (int j = 0; j < dim; j++) u_frame[bl](j, j) = std::exp(-tau * ad.get_eigenvalue(bl, j));
+    }
+    return u_frame;
+  }
+
   // Calculate the Frobenius norm of the u_frame block diagonal matrix:
   double frobenius_norm(u_frame_t const &u_frame) {
     double val = 0;
@@ -56,23 +69,15 @@ namespace inchworm {
   //
   u_frame_t propagator_product(atom_diag const &ad, time_diagram_t const &diagram, double tau, u_tau_t const *const u_tau_p) {
 
-    u_frame_t u_frame = make_zero_propagator_frame(ad);
+    if (diagram.size() == 0) return make_bare_propagator_frame(ad, tau);
 
+    u_frame_t u_frame = make_zero_propagator_frame(ad);
     for (int initial_bl = 0; initial_bl < ad.n_subspaces(); initial_bl++) {
       int dim      = ad.get_subspace_dim(initial_bl);
       int new_bl   = initial_bl;
       auto new_mat = matrix_t{};
 
-      //std::printf("bl %d \n", initial_bl);
-      if (diagram.size() == 0) {      // if order is zero, use bare propagator and skip the rest of the function
-        new_mat = matrix_t(dim, dim); //zeros?
-        new_mat = 0;
-        for (int j = 0; j < dim; j++) new_mat(j, j) = std::exp(-tau * ad.get_eigenvalue(initial_bl, j));
-        u_frame[new_bl] = new_mat;
-        continue;
-      }
-
-      for (int i = diagram.size() - 1; (i >= 0) and (new_bl != -1); i--) {
+      for (int i = 0; (i < diagram.size()) and (new_bl != -1); i++) {
         auto const &op = diagram.op_list[i];
         new_bl         = (op.dag ? ad.cdag_connection(op.linear_index, new_bl) : ad.c_connection(op.linear_index, new_bl));
       }
@@ -81,7 +86,7 @@ namespace inchworm {
       if (new_bl == -1) continue;
       new_bl = initial_bl;
 
-      double dtau = tau - diagram.max_tau();
+      double dtau = diagram.min_tau();
       if (u_tau_p)
         new_mat = (*u_tau_p)[initial_bl](dtau);
       else {
@@ -92,7 +97,7 @@ namespace inchworm {
       }
       //std::cout << "after\n" << new_mat << "\n\n";
 
-      for (int i = diagram.size() - 1; i >= 0; i--) {
+      for (int i = 0; i < diagram.size(); i++) {
         auto const &op = diagram.op_list[i];
         //std::cout << "new_mat 1: " << new_bl << " \n" << new_mat << "\n\n";
         //std::cout << (op.dag ? ad.cdag_matrix(op.linear_index, new_bl) : ad.c_matrix(op.linear_index, new_bl)) << "\n\n";
@@ -100,7 +105,7 @@ namespace inchworm {
         new_bl  = (op.dag ? ad.cdag_connection(op.linear_index, new_bl) : ad.c_connection(op.linear_index, new_bl));
 
         //std::cout << "new_mat 2: " << new_bl << " \n" << new_mat << "\n\n";
-        dtau = op.tau - (i == 0 ? 0 : diagram.op_list[i - 1].tau);
+        dtau = (i == (diagram.size() - 1) ? tau : diagram.op_list[i + 1].tau) - op.tau;
         if (u_tau_p)
           new_mat = (*u_tau_p)[new_bl](dtau) * new_mat; // (interpolation)
         else {

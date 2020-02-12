@@ -22,8 +22,11 @@
 #include "./solver_core.hpp"
 
 #include "./post_process.hpp"
+
 #include "./mc/measures/sign.hpp"
 #include "./mc/measures/u_frame.hpp"
+#include "./mc/measures/average_k.hpp"
+
 #include "./mc/moves/insert.hpp"
 #include "./mc/moves/remove.hpp"
 
@@ -103,7 +106,7 @@ namespace inchworm {
     _h_loc = solve_params.h_int;
     h_diag = {_h_loc, fops, solve_params.quantum_numbers};
     u_tau  = make_propagator(h_diag, constr_params.n_tau);
-    print_eigensystems(h_diag);
+    //print_eigensystems(h_diag);
   }
 
   void solver_core::solve(solve_params_t const &solve_params) {
@@ -124,6 +127,8 @@ namespace inchworm {
 
     //std::printf("salut %ld\n", res.u_frame.size());
     for (auto const &B : res.u_frame) std::cout << B;
+    std::cout << "\n\nsign: " << res.average_sign << "\n";
+    std::cout << "\norder: " << res.average_k << "\n";
   }
 
   //------------------------------
@@ -137,7 +142,7 @@ namespace inchworm {
     auto &rng = mc.get_rng();
 
     // Create Monte-Carlo configuration
-    qmc_config_data_t qmc_config_data{h_diag};
+    qmc_config_data_t qmc_config_data{h_diag, tau_max};
 
     // Create Monte-Carlo params
     qmc_params_t qmc_params{Delta_tau, map_lin_idx_to_block_inner, h_diag, u_tau, tau_max, tau_split, use_bare_propagator};
@@ -148,8 +153,9 @@ namespace inchworm {
 
     single_step_results_t results(h_diag);
     // Register all measurements
-    if (params.measure_sign) mc.add_measure(measures::sign{params, qmc_config_data, results}, "sign measurement");
-    mc.add_measure(measures::u_frame{params, qmc_config_data, results}, "propagator measurement"); // we have to measure this (not a choice)
+    mc.add_measure(measures::sign{params, qmc_config_data, results}, "sign measurement");
+    mc.add_measure(measures::u_frame{params, qmc_config_data, results}, "propagator measurement"); 
+    mc.add_measure(measures::average_k{params, qmc_config_data, results}, "average perturbation order");
 
     // Perform QMC run and collect results
     mc.warmup_and_accumulate(params.n_warmup_cycles, params.n_cycles, params.length_cycle, triqs::utility::clock_callback(params.max_time));
