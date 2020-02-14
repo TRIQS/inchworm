@@ -7,9 +7,11 @@ namespace inchworm::measures {
      : qmc_config_data(qmc_config_data_), results(results_) {}
 
   void u_frame::accumulate(scalar_t sign) {
-    //if (qmc_config_data.config.size() == 1) {
-    for (int bl = 0; bl < results.u_frame.size(); bl++) results.u_frame[bl] += qmc_config_data.u_frame[bl];
-    average_sign += sign;
+    //int factor = 1;
+    //if (qmc_config_data.config.size() == 1) { //factor = -1;
+    for (int bl = 0; bl < results.u_frame.size(); bl++)
+      results.u_frame[bl] += qmc_config_data.w.hyb * qmc_config_data.u_frame[bl] / qmc_config_data.w.loc;
+    average_sign += sign / qmc_config_data.w.loc;
     //}
   }
 

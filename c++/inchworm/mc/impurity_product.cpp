@@ -1,5 +1,7 @@
 #include "./impurity_product.hpp"
 
+#define USE_GS 0
+
 namespace inchworm {
   //
   triqs::hilbert_space::gf_struct_t find_propagator_struct(atom_diag const &ad) {
@@ -39,10 +41,17 @@ namespace inchworm {
       int dim     = ad.get_subspace_dim(bl);
       u_frame[bl] = matrix_t(dim, dim); //  use zeros<> ?? check
       u_frame[bl] = 0;
-      for (int j = 0; j < dim; j++) u_frame[bl](j, j) = std::exp(-tau * ad.get_eigenvalue(bl, j));
+      for (int j = 0; j < dim; j++) u_frame[bl](j, j) = std::exp(-tau * (ad.get_eigenvalue(bl, j) + USE_GS * ad.get_gs_energy()));
     }
     return u_frame;
   }
+
+  /*
+  u_frame_t operator*=(scalar_t factor, u_frame_t const & u_frame) {
+    u_frame_t
+    for (auto & Bl : u_frame) Bl = factor * Bl;
+    return u_frame;
+  }*/
 
   // Calculate the Frobenius norm of the u_frame block diagonal matrix:
   double frobenius_norm(u_frame_t const &u_frame) {
@@ -96,7 +105,8 @@ namespace inchworm {
         new_mat = matrix_t(dim, dim); //zeros?
         new_mat = 0;
         for (int j = 0; j < dim; j++)
-          new_mat(j, j) = std::exp(-dtau * ad.get_eigenvalue(initial_bl, j)); // Create time-evolution matrix e^-H(tau-tau_max)
+          new_mat(j, j) =
+             std::exp(-dtau * (ad.get_eigenvalue(initial_bl, j) + USE_GS * ad.get_gs_energy())); // Create time-evolution matrix e^-H(tau-tau_max)
       }
       //std::cout << "after\n" << new_mat << "\n\n";
 
@@ -113,7 +123,8 @@ namespace inchworm {
           new_mat = (*u_tau_p)[new_bl](dtau) * new_mat; // (interpolation)
         else {
           auto _ = triqs::arrays::range();
-          for (int j = 0; j < dim; j++) new_mat(_, j) *= std::exp(-dtau * ad.get_eigenvalue(new_bl, j)); // Time-evolution
+          for (int j = 0; j < dim; j++)
+            new_mat(_, j) *= std::exp(-dtau * (ad.get_eigenvalue(new_bl, j) + USE_GS * ad.get_gs_energy())); // Time-evolution
         }
         //std::cout << "new_mat 3: " << new_bl << " \n" << new_mat << "\n\n\n\n";
       }

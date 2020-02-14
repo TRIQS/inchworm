@@ -34,9 +34,7 @@ namespace inchworm::diagram {
 
   // Simple function to find the sign of the diagram.
   // Note: important to use pos_c and not pos_cdag
-  int time_diagram_t::sign() const {
-    return (std::accumulate(pos_c.begin(), pos_c.end(), 0) % 2 == 0 ? 1 : -1);
-  }
+  int time_diagram_t::sign() const { return (std::accumulate(pos_c.begin(), pos_c.end(), 0) % 2 == 0 ? 1 : -1); }
 
   //
   time_diagram_t::time_diagram_t(std::vector<time_and_index_t> const &c, std::vector<time_and_index_t> const &cdag,

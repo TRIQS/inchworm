@@ -46,7 +46,7 @@ namespace inchworm::moves {
     print_configuration(diagram);
     //std::printf("\n\nsign= %d  t_ratio=% 4.7f  w_hyb=% 4.7f  w_loc=% 4.7f\n", sign, params.tau_max / (proposed_config.size() + 1), proposed_w.hyb, proposed_w.loc);
     for (auto const &B : proposed_u_frame) std::cout << B;
-    std::printf("\n\nsign= %d   w_hyb=% 4.7f  w_loc=% 4.7f\n", proposed_sign, proposed_w.hyb, proposed_w.loc);
+    std::printf("\n\nsign= %d   w_hyb=% 4.10f  w_loc=% 4.10f\n", proposed_sign, proposed_w.hyb, proposed_w.loc);
     data.w       = proposed_w;
     data.u_frame = proposed_u_frame;
     data.config  = proposed_config;

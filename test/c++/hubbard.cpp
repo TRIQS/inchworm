@@ -53,7 +53,7 @@ void print_eigensystems(triqs::atom_diag::atom_diag<false> const &ad) {
 
 void print_matrix(triqs::arrays::matrix<double> m) {
   for (int i = 0; i < first_dim(m); i++) {
-    for (int j = 0; j < second_dim(m); j++) { std::printf("% 5.5f ", m(i, j)); }
+    for (int j = 0; j < second_dim(m); j++) { std::printf("% 5.8f ", m(i, j)); }
     std::printf("\n");
   }
   std::printf("\n\n");
@@ -87,7 +87,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   solver_core S(cp);
   //int up = 0, dn = 1;
   int n_bath       = 1;
-  double theta[]   = {0.05, 0.05};
+  double theta[]   = {0.005, 0.005};
   double epsilon[] = {0.0, 0.0};
 
   for (auto const &tau : S.Delta_tau[0].mesh()) {
@@ -109,7 +109,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   // Solve Parameters
   solve_params_t sp;
   sp.h_int           = U * n("up", 0) * n("dn", 0) - mu * (n("up", 0) + n("dn", 0));
-  sp.n_cycles        = 10000;
+  sp.n_cycles        = 50000;
   sp.length_cycle    = 10;
   sp.n_warmup_cycles = 20;
   sp.max_time        = -1;
@@ -153,21 +153,17 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   std::printf("\n\n");
   auto dtau = cp.beta;
   auto ad   = triqs::atom_diag::atom_diag<false>(h, fops);
-  auto es   = ad.get_eigensystems();
   auto ps   = partial_sum(ad, 2, [dtau](double x) { return std::exp(-dtau * x); });
   print_matrix(ps);
 
   auto ad_bath = triqs::atom_diag::atom_diag<false>(h_bath, fops_bath);
-  auto es_bath = ad_bath.get_eigensystems();
   auto ps_bath = partial_sum(ad_bath, 0, [dtau](double x) { return std::exp(-dtau * x); });
   //print_eigensystems(ad_bath);
   //print_matrix(ps_bath);
   print_matrix(ps / ps_bath(0, 0));
 
-  double e      = epsilon[0];
-  double analy  = (-2. * theta[0] * theta[0] / (1 + std::exp(cp.beta * e))) * (((1 + e) - std::exp(cp.beta * e)) / e / e);
-  double analy2 = (theta[0] * theta[0] * cp.beta * cp.beta);
-  std::printf("\n\n  % 4.8f % 4.8f \n", analy, analy2);
+  double analy2 = -(theta[0] * theta[0] * cp.beta * cp.beta);
+  std::printf("\n\n  % 4.8f \n", analy2);
 }
 
 MAKE_MAIN
