@@ -8,8 +8,8 @@ namespace inchworm::measures {
 
   void u_frame::accumulate(scalar_t sign) {
     //if (qmc_config_data.config.size() == 1) {
-      for (int bl = 0; bl < results.u_frame.size(); bl++) results.u_frame[bl] += qmc_config_data.u_frame[bl];
-      average_sign += sign;
+    for (int bl = 0; bl < results.u_frame.size(); bl++) results.u_frame[bl] += qmc_config_data.u_frame[bl];
+    average_sign += sign;
     //}
   }
 

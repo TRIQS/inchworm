@@ -20,14 +20,15 @@ namespace inchworm::moves {
     void reject() {}
 
     /// Constructor:
-    remove(qmc_config_data_t &data, qmc_params_t const &qmc_params, triqs::mc_tools::random_generator &rng) : data(data), params(qmc_params), rng(rng) {}
+    remove(qmc_config_data_t &data, qmc_params_t const &qmc_params, triqs::mc_tools::random_generator &rng)
+       : data(data), params(qmc_params), rng(rng) {}
 
     private:
     /// The Monte-Carlo configuration
     qmc_config_data_t &data;
 
     /// The Monte-Carlo parameters
-    qmc_params_t const  &params;
+    qmc_params_t const &params;
 
     /// The random number generator
     triqs::mc_tools::random_generator &rng;
@@ -40,6 +41,8 @@ namespace inchworm::moves {
 
     /// container of the calculated time frame of the propagator
     u_frame_t proposed_u_frame = make_zero_propagator_frame(params.h_diag);
+
+    int proposed_sign;
   };
 
 } // namespace inchworm::moves

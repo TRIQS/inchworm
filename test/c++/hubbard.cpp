@@ -87,14 +87,15 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   solver_core S(cp);
   //int up = 0, dn = 1;
   int n_bath       = 1;
-  double theta[]   = {0.01, 0.01};
-  double epsilon[] = {0.000001, 0.001};
+  double theta[]   = {0.05, 0.05};
+  double epsilon[] = {0.0, 0.0};
 
   for (auto const &tau : S.Delta_tau[0].mesh()) {
     for (int i = 0; i < 2; i++) {
       S.Delta_tau[i][tau] = 0.0;
       for (int n = 0; n < n_bath; n++) {
-        S.Delta_tau[i][tau] -= theta[n] * theta[n] * (std::exp(-tau * epsilon[n]) / (1 + std::exp(-cp.beta * epsilon[n])));
+        // factor 2 is for spin:
+        S.Delta_tau[i][tau] -= 2 * theta[n] * theta[n] * (std::exp(-tau * epsilon[n]) / (1. + std::exp(-cp.beta * epsilon[n])));
       }
     }
   }
@@ -108,7 +109,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   // Solve Parameters
   solve_params_t sp;
   sp.h_int           = U * n("up", 0) * n("dn", 0) - mu * (n("up", 0) + n("dn", 0));
-  sp.n_cycles        = 50000;
+  sp.n_cycles        = 10000;
   sp.length_cycle    = 10;
   sp.n_warmup_cycles = 20;
   sp.max_time        = -1;
@@ -163,9 +164,10 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   //print_matrix(ps_bath);
   print_matrix(ps / ps_bath(0, 0));
 
-  double e     = epsilon[0];
-  double analy = (-2 * theta[0] * theta[0] / (1 + std::exp(cp.beta * e))) * (((1 + e) - std::exp(cp.beta * e)) / e / e);
-  std::printf("\n\n % 4.8f \n", analy);
+  double e      = epsilon[0];
+  double analy  = (-2. * theta[0] * theta[0] / (1 + std::exp(cp.beta * e))) * (((1 + e) - std::exp(cp.beta * e)) / e / e);
+  double analy2 = (theta[0] * theta[0] * cp.beta * cp.beta);
+  std::printf("\n\n  % 4.8f % 4.8f \n", analy, analy2);
 }
 
 MAKE_MAIN

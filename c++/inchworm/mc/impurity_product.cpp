@@ -50,8 +50,11 @@ namespace inchworm {
     for (auto const &B : u_frame) {
       double norm = frobenius_norm(B);
       val += norm * norm;
+      //double norm = trace(B);
+      //val += norm ;
     }
     return std::sqrt(val);
+    //return val;
   }
 
   // mettre dans une classe

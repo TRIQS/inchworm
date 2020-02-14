@@ -30,8 +30,9 @@ namespace inchworm {
     config_t config;   // last accepted configuration of c and cdag
     weights_t w;       // weight values of the last accepted configuration
     u_frame_t u_frame; // frame of the last accepted configuraiton: just one time frame of a propagator
+    int sign;          // sign of the last accepted configuration
 
-    qmc_config_data_t(atom_diag const &h_diag, double tau_max) : w{1., 1.} { u_frame = make_bare_propagator_frame(h_diag, tau_max); }
+    qmc_config_data_t(atom_diag const &h_diag, double tau_max) : w{1., 1.}, sign{1} { u_frame = make_bare_propagator_frame(h_diag, tau_max); }
 
     //qmc_config_data_t(params_t const &params, atom_diag const &h_diag, u_tau_t const &u_tau, block_gf_const_view<imtime> delta,
     //                  std::map<int, std::pair<int, int>> linindex);
@@ -49,12 +50,12 @@ namespace inchworm {
       auto [bl, in]         = linindex.at(li);
       auto [bl_dag, in_dag] = linindex.at(li_dag);
 
-      EXPECTS(bl == bl_dag);
-      double dtau = tau_dag - tau;
-      if (dtau >= 0)
-        return (hyb_tau[bl])(dtau)(in_dag, in);
+      if (bl != bl_dag) return 0.; // important: there should be no finite terms of the hybridization between different [bl]ock.
+      double dtau = tau - tau_dag;
+      if (dtau >= 0.)
+        return (hyb_tau[bl])(dtau)(in, in_dag);
       else
-        return -(hyb_tau[bl])(hyb_tau[bl].domain().beta + dtau)(in_dag, in);
+        return -(hyb_tau[bl])(hyb_tau[bl].domain().beta + dtau)(in, in_dag);
     }
   };
 

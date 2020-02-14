@@ -40,6 +40,8 @@ namespace inchworm::moves {
 
     /// container of the calculated time frame of the propagator
     u_frame_t proposed_u_frame = make_zero_propagator_frame(params.h_diag);
+
+    int proposed_sign;
   };
 
 } // namespace inchworm::moves
