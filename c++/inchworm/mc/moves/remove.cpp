@@ -8,8 +8,10 @@ namespace inchworm::moves {
     proposed_w      = data.w;
 
     int N     = data.config.size(); // size before proposition
+    if(N==0) return 0;
     int i     = rng(N);
     int i_dag = rng(N);
+    std::printf("i=%d i_dag=%d N=%d  ",i,i_dag,N);
     if (not proposed_config.try_erase(i, i_dag)) return 0; //data is not modified in this case
 
     //std::printf("\nremoving:");

@@ -8,11 +8,11 @@ namespace inchworm::measures {
 
   void u_frame::accumulate(scalar_t sign) {
     //int factor = 1;
-    //if (qmc_config_data.config.size() == 1) { //factor = -1;
-    for (int bl = 0; bl < results.u_frame.size(); bl++)
-      results.u_frame[bl] += qmc_config_data.w.hyb * qmc_config_data.u_frame[bl] / qmc_config_data.w.loc;
-    average_sign += sign / qmc_config_data.w.loc;
-    //}
+    if (qmc_config_data.config.size() == 0) {
+      scalar_t s = sign / qmc_config_data.w.loc;
+      average_sign += s;
+      for (int bl = 0; bl < results.u_frame.size(); bl++) results.u_frame[bl] += s * qmc_config_data.u_frame[bl];
+    }
   }
 
   void u_frame::collect_results(mpi::communicator const &comm) {
@@ -20,7 +20,7 @@ namespace inchworm::measures {
     results.u_frame = mpi::all_reduce(results.u_frame, comm);
 
     //std::printf("average sign: % 3.4f \n", average_sign);
-    for (auto &x : results.u_frame) x /= average_sign;
+    //for (auto &x : results.u_frame) x /= 10000;
     //assign_frame_to_propagator(results.u_tau, u_frame, qmc_config_data.inch_step);
   }
 

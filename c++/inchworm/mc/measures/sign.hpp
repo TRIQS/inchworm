@@ -25,7 +25,7 @@ namespace inchworm::measures {
 
     scalar_t average_sign = 0;
 
-    long count = 0;
+    scalar_t z = 0;
   };
 
 } // namespace inchworm::measures

@@ -87,7 +87,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   solver_core S(cp);
   //int up = 0, dn = 1;
   int n_bath       = 1;
-  double theta[]   = {0.005, 0.005};
+  double theta[]   = {0.2, 0.2};
   double epsilon[] = {0.0, 0.0};
 
   for (auto const &tau : S.Delta_tau[0].mesh()) {
@@ -109,7 +109,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   // Solve Parameters
   solve_params_t sp;
   sp.h_int           = U * n("up", 0) * n("dn", 0) - mu * (n("up", 0) + n("dn", 0));
-  sp.n_cycles        = 50000;
+  sp.n_cycles        = 10000;
   sp.length_cycle    = 10;
   sp.n_warmup_cycles = 20;
   sp.max_time        = -1;

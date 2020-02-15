@@ -66,6 +66,13 @@ namespace inchworm {
     //return val;
   }
 
+  // calculate the trace of the u_frame block diagonal matrix:
+  double trace(u_frame_t const &u_frame) {
+    double val = 0;
+    for (auto const &B : u_frame) val += trace(B);
+    return val;
+  }
+
   // mettre dans une classe
   u_tau_t make_propagator(atom_diag const &h_diag, int n_tau) {
     // this assign identity to the first frame (or time) of the propagator.

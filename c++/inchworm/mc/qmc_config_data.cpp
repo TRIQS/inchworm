@@ -14,7 +14,7 @@ namespace inchworm {
 
   bool config_t::try_erase(int i, int i_dag) {
     //std::printf("try_erase? %d   %d %d \n", size(), i, i_dag);
-    if ((size() <= i) or (size() <= i_dag)) return false;
+    if ((size() <= i) or (size() <= i_dag)){ std::printf("heille.\n"); return false;}
     c_list.erase(c_list.begin() + i);
     cdag_list.erase(cdag_list.begin() + i_dag);
     return true;

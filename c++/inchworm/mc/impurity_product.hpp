@@ -48,6 +48,7 @@ namespace inchworm {
   u_frame_t make_bare_propagator_frame(atom_diag const &ad, double tau);
 
   double frobenius_norm(u_frame_t const &u_frame);
+  double trace(u_frame_t const &u_frame);
 
   //void init_propagator_frame(u_tau_t &U, u_frame_t const &u_frame, int frame); // faire un constructeur (struct)
 
