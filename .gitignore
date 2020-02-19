@@ -1,6 +1,7 @@
 compile_commands.json
 doc/cpp2rst_generated
 build
+build_*
 ./quickvim.sh
 *.swp
 .clangd

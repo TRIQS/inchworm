@@ -125,10 +125,14 @@ namespace inchworm {
     init(solve_params);
     auto res = single_step(solve_params, constr_params.beta / 2, constr_params.beta, true);
 
-    //std::printf("salut %ld\n", res.u_frame.size());
+    //std::printf("\n ");
+    //for (auto const &B : res.zero_frame) std::cout << B;
+    std::printf("\n ");
     for (auto const &B : res.u_frame) std::cout << B;
     std::cout << "\n\nsign: " << res.average_sign << "\n";
     std::cout << "\norder: " << res.average_k << "\n";
+    //for (auto o : res.u_expansion_order) std::printf("% 4.5f ", o);
+    std::printf("\n ");
   }
 
   //------------------------------
@@ -154,7 +158,7 @@ namespace inchworm {
     single_step_results_t results(h_diag);
     // Register all measurements
     mc.add_measure(measures::sign{params, qmc_config_data, results}, "sign measurement");
-    mc.add_measure(measures::u_frame{params, qmc_config_data, results}, "propagator measurement"); 
+    mc.add_measure(measures::u_frame{params, qmc_config_data, results}, "propagator measurement");
     mc.add_measure(measures::average_k{params, qmc_config_data, results}, "average perturbation order");
 
     // Perform QMC run and collect results

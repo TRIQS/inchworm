@@ -22,7 +22,8 @@ namespace inchworm::moves {
     proposed_sign = diagram.sign();
 
     if (params.use_bare_propagator) {
-      proposed_w.hyb   = hyb_mat.det();
+      proposed_w.hyb = hyb_mat.det();
+      //hyb_mat.print();
       proposed_u_frame = propagator_product(params.h_diag, diagram, params.tau_max);
     } else {
       proposed_w.hyb   = diagram::inclusion_exclusion(diagram, hyb_mat);
@@ -42,11 +43,13 @@ namespace inchworm::moves {
   scalar_t insert::accept() {
     //std::printf("\n\nsize=%d\n", proposed_config.size());
     //for (auto const &B : proposed_u_frame) std::cout << B;
-    auto diagram = diagram::time_diagram_t(proposed_config.c_list, proposed_config.cdag_list, {}); // make a free function (not member of data)
+    auto diagram  = diagram::time_diagram_t(proposed_config.c_list, proposed_config.cdag_list, {}); // make a free function (not member of data)
     print_configuration(diagram);
+    auto hyb_mat  = diagram::hyb_matrix_t(diagram, params.hyb_adaptor);
+    hyb_mat.print();
     //std::printf("\n\nsign= %d  t_ratio=% 4.7f  w_hyb=% 4.7f  w_loc=% 4.7f\n", sign, params.tau_max / (proposed_config.size() + 1), proposed_w.hyb, proposed_w.loc);
     for (auto const &B : proposed_u_frame) std::cout << B;
-    std::printf("\n\nsign= %d   w_hyb=% 4.10f  w_loc=% 4.10f\n", proposed_sign, proposed_w.hyb, proposed_w.loc);
+    std::printf("\n\nsign= % d   w_hyb=% 4.10f  w_loc=% 4.10f\n", proposed_sign, proposed_w.hyb, proposed_w.loc);
     data.w       = proposed_w;
     data.u_frame = proposed_u_frame;
     data.config  = proposed_config;

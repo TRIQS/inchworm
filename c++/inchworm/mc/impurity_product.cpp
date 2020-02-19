@@ -130,8 +130,11 @@ namespace inchworm {
           new_mat = (*u_tau_p)[new_bl](dtau) * new_mat; // (interpolation)
         else {
           auto _ = triqs::arrays::range();
-          for (int j = 0; j < dim; j++)
+          for (int j = 0; j < ad.get_subspace_dim(new_bl); j++) {
+            //std::printf("new_bl %d, j %d \n", new_bl, j);
+            //std::printf("ad.get_subspace_dim(new_bl) = %d \n", ad.get_subspace_dim(new_bl));
             new_mat(_, j) *= std::exp(-dtau * (ad.get_eigenvalue(new_bl, j) + USE_GS * ad.get_gs_energy())); // Time-evolution
+          }
         }
         //std::cout << "new_mat 3: " << new_bl << " \n" << new_mat << "\n\n\n\n";
       }

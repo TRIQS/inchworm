@@ -7,11 +7,11 @@ namespace inchworm::moves {
     proposed_config = data.config; // we first copy last accepted config before proposing the new remove.
     proposed_w      = data.w;
 
-    int N     = data.config.size(); // size before proposition
-    if(N==0) return 0;
+    int N = data.config.size(); // size before proposition
+    if (N == 0) return 0;
     int i     = rng(N);
     int i_dag = rng(N);
-    std::printf("i=%d i_dag=%d N=%d  ",i,i_dag,N);
+    std::printf("i=%d i_dag=%d N=%d  ", i, i_dag, N);
     if (not proposed_config.try_erase(i, i_dag)) return 0; //data is not modified in this case
 
     //std::printf("\nremoving:");
@@ -51,9 +51,11 @@ namespace inchworm::moves {
     //for (auto const &B : proposed_u_frame) std::cout << B;
     auto diagram = diagram::time_diagram_t(proposed_config.c_list, proposed_config.cdag_list, {}); // make a free function (not member of data)
     print_configuration(diagram);
+    auto hyb_mat = diagram::hyb_matrix_t(diagram, params.hyb_adaptor);
+    hyb_mat.print();
     //std::printf("\n\nsign= %d  t_ratio=% 4.7f  w_hyb=% 4.7f  w_loc=% 4.7f\n", sign, params.tau_max / (proposed_config.size() + 1), proposed_w.hyb, proposed_w.loc);
     for (auto const &B : proposed_u_frame) std::cout << B;
-    std::printf("\n\nsign= %d   w_hyb=% 4.7f  w_loc=% 4.7f\n", proposed_sign, proposed_w.hyb, proposed_w.loc);
+    std::printf("\n\nsign= % d   w_hyb=% 4.7f  w_loc=% 4.7f\n", proposed_sign, proposed_w.hyb, proposed_w.loc);
     data.w       = proposed_w;
     data.u_frame = proposed_u_frame;
     data.config  = proposed_config;

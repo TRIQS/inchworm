@@ -51,7 +51,7 @@ namespace inchworm {
       auto [bl_dag, in_dag] = linindex.at(li_dag);
 
       if (bl != bl_dag) return 0.; // important: there should be no finite terms of the hybridization between different [bl]ock.
-      double dtau = tau - tau_dag;
+      double dtau = tau_dag - tau;
       if (dtau >= 0.)
         return (hyb_tau[bl])(dtau)(in, in_dag);
       else

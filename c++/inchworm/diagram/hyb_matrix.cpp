@@ -42,8 +42,8 @@ namespace inchworm::diagram {
 
     for (auto [i, c] : enumerate(diagram.c_list))
       for (auto [j, cdag] : enumerate(diagram.cdag_list)) {
-
-        //double dtau = cdag.tau - c.tau;
+        //std::printf("\ni %d  j %d    %f",i,j, hyb_tau(c.tau, c.linear_index, cdag.tau, cdag.linear_index));
+        //std::printf(" %f %d   %f %d \n",c.tau, c.linear_index, cdag.tau, cdag.linear_index );
         mat(i, j) = hyb_tau(c.tau, c.linear_index, cdag.tau, cdag.linear_index);
       }
   }
@@ -98,10 +98,10 @@ namespace inchworm::diagram {
   void hyb_matrix_t::print() {
     std::printf("\nhybridization mat: \n");
     for (int i = 0; i < diagram.perturbation_order(); i++) {
-      for (int j = 0; j < diagram.perturbation_order(); j++) { std::printf("% 2.5f ", mat(i, j)); }
+      for (int j = 0; j < diagram.perturbation_order(); j++) { std::printf("% 2.7f ", mat(i, j)); }
       std::printf("\n");
     }
-    std::cout << std::setprecision(10) << mat;
-    std::printf("\ndet: %e\n", det());
+    //std::cout << std::setprecision(10) << mat;
+    //std::printf("\ndet: %e\n", det());
   }
 } // namespace inchworm::diagram
