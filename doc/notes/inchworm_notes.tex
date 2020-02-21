@@ -175,14 +175,18 @@ Notes on the implementation of the inchworm in triqs.
 
 From Gull review:
 \begin{align}
-U(\beta)=& \operatorname{Tr_B} [e^{-\beta (H_a + H_\text{hyb}) }]  
+U(\beta)=& \frac{1}{Z_{\text {bath }}}\operatorname{Tr_B} [e^{-\beta (H_a + H_\text{hyb}) }]  
 \\
 =&  \sum_{k=0}^{\infty} \int_{0}^{\beta} d \tau_{1} \cdots \int_{\tau_{k-1}}^{\beta} d \tau_{k} \int_{0}^{\beta} d \tau_{1}^{\prime} \cdots \int_{\tau_{k^{\prime}-1}}^{\beta} d \tau_{k}^{\prime} \\
 & \times \operatorname{Tr_B}\left[T_{\tau} e^{-\beta H_{a}} \tilde{H}_{\mathrm{hyb}}\left(\tau_{k}\right) \tilde{H}_{\mathrm{hyb}}^{\dagger}\left(\tau_{k}^{\prime}\right) \cdots\right. \left.\times \tilde{H}_{\mathrm{hyb}}\left(\tau_{1}\right) \tilde{H}_{\mathrm{hyb}}^{\dagger}\left(\tau_{1}^{\prime}\right)\right]
 \end{align}
 
 where
-$H_{\mathrm{hyb}}=\sum_{p j}\left(\theta_{p}^{j} c_{p}^{\dagger} d_{j}+\theta_{p}^{j *} d_{j}^{\dagger} c_{p}\right)=\tilde{H}_{\mathrm{hyb}}+\tilde{H}_{\mathrm{hyb}}^{\dagger}$. Then: 
+$H_{\mathrm{hyb}}=\sum_{p j}\left(\theta_{p}^{j} c_{p}^{\dagger} d_{j}+\theta_{p}^{j *} d_{j}^{\dagger} c_{p}\right)=\tilde{H}_{\mathrm{hyb}}+\tilde{H}_{\mathrm{hyb}}^{\dagger}$. 
+Note that there is an $(-1)^k$ missing from these definitions. Wait, why? 
+
+After that: 
+
 \begin{align}
 U(\beta)=& \sum_{k=0}^{\infty}   \int_{0}^{\beta} d \tau_{1} \cdots \int_{\tau_{k-1}}^{\beta} d \tau_{k} \int_{0}^{\beta} d \tau_{1}^{\prime} \cdots \int_{\tau_{k-1}^{\prime}}^{\beta} d \tau_{k}^{\prime} \\
 & \times \sum_{j_1^{(\prime)} \cdots j_k^{(\prime)}} \sum_{p_1^{(\prime)} \cdots  p_k^{(\prime)}} 
@@ -225,7 +229,7 @@ Ok, I need to do this proof at least once.
 
 Using this last definition, we get:
 \begin{align}
-U(\beta)=& Z_{\text {bath }} \sum_k^{\infty} \int_{0}^{\beta} d \tau_1 \cdots \int_{\tau_k}^{\beta} d \tau_k^{\prime}
+U(\beta)=& \sum_k^{\infty} \int_{0}^{\beta} d \tau_1 \cdots \int_{\tau_k}^{\beta} d \tau_k^{\prime}
 \\
 &\sum_{j_1 \ldots j_k}  \sum_{j_{1}^{\prime} \ldots j_k^{\prime}} 
 \Big[ T_{\tau} e^{-\beta H_\mathrm{loc}}
