@@ -25,7 +25,7 @@ namespace inchworm::diagram {
 
   inline bool operator<(time_and_index_t const &t1, time_and_index_t const &t2) { return (t1.tau < t2.tau); }
 
-  auto sort_tau = [](auto const &x, auto const &y) { return x.tau < y.tau; };
+  //auto sort_tau = [](auto const &x, auto const &y) { return x.tau < y.tau; };
 
   int time_diagram_t::perturbation_order() const { return c_list.size(); }
   int time_diagram_t::size() const { return op_list.size(); }
@@ -33,8 +33,8 @@ namespace inchworm::diagram {
   double time_diagram_t::min_tau() const { return op_list.front().tau; }
 
   // Simple function to find the sign of the diagram.
-  // Note: important to use pos_c and not pos_cdag
-  int time_diagram_t::sign() const { return (std::accumulate(pos_c.begin(), pos_c.end(), 0) % 2 == 0 ? 1 : -1); }
+  // Note: important to use pos_c and not pos_cdag (this corresponds to normal order chosen c c^dag c c^dag ..., NOTE these are stocked in reverse order, document this PLEASE)
+  int time_diagram_t::sign() const { return (std::accumulate(pos_cdag.begin(), pos_cdag.end(), 0) % 2 == 0 ? 1 : -1); }
 
   //
   time_diagram_t::time_diagram_t(std::vector<time_and_index_t> const &c, std::vector<time_and_index_t> const &cdag,

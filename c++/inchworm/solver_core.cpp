@@ -125,10 +125,18 @@ namespace inchworm {
     init(solve_params);
     auto res = single_step(solve_params, constr_params.beta / 2, constr_params.beta, true);
 
-    //std::printf("\n ");
-    //for (auto const &B : res.zero_frame) std::cout << B;
+    double normalization_cte = (double) res.zero_frame[0](0,0); //need to do better at some point
     std::printf("\n ");
-    for (auto const &B : res.u_frame) std::cout << B;
+    //for (auto const &B : res.zero_frame) std::cout << (double) (B/normalization_cte);
+    for (auto &B : res.zero_frame){
+      B /= normalization_cte;
+      std::cout << B;
+    }
+    std::printf("\n ");
+    for (auto &B : res.u_frame){
+      B /= normalization_cte;
+      std::cout << B;
+    }
     std::cout << "\n\nsign: " << res.average_sign << "\n";
     std::cout << "\norder: " << res.average_k << "\n";
     //for (auto o : res.u_expansion_order) std::printf("% 4.5f ", o);

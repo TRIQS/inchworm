@@ -28,7 +28,7 @@
 #include <triqs/atom_diag/atom_diag.hpp>
 #include <triqs/arrays/blas_lapack/dot.hpp>
 
-#define USE_GS 0
+#define USE_GS 1
 
 namespace triqs {
   namespace atom_diag {
@@ -50,7 +50,7 @@ namespace triqs {
       //TODO: incorporate in atom_diag and make it a member function.
       int dim_partial = (1 << linear_index);
       int dim_full    = ad.get_full_hilbert_space_dim();
-      int factor      = dim_full / dim_partial;
+      int factor      = 1;//dim_full / dim_partial;
       EXPECTS(dim_partial < dim_full);
       EXPECTS(dim_full % dim_partial == 0);
 

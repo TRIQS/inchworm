@@ -53,7 +53,7 @@ void print_eigensystems(triqs::atom_diag::atom_diag<false> const &ad) {
 
 void print_matrix(triqs::arrays::matrix<double> m) {
   for (int i = 0; i < first_dim(m); i++) {
-    for (int j = 0; j < second_dim(m); j++) { std::printf("% 5.8f ", m(i, j)); }
+    for (int j = 0; j < second_dim(m); j++) { std::printf("% 5.10f ", m(i, j)); }
     std::printf("\n");
   }
   std::printf("\n\n");
@@ -86,16 +86,16 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   // Set up the Solver
   solver_core S(cp);
   //int up = 0, dn = 1;
-  int n_bath       = 1;
-  double theta[]   = {0.1, 0.05, 0.05};
-  double epsilon[] = {0.0, 0.0, 0.0};
+  int n_bath       = 2;
+  double theta[]   = {0.02, 0.02};
+  double epsilon[] = {0.4, -0.3};
 
   for (auto const &tau : S.Delta_tau[0].mesh()) {
     for (int i = 0; i < 2; i++) {
       S.Delta_tau[i][tau] = 0.0;
       for (int n = 0; n < n_bath; n++) {
         // factor 2 is for spin:
-        S.Delta_tau[i][tau] -= 2 * theta[n] * theta[n] * (std::exp(-tau * epsilon[n]) / (1. + std::exp(-cp.beta * epsilon[n])));
+        S.Delta_tau[i][tau] -= theta[n] * theta[n] * (std::exp(-tau * epsilon[n]) / (1. + std::exp(-cp.beta * epsilon[n])));
       }
     }
   }
@@ -109,7 +109,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   // Solve Parameters
   solve_params_t sp;
   sp.h_int           = U * n("up", 0) * n("dn", 0) - mu * (n("up", 0) + n("dn", 0));
-  sp.n_cycles        = 10000;
+  sp.n_cycles        = 500000;
   sp.length_cycle    = 4;
   sp.n_warmup_cycles = 20;
   sp.max_time        = -1;
@@ -138,6 +138,8 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   auto h_bath = 0 * (n("up", 0) + (n("dn", 0)));
 
   for (int i = 0; i < n_bath; i++) {
+    //h += theta[i] * (c_dag("up", 0) * c("dn", i + 1) + c_dag("dn", i + 1) * c("up", 0));
+    //h += theta[i] * (c_dag("dn", 0) * c("up", i + 1) + c_dag("up", i + 1) * c("dn", 0));
     h += theta[i] * (c_dag("up", 0) * c("up", i + 1) + c_dag("up", i + 1) * c("up", 0));
     h += theta[i] * (c_dag("dn", 0) * c("dn", i + 1) + c_dag("dn", i + 1) * c("dn", 0));
     h += epsilon[i] * (n("up", i + 1) + n("dn", i + 1));
@@ -154,7 +156,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   auto dtau = cp.beta;
   auto ad   = triqs::atom_diag::atom_diag<false>(h, fops);
   auto ps   = partial_sum(ad, 2, [dtau](double x) { return std::exp(-dtau * x); });
-  print_matrix(ps);
+  //print_matrix(ps);
 
   auto ad_bath = triqs::atom_diag::atom_diag<false>(h_bath, fops_bath);
   auto ps_bath = partial_sum(ad_bath, 0, [dtau](double x) { return std::exp(-dtau * x); });
@@ -162,11 +164,8 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   //print_matrix(ps_bath);
   print_matrix(ps / ps_bath(0, 0));
 
-  double analy1 = -(theta[0] * theta[0] * cp.beta * cp.beta);
+  double analy1 = 0.5 * (theta[0] * theta[0] * cp.beta * cp.beta);
   std::printf("\n\n  % 4.8f \n", analy1);
-
-  double analy2 = (theta[0] * theta[0] * cp.beta * cp.beta * theta[0] * theta[0] * cp.beta * cp.beta);
-  std::printf("\n\n  % 4.8f \n", analy2);
 }
 
 MAKE_MAIN

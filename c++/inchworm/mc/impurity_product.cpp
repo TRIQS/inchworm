@@ -46,13 +46,6 @@ namespace inchworm {
     return u_frame;
   }
 
-  /*
-  u_frame_t operator*=(scalar_t factor, u_frame_t const & u_frame) {
-    u_frame_t
-    for (auto & Bl : u_frame) Bl = factor * Bl;
-    return u_frame;
-  }*/
-
   // Calculate the Frobenius norm of the u_frame block diagonal matrix:
   double frobenius_norm(u_frame_t const &u_frame) {
     double val = 0;

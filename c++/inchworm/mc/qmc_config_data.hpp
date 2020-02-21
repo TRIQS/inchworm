@@ -53,9 +53,9 @@ namespace inchworm {
       if (bl != bl_dag) return 0.; // important: there should be no finite terms of the hybridization between different [bl]ock.
       double dtau = tau_dag - tau;
       if (dtau >= 0.)
-        return (hyb_tau[bl])(dtau)(in, in_dag);
+        return (hyb_tau[bl])(dtau)(in_dag, in);
       else
-        return -(hyb_tau[bl])(hyb_tau[bl].domain().beta + dtau)(in, in_dag);
+        return -(hyb_tau[bl])(hyb_tau[bl].domain().beta + dtau)(in_dag, in);
     }
   };
 

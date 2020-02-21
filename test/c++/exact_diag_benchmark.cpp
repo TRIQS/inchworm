@@ -97,7 +97,7 @@ TEST(inchworm, partial_trace) {
 
   std::vector<many_body_op_t> qn;
   qn.resize(1);
-  qn[0] += n("up", 0) + n("dn", 0);
+  qn[0] += (n("up", 0) + n("dn", 0));
 
   auto ad = triqs::atom_diag::atom_diag<false>(h, fops, qn);
   auto es = ad.get_eigensystems();
