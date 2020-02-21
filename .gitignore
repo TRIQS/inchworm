@@ -5,3 +5,9 @@ build_*
 ./quickvim.sh
 *.swp
 .clangd
+
+doc/notes/inchworm_notes.aux
+doc/notes/inchworm_notes.log
+doc/notes/inchworm_notes.out
+doc/notes/inchworm_notes.pdf
+
