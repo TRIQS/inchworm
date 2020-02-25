@@ -277,11 +277,18 @@ def c_phi_sum(create, phi, orb):
   else:
      return (a_(orb)*phi)
 
-#def delta
+def delta(t1,t1_prime, alpha1, beta1):
+  if alpha1 != beta1: return 0.
+  elif t1>t1_prime: return 1.
+  else: return -1.
+  
+
 
 def determinant(perm, alpha1,beta1, alpha2,beta2):
-  return 1.0
-
+  value = delta(perm[0],perm[1],alpha1,beta1) * delta(perm[2],perm[3],alpha2,beta2) \
+         -delta(perm[0],perm[3],alpha1,beta2) * delta(perm[2],perm[1],alpha2,beta1)
+  return value
+         
 def matrix(perm):
   #for ii in range(len(perm)):
   
@@ -298,11 +305,11 @@ def matrix(perm):
         
        phi = get_state(ii)
        #print phi
-       phi_step1 = c_phi_sum(perm[3]%2 == 0, phi      , alpha1)
+       phi_step1 = c_phi_sum(perm[0]%2 == 0, phi      , alpha1)
        #print phi_step1
-       phi_step2 = c_phi_sum(perm[2]%2 == 0, phi_step1, beta1)
-       phi_step3 = c_phi_sum(perm[1]%2 == 0, phi_step2, alpha2)
-       phi_step4 = c_phi_sum(perm[0]%2 == 0, phi_step3, beta2)
+       phi_step2 = c_phi_sum(perm[1]%2 == 0, phi_step1, beta1)
+       phi_step3 = c_phi_sum(perm[2]%2 == 0, phi_step2, alpha2)
+       phi_step4 = c_phi_sum(perm[3]%2 == 0, phi_step3, beta2)
        
        value[ii] += det_contribution * phi_step4.scalarProd(phi)
   print(value)
