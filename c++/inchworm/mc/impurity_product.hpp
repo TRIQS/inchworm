@@ -71,16 +71,16 @@ namespace inchworm {
     return out;
   }
 
-  //constexpr int MAX_ORDER = 10;
+  constexpr int MAX_ORDER = 10;
   struct single_step_results_t {
     double average_sign = 0.0;
     double average_k    = 0.0;
     u_frame_t u_frame;
-    u_frame_t zero_frame;
-    //std::vector<double> u_expansion_order;
-    single_step_results_t(atom_diag const &h_diag) { //: u_expansion_order(MAX_ORDER, 0) {
-      u_frame = make_zero_propagator_frame(h_diag);
-      zero_frame = u_frame;
+    u_frame_t u_frame_0th_order;
+    std::vector<double> u_expansion_order;
+    single_step_results_t(atom_diag const &h_diag) : u_expansion_order(MAX_ORDER, 0) {
+      u_frame    = make_zero_propagator_frame(h_diag);
+      u_frame_0th_order = u_frame;
     };
   };
 

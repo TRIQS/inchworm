@@ -292,16 +292,18 @@ def determinant(perm, alpha1,beta1, alpha2,beta2):
 def matrix(perm):
   #for ii in range(len(perm)):
   
-  orbitals = [0,1]
-  value = np.zeros(4,dtype='float')
-
+  orbitals = [0]
+  value = np.zeros(2,dtype='float')
+  sign = parity(perm0)
+  value1 = np.zeros(2,dtype='float')
+  
   for alpha1 in orbitals:   # perm = 0
    for beta1 in orbitals:   # perm = 1
     for alpha2 in orbitals: # perm = 2
      for beta2 in orbitals: # perm = 3
 
       det_contribution = determinant(perm, alpha1,beta1, alpha2,beta2)
-      for ii in range(4):
+      for ii in range(2):
         
        phi = get_state(ii)
        #print phi
@@ -311,23 +313,34 @@ def matrix(perm):
        phi_step3 = c_phi_sum(perm[2]%2 == 0, phi_step2, alpha2)
        phi_step4 = c_phi_sum(perm[3]%2 == 0, phi_step3, beta2)
        
-       value[ii] += det_contribution * phi_step4.scalarProd(phi)
+       value[ii] += sign*det_contribution * phi_step4.scalarProd(phi)
+       value1[ii] += 1
+
   print(value)
-  return value
+  print(value1)
+  return value,value1
 
 
 perm = permutations(range(4))
 
 NN=0
-value = np.zeros(4,dtype='float')
+value  = np.zeros(2,dtype='float')
+value1 = np.zeros(2,dtype='float')
 for perm0 in perm:
 
-  print("%2d % d " % (NN,  parity(perm0)), perm0)
-  value += matrix(perm0)
+  print("%2d % d \n " % (NN,  parity(perm0)), perm0)
+  tmp,tmp1 = matrix(perm0)
+  value += tmp
+  value1 += tmp1
   print("")
   
   NN +=1
 
 print(value)
+print(value1)
+
+print(value[0]/value1[0])
+
+
 exit()
 
