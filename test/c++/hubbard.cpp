@@ -87,7 +87,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   solver_core S(cp);
   //int up = 0, dn = 1;
   int n_bath       = 1;
-  double theta[]   = {0.5};
+  double theta[]   = {1.0};
   double epsilon[] = {0.0};
 
   for (auto const &tau : S.Delta_tau[0].mesh()) {
@@ -163,10 +163,20 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   //print_matrix(ps_bath);
   print_matrix(ps / ps_bath(0, 0));
 
-  double analy1 = 0.5 * (theta[0] * theta[0] * cp.beta * cp.beta);
-  double analy2 = 0.25 * (std::exp(theta[0] * cp.beta) + std::exp(-theta[0] * cp.beta) + 2);
-  std::printf("\n\n  % 4.8f \n", analy1);
-  std::printf("\n\n  % 4.8f \n", analy2 * analy2);
+  double tmp         = std::cosh(theta[0] * cp.beta / 2.);
+  double total_serie = std::pow(tmp, 4);
+  double x           = theta[0] * cp.beta;
+
+  double order1 = (1. / 2.) * std::pow(x, 2);
+  double order2 = (5. / 48.) * std::pow(x, 4);
+  double order3 = (17. / 1440.) * std::pow(x, 6);
+  double order4 = (13. / 16128.) * std::pow(x, 8);
+
+  std::printf("order 1: % 4.8f \n", order1);
+  std::printf("order 2: % 4.8f \n", order2);
+  std::printf("order 3: % 4.8f \n", order3);
+  std::printf("order 4: % 4.8f \n", order4);
+  std::printf("\ntotal: % 4.8f \n", total_serie);
 }
 
 MAKE_MAIN
