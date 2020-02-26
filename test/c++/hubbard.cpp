@@ -87,7 +87,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   solver_core S(cp);
   //int up = 0, dn = 1;
   int n_bath       = 1;
-  double theta[]   = {0.3};
+  double theta[]   = {0.5};
   double epsilon[] = {0.0};
 
   for (auto const &tau : S.Delta_tau[0].mesh()) {
@@ -153,17 +153,20 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   std::printf("\n\n");
   auto dtau = cp.beta;
   auto ad   = triqs::atom_diag::atom_diag<false>(h, fops);
-  auto ps   = partial_sum(ad, 2, [dtau](double x) { return std::exp(-dtau * x); });
+  auto E0   = ad.get_gs_energy();
+  auto ps   = partial_sum(ad, 2, [dtau, E0](double E) { return std::exp(-dtau * (E - E0)); });
   print_matrix(ps);
 
   auto ad_bath = triqs::atom_diag::atom_diag<false>(h_bath, fops_bath);
-  auto ps_bath = partial_sum(ad_bath, 0, [dtau](double x) { return std::exp(-dtau * x); });
+  auto ps_bath = partial_sum(ad_bath, 0, [dtau, E0](double E) { return std::exp(-dtau * (E - E0)); });
   //print_eigensystems(ad_bath);
   //print_matrix(ps_bath);
   print_matrix(ps / ps_bath(0, 0));
 
   double analy1 = 0.5 * (theta[0] * theta[0] * cp.beta * cp.beta);
+  double analy2 = 0.25 * (std::exp(theta[0] * cp.beta) + std::exp(-theta[0] * cp.beta) + 2);
   std::printf("\n\n  % 4.8f \n", analy1);
+  std::printf("\n\n  % 4.8f \n", analy2 * analy2);
 }
 
 MAKE_MAIN

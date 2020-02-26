@@ -3,7 +3,7 @@
  * inchworm: A TRIQS based impurity solver
  *
  * Copyright (c) 2019 The Simons foundation
- *   authors: Nils Wentzell
+ *   authors: Maxime Charlebois
  *
  * inchworm is free software: you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
@@ -89,7 +89,7 @@ namespace inchworm {
     int n_warmup_cycles = 5000;
 
     /// Random seed of the random generator
-    int random_seed = 34788 + 928374 * mpi::communicator().rank();
+    int random_seed = 134789 + 928374 * mpi::communicator().rank();
 
     /// Name of the random generator
     std::string random_name = "";

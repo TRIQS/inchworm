@@ -28,7 +28,7 @@
 #include <triqs/atom_diag/atom_diag.hpp>
 #include <triqs/arrays/blas_lapack/dot.hpp>
 
-#define USE_GS 1
+//#define USE_GS 1
 
 namespace triqs {
   namespace atom_diag {
@@ -66,7 +66,7 @@ namespace triqs {
         int size    = ad.get_subspace_dim(s);
         auto E_Udag = dagger(es[s].unitary_matrix);
         for (int i = 0; i < size; i++)
-          for (int j = 0; j < size; j++) E_Udag(i, j) *= fct(es[s].eigenvalues[i] + USE_GS * ad.get_gs_energy());
+          for (int j = 0; j < size; j++) E_Udag(i, j) *= fct(es[s].eigenvalues[i] + ad.get_gs_energy());
         auto H = es[s].unitary_matrix * E_Udag;
 
         for (int i = 0; i < size; i++) {

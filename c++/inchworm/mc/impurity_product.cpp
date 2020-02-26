@@ -1,7 +1,5 @@
 #include "./impurity_product.hpp"
 
-#define USE_GS 0
-
 namespace inchworm {
   //
   triqs::hilbert_space::gf_struct_t find_propagator_struct(atom_diag const &ad) {
@@ -41,7 +39,7 @@ namespace inchworm {
       int dim     = ad.get_subspace_dim(bl);
       u_frame[bl] = matrix_t(dim, dim); //  use zeros<> ?? check
       u_frame[bl] = 0;
-      for (int j = 0; j < dim; j++) u_frame[bl](j, j) = std::exp(-tau * (ad.get_eigenvalue(bl, j) + USE_GS * ad.get_gs_energy()));
+      for (int j = 0; j < dim; j++) u_frame[bl](j, j) = std::exp(-tau * ad.get_eigenvalue(bl, j));
     }
     return u_frame;
   }
@@ -105,8 +103,7 @@ namespace inchworm {
         new_mat = matrix_t(dim, dim); //zeros?
         new_mat = 0;
         for (int j = 0; j < dim; j++)
-          new_mat(j, j) =
-             std::exp(-dtau * (ad.get_eigenvalue(initial_bl, j) + USE_GS * ad.get_gs_energy())); // Create time-evolution matrix e^-H(tau-tau_max)
+          new_mat(j, j) = std::exp(-dtau * ad.get_eigenvalue(initial_bl, j)); // Create time-evolution matrix e^-H(tau-tau_max)
       }
       //std::cout << "after\n" << new_mat << "\n\n";
 
@@ -126,7 +123,7 @@ namespace inchworm {
           for (int j = 0; j < ad.get_subspace_dim(new_bl); j++) {
             //std::printf("new_bl %d, j %d \n", new_bl, j);
             //std::printf("ad.get_subspace_dim(new_bl) = %d \n", ad.get_subspace_dim(new_bl));
-            new_mat(_, j) *= std::exp(-dtau * (ad.get_eigenvalue(new_bl, j) + USE_GS * ad.get_gs_energy())); // Time-evolution
+            new_mat(_, j) *= std::exp(-dtau * ad.get_eigenvalue(new_bl, j)); // Time-evolution
           }
         }
         //std::cout << "new_mat 3: " << new_bl << " \n" << new_mat << "\n\n\n\n";

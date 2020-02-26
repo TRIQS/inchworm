@@ -21,8 +21,8 @@ namespace inchworm::measures {
     scalar_t s = sign / (qmc_config_data.w.loc * factor);
     //if (qmc_config_data.config.size() < MAX_ORDER) { results.u_expansion_order[qmc_config_data.config.size()] += 1 / qmc_config_data.w.loc; }
     //average_sign += s;
-    //if (qmc_config_data.config.size() == 1)
-    for (int bl = 0; bl < results.u_frame.size(); bl++) results.u_frame[bl] += s * qmc_config_data.u_frame[bl];
+    if (qmc_config_data.config.size() == 2)
+      for (int bl = 0; bl < results.u_frame.size(); bl++) results.u_frame[bl] += s * qmc_config_data.u_frame[bl];
     if (qmc_config_data.config.size() == 0)
       for (int bl = 0; bl < results.zero_frame.size(); bl++) results.zero_frame[bl] += s * qmc_config_data.u_frame[bl];
   }

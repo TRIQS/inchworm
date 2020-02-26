@@ -48,7 +48,7 @@ namespace inchworm::moves {
     //std::printf("yes\n");
     //std::printf("\n\nsize=%d\n", proposed_config.size());
     //for (auto const &B : proposed_u_frame) std::cout << B;
-    if (proposed_config.size()==2) { //params.verbosity == 10) {
+    if (false){// (proposed_config.size()==2) { //params.verbosity == 10) {
       auto diagram = diagram::time_diagram_t(proposed_config.c_list, proposed_config.cdag_list, {});
       print_configuration(diagram);
       auto hyb_mat = diagram::hyb_matrix_t(diagram, params.hyb_adaptor);
