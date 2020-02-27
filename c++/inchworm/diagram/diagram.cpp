@@ -42,6 +42,7 @@ namespace inchworm::diagram {
      : op_list(2 * c.size()), c_list{c}, cdag_list{cdag} {
 
     std::sort(cdag_list.begin(), cdag_list.end(), [](auto const &x, auto const &y) { return x.tau < y.tau; });
+    std::sort(c_list.begin(), c_list.end(), [](auto const &x, auto const &y) { return x.tau < y.tau; });
 
     EXPECTS(c_list.size() == cdag_list.size());
     split_points.reserve(split_times.size());
