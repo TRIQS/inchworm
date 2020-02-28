@@ -35,7 +35,7 @@ namespace inchworm::moves {
     auto w_loc_ratio = proposed_w.loc / data.w.loc;
     auto t_ratio     = std::pow(params.tau_max * n_fops / (N + 1), 2);
 
-    if (proposed_config.size() == 2) {
+    if (proposed_config.size() == 4) {
       std::printf("\n ");
       for (auto &B : proposed_u_frame) { std::cout << B; }
       hyb_mat.print();
