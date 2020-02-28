@@ -123,9 +123,13 @@ namespace inchworm {
     // Merge constr_params and solve_params
     last_solve_params = solve_params;
     init(solve_params);
-    auto res = single_step(solve_params, constr_params.beta / 2, constr_params.beta, true);
+    double tau_max   = constr_params.beta;
+    double tau_split = constr_params.beta / 2;
 
-    double normalization_cte = (double)res.u_frame_0th_order[0](0, 0); //need to do better at some point
+    u_frame_bare = make_bare_propagator_frame(h_diag, tau_max);
+    auto res     = single_step(solve_params, tau_split, tau_max, true);
+
+    double normalization_cte = (double)res.u_frame_0th_order[0](0, 0) / (double)u_frame_bare[0](0, 0) ; //need to do better at some point
     std::printf("\n ");
     //for (auto const &B : res.u_frame_0th_order) std::cout << (double) (B/normalization_cte);
     for (auto &B : res.u_frame_0th_order) {
@@ -141,7 +145,7 @@ namespace inchworm {
     std::cout << "\norder: " << res.average_k << "\n";
     for (auto o : res.u_expansion_order) std::printf("% 4.5f ", o / normalization_cte);
     std::printf("\n ");
-  }
+  } // namespace inchworm
 
   //------------------------------
   single_step_results_t solver_core::single_step(solve_params_t const &solve_params, double tau_split, double tau_max, bool use_bare_propagator) {

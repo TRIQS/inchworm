@@ -41,6 +41,7 @@ namespace inchworm::diagram {
 
     using matrix_t = triqs::arrays::matrix<scalar_t>;
 
+    int size;
     matrix_t mat;
     time_diagram_t const &diagram;
 

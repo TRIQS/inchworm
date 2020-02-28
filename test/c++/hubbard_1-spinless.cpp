@@ -62,9 +62,7 @@ void print_matrix(triqs::arrays::matrix<double> m) {
 // Prepare funcdamental operator set
 fundamental_operator_set make_fops(int N) {
   fundamental_operator_set fops;
-  for (int o : range(N)) {
-    fops.insert("up", o);
-  }
+  for (int o : range(N)) { fops.insert("up", o); }
   return fops;
 }
 
@@ -78,20 +76,26 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   constr_params_t cp;
   cp.beta      = 2.0;
   cp.gf_struct = {{"up", {0}}};
-  cp.n_tau     = 3;
-  cp.n_iw      = 1;
+  cp.n_tau     = 500;
+  cp.n_iw      = 250;
 
   // Set up the Solver
   solver_core S(cp);
   //int up = 0, dn = 1;
   int n_bath       = 1;
-  double theta[]   = {1.0};
-  double epsilon[] = {0.0};
+  double theta[]   = {1.4};
+  double epsilon[] = {1000.0};
 
   for (auto const &tau : S.Delta_tau[0].mesh()) {
     S.Delta_tau[0][tau] = 0.0;
     for (int n = 0; n < n_bath; n++) {
-      S.Delta_tau[0][tau] -= theta[n] * theta[n] * (std::exp(-tau * epsilon[n]) / (1. + std::exp(-cp.beta * epsilon[n])));
+      double val;
+      if (epsilon[n] > 0.0)
+        val = -theta[n] * theta[n] * (-std::exp(-((double)tau) * (epsilon[n])) / (1. + std::exp(-cp.beta * epsilon[n])));
+      else
+        val = -theta[n] * theta[n] * (-std::exp(-((double)tau - cp.beta) * (epsilon[n])) / (1. + std::exp(cp.beta * epsilon[n])));
+      S.Delta_tau[0][tau] += val;
+      std::printf("hyb = %f, %f \n", val, (double)tau);
     }
   }
 
@@ -104,7 +108,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   // Solve Parameters
   solve_params_t sp;
   sp.h_int           = mu * n("up", 0);
-  sp.n_cycles        = 1000000;
+  sp.n_cycles        = 100000;
   sp.length_cycle    = 10;
   sp.n_warmup_cycles = 20;
   sp.max_time        = -1;
@@ -157,6 +161,19 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   //print_matrix(ps_bath);
   print_matrix(ps / ps_bath(0, 0));
 
+  //double tmp         = std::cosh(theta[0] * cp.beta / 2.);
+  //double total_serie = std::pow(tmp, 2);
+  double x     = theta[0] * cp.beta;
+  double delta = std::sqrt(epsilon[0] * epsilon[0] + theta[0] * theta[0]);
+  double e0    = epsilon[0] - delta;
+  double e1    = epsilon[0] + delta;
+
+  double U00 = 1. + (1. / delta) * (-e0 * std::exp(-cp.beta * e0) + e1 * std::exp(-cp.beta * e1));
+
+  double U11    = (1. / delta) * (-e0 * std::exp(-cp.beta * e1) + e1 * std::exp(-cp.beta * e0)) + std::exp(-cp.beta * epsilon[0]);
+  double zb     = (1 + std::exp(-theta[0] * cp.beta));
+  double order0 = (1 + std::exp(-theta[0] * cp.beta));
+  /*
   double tmp         = std::cosh(theta[0] * cp.beta / 2.);
   double total_serie = std::pow(tmp, 2);
   double x           = theta[0] * cp.beta;
@@ -165,14 +182,16 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   double order2 = (1. / 48.) * std::pow(x, 4);
   double order3 = (1. / 1440.) * std::pow(x, 6);
   double order4 = (1. / 80640.) * std::pow(x, 8);
-
+  */
   //beta**10*theta**10/7257600 + beta**8*theta**8/80640 + beta**6*theta**6/1440 + beta**4*theta**4/48 + beta**2*theta**2/4 + 1
 
-  std::printf("order 1: % 4.8f \n", order1);
-  std::printf("order 2: % 4.8f \n", order2);
-  std::printf("order 3: % 4.8f \n", order3);
-  std::printf("order 4: % 4.8f \n", order4);
-  std::printf("\ntotal: % 4.8f \n", total_serie);
+  std::printf("order 0: % 4.8f \n", order0 / zb);
+  //std::printf("order 1: % 4.8f \n", order1);
+  //std::printf("order 2: % 4.8f \n", order2);
+  //std::printf("order 3: % 4.8f \n", order3);
+  //std::printf("order 4: % 4.8f \n", order4);
+  std::printf("\ntotal: % 4.8f \n", U00 / zb);
+  std::printf("\ntotal: % 4.8f \n", U11 / zb);
 }
 
 MAKE_MAIN

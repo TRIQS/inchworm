@@ -40,6 +40,7 @@ namespace inchworm::moves {
     auto w_loc_ratio = proposed_w.loc / data.w.loc;
     auto t_ratio     = std::pow(N / (n_fops * params.tau_max), 2);
 
+    //std::printf("\n\nsign_ratio= %d  w_hyb_ratio=% 4.7f  w_loc_ratio=% 4.7f  t_ratio=% 4.7f\n", sign_ratio, w_hyb_ratio, w_loc_ratio, t_ratio);
     return sign_ratio * t_ratio * w_loc_ratio * w_hyb_ratio;
   }
 
@@ -48,7 +49,7 @@ namespace inchworm::moves {
     //std::printf("yes\n");
     //std::printf("\n\nsize=%d\n", proposed_config.size());
     //for (auto const &B : proposed_u_frame) std::cout << B;
-    if (proposed_config.size()==2) { //params.verbosity == 10) {
+    if (false) { // (proposed_config.size()==2) { //params.verbosity == 10) {
       auto diagram = diagram::time_diagram_t(proposed_config.c_list, proposed_config.cdag_list, {});
       print_configuration(diagram);
       auto hyb_mat = diagram::hyb_matrix_t(diagram, params.hyb_adaptor);

@@ -28,24 +28,31 @@ namespace inchworm::diagram {
   }
 
   hyb_matrix_t::hyb_matrix_t(time_diagram_t const &diagram) : mat(diagram.perturbation_order(), diagram.perturbation_order()), diagram{diagram} {
-
-    for (auto [i, c] : enumerate(diagram.c_list))
+    int N = 0;
+    for (auto [i, c] : enumerate(diagram.c_list)) {
+      N++;
       for (auto [j, cdag] : enumerate(diagram.cdag_list)) {
 
         double dtau = cdag.tau - c.tau;
         mat(i, j)   = hyb_function_dummy(dtau);
       }
+    }
+    size = N;
   }
 
   hyb_matrix_t::hyb_matrix_t(time_diagram_t const &diagram, hyb_adaptor_t const &hyb_tau)
      : mat(diagram.perturbation_order(), diagram.perturbation_order()), diagram{diagram} {
 
-    for (auto [i, c] : enumerate(diagram.c_list))
+    int N = 0;
+    for (auto [i, c] : enumerate(diagram.c_list)) {
+      N++;
       for (auto [j, cdag] : enumerate(diagram.cdag_list)) {
         //std::printf("\ni %d  j %d    %f",i,j, hyb_tau(c.tau, c.linear_index, cdag.tau, cdag.linear_index));
         //std::printf(" %f %d   %f %d \n",c.tau, c.linear_index, cdag.tau, cdag.linear_index );
         mat(i, j) = hyb_tau(c.tau, c.linear_index, cdag.tau, cdag.linear_index);
       }
+    }
+    size = N;
   }
 
   void hyb_matrix_t::optimize_inclusion_exclusion() {
@@ -70,7 +77,16 @@ namespace inchworm::diagram {
     if constexpr (verbose > 1) print();
   }
 
-  scalar_t hyb_matrix_t::det() { return determinant(mat); }
+  scalar_t hyb_matrix_t::det() {
+/*    if (size == 0)
+      return 1.0;
+    else if (size == 1)
+      return mat(0, 0);
+    else if (size == 2)
+      return (mat(0,0)*mat(1,1)-mat(1,0)*mat(0,1));
+    else */
+      return determinant(mat);
+  }
 
   scalar_t hyb_matrix_t::extract_det(std::vector<int> const &list_of_indices) const {
 
@@ -98,7 +114,7 @@ namespace inchworm::diagram {
   void hyb_matrix_t::print() {
     std::printf("\nhybridization mat: \n");
     for (int i = 0; i < diagram.perturbation_order(); i++) {
-      for (int j = 0; j < diagram.perturbation_order(); j++) { std::printf("% 2.7f ", mat(i, j)); }
+      for (int j = 0; j < diagram.perturbation_order(); j++) { std::printf("% 2.7e ", mat(i, j)); }
       std::printf("\n");
     }
     //std::cout << std::setprecision(10) << mat;

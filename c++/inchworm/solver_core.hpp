@@ -16,6 +16,7 @@ namespace inchworm {
     many_body_op_t _h_loc; // The local Hamiltonian = h_int + h0
     std::map<int, std::pair<int, int>> map_lin_idx_to_block_inner;
     fundamental_operator_set fops;
+    u_frame_t u_frame_bare;
 
     //mpi::communicator _comm;   // define the communicator, here MPI_COMM_WORLD
     int _solve_status; // Status of the solve upon exit: 0 for clean termination, > 0 otherwise.
@@ -70,7 +71,7 @@ namespace inchworm {
     h_tau_t Delta_tau;
 
     g_iw_t G0_iw; // Non-interacting Matsubara Green's function
-    
+
     // Allow the user to retrigger post-processing with the last set of parameters
     void post_process() {
       if (not last_solve_params) TRIQS_RUNTIME_ERROR << "You need to run the solver once before you post-process";

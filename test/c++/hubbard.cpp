@@ -87,14 +87,13 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   solver_core S(cp);
   //int up = 0, dn = 1;
   int n_bath       = 1;
-  double theta[]   = {1.0};
-  double epsilon[] = {0.0};
+  double theta[]   = {0.7};
+  double epsilon[] = {-10.0};
 
   for (auto const &tau : S.Delta_tau[0].mesh()) {
     for (int i = 0; i < 2; i++) {
       S.Delta_tau[i][tau] = 0.0;
       for (int n = 0; n < n_bath; n++) {
-        // factor 2 is for spin:
         S.Delta_tau[i][tau] -= theta[n] * theta[n] * (std::exp(-tau * epsilon[n]) / (1. + std::exp(-cp.beta * epsilon[n])));
       }
     }
@@ -109,7 +108,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   // Solve Parameters
   solve_params_t sp;
   sp.h_int           = U * n("up", 0) * n("dn", 0) - mu * (n("up", 0) + n("dn", 0));
-  sp.n_cycles        = 100000;
+  sp.n_cycles        = 500000;
   sp.length_cycle    = 10;
   sp.n_warmup_cycles = 20;
   sp.max_time        = -1;
