@@ -175,20 +175,18 @@ Notes on the implementation of the inchworm in triqs.
 
 From Gull review:
 \begin{align}
-U(\beta)=& \frac{1}{Z_{\text {bath }}}\operatorname{Tr_B} [e^{-\beta (H_a + H_\text{hyb}) }]  
+U(\beta)=& \frac{1}{Z_{\text {bath }}} \operatorname{Tr_B} [e^{-\beta (H_a + H_\text{hyb}) }]  
 \\
 =&  \sum_{k=0}^{\infty} \int_{0}^{\beta} d \tau_{1} \cdots \int_{\tau_{k-1}}^{\beta} d \tau_{k} \int_{0}^{\beta} d \tau_{1}^{\prime} \cdots \int_{\tau_{k^{\prime}-1}}^{\beta} d \tau_{k}^{\prime} \\
 & \times \operatorname{Tr_B}\left[T_{\tau} e^{-\beta H_{a}} \tilde{H}_{\mathrm{hyb}}\left(\tau_{k}\right) \tilde{H}_{\mathrm{hyb}}^{\dagger}\left(\tau_{k}^{\prime}\right) \cdots\right. \left.\times \tilde{H}_{\mathrm{hyb}}\left(\tau_{1}\right) \tilde{H}_{\mathrm{hyb}}^{\dagger}\left(\tau_{1}^{\prime}\right)\right]
 \end{align}
 
 where
-$H_{\mathrm{hyb}}=\sum_{p j}\left(\theta_{p}^{j} c_{p}^{\dagger} d_{j}+\theta_{p}^{j *} d_{j}^{\dagger} c_{p}\right)=\tilde{H}_{\mathrm{hyb}}+\tilde{H}_{\mathrm{hyb}}^{\dagger}$. 
-Note that there is an $(-1)^k$ missing from these definitions. Wait, why? 
-
+$H_{\mathrm{hyb}}=\sum_{p j}\left(\theta_{p}^{j} c_{p}^{\dagger} d_{j}+\theta_{p}^{j *} d_{j}^{\dagger} c_{p}\right)=\tilde{H}_{\mathrm{hyb}}+\tilde{H}_{\mathrm{hyb}}^{\dagger}$. The trace over the baths have for consequence that only the terms with same numbers of $\tilde{H}_{\mathrm{hyb}}$ and $\tilde{H}_{\mathrm{hyb}}^{\dagger}$ survive in the sum above. This results in a $(-1)^2$ for the only surviving terms of the sum, thus the absence of minus sign.
 After that: 
 
 \begin{align}
-U(\beta)=& \sum_{k=0}^{\infty}   \int_{0}^{\beta} d \tau_{1} \cdots \int_{\tau_{k-1}}^{\beta} d \tau_{k} \int_{0}^{\beta} d \tau_{1}^{\prime} \cdots \int_{\tau_{k-1}^{\prime}}^{\beta} d \tau_{k}^{\prime} \\
+U(\beta)=& \frac{1}{Z_{\text {bath }}}\sum_{k=0}^{\infty}   \int_{0}^{\beta} d \tau_{1} \cdots \int_{\tau_{k-1}}^{\beta} d \tau_{k} \int_{0}^{\beta} d \tau_{1}^{\prime} \cdots \int_{\tau_{k-1}^{\prime}}^{\beta} d \tau_{k}^{\prime} \\
 & \times \sum_{j_1^{(\prime)} \cdots j_k^{(\prime)}} \sum_{p_1^{(\prime)} \cdots  p_k^{(\prime)}} 
 \theta_{p_{1}}^{j_{1}} \theta_{p_{1}^{\prime}}^{j_{1}^{\prime}*} \cdots \theta_{p_{k}}^{j_{k}} \theta_{p_{k}^{\prime}}^{j_k^{\prime}*} \\
 & \times \operatorname{Tr_B}\left[T_{\tau} e^{-\beta H_{a}} d_{j_{k}}\left(\tau_{k}\right) c_{p_{k}}^{\dagger}\left(\tau_{k}\right) c_{p_{k^{\prime}}}\left(\tau_{k}^{\prime}\right)   d_{j_{k}^{\prime}}^{\dagger}\left(\tau_{k}^{\prime}\right) \right.\\
@@ -197,7 +195,7 @@ U(\beta)=& \sum_{k=0}^{\infty}   \int_{0}^{\beta} d \tau_{1} \cdots \int_{\tau_{
 
 With and $H_a=H_\mathrm{loc}+H_\mathrm{bath}$ we can reorder: 
 \begin{align}
-U(\beta)=& \sum_{k=0}^{\infty}  \int_{0}^{\beta} d \tau_{1} \cdots \int_{\tau_{k-1}}^{\beta} d \tau_{k} \int_{0}^{\beta} d \tau_{1}^{\prime} \cdots \int_{\tau_{k-1}^{\prime}}^{\beta} d \tau_{k}^{\prime} \\
+U(\beta)=& \frac{1}{Z_{\text {bath }}}\sum_{k=0}^{\infty}  \int_{0}^{\beta} d \tau_{1} \cdots \int_{\tau_{k-1}}^{\beta} d \tau_{k} \int_{0}^{\beta} d \tau_{1}^{\prime} \cdots \int_{\tau_{k-1}^{\prime}}^{\beta} d \tau_{k}^{\prime} \\
 & \times \sum_{j_1^{(\prime)} \cdots j_k^{(\prime)}} \sum_{p_1^{(\prime)} \cdots  p_k^{(\prime)}} 
 \theta_{p_{1}}^{j_{1}} \theta_{p_{1}^{\prime}}^{j_{1}^{\prime}*} \cdots \theta_{p_{k}}^{j_{k}} \theta_{p_{k}^{\prime}}^{j_k^{\prime}*} \\
 & \times \left[T_{\tau} e^{-\beta H_{\mathrm{loc}}} d_{j_{k}}\left(\tau_{k}\right) d_{j_{k}^{\prime}}^{\dagger}\left(\tau_{k}^{\prime}\right) \cdots d_{j_{1}}\left(\tau_{1}\right) d_{j_{1}^{\prime}}^{\dagger}\left(\tau_{1}^{\prime}\right)\right] \\
@@ -229,7 +227,7 @@ Ok, I need to do this proof at least once.
 
 Using this last definition, we get:
 \begin{align}
-U(\beta)=& \sum_k^{\infty} \int_{0}^{\beta} d \tau_1 \cdots \int_{\tau_k}^{\beta} d \tau_k^{\prime}
+U(\beta)=& \frac{1}{Z_{\text {bath }}}\sum_k^{\infty} \int_{0}^{\beta} d \tau_1 \cdots \int_{\tau_k}^{\beta} d \tau_k^{\prime}
 \\
 &\sum_{j_1 \ldots j_k}  \sum_{j_{1}^{\prime} \ldots j_k^{\prime}} 
 \Big[ T_{\tau} e^{-\beta H_\mathrm{loc}}
@@ -241,12 +239,12 @@ d_{j_k}(\tau_k) d_{j_k^\prime}^{\dagger} (\tau_k^\prime) \cdots d_{j_1}(\tau_1) 
 
 Zeroth order: 
 \begin{align}
-U_0(\beta)=& Z_{\text {bath }} e^{-\beta H_\mathrm{loc}}
+U_0(\beta)=&  e^{-\beta H_\mathrm{loc}}
 \end{align}
 
 First order: 
 \begin{align}
-U_1(\beta)=& Z_{\text {bath }} \int_{0}^{\beta} d \tau_1 \int_0^{\beta} d \tau_1^{\prime}
+U_1(\beta)=&  \int_{0}^{\beta} d \tau_1 \int_0^{\beta} d \tau_1^{\prime}
 \sum_{j_1 j_1^\prime}  
 \Big[ T_{\tau} e^{-\beta H_\mathrm{loc}}
 d_{j_1}(\tau_1) d_{j_1^\prime}^{\dagger} (\tau_1^\prime) \Big] \Delta_{j_1 j_1^\prime} ( \tau_1 - \tau_1^\prime)
@@ -262,15 +260,15 @@ U_1(\beta) / U_0(\beta)=& -\frac{(\beta \theta)^2}{2}
 
 This simple system can be solved exactly
 \begin{align}
-U(\beta)=& \operatorname{Tr_B} [e^{-\beta (H_\text{loc} + H_\text{bath} + H_\text{hyb}) }]  
+U(\beta)=& \frac{1}{Z_{\text {bath }}}\operatorname{Tr_B} [e^{-\beta (H_\text{loc} + H_\text{bath} + H_\text{hyb}) }]  
 \end{align}
 
 \pagebreak
 
 \begin{align} 
-U(\beta)=& \operatorname{Tr_B} [e^{-\beta (H_a + H_\text{hyb}) }]  
+U(\beta)=& \frac{1}{Z_{\text {bath }}}\operatorname{Tr_B} [e^{-\beta (H_a + H_\text{hyb}) }]  
 \\
-U(\beta)=&  \text{Tr}_B\left[
+U(\beta)=& \frac{1}{Z_{\text {bath }}} \text{Tr}_B\left[
 \sum_{k} \frac{1}{k !} 
 \sum_{a b} 
 e^{-\beta H_\text{loc}}

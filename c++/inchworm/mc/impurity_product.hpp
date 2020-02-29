@@ -45,7 +45,7 @@ namespace inchworm {
   gf_struct_t find_propagator_struct(atom_diag const &ad);
 
   u_frame_t make_zero_propagator_frame(atom_diag const &ad);
-  u_frame_t make_bare_propagator_frame(atom_diag const &ad, double tau);
+  u_frame_t make_bare_propagator_frame(atom_diag const &ad, double tau, bool set_gs_to_0 = false);
 
   double frobenius_norm(u_frame_t const &u_frame);
   double trace(u_frame_t const &u_frame);
@@ -79,7 +79,7 @@ namespace inchworm {
     u_frame_t u_frame_0th_order;
     std::vector<double> u_expansion_order;
     single_step_results_t(atom_diag const &h_diag) : u_expansion_order(MAX_ORDER, 0) {
-      u_frame    = make_zero_propagator_frame(h_diag);
+      u_frame           = make_zero_propagator_frame(h_diag);
       u_frame_0th_order = u_frame;
     };
   };

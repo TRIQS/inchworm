@@ -32,7 +32,7 @@ namespace inchworm {
     u_frame_t u_frame; // frame of the last accepted configuraiton: just one time frame of a propagator
     int sign;          // sign of the last accepted configuration
 
-    qmc_config_data_t(atom_diag const &h_diag, double tau_max) : w{1., 1.}, sign{1} { u_frame = make_bare_propagator_frame(h_diag, tau_max); }
+    qmc_config_data_t(atom_diag const &h_diag, double tau_max) : w{1., 1.}, sign{1} { u_frame = make_bare_propagator_frame(h_diag, tau_max, false); }
 
     //qmc_config_data_t(params_t const &params, atom_diag const &h_diag, u_tau_t const &u_tau, block_gf_const_view<imtime> delta,
     //                  std::map<int, std::pair<int, int>> linindex);

@@ -82,9 +82,9 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   // Set up the Solver
   solver_core S(cp);
   //int up = 0, dn = 1;
-  int n_bath       = 1;
-  double theta[]   = {4.4};
-  double epsilon[] = {100.0};
+  int n_bath       = 2;
+  double theta[]   = {0.4,-1.1};
+  double epsilon[] = {-1.0,3.4};
 
   for (auto const &tau : S.Delta_tau[0].mesh()) {
     S.Delta_tau[0][tau] = 0.0;

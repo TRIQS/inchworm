@@ -32,14 +32,14 @@ namespace inchworm {
   }
 
   //
-  u_frame_t make_bare_propagator_frame(atom_diag const &ad, double tau) {
+  u_frame_t make_bare_propagator_frame(atom_diag const &ad, double tau, bool set_gs_to_0) {
     u_frame_t u_frame(ad.n_subspaces());
 
     for (int bl = 0; bl < ad.n_subspaces(); bl++) {
       int dim     = ad.get_subspace_dim(bl);
       u_frame[bl] = matrix_t(dim, dim); //  use zeros<> ?? check
       u_frame[bl] = 0;
-      for (int j = 0; j < dim; j++) u_frame[bl](j, j) = std::exp(-tau * ad.get_eigenvalue(bl, j));
+      for (int j = 0; j < dim; j++) u_frame[bl](j, j) = std::exp(-tau * (ad.get_eigenvalue(bl, j) + (set_gs_to_0 ? 0. : ad.get_gs_energy())));
     }
     return u_frame;
   }
@@ -79,9 +79,10 @@ namespace inchworm {
   //
   u_frame_t propagator_product(atom_diag const &ad, time_diagram_t const &diagram, double tau, u_tau_t const *const u_tau_p) {
 
-    if (diagram.size() == 0) return make_bare_propagator_frame(ad, tau);
+    if (diagram.size() == 0) return make_bare_propagator_frame(ad, tau, false);
 
-    u_frame_t u_frame = make_zero_propagator_frame(ad);
+    constexpr bool set_gs_to_0 = false;
+    u_frame_t u_frame          = make_zero_propagator_frame(ad);
     for (int initial_bl = 0; initial_bl < ad.n_subspaces(); initial_bl++) {
       int dim      = ad.get_subspace_dim(initial_bl);
       int new_bl   = initial_bl;
@@ -103,7 +104,8 @@ namespace inchworm {
         new_mat = matrix_t(dim, dim); //zeros?
         new_mat = 0;
         for (int j = 0; j < dim; j++)
-          new_mat(j, j) = std::exp(-dtau * ad.get_eigenvalue(initial_bl, j)); // Create time-evolution matrix e^-H(tau-tau_max)
+          new_mat(j, j) = std::exp(
+             -dtau * (ad.get_eigenvalue(initial_bl, j) + (set_gs_to_0 ? 0. : ad.get_gs_energy()))); // Create time-evolution matrix e^-H(tau-tau_max)
       }
       //std::cout << "after\n" << new_mat << "\n\n";
 
@@ -123,7 +125,8 @@ namespace inchworm {
           for (int j = 0; j < ad.get_subspace_dim(new_bl); j++) {
             //std::printf("new_bl %d, j %d \n", new_bl, j);
             //std::printf("ad.get_subspace_dim(new_bl) = %d \n", ad.get_subspace_dim(new_bl));
-            new_mat(_, j) *= std::exp(-dtau * ad.get_eigenvalue(new_bl, j)); // Time-evolution
+            new_mat(_, j) *=
+               std::exp(-dtau * (ad.get_eigenvalue(new_bl, j) + (set_gs_to_0 ? 0. : ad.get_gs_energy()))); // bare imaginary time evolution
           }
         }
         //std::cout << "new_mat 3: " << new_bl << " \n" << new_mat << "\n\n\n\n";

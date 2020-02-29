@@ -72,29 +72,35 @@ fundamental_operator_set make_fops(int N) {
 TEST(inchworm, HubbardAtom) { // NOLINT
 
   // System Parameters
-  double U  = 0.;
-  double mu = U / 2;
+  double U  = 10.;
+  double mu = U / 2.;
   //double h  = 0.1;
 
   // Construct Parameters
   constr_params_t cp;
   cp.beta      = 2.0;
   cp.gf_struct = {{"up", {0}}, {"dn", {0}}};
-  cp.n_tau     = 3;
-  cp.n_iw      = 1;
+  cp.n_tau     = 500;
+  cp.n_iw      = 250;
 
   // Set up the Solver
   solver_core S(cp);
   //int up = 0, dn = 1;
   int n_bath       = 1;
-  double theta[]   = {0.7};
-  double epsilon[] = {-10.0};
+  double theta[]   = {0.9};
+  double epsilon[] = {0.0};
 
   for (auto const &tau : S.Delta_tau[0].mesh()) {
     for (int i = 0; i < 2; i++) {
       S.Delta_tau[i][tau] = 0.0;
       for (int n = 0; n < n_bath; n++) {
-        S.Delta_tau[i][tau] -= theta[n] * theta[n] * (std::exp(-tau * epsilon[n]) / (1. + std::exp(-cp.beta * epsilon[n])));
+        double val;
+        if (epsilon[n] > 0.0)
+          val = -theta[n] * theta[n] * (std::exp(-((double)tau) * (epsilon[n])) / (1. + std::exp(-cp.beta * epsilon[n])));
+        else
+          val = -theta[n] * theta[n] * (std::exp(-((double)tau - cp.beta) * (epsilon[n])) / (1. + std::exp(cp.beta * epsilon[n])));
+        S.Delta_tau[i][tau] += val;
+        std::printf("hyb = %f, %f \n", val, (double)tau);
       }
     }
   }
@@ -154,6 +160,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   auto ad   = triqs::atom_diag::atom_diag<false>(h, fops);
   auto E0   = ad.get_gs_energy();
   auto ps   = partial_sum(ad, 2, [dtau, E0](double E) { return std::exp(-dtau * (E - E0)); });
+  //print_eigensystems(ad);
   print_matrix(ps);
 
   auto ad_bath = triqs::atom_diag::atom_diag<false>(h_bath, fops_bath);
@@ -161,7 +168,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   //print_eigensystems(ad_bath);
   //print_matrix(ps_bath);
   print_matrix(ps / ps_bath(0, 0));
-
+  /*
   double tmp         = std::cosh(theta[0] * cp.beta / 2.);
   double total_serie = std::pow(tmp, 4);
   double x           = theta[0] * cp.beta;
@@ -175,7 +182,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   std::printf("order 2: % 4.8f \n", order2);
   std::printf("order 3: % 4.8f \n", order3);
   std::printf("order 4: % 4.8f \n", order4);
-  std::printf("\ntotal: % 4.8f \n", total_serie);
+  std::printf("\ntotal: % 4.8f \n", total_serie);*/
 }
 
 MAKE_MAIN
