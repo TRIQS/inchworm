@@ -2,19 +2,16 @@
 
 %------------------------------------------------------------------------------------------------------------------------%
 \usepackage{blindtext}
-%\usepackage[french]{babel} 			% parce qu'on travaille en fraçais
-\usepackage[utf8]{inputenc}	% maudit MAC!
-%\usepackage[cyr]{aeguill}				% règle un problème de guillemets
-\usepackage{amssymb}				% pour les lettres grecques
-\usepackage{amsmath}				% plein de bonus pour les maths
-\usepackage{amsfonts}				% plein de fonts pour les maths
-\usepackage{fullpage} 				% parce qu'on a pas de note en marge
+\usepackage[utf8]{inputenc}	                
+\usepackage{amssymb}				
+\usepackage{amsmath}				
+\usepackage{amsfonts}				
+\usepackage{fullpage} 				
 \usepackage{geometry}				% permet de changer les marges
-\usepackage[pdftex]{graphicx}		% permet de dimensioner des graphismes
+\usepackage[pdftex]{graphicx}		        % permet de dimensioner des graphismes
 %\usepackage{tocbibind}				% inclut la TOC et la BIBLI dans la table des matière
-\usepackage[small,bf]{caption}		% change le format des captions
-\usepackage{wrapfig}					% permet de mettre des petite figures en petit
-\usepackage{multicol}					% plusieurs colonnes
+\usepackage[small,bf]{caption}	        	
+\usepackage{multicol}				% plusieurs colonnes
 \usepackage{fancyhdr}				% pour faire des beaux headers
 \usepackage[pdftex,plainpages=false,colorlinks=true,linkcolor=blue, citecolor=blue, urlcolor=blue]{hyperref}
 \usepackage{fancyvrb}
@@ -170,13 +167,18 @@
 
 Notes on the implementation of the inchworm in triqs.
 
-\section{Diagram notation}
+\section{Expansion of the propagator}
+\subsection{Derivation of the propagator}
 
+Following the 2011 review's notation, we calculate the imaginary time evolution operator defined as:
+\begin{align}
+U(\beta)=& \frac{1}{Z_{\text {bath }}} \operatorname{Tr_B} [e^{-\beta H }] 
+\end{align}
 
-From Gull review:
+In interaction representation, where $H=H_a+H_\text{hyb}$, and the expansion is done on $H_\text{hyb}$
 \begin{align}
 U(\beta)=& \frac{1}{Z_{\text {bath }}} \operatorname{Tr_B} [e^{-\beta (H_a + H_\text{hyb}) }]  
-\\
+\\ 
 =&  \sum_{k=0}^{\infty} \int_{0}^{\beta} d \tau_{1} \cdots \int_{\tau_{k-1}}^{\beta} d \tau_{k} \int_{0}^{\beta} d \tau_{1}^{\prime} \cdots \int_{\tau_{k^{\prime}-1}}^{\beta} d \tau_{k}^{\prime} \\
 & \times \operatorname{Tr_B}\left[T_{\tau} e^{-\beta H_{a}} \tilde{H}_{\mathrm{hyb}}\left(\tau_{k}\right) \tilde{H}_{\mathrm{hyb}}^{\dagger}\left(\tau_{k}^{\prime}\right) \cdots\right. \left.\times \tilde{H}_{\mathrm{hyb}}\left(\tau_{1}\right) \tilde{H}_{\mathrm{hyb}}^{\dagger}\left(\tau_{1}^{\prime}\right)\right]
 \end{align}
@@ -223,23 +225,29 @@ Then (I need to think about it more):
 \\
 \quad \times c_{p_{k}}^{\dagger}\left(\tau_{k}\right) c_{p_{k^{\prime}}}\left(\tau_{k}^{\prime}\right) \cdots c_{p_{1}}^{\dagger}\left(\tau_{1}\right) c_{p_{1}^{\prime}}\left(\tau_{1}^{\prime}\right)\Big]=\operatorname{det} \Delta
 \end{align}
-Ok, I need to do this proof at least once. 
 
 Using this last definition, we get:
 \begin{align}
-U(\beta)=& \frac{1}{Z_{\text {bath }}}\sum_k^{\infty} \int_{0}^{\beta} d \tau_1 \cdots \int_{\tau_k}^{\beta} d \tau_k^{\prime}
-\\
-&\sum_{j_1 \ldots j_k}  \sum_{j_{1}^{\prime} \ldots j_k^{\prime}} 
+U(\beta)=& \sum_k^{\infty}
+\int_{0}^{\beta} d \tau_1 \cdots \int_{\tau_{k-1}}^{\beta} d \tau_k
+\int_{0}^{\beta} d \tau_1 \cdots \int_{\tau_{k-1}^\prime}^{\beta} d \tau_k^{\prime}
+\sum_{j_1 \ldots j_k}  \sum_{j_{1}^{\prime} \ldots j_k^{\prime}} 
 \Big[ T_{\tau} e^{-\beta H_\mathrm{loc}}
 d_{j_k}(\tau_k) d_{j_k^\prime}^{\dagger} (\tau_k^\prime) \cdots d_{j_1}(\tau_1) d_{j_1^\prime}^{\dagger} (\tau_1^\prime) \Big] \operatorname{det} \Delta
+\label{eq::normal_order}
 \end{align}
+where $\tau_k > \cdots >\tau_1$ and $\tau_k^\prime > \cdots >\tau_1^\prime$. This is the normal order, i.e. the order that does not have a sign. Practically, we need to order the operators for all the times togheter such that $\tau_{left} > \cdots >\tau_{right}$ but there is a sign $(-1)^\sigma$ where $\sigma$ is the number of permutation one must do to order all the times starting from the normal order. 
 
+\subsection{Specific to my implementation}
+There are many ways to evaluate this $\sigma$. In my implementation, the $d^\dagger$ and $d$ are stored in two vectors, and the time ordered operator in another vector. It is more natural to work with vector where the time is sorted in the ascending order. This is also the order in which we apply the operator in the matrix products. In that case, the number of permutation between the normal order and the sorted order ($\sigma$) is simply the sum of the positions of the $d^\dagger$ operators in the sorted order. 
 
+\subsection{Simple model exact values}
 
 
 Zeroth order: 
 \begin{align}
 U_0(\beta)=&  e^{-\beta H_\mathrm{loc}}
+\label{eq::zeroth_order}
 \end{align}
 
 First order: 
@@ -250,20 +258,162 @@ U_1(\beta)=&  \int_{0}^{\beta} d \tau_1 \int_0^{\beta} d \tau_1^{\prime}
 d_{j_1}(\tau_1) d_{j_1^\prime}^{\dagger} (\tau_1^\prime) \Big] \Delta_{j_1 j_1^\prime} ( \tau_1 - \tau_1^\prime)
 \end{align}
 
-For an extremely simple case (one site, $U=0$, $H_\text{loc}=0$, one bath $\epsilon=0$, $\Delta=-\frac{\theta^2}{2}$):
+For an extremely simple case (one site, spinless, $U=0$, $H_\text{loc}=0$, one bath $\epsilon=0$, $\Delta=-\frac{\theta^2}{2}$):
 \begin{align}
-U_1(\beta) / U_0(\beta)=& -\frac{(\beta \theta)^2}{2}
+U_1(\beta)=& \int_{0}^{\beta} d \tau_1 \int_0^{\beta} d \tau_1^{\prime} \sum_{j_1 j_1^\prime} 
+\Big[ T_{\tau} d_{j_1}(\tau_1) d_{j_1^\prime}^{\dagger} (\tau_1^\prime) \Big]   
+\frac{\theta^2}{2}
+\\
+=& 
+\Bigg(\frac{\beta^2}{2}
+\Bigg[  
+\begin{pmatrix} -1&0\\ 0&0\\ \end{pmatrix}
++
+\begin{pmatrix} 0&0\\ 0&-1\\ \end{pmatrix}
+\Bigg]  
+\Bigg) 
+\frac{-\theta^2}{2}
+\\
+=& \frac{(\beta \theta)^2}{4} I_{2 \times 2}
+\label{eq::first_order}
 \end{align}
 
-\pagebreak
+Another simple case is the same model, but with spin. The only difference is the sum $\sum_{j_1 j_1^\prime}$ where the only allowed terms are the ones with $j_1=j_1^\prime$ since we have no hybridization between both spins. In that case, the first order becomes:
+\begin{align}
+U_1(\beta)=
+\left(\frac{\beta^2}{2}
+\left[
+\begin{pmatrix} 
+  1&&&\\ 
+  &0&&\\ 
+  &&1&\\ 
+  &&&0\\ 
+\end{pmatrix}
++
+\begin{pmatrix} 
+  0&&&\\ 
+  &1&&\\ 
+  &&0&\\ 
+  &&&1\\ 
+\end{pmatrix}
++
+\begin{pmatrix} 
+  1&&&\\ 
+  &1&&\\ 
+  &&0&\\ 
+  &&&0\\ 
+\end{pmatrix}
++
+\begin{pmatrix} 
+  0&&&\\ 
+  &0&&\\ 
+  &&1&\\ 
+  &&&1\\ 
+\end{pmatrix}
+\right]
+\right)
+\frac{\theta^2}{2}
+=
+\frac{(\beta \theta)^2}{2} I_{4 \times 4}
+\label{eq::first_order2}
+\end{align}
 
+\subsection{Exact diagonalization simple model}
 
 This simple system can be solved exactly
 \begin{align}
 U(\beta)=& \frac{1}{Z_{\text {bath }}}\operatorname{Tr_B} [e^{-\beta (H_\text{loc} + H_\text{bath} + H_\text{hyb}) }]  
 \end{align}
 
+for a spinless model, this simply becomes
+\begin{align}
+H=
+H_\text{loc} + H_\text{bath} + H_\text{hyb}=
+\begin{blockarray}{ccccc}
+& \ket{00} & \ket{01} & \ket{10} & \ket{11} \\
+\begin{block}{c(cccc)}
+\bra{00} & 0&0&0&0\\
+\bra{01} & 0&0&\theta&0\\
+\bra{10} & 0&\theta&0&0\\
+\bra{11} & 0&0&0&0\\
+\end{block}
+\end{blockarray}
+\end{align}
+
+\begin{align}
+D = U H U^\dagger=
+\begin{pmatrix}
+0&0&0&0\\
+0&\theta&0&0\\
+0&0&-\theta&0\\
+0&0&0&0\\
+\end{pmatrix}
+&&
+e^{-\beta D} =
+\begin{pmatrix}
+1&0&0&0\\
+0&e^{-\beta \theta}&0&0\\
+0&0&e^{\beta \theta}&0\\
+0&0&0&1\\
+\end{pmatrix}
+\end{align}
+
+\begin{align}
+e^{-\beta H} = e^{-\beta U^\dagger D U} = U^\dagger e^{-\beta D} U  =
+\begin{pmatrix}
+1&0&0&0\\
+0&\cosh(\beta \theta)&\sinh(\beta \theta)&0\\
+0&\sinh(\beta \theta)&\cosh(\beta \theta)&0\\
+0&0&0&1\\
+\end{pmatrix}
+\end{align}
+
+\begin{align}
+Z_{\text {bath }} = \operatorname{Tr_B}[ e^{-\beta H_\text{bath} }  ] = 2
+\end{align}
+
+\begin{align}
+U(\beta)=& \frac{1}{Z_{\text {bath }}} e^{-\beta H} = \frac{\cosh(\beta \theta)+1}{2} I_{2 \times 2}
+\end{align}
+
+using trigonometric identity and the serie expansion around $\theta=0$, we obtain:
+\begin{align}
+U(\beta)=& \cosh^2\bigg(\frac{\beta \theta}{2}\bigg) I_{2 \times 2}
+=
+\bigg(
+1
++\frac{\beta^{2} \theta^{2}}{4}
++\frac{\beta^{4} \theta^{4}}{48}
++\frac{\beta^{6} \theta^{6}}{1440}
++\cdots \bigg)
+I_{2 \times 2}
+\end{align}
+
+The zeroth order of the expansion is the same as Eq.~\eqref{eq::zeroth_order} (with $H_\text{loc}=0$) and the
+first order here is the same as the Eq.~\eqref{eq::first_order}, which is a good self-consistency check. For the same system but with a spin (without hybridization between spins), we have:
+\begin{align}
+U_{spin}(\beta)= U_{spinless}(\beta) \otimes  U_{spinless}(\beta) = \cosh^4\bigg(\frac{\beta \theta}{2}\bigg) I_{4 \times 4}
+=
+\bigg(
+1
++\frac{\beta^{2} \theta^{2}}{2}
++\frac{5 \beta^{4} \theta^{4}}{48}
++\frac{17 \beta^{6} \theta^{6}}{1440}
++\cdots \bigg)
+I_{4 \times 4}
+\end{align}
+which again is coherent with Eq.~\eqref{eq::zeroth_order} and~\eqref{eq::first_order2}.
+
+
+
+
+
+
+
+
+
 \pagebreak
+
 
 \begin{align} 
 U(\beta)=& \frac{1}{Z_{\text {bath }}}\operatorname{Tr_B} [e^{-\beta (H_a + H_\text{hyb}) }]  
@@ -533,11 +683,11 @@ The Leibniz formula for the determinant of an $\Delta$ matrix (size $n \times n$
 \end{equation}
 where $\sigma$ is permutation  and $\operatorname{sgn}(\sigma)$ is the sign of the permutation. But for the inchworm we need to consider only the connected element on this summation:
 \begin{equation}
-(\operatorname{det} \Delta )_{inchworm} =\sum_{\sigma \in S_n, \text{connected}} \operatorname{sgn}(\sigma) \prod_{i=1} \Delta_{a_{i} b_{\sigma_i}}\left(\tau_{i}, \tau_{\sigma_i}^{\prime}\right)
+w_\text{hyb} = (\operatorname{det} \Delta )_{inchworm} =\sum_{\sigma \in S_n, \text{connected}} \operatorname{sgn}(\sigma) \prod_{i=1} \Delta_{a_{i} b_{\sigma_i}}\left(\tau_{i}, \tau_{\sigma_i}^{\prime}\right)
 \end{equation}
 
 This last equation is what is calculate by the algorithms of Sec~\ref{sec::proper} and~\ref{sec::inclu}.
-({\color{red} Disclaimer: We need to review this notation at some point})
+
 
 
 There is two different parts to the Monte Carlo of the inchworm, the part concerning the evaluation of the hybridization configuration (keeping only the proper contribution) and the part concerning the evaluation of the propagator. Let's write the propagator for ct-hyb first:
@@ -546,26 +696,26 @@ There is two different parts to the Monte Carlo of the inchworm, the part concer
 U(\tau,\tau^\prime)
 &=
 \sum_{a b} 
-e^{-(\tau-\tau^\prime) H_{loc}}
 \int_{0}^{\beta} 
 \prod_{i=1}^{k} 
 \left(
 d \tau_{i} 
 d \tau_{i}^{\prime} 
-c_{a_i}(\tau_{i})    
-c_{b_i}^{\dagger}(\tau_{i}^{\prime})
+e^{-(\tau-\tau^\prime) H_{loc}}
+d_{a_i}(\tau_{i})    
+d_{b_i}^{\dagger}(\tau_{i}^{\prime})
 \right)
 (\operatorname{det} \Delta ) 
 \\
 &=
 \sum_{a b} 
-e^{-(\tau-\tau^\prime) H_{loc}}
 \int_{0}^{\beta} 
 \left(
 \prod_{i=1}^{2k} 
 d \tau_{i} 
 \right)
 \left(
+e^{-(\tau-\tau^\prime) H_{loc}}
 O_{a_i}(\tau_0)
 O_{b_i}(\tau_1)
 O_{c_i}(\tau_2)
@@ -574,9 +724,7 @@ O_{z_i}(\tau_{2k})
 \right)
 (\operatorname{det} \Delta ) 
 \end{align}
-({\color{red} Disclaimer: i am not sur of the detail of the equation for now, this is just the general form. Especially the $\sum_{k} \frac{1}{k !} 
-$ part, omitted here, to be discussed at some point.})
-where $O_{a_i}(\tau_i)$ is any operator  $c_{a_i}(\tau_i)$ or $c^\dagger_{a_i}(\tau_i)$, as long as the time are ordered. In the basis where the local hamiltonian is diagonal, the time evolution is given by $O_{a_i}(\tau_i) = e^{- \tau_i H_{loc}} O_{a_i} e^{ \tau_i H_{loc}}$. We define the bare propagator as $U_0(\tau_i,\tau_i^\prime) =e^{ -(\tau_i - \tau_i^\prime) H_{loc}}$ is the propagator of the impurity. Hence the equation become: 
+where $O_{a_i}(\tau_i)$ is any operator  $d_{a_i}(\tau_i)$ or $d^\dagger_{a_i}(\tau_i)$, as long as the time are ordered. In the basis where the local hamiltonian is diagonal, the time evolution is given by $O_{a_i}(\tau_i) = e^{- \tau_i H_{loc}} O_{a_i} e^{ \tau_i H_{loc}}$. We define the bare propagator as $U_0(\tau_i,\tau_i^\prime) =e^{ -(\tau_i - \tau_i^\prime) H_{loc}}$ is the propagator of the impurity. Hence the equation become: 
 
 \begin{align} 
 U(\tau,\tau^\prime)
@@ -804,8 +952,6 @@ For the example here, this then give:
 \end{blockarray}
 \end{align}
 
-({\color{red} Disclaimer: i am not sure about this factor 4, I think I miss a $\frac{1}{2^{N_{traced}} }$ somewhere.  My reasoning is that whatever the amount of baths that we consider here, the result should be similar.}) 
-
 Now the extension for the propagator is straight forward. 
 
 \begin{align}
@@ -882,11 +1028,13 @@ This benchmark, although a little too simple, can be easily generalized to a big
   \citenamefont {Gull},\ and\ \citenamefont
   {Cohen}}]{boag_inclusion-exclusion_2018}%
   \BibitemOpen
-  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {A.}~\bibnamefont
-  {Boag}}, \bibinfo {author} {\bibfnamefont {E.}~\bibnamefont {Gull}}, \ and\
-  \bibinfo {author} {\bibfnamefont {G.}~\bibnamefont {Cohen}},\ }\href
+  \bibfield  {author} {
+    \bibinfo {author} {\bibfnamefont {A.}~\bibnamefont
+  {Boag}}, 
+    \bibinfo {author} {\bibfnamefont {E.}~\bibnamefont {Gull}}, \ and\
+    \bibinfo {author} {\bibfnamefont {G.}~\bibnamefont {Cohen}},\ } \href
   {\doibase 10.1103/PhysRevB.98.115152} {\ \textbf {\bibinfo {volume} {98}},\
-  \bibinfo {pages} {115152}}\BibitemShut {NoStop}%
+  \bibinfo {pages} {115152} \bibinfo {year} (2018) }\BibitemShut {NoStop}%
 \end{thebibliography}%
 
 
@@ -903,66 +1051,4 @@ This benchmark, although a little too simple, can be easily generalized to a big
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-From Michel's notes:
-
-\begin{align}
-Z &=Z_{\text {bath }} \int D d_{a \alpha} D d_{a \alpha}^{\dagger} T_{\tau} \exp \left(-S_{\text {tot }}\right) \\
-&=Z_{\text {bath }} \int D d_{a \alpha} D d_{a \alpha}^{\dagger} T_{\tau} \exp \left(-S_{\text {loc }}\right) \prod_{a} T_{\tau} \exp \left(-S_{a}\right)
-\end{align}
-
-
-\begin{align}
-S_{a}=\sum_{\alpha, \beta} \int d \tau d \tau^{\prime} d_{a \alpha}^{\dagger}(\tau) \Delta_{\alpha \beta}^{a}\left(\tau-\tau^{\prime}\right) d_{a \beta}\left(\tau^{\prime}\right)
-\end{align}
-
-\begin{align}
-Z=& Z_{\text {bath }} \int D d_{a \alpha} D d_{a \alpha}^{\dagger} T_{\tau} \exp \left(-S_{\text {loc }}\right) \prod_{a} T_{\tau} \sum_{n_{a}} \frac{(-1)^{n_{a}}}{n_{a} !} \int_{0}^{\beta} d \tau_{a 1} d \tau_{a 1}^{\prime} \cdots d \tau_{a n} d \tau_{a n}^{\prime} \\
-& \sum_{\alpha_{1}^{a} \ldots \beta_{n_{a}}^{a}} d_{a \alpha_{1}^{a}}^{\dagger}\left(\tau_{a 1}\right) \Delta_{\alpha_{1}^{2} \beta_{1}^{a}}^{a}\left(\tau_{a 1}-\tau_{a 1}^{\prime}\right) d_{a \beta_{1}^{a}}\left(\tau_{a 1}^{\prime}\right) \cdots \\
-& d_{a \alpha_{n_{a}}^{\dagger}}^{\dagger}\left(\tau_{a n_{a}}\right) \Delta_{\alpha_{n_{a}}^{a} \beta_{n_{a}}^{a}}\left(\tau_{a n_{a}}-\tau_{a n_{a}}^{\prime}\right) d_{a \beta_{n_{a}}^{a}}\left(\tau_{a n_{a}}^{\prime}\right)
-\end{align}
-
-\begin{align}
-Z=& Z_{\text {bath }} \int D d_{a \alpha} D d_{a \alpha}^{\dagger} T_{\tau} \exp \left(-S_{\text {loc }}\right) \prod_{a} T_{\tau} \sum_{n_{a}} \frac{(-1)^{n_{a}}}{n_{a} !} \int_{0}^{\beta} d \tau_{a 1}^{\prime} \cdots d \tau_{a n}^{\prime} \\
-& \int_{0}^{\beta} d \tau_{a 1} \int_{0}^{\tau_{a 1}} d \tau_{a 2} \cdots \sum_{\alpha_{1}^{a} \ldots \beta_{n_{a}}^{a}} d_{a \alpha_{1}^{a}}^{\dagger}\left(\tau_{a 1}\right) d_{a \beta_{1}^{a}}\left(\tau_{a 1}^{\prime}\right) \cdots \\
-& d_{a \alpha_{n a}^{a}}^{\dagger}\left(\tau_{a n_{a}}\right) d_{a \beta_{n_{a}}^{a}}\left(\tau_{a n_{a}}^{\prime}\right) \operatorname{Det} M_{a}^{-1}
-\end{align}
-
-\begin{align}
-Z=& Z_{\text {bath }} \int D d_{a \alpha} D d_{a \alpha}^{\dagger} T_{\tau} \exp \left(-S_{\text {loc }}\right) \prod_{a} T_{\tau} \sum_{n_{a}}(-1)^{n_{a}} \int_{0}^{\beta} d \tau_{a 1}^{\prime} \int_{0}^{\tau_{a 1}^{\prime}} d \tau_{a 2}^{\prime} \cdots \\
-& \int_{0}^{\beta} d \tau_{a 1} \int_{0}^{\tau_{a 1}} d \tau_{a 2} \cdots \sum_{\alpha_{1}^{a} \ldots \beta_{n_{a}}^{a}} d_{a \alpha_{1}^{a}}^{\dagger}\left(\tau_{a 1}\right) d_{a \beta_{1}^{a}}\left(\tau_{a 1}^{\prime}\right) \cdots \\
-& d_{a \alpha_{n_{a}}^{a}}^{\dagger}\left(\tau_{a n_{a}}\right) d_{a \beta_{n_{a}}^{a}}\left(\tau_{a n_{a}}^{\prime}\right) \operatorname{Det} M_{a}^{-1}
-\end{align}
 

@@ -63,7 +63,7 @@ exit()
 '''
 
 
-#epsilon = 0
+epsilon = 0
 
 H=sy.Matrix([[0,0,0,0],
              [0,0,theta,0],
@@ -126,10 +126,11 @@ sy.pprint(U_traced[0,0]/zb)
 print '\n'
 sy.pprint(U_traced[1,1]/zb)
 
-for n in range(3):
+for n in range(4):
 
-  x = sy.simplify(taylor(U_traced[0,0]/zb,0,n))
+  x = sy.simplify(taylor(U_traced[0,0]/zb,0,2*n))
   
+  print
   print
   print 'order %d' % n
   print  

@@ -72,7 +72,7 @@ fundamental_operator_set make_fops(int N) {
 TEST(inchworm, HubbardAtom) { // NOLINT
 
   // System Parameters
-  double U  = 10.;
+  double U  = 0.;
   double mu = U / 2.;
   //double h  = 0.1;
 
