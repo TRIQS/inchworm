@@ -35,17 +35,6 @@ namespace inchworm::moves {
 
     proposed_w.loc = frobenius_norm(proposed_u_frame);
 
-    /*
-    if (params.use_bare_propagator) {
-      proposed_w.hyb = hyb_mat.det();
-      //hyb_mat.print();
-      proposed_u_frame = propagator_product(params.h_diag, diagram, params.tau_max);
-    } else {
-      proposed_w.hyb   = diagram::inclusion_exclusion(diagram, hyb_mat);
-      proposed_u_frame = propagator_product(params.h_diag, diagram, params.tau_max, &params.u_tau);
-    }
-    */
-
     proposed_w.loc   = frobenius_norm(proposed_u_frame);
     auto sign_ratio  = proposed_sign / data.sign;
     auto w_hyb_ratio = proposed_w.hyb / data.w.hyb;
@@ -68,7 +57,7 @@ namespace inchworm::moves {
   scalar_t insert::accept() {
     //std::printf("\n\nsize=%d\n", proposed_config.size());
     //for (auto const &B : proposed_u_frame) std::cout << B;
-    if (proposed_config.size() == 100) { //params.verbosity == 10) {
+    if (proposed_config.size() == 1) { //params.verbosity == 10) {
       auto diagram = diagram::time_diagram_t(proposed_config.c_list, proposed_config.cdag_list, {});
       print_configuration(diagram);
       auto hyb_mat = diagram::hyb_matrix_t(diagram, params.hyb_adaptor);

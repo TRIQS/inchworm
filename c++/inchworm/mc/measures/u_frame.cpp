@@ -12,7 +12,7 @@ namespace inchworm::measures {
     //int factor = factorial(qmc_config_data.config.size());
     scalar_t s = sign / (qmc_config_data.w.loc);
     if (qmc_config_data.config.size() < MAX_ORDER) {
-      results.u_expansion_order[qmc_config_data.config.size()] += s * qmc_config_data.u_frame[0](0, 0) ;
+      results.u_expansion_order[qmc_config_data.config.size()] += s * qmc_config_data.u_frame[0](0, 0);
     }
     //average_sign += s;
     //if (qmc_config_data.config.size() == 2)
