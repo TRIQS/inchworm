@@ -24,8 +24,8 @@ namespace inchworm::moves {
     else
       proposed_w.hyb = diagram::inclusion_exclusion(diagram, hyb_mat);
 
-    //double tol = 1e-10;
-    //if (std::abs(proposed_w.hyb) < tol) return 0.0;
+    double tol = 1e-12;
+    if (std::abs(proposed_w.hyb) < tol) return 0.0;
 
     if (params.use_bare_propagator)
       proposed_u_frame = propagator_product(params.h_diag, diagram, params.tau_max);
@@ -49,7 +49,7 @@ namespace inchworm::moves {
     //std::printf("yes\n");
     //std::printf("\n\nsize=%d\n", proposed_config.size());
     //for (auto const &B : proposed_u_frame) std::cout << B;
-    if (proposed_config.size()==1) { //params.verbosity == 10) {
+    if (proposed_config.size()==100) { //params.verbosity == 10) {
       auto diagram = diagram::time_diagram_t(proposed_config.c_list, proposed_config.cdag_list, {});
       print_configuration(diagram);
       auto hyb_mat = diagram::hyb_matrix_t(diagram, params.hyb_adaptor);

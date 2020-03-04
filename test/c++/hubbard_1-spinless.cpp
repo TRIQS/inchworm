@@ -83,30 +83,29 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   // Set up the Solver
   solver_core S(cp);
   //int up = 0, dn = 1;
-  int n_bath       = 1;
-  double theta[]   = {1., -1.1};
-  double epsilon[] = {0.0, 3.4};
+  int n_bath       = 2;
+  double theta[]   = {3.0, 3.0};
+  double epsilon[] = {0.0, 0.0};
   for (auto const &tau : S.Delta_tau[0].mesh()) {
     for (int i = 0; i < n_site; i++) {
       S.Delta_tau[i][tau] = 0.0;
-      for (int n = 0; n < n_bath; n++) {
-        double val;
-        if (epsilon[n] > 0.0)
-          val = -theta[n] * theta[n] * (std::exp(-((double)tau) * (epsilon[n])) / (1. + std::exp(-cp.beta * epsilon[n])));
-        else
-          val = -theta[n] * theta[n] * (std::exp(-((double)tau - cp.beta) * (epsilon[n])) / (1. + std::exp(cp.beta * epsilon[n])));
-        S.Delta_tau[i][tau] += val;
-        //std::printf("hyb = %f, %f \n", val, (double)tau);
-      }
+      //for (int n = 0; n < n_bath; n++) {
+      double val;
+      if (epsilon[i] > 0.0)
+        val = -theta[i] * theta[i] * (std::exp(-((double)tau) * (epsilon[i])) / (1. + std::exp(-cp.beta * epsilon[i])));
+      else
+        val = -theta[i] * theta[i] * (std::exp(-((double)tau - cp.beta) * (epsilon[i])) / (1. + std::exp(cp.beta * epsilon[i])));
+      S.Delta_tau[i][tau] += val;
+      //std::printf("hyb = %f, %f \n", val, (double)tau);
+      //}
     }
   }
-
 
   std::cout << S.Delta_tau[0];
 
   std::vector<many_body_op_t> qn;
   qn.resize(1);
-  auto h_int = 0 * n("up", 0) ;
+  auto h_int = 0 * n("up", 0);
   for (int j = 0; j < n_site; j++) {
     qn[0] += n("up", j);
     h_int -= mu * n("up", j);
@@ -115,7 +114,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   // Solve Parameters
   solve_params_t sp;
   sp.h_int           = h_int;
-  sp.n_cycles        = 50000;
+  sp.n_cycles        = 500000;
   sp.length_cycle    = 10;
   sp.n_warmup_cycles = 20;
   sp.max_time        = -1;
@@ -143,12 +142,12 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   for (int j = 0; j < n_site; j++) {
     h -= mu * (n("up", j) + n("dn", j));
 
-    for (int i = 0; i < n_bath; i++) {
-      h += theta[i] * (c_dag("up", j) * c("up", i + n_site) + c_dag("up", i + n_site) * c("up", j));
-      h += epsilon[i] * n("up", i + n_site);
+    //for (int i = 0; i < n_bath; i++) {
+      h += theta[j] * (c_dag("up", j) * c("up", j + n_site) + c_dag("up", j + n_site) * c("up", j));
+      h += epsilon[j] * n("up", j + n_site);
 
-      h_bath += epsilon[i] * n("up", i);
-    }
+      h_bath += epsilon[j] * n("up", j);
+    //}
   }
 
   std::printf("\n\n");
@@ -164,26 +163,23 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   print_matrix(ps_bath);
   print_matrix(ps / ps_bath(0, 0));
 
-  //double tmp         = std::cosh(theta[0] * cp.beta / 2.);
-  //double total_serie = std::pow(tmp, 2);
   double x = theta[0] * cp.beta;
-  //double delta = std::sqrt(epsilon[0] * epsilon[0] + theta[0] * theta[0]);
-  //double e0    = epsilon[0] - delta;
-  //double e1    = epsilon[0] + delta;
-
-  //double U00 = 1. + (1. / delta) * (-e0 * std::exp(-cp.beta * e0) + e1 * std::exp(-cp.beta * e1));
-
-  //double U11    = (1. / delta) * (-e0 * std::exp(-cp.beta * e1) + e1 * std::exp(-cp.beta * e0)) + std::exp(-cp.beta * epsilon[0]);
-  //double zb     = (1 + std::exp(-theta[0] * cp.beta));
-  //double order0 = (1 + std::exp(-theta[0] * cp.beta));
-
-  double tmp         = std::cosh(theta[0] * cp.beta / sqrt(2.));
+  /*  double tmp         = std::cosh(theta[0] * cp.beta / sqrt(2.));
   double total_serie = std::pow(tmp, 2);
 
   double order1 = (1. / 2.) * std::pow(x, 2);
   double order2 = (1. / 12.) * std::pow(x, 4);
   double order3 = (1. / 180.) * std::pow(x, 6);
   double order4 = (1. / 5040.) * std::pow(x, 8);
+  */
+
+  double tmp         = std::cosh(theta[0] * cp.beta / 2.);
+  double total_serie = std::pow(tmp, 4);
+
+  double order1 = (1. / 2.) * std::pow(x, 2);
+  double order2 = (5. / 48.) * std::pow(x, 4);
+  double order3 = (17. / 1440.) * std::pow(x, 6);
+  double order4 = (13. / 16128.) * std::pow(x, 8);
 
   //beta**10*theta**10/7257600 + beta**8*theta**8/80640 + beta**6*theta**6/1440 + beta**4*theta**4/48 + beta**2*theta**2/4 + 1
 

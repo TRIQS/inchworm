@@ -5,7 +5,7 @@ from sympy.functions import cosh
 
 theta = sy.Symbol('theta')
 beta = sy.Symbol('beta')
-f = (cosh(beta*theta/2))**2
+f = (cosh(beta*theta/2))**4
 
 def factorial(n):
   if n <= 0:

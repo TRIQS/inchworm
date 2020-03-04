@@ -72,15 +72,15 @@ fundamental_operator_set make_fops(int N) {
 TEST(inchworm, HubbardAtom) { // NOLINT
 
   // System Parameters
-  double U  = 10.0;
+  double U  = 0.0;
   double mu = U / 2.;
   //double h  = 0.1;
 
   // Construct Parameters
   constr_params_t cp;
   cp.beta      = 2.0;
-  int n_site   = 2;
-  cp.gf_struct = {{"up", {0}}, {"dn", {0}}, {"up", {1}}, {"dn", {1}}};
+  int n_site   = 1;
+  cp.gf_struct = {{"up", {0}}, {"dn", {0}}};//, {"up", {1}}, {"dn", {1}}};
   cp.n_tau     = 500;
   cp.n_iw      = 250;
 
@@ -88,7 +88,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   solver_core S(cp);
   //int up = 0, dn = 1;
   int n_bath       = 1;
-  double theta[]   = {0.01, -0.4};
+  double theta[]   = {3.0, -0.4};
   double epsilon[] = {0.0, 2.5};
 
   for (auto const &tau : S.Delta_tau[0].mesh()) {
@@ -173,6 +173,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
 
   double x = theta[0] * cp.beta;
 
+  /*
   double tmp         = std::cosh(theta[0] * cp.beta / sqrt(2.));
   double total_serie = std::pow(tmp, 2);
 
@@ -180,6 +181,15 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   double order2 = (5. / 12.) * std::pow(x, 4);
   double order3 = (17. / 180.) * std::pow(x, 6);
   double order4 = (13. / 1008.) * std::pow(x, 8);
+  */
+
+  double tmp         = std::cosh(theta[0] * cp.beta / 2.);
+  double total_serie = std::pow(tmp, 4);
+
+  double order1 = (1. / 2.) * std::pow(x, 2);
+  double order2 = (5. / 48.) * std::pow(x, 4);
+  double order3 = (17. / 1440.) * std::pow(x, 6);
+  double order4 = (13. / 16128.) * std::pow(x, 8);
 
   std::printf("order 1: % 4.8f \n", order1);
   std::printf("order 2: % 4.8f \n", order2);
