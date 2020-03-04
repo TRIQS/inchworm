@@ -88,22 +88,22 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   solver_core S(cp);
   //int up = 0, dn = 1;
   int n_bath       = 1;
-  double theta[]   = {3.0, -0.4};
-  double epsilon[] = {0.0, 2.5};
+  double theta[]   = {3.0};
+  double epsilon[] = {0.0};
 
   for (auto const &tau : S.Delta_tau[0].mesh()) {
+    double val;
     for (int i = 0; i < 2*n_site; i++) {
       S.Delta_tau[i][tau] = 0.0;
       for (int n = 0; n < n_bath; n++) {
-        double val;
         if (epsilon[n] > 0.0)
           val = -theta[n] * theta[n] * (std::exp(-((double)tau) * (epsilon[n])) / (1. + std::exp(-cp.beta * epsilon[n])));
         else
           val = -theta[n] * theta[n] * (std::exp(-((double)tau - cp.beta) * (epsilon[n])) / (1. + std::exp(cp.beta * epsilon[n])));
         S.Delta_tau[i][tau] += val;
-        //std::printf("hyb = %f, %f \n", val, (double)tau);
       }
     }
+    std::printf("hyb = %f, %f \n", val, (double)tau);
   }
 
   std::cout << S.Delta_tau[0];
@@ -119,7 +119,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   // Solve Parameters
   solve_params_t sp;
   sp.h_int           = h_int;
-  sp.n_cycles        = 500000;
+  sp.n_cycles        = 100000;
   sp.length_cycle    = 10;
   sp.n_warmup_cycles = 20;
   sp.max_time        = -1;

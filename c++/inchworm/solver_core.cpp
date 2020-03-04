@@ -144,8 +144,10 @@ namespace inchworm {
     }
     std::cout << "\n\nsign: " << res.average_sign << "\n";
     std::cout << "\norder: " << res.average_k << "\n";
-    for (auto o : res.u_expansion_order) std::printf("% 4.5f ", o / normalization_cte);
-    std::printf("\n ");
+    for (auto o : res.samples_expansion_order) std::printf("%16d ", o);
+    std::printf("\n");
+    for (auto o : res.u_expansion_order) std::printf("% 16.5f ", o / normalization_cte);
+    std::printf("\n");
   } // namespace inchworm
 
   //------------------------------

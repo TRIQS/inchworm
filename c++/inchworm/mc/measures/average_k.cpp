@@ -7,12 +7,14 @@ namespace inchworm::measures {
 
   void average_k::accumulate(scalar_t sign) {
     ave_k += qmc_config_data.config.size();
+    if (qmc_config_data.config.size() < MAX_ORDER) { results.samples_expansion_order[qmc_config_data.config.size()] += 1; }
     ++count;
   }
 
   void average_k::collect_results(mpi::communicator const &comm) {
-    ave_k = mpi::all_reduce(ave_k, comm);
-    count = mpi::all_reduce(count, comm);
+    results.samples_expansion_order = mpi::all_reduce(results.samples_expansion_order, comm);
+    ave_k                           = mpi::all_reduce(ave_k, comm);
+    count                           = mpi::all_reduce(count, comm);
     ave_k /= count;
 
     results.average_k = ave_k;
