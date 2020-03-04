@@ -77,7 +77,7 @@ namespace inchworm {
         //linindex[std::make_pair(block_index, inner_index)] = fops[{bl.first, a}];
         map_lin_idx_to_block_inner[fops[{bl.first, a}]] = std::make_pair(block_index, inner_index);
         inner_index++;
-        ///printf("salut: %d\n", fops[{bl.first, a}]);
+        printf("salut: %d\n", fops[{bl.first, a}]);
       }
       block_index++;
     }
@@ -106,7 +106,7 @@ namespace inchworm {
     _h_loc = solve_params.h_int;
     h_diag = {_h_loc, fops, solve_params.quantum_numbers};
     u_tau  = make_propagator(h_diag, constr_params.n_tau);
-    //print_eigensystems(h_diag);
+    print_eigensystems(h_diag);
   }
 
   void solver_core::solve(solve_params_t const &solve_params) {

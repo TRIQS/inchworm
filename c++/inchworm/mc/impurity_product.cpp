@@ -125,7 +125,7 @@ namespace inchworm {
           for (int j = 0; j < ad.get_subspace_dim(new_bl); j++) {
             //std::printf("new_bl %d, j %d \n", new_bl, j);
             //std::printf("ad.get_subspace_dim(new_bl) = %d \n", ad.get_subspace_dim(new_bl));
-            new_mat(j, _) *=
+            new_mat(j, _) *= // ATTENTION!
                std::exp(-dtau * (ad.get_eigenvalue(new_bl, j) + (set_gs_to_0 ? 0. : ad.get_gs_energy()))); // bare imaginary time evolution
           }
         }

@@ -50,7 +50,7 @@ namespace triqs {
       //TODO: incorporate in atom_diag and make it a member function.
       int dim_partial = (1 << linear_index);
       int dim_full    = ad.get_full_hilbert_space_dim();
-      int factor      = 1;//dim_full / dim_partial;
+      //int factor      = 1;//dim_full / dim_partial;
       EXPECTS(dim_partial < dim_full);
       EXPECTS(dim_full % dim_partial == 0);
 
@@ -76,11 +76,11 @@ namespace triqs {
           for (int j = 0; j < size; j++) {
             uint64_t traced_idx2    = get_MSB(fs[s][j], linear_index);
             uint64_t preserved_idx2 = get_LSB(fs[s][j], linear_index);
-            if (traced_idx1 == traced_idx2) { partial_sum(preserved_idx1, preserved_idx2) += H(i, j) / factor; }
+            if (traced_idx1 == traced_idx2) { partial_sum(preserved_idx1, preserved_idx2) += H(i, j);}// / factor; }
           }
         }
       }
-      std::printf("factor = %d, dim_full= %d, dim_partial= %d\n", factor, dim_full, dim_partial);
+      //std::printf("factor = %d, dim_full= %d, dim_partial= %d\n", factor, dim_full, dim_partial);
       return partial_sum;
     }
 

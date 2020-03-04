@@ -53,7 +53,7 @@ void print_eigensystems(triqs::atom_diag::atom_diag<false> const &ad) {
 
 void print_matrix(triqs::arrays::matrix<double> m) {
   for (int i = 0; i < first_dim(m); i++) {
-    for (int j = 0; j < second_dim(m); j++) { std::printf("% 5.6f ", m(i, j)); }
+    for (int j = 0; j < second_dim(m); j++) { std::printf("% 5.10f ", m(i, j)); }
     std::printf("\n");
   }
   std::printf("\n\n");
@@ -72,15 +72,14 @@ fundamental_operator_set make_fops(int N) {
 TEST(inchworm, HubbardAtom) { // NOLINT
 
   // System Parameters
-  double U  = 10.0;
+  double U  = 10.;
   double mu = U / 2.;
   //double h  = 0.1;
 
   // Construct Parameters
   constr_params_t cp;
   cp.beta      = 2.0;
-  int n_site   = 2;
-  cp.gf_struct = {{"up", {0}}, {"dn", {0}}, {"up", {1}}, {"dn", {1}}};
+  cp.gf_struct = {{"up", {0}}, {"dn", {0}}};
   cp.n_tau     = 500;
   cp.n_iw      = 250;
 
@@ -88,11 +87,11 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   solver_core S(cp);
   //int up = 0, dn = 1;
   int n_bath       = 1;
-  double theta[]   = {0.01, -0.4};
-  double epsilon[] = {0.0, 2.5};
+  double theta[]   = {0.4};
+  double epsilon[] = {0.0};
 
   for (auto const &tau : S.Delta_tau[0].mesh()) {
-    for (int i = 0; i < 2*n_site; i++) {
+    for (int i = 0; i < 2; i++) {
       S.Delta_tau[i][tau] = 0.0;
       for (int n = 0; n < n_bath; n++) {
         double val;
@@ -110,16 +109,12 @@ TEST(inchworm, HubbardAtom) { // NOLINT
 
   std::vector<many_body_op_t> qn;
   qn.resize(1);
-  auto h_int = 0 * (n("up", 0) * (n("dn", 0)));
-  for (int j = 0; j < n_site; j++) {
-    qn[0] += n("up", j) + n("dn", j);
-    h_int += U * n("up", j) * n("dn", j) - mu * (n("up", j) + n("dn", j));
-  }
+  qn[0] += n("up", 0) + n("dn", 0);
 
   // Solve Parameters
   solve_params_t sp;
-  sp.h_int           = h_int;
-  sp.n_cycles        = 500000;
+  sp.h_int           = U * n("up", 0) * n("dn", 0) - mu * (n("up", 0) + n("dn", 0));
+  sp.n_cycles        = 1500000;
   sp.length_cycle    = 10;
   sp.n_warmup_cycles = 20;
   sp.max_time        = -1;
@@ -139,54 +134,55 @@ TEST(inchworm, HubbardAtom) { // NOLINT
 
   // Compare against the reference data
   // h5diff("hubbard.out.h5", "hubbard.ref.h5")
-  auto fops      = make_fops(n_bath + n_site);
+  auto fops      = make_fops(n_bath + 1);
   auto fops_bath = make_fops(n_bath);
 
-  auto h      = 0 * (n("up", 0) * (n("dn", 0)));
+  auto h = U * (n("up", 0) * (n("dn", 0))); // 0 is the only interacting orbital
+  h -= mu * (n("up", 0) + n("dn", 0));
+
   auto h_bath = 0 * (n("up", 0) + (n("dn", 0)));
-  for (int j = 0; j < n_site; j++) {
-    h += U * (n("up", j) * n("dn", j));
-    h -= mu * (n("up", j) + n("dn", j));
 
-    for (int i = 0; i < n_bath; i++) {
-      h += theta[i] * (c_dag("up", j) * c("up", i + n_site) + c_dag("up", i + n_site) * c("up", j));
-      h += theta[i] * (c_dag("dn", j) * c("dn", i + n_site) + c_dag("dn", i + n_site) * c("dn", j));
-      h += epsilon[i] * (n("up", i + n_site) + n("dn", i + n_site));
+  for (int i = 0; i < n_bath; i++) {
+    h += theta[i] * (c_dag("up", 0) * c("up", i + 1) + c_dag("up", i + 1) * c("up", 0));
+    h += theta[i] * (c_dag("dn", 0) * c("dn", i + 1) + c_dag("dn", i + 1) * c("dn", 0));
+    h += epsilon[i] * (n("up", i + 1) + n("dn", i + 1));
 
-      h_bath += epsilon[i] * (n("up", i) + n("dn", i));
-    }
+    h_bath += epsilon[i] * (n("up", i) + n("dn", i));
+    //h -= mu * (n("up", i + 1) + n("dn", i + 1));
   }
 
-  //std::printf("\n\n");
+  //std::vector<many_body_op_t> qn;
+  //qn.resize(1);
+  //qn[0] += n("up", 0) + n("dn", 0);
+
+  std::printf("\n\n");
   auto dtau = cp.beta;
   auto ad   = triqs::atom_diag::atom_diag<false>(h, fops);
   auto E0   = ad.get_gs_energy();
-  auto ps   = partial_sum(ad, 2 * n_site, [dtau, E0](double E) { return std::exp(-dtau * (E - E0)); });
+  auto ps   = partial_sum(ad, 2, [dtau, E0](double E) { return std::exp(-dtau * (E - E0)); });
   //print_eigensystems(ad);
-  //print_matrix(ps);
+  print_matrix(ps);
 
   auto ad_bath = triqs::atom_diag::atom_diag<false>(h_bath, fops_bath);
   auto ps_bath = partial_sum(ad_bath, 0, [dtau, E0](double E) { return std::exp(-dtau * (E - E0)); });
   //print_eigensystems(ad_bath);
-  print_matrix(ps_bath);
+  //print_matrix(ps_bath);
   print_matrix(ps / ps_bath(0, 0));
+  /*
+  double tmp         = std::cosh(theta[0] * cp.beta / 2.);
+  double total_serie = std::pow(tmp, 4);
+  double x           = theta[0] * cp.beta;
 
-  double x = theta[0] * cp.beta;
-
-  double tmp         = std::cosh(theta[0] * cp.beta / sqrt(2.));
-  double total_serie = std::pow(tmp, 2);
-
-  double order1 = (1. / 1.) * std::pow(x, 2);
-  double order2 = (5. / 12.) * std::pow(x, 4);
-  double order3 = (17. / 180.) * std::pow(x, 6);
-  double order4 = (13. / 1008.) * std::pow(x, 8);
+  double order1 = (1. / 2.) * std::pow(x, 2);
+  double order2 = (5. / 48.) * std::pow(x, 4);
+  double order3 = (17. / 1440.) * std::pow(x, 6);
+  double order4 = (13. / 16128.) * std::pow(x, 8);
 
   std::printf("order 1: % 4.8f \n", order1);
   std::printf("order 2: % 4.8f \n", order2);
   std::printf("order 3: % 4.8f \n", order3);
   std::printf("order 4: % 4.8f \n", order4);
-  std::printf("\n\ntotal : % 4.8f \n", total_serie);
-
+  std::printf("\ntotal: % 4.8f \n", total_serie);*/
 }
 
 MAKE_MAIN
