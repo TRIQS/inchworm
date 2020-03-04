@@ -21,7 +21,7 @@ def taylor(function,theta0,N):
     n += 1
   return serie
 
-x = taylor(f,0,10)
+x = taylor(f,0,16)
 
 print x
 print

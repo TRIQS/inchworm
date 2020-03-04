@@ -23,7 +23,7 @@
 
 #include "./post_process.hpp"
 
-#include "./mc/measures/sign.hpp"
+//#include "./mc/measures/sign.hpp"
 #include "./mc/measures/u_frame.hpp"
 #include "./mc/measures/average_k.hpp"
 
@@ -77,7 +77,6 @@ namespace inchworm {
         //linindex[std::make_pair(block_index, inner_index)] = fops[{bl.first, a}];
         map_lin_idx_to_block_inner[fops[{bl.first, a}]] = std::make_pair(block_index, inner_index);
         inner_index++;
-        printf("salut: %d\n", fops[{bl.first, a}]);
       }
       block_index++;
     }
@@ -142,7 +141,6 @@ namespace inchworm {
       B /= normalization_cte;
       std::cout << B;
     }
-    std::cout << "\n\nsign: " << res.average_sign << "\n";
     std::cout << "\norder: " << res.average_k << "\n";
     for (auto o : res.samples_expansion_order) std::printf("%16d ", o);
     std::printf("\n");
@@ -172,7 +170,7 @@ namespace inchworm {
 
     single_step_results_t results(h_diag);
     // Register all measurements
-    mc.add_measure(measures::sign{params, qmc_config_data, results}, "sign measurement");
+    //mc.add_measure(measures::sign{params, qmc_config_data, results}, "sign measurement");
     mc.add_measure(measures::u_frame{params, qmc_config_data, results}, "propagator measurement");
     mc.add_measure(measures::average_k{params, qmc_config_data, results}, "average perturbation order");
 

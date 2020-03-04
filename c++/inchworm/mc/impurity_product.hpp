@@ -73,8 +73,7 @@ namespace inchworm {
 
   constexpr int MAX_ORDER = 10;
   struct single_step_results_t {
-    double average_sign = 0.0;
-    double average_k    = 0.0;
+    double average_k = 0.0;
     u_frame_t u_frame;
     u_frame_t u_frame_0th_order;
     std::vector<double> u_expansion_order;
