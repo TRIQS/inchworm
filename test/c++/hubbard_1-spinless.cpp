@@ -28,37 +28,6 @@
 
 using namespace inchworm;
 
-void print_energies(std::vector<std::vector<double>> const &E) {
-  for (auto sp : E) {
-    for (auto l : sp) { std::printf("% 2.3f ", l); }
-    std::printf("\n");
-  }
-  std::printf("\n");
-}
-
-void print_eigensystems(triqs::atom_diag::atom_diag<false> const &ad) {
-  for (auto sp : ad.get_eigensystems()) {
-    for (auto l : sp.eigenvalues) { std::printf("% 2.3f ", l); }
-    std::printf("\n\n");
-
-    for (int i = 0; i < sp.eigenvalues.size(); i++) {
-      for (int j = 0; j < sp.eigenvalues.size(); j++) { std::printf("% 2.3f ", sp.unitary_matrix(i, j)); }
-      std::printf("\n");
-    }
-    //for (auto u : sp.unitary_matrix) { TRIQS_PRINT(u); }
-    std::printf("\n\n");
-  }
-  std::printf("\n");
-}
-
-void print_matrix(triqs::arrays::matrix<double> m) {
-  for (int i = 0; i < first_dim(m); i++) {
-    for (int j = 0; j < second_dim(m); j++) { std::printf("% 5.10f ", m(i, j)); }
-    std::printf("\n");
-  }
-  std::printf("\n\n");
-}
-
 // Prepare funcdamental operator set
 fundamental_operator_set make_fops(int N) {
   fundamental_operator_set fops;
@@ -143,10 +112,10 @@ TEST(inchworm, HubbardAtom) { // NOLINT
     h -= mu * (n("up", j) + n("dn", j));
 
     //for (int i = 0; i < n_bath; i++) {
-      h += theta[j] * (c_dag("up", j) * c("up", j + n_site) + c_dag("up", j + n_site) * c("up", j));
-      h += epsilon[j] * n("up", j + n_site);
+    h += theta[j] * (c_dag("up", j) * c("up", j + n_site) + c_dag("up", j + n_site) * c("up", j));
+    h += epsilon[j] * n("up", j + n_site);
 
-      h_bath += epsilon[j] * n("up", j);
+    h_bath += epsilon[j] * n("up", j);
     //}
   }
 

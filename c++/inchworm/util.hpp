@@ -1,8 +1,9 @@
 #pragma once
 
+#include "./u_frame.hpp"
+#include "./types.hpp"
 #include <triqs/gfs.hpp>
 #include <triqs/h5.hpp>
-//#include <triqs/test_tools/gfs.hpp>
 #include <triqs/hilbert_space/fundamental_operator_set.hpp>
 #include <triqs/atom_diag/atom_diag.hpp>
 #include <triqs/arrays/blas_lapack/dot.hpp>
@@ -22,7 +23,12 @@ namespace inchworm {
      * @param fct Function to be applied to eigenvalues in atom_diag.
      * @return The partial sum matrix of a function the Hamiltonian.
      */
-  triqs::arrays::matrix<double> partial_sum(triqs::atom_diag::atom_diag<false> const &ad, int linear_index, std::function<double(double)> fct);
-  triqs::arrays::matrix<double> partial_sum2(triqs::atom_diag::atom_diag<false> const &ad, int linear_index, std::function<double(double)> fct);
+  triqs::arrays::matrix<double> partial_sum(atom_diag const &ad, int linear_index, std::function<double(double)> fct);
+  u_frame_t partial_trace(atom_diag const &ad_full, atom_diag const &ad_target, std::function<double(double)> fct);
+  scalar_t trace(atom_diag const &ad_full, std::function<double(double)> fct);
+
+  void print_energies(std::vector<std::vector<double>> const &E);
+  void print_eigensystems(atom_diag const &ad); 
+  void print_matrix(triqs::arrays::matrix<double> m);
 
 } // namespace inchworm

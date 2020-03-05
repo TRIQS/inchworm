@@ -19,8 +19,8 @@
  * inchworm. If not, see <http://www.gnu.org/licenses/>.
  *
  ******************************************************************************/
-#include <inchworm/util.hpp>
 #include <inchworm/solver_core.hpp>
+#include <inchworm/util.hpp>
 
 #include <triqs/gfs.hpp>
 #include <triqs/h5.hpp>
@@ -28,43 +28,12 @@
 
 using namespace inchworm;
 
-void print_energies(std::vector<std::vector<double>> const &E) {
-  for (auto sp : E) {
-    for (auto l : sp) { std::printf("% 2.3f ", l); }
-    std::printf("\n");
-  }
-  std::printf("\n");
-}
-
-void print_eigensystems(triqs::atom_diag::atom_diag<false> const &ad) {
-  for (auto sp : ad.get_eigensystems()) {
-    for (auto l : sp.eigenvalues) { std::printf("% 2.3f ", l); }
-    std::printf("\n\n");
-
-    for (int i = 0; i < sp.eigenvalues.size(); i++) {
-      for (int j = 0; j < sp.eigenvalues.size(); j++) { std::printf("% 2.3f ", sp.unitary_matrix(i, j)); }
-      std::printf("\n");
-    }
-    //for (auto u : sp.unitary_matrix) { TRIQS_PRINT(u); }
-    std::printf("\n\n");
-  }
-  std::printf("\n");
-}
-
-void print_matrix(triqs::arrays::matrix<double> m) {
-  for (int i = 0; i < first_dim(m); i++) {
-    for (int j = 0; j < second_dim(m); j++) { std::printf("% 5.6f ", m(i, j)); }
-    std::printf("\n");
-  }
-  std::printf("\n\n");
-}
-
 // Prepare funcdamental operator set
-fundamental_operator_set make_fops(int N) {
+fundamental_operator_set make_fops(int idx1, int idx2) {
   fundamental_operator_set fops;
-  for (int o : range(N)) {
-    fops.insert("up", o);
-    fops.insert("dn", o);
+  for (int i = idx1; i < idx2; i++) {
+    fops.insert("up", i);
+    fops.insert("dn", i);
   }
   return fops;
 }
@@ -107,15 +76,15 @@ TEST(inchworm, HubbardAtom) { // NOLINT
 
   std::vector<many_body_op_t> qn;
   qn.resize(1);
-  auto h_int = 0 * (n("up", 0) * (n("dn", 0)));
+  auto h_atom = 0 * (n("up", 0) * (n("dn", 0)));
   for (int j = 0; j < n_site; j++) {
     qn[0] += n("up", j) + n("dn", j);
-    h_int += U * n("up", j) * n("dn", j) - mu * (n("up", j) + n("dn", j));
+    h_atom += U * n("up", j) * n("dn", j) - mu * (n("up", j) + n("dn", j));
   }
 
   // Solve Parameters
   solve_params_t sp;
-  sp.h_int           = h_int;
+  sp.h_int           = h_atom;
   sp.n_cycles        = 1000000;
   sp.length_cycle    = 10;
   sp.n_warmup_cycles = 20;
@@ -130,85 +99,36 @@ TEST(inchworm, HubbardAtom) { // NOLINT
 
   // Compare against the reference data
   // h5diff("hubbard.out.h5", "hubbard.ref.h5")
-  auto fops      = make_fops(n_bath + n_site);
-  auto fops_bath = make_fops(n_bath);
+  auto fops_tot  = make_fops(0, n_site + n_bath);
+  auto fops_atom = make_fops(0, n_site);
+  auto fops_bath = make_fops(n_site, n_site + n_bath);
 
-  auto h      = 0 * n("up", 0);
+  auto h_hyb  = 0 * n("up", 0);
   auto h_bath = 0 * n("up", 0);
   for (int j = 0; j < n_site; j++) {
-    h += U * (n("up", j) * n("dn", j));
-    h -= mu * (n("up", j) + n("dn", j));
-
     for (int i = 0; i < n_bath; i++) {
-      h += theta[i] * (c_dag("up", j) * c("up", i + n_site) + c_dag("up", i + n_site) * c("up", j));
-      h += theta[i] * (c_dag("dn", j) * c("dn", i + n_site) + c_dag("dn", i + n_site) * c("dn", j));
-      h += epsilon[i] * (n("up", i + n_site) + n("dn", i + n_site));
+      h_hyb += theta[i] * (c_dag("up", j) * c("up", i + n_site) + c_dag("up", i + n_site) * c("up", j));
+      h_hyb += theta[i] * (c_dag("dn", j) * c("dn", i + n_site) + c_dag("dn", i + n_site) * c("dn", j));
+      //h += epsilon[i] * (n("up", i + n_site) + n("dn", i + n_site));
 
-      h_bath += epsilon[i] * (n("up", i) + n("dn", i));
+      h_bath += epsilon[i] * (n("up", i + n_site) + n("dn", i + n_site));
     }
   }
 
   //std::printf("\n\n");
   auto dtau    = cp.beta;
-  auto ad      = triqs::atom_diag::atom_diag<false>(h, fops);
+  auto ad_tot  = triqs::atom_diag::atom_diag<false>(h_atom + h_bath + h_hyb, fops_tot);
+  auto ad_atom = triqs::atom_diag::atom_diag<false>(h_atom, fops_atom, qn);
   auto ad_bath = triqs::atom_diag::atom_diag<false>(h_bath, fops_bath);
-  auto E0      = ad.get_gs_energy();
-
-  for (auto o : ad.get_fops().data()) {
-    std::cout << o << "\n";
-    for (auto v : ad_bath.get_fops().data()) {
-      if (v == o) std::cout << "fit\n";
-      std::cout << v << "\n";
-    }
-  }
+  auto E0      = ad_tot.get_gs_energy();
 
   //for (int i = 0; i < ad.get_fops().size(); i++) std::cout << ad.get_fops()[i] << "\n";
   //std::cout << ad.get_full_hilbert_space();
 
-  auto ps = partial_sum2(ad, 2 * n_site, [dtau, E0](double E) { return std::exp(-dtau * (E - E0)); });
+  auto u_frame = partial_trace(ad_tot, ad_atom, [dtau, E0](double E) { return std::exp(-dtau * (E - E0)); });
   std::printf("\n");
-  auto ps_bath = partial_sum2(ad_bath, 0, [dtau, E0](double E) { return std::exp(-dtau * (E - E0)); });
-  print_matrix(ps / ps_bath(0, 0));
-
-  // Store the Result
-  if (mpi::communicator().rank() == 0) {
-    auto arch = triqs::h5::file("hubbard.out.h5", 'w');
-    h5_write(arch, "S", S);
-  }
-
-  /*
-  double x = theta[0] * cp.beta;
-    double tmp         = std::cosh(theta[0] * cp.beta / sqrt(2.));
-    double total_serie = std::pow(tmp, 2);
-
-    double order1 = (1. / 1.) * std::pow(x, 2);
-    double order2 = (5. / 12.) * std::pow(x, 4);
-    double order3 = (17. / 180.) * std::pow(x, 6);
-    double order4 = (13. / 1008.) * std::pow(x, 8);
-
-    double tmp         = std::cosh(theta[0] * cp.beta / 2.);
-    double total_serie = std::pow(tmp, 4);
-
-    double order1 = (1. / 2.) * std::pow(x, 2);
-    double order2 = (5. / 48.) * std::pow(x, 4);
-    double order3 = (17. / 1440.) * std::pow(x, 6);
-    double order4 = (13. / 16128.) * std::pow(x, 8);
-    double order5 = (257. / 7257600.) * std::pow(x, 10);
-    double order6 = (41. / 38320128.) * std::pow(x, 12);
-    double order7 = (4097. / 174356582400.) * std::pow(x, 14);
-    double order8 = (3277. / 8369115955200.) * std::pow(x, 16);
-
-    std::printf("order 0: % 4.8f \n", 1.0);
-    std::printf("order 1: % 4.8f \n", order1);
-    std::printf("order 2: % 4.8f \n", order2);
-    std::printf("order 3: % 4.8f \n", order3);
-    std::printf("order 4: % 4.8f \n", order4);
-    std::printf("order 5: % 4.8f \n", order5);
-    std::printf("order 6: % 4.8f \n", order6);
-    std::printf("order 7: % 4.8f \n", order7);
-    std::printf("order 8: % 4.8f \n", order8);
-    std::printf("\n\ntotal : % 4.8f \n", total_serie);
-    */
+  auto ps_bath = trace(ad_bath, [dtau, E0](double E) { return std::exp(-dtau * (E - E0)); });
+  print(u_frame, 1. / ps_bath);
 }
 
 MAKE_MAIN

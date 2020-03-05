@@ -31,7 +31,10 @@ namespace inchworm {
   /// The parameters for the solver construction
   struct constr_params_t {
 
-    /// Number of tau points
+    /// Number of tau points for the hybridization function
+    int n_tau_inch = 4;
+
+    /// Number of tau points for the hybridization function
     int n_tau = 101;
 
     /// Number of Matsubara frequencies

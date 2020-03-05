@@ -2,31 +2,32 @@
 
 namespace inchworm {
 
-  // mettre dans une classe
   u_tau_t make_propagator(atom_diag const &h_diag, int n_tau) {
-    // this assign identity to the first frame (or time) of the propagator.
-    // Build the propagator
-    //auto propagator_struct = find_propagator_struct(h_diag);
+    // this create the propagator and assign identity to the first frame (or time) of the propagator.
     int n_sub = h_diag.n_subspaces();
     triqs::hilbert_space::gf_struct_t propagator_struct;
 
-    //std::printf("%d: \n", n_sub);
     for (int i = 0; i < n_sub; i++) {
-      //int sub_dim = ad.get_subspace_dim(i);
-      //std::printf("%d ", ad.get_subspace_dim(i));
-
       std::vector<std::variant<int, std::string>> l(h_diag.get_subspace_dim(i));
       std::iota(l.begin(), l.end(), 0);
       propagator_struct.push_back(std::make_pair(std::to_string(i), l));
     }
-    //std::printf("\n\n");
 
-
-    auto u_tau             = u_tau_t{{1, Fermion, n_tau}, propagator_struct};
-    //auto u_frame = u_frame_t{h_diag};
-
-    for (auto &block : u_tau) block[0] = 1; //make_unit_matrix<scalar_t>(first_dim(u_tau[bl][0])); // for auto
+    auto u_tau = u_tau_t{{1, Fermion, n_tau}, propagator_struct};
+    for (auto &block : u_tau) block[0] = 1; // identity at time zero
     return u_tau;
+  }
+
+  void print(u_tau_t u_tau) {
+    //for (int bl = 0; bl < u_tau.size(); bl++) { u_tau[bl][frame_number] = u_frame[bl]; }
+    std::cout << u_tau;
+    return;
+  }
+
+  void assign_u_frame_to_propagator(u_tau_t u_tau, u_frame_t const &u_frame, int frame_number) {
+    for (int bl = 0; bl < u_tau.size(); bl++) { u_tau[bl][frame_number] = u_frame[bl]; }
+    print(u_tau);
+    return;
   }
 
   //
@@ -78,7 +79,7 @@ namespace inchworm {
           for (int j = 0; j < ad.get_subspace_dim(new_bl); j++) {
             //std::printf("new_bl %d, j %d \n", new_bl, j);
             //std::printf("ad.get_subspace_dim(new_bl) = %d \n", ad.get_subspace_dim(new_bl));
-            new_mat(j, _) *= // ATTENTION!
+            new_mat(j, _) *=                                                                               // ATTENTION!
                std::exp(-dtau * (ad.get_eigenvalue(new_bl, j) + (set_gs_to_0 ? 0. : ad.get_gs_energy()))); // bare imaginary time evolution
           }
         }

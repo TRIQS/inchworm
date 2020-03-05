@@ -1,4 +1,3 @@
-#include "./u_frame.hpp"
 #include "./solver_core.hpp"
 
 #include "./post_process.hpp"
@@ -14,20 +13,6 @@
 #include <triqs/mc_tools/mc_generic.hpp>
 
 namespace inchworm {
-  void print_eigensystems(triqs::atom_diag::atom_diag<false> const &ad) {
-    for (auto sp : ad.get_eigensystems()) {
-      for (auto l : sp.eigenvalues) { std::printf("% 2.3f ", l); }
-      std::printf("\n\n");
-
-      for (int i = 0; i < sp.eigenvalues.size(); i++) {
-        for (int j = 0; j < sp.eigenvalues.size(); j++) { std::printf("% 2.3f ", sp.unitary_matrix(i, j)); }
-        std::printf("\n");
-      }
-      //for (auto u : sp.unitary_matrix) { TRIQS_PRINT(u); }
-      std::printf("\n\n");
-    }
-    std::printf("\n");
-  }
 
   solver_core::solver_core(constr_params_t const &p) : gf_struct(p.gf_struct), constr_params(p) {
 
@@ -108,7 +93,7 @@ namespace inchworm {
     u_frame_bare = make_bare_propagator_frame(h_diag, tau_max, false);
     auto res     = single_step(solve_params, tau_split, tau_max, true);
 
-    double normalization_cte = (double)res.u_frame_0th_order[1](0, 0) / ((double)u_frame_bare[1](0, 0)); //need to do better at some point
+    double normalization_cte = (double)res.u_frame_0th_order[0](0, 0) / ((double)u_frame_bare[0](0, 0)); //need to do better at some point
     //std::cout << "\n\nnormalization_cte: " << (double)res.u_frame_0th_order[0](0, 0) << "  " << ((double)u_frame_bare[0](0, 0)) << "  " << normalization_cte << "\n";
     std::printf("\n ");
     //for (auto const &B : res.u_frame_0th_order) std::cout << (double) (B/normalization_cte);

@@ -45,4 +45,12 @@ namespace inchworm {
     return val;
   }
 
+  void print(u_frame_t const &u_frame, double factor) {
+    for (auto block : u_frame) {
+      block *= factor;
+      std::cout << block ;
+    }
+      std::cout << "\n" ;
+  }
+
 } // namespace inchworm

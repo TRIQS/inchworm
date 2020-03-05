@@ -31,37 +31,6 @@
 
 using namespace inchworm;
 
-void print_energies(std::vector<std::vector<double>> const &E) {
-  for (auto sp : E) {
-    for (auto l : sp) { std::printf("% 2.3f ", l); }
-    std::printf("\n");
-  }
-  std::printf("\n");
-}
-
-void print_eigensystems(triqs::atom_diag::atom_diag<false> const &ad) {
-  for (auto sp : ad.get_eigensystems()) {
-    for (auto l : sp.eigenvalues) { std::printf("% 2.3f ", l); }
-    std::printf("\n\n");
-
-    for (int i = 0; i < sp.eigenvalues.size(); i++) {
-      for (int j = 0; j < sp.eigenvalues.size(); j++) { std::printf("% 2.3f ", sp.unitary_matrix(i, j)); }
-      std::printf("\n");
-    }
-    //for (auto u : sp.unitary_matrix) { TRIQS_PRINT(u); }
-    std::printf("\n\n");
-  }
-  std::printf("\n");
-}
-
-void print_matrix(triqs::arrays::matrix<double> m) {
-  for (int i = 0; i < first_dim(m); i++) {
-    for (int j = 0; j < second_dim(m); j++) { std::printf("% 2.3f ", m(i, j)); }
-    std::printf("\n");
-  }
-  std::printf("\n\n");
-}
-
 // Prepare funcdamental operator set
 fundamental_operator_set make_fops(int N) {
   fundamental_operator_set fops;
@@ -89,8 +58,8 @@ TEST(inchworm, partial_trace) {
   h -= mu * (n("up", 0) + n("dn", 0));
 
   for (int i = 0; i < n_bath; i++) {
-    h += 10000*theta[i] * (c_dag("up", 0) * c("up", i + 1) + c_dag("up", i + 1) * c("up", 0));
-    h += 10000*theta[i] * (c_dag("dn", 0) * c("dn", i + 1) + c_dag("dn", i + 1) * c("dn", 0));
+    h += 10000 * theta[i] * (c_dag("up", 0) * c("up", i + 1) + c_dag("up", i + 1) * c("up", 0));
+    h += 10000 * theta[i] * (c_dag("dn", 0) * c("dn", i + 1) + c_dag("dn", i + 1) * c("dn", 0));
     h += epsilon[i] * (n("up", i + 1) + n("dn", i + 1));
     h -= mu * (n("up", i + 1) + n("dn", i + 1));
   }

@@ -2,6 +2,54 @@
 
 namespace inchworm {
 
+  void print_energies(std::vector<std::vector<double>> const &E) {
+    for (auto sp : E) {
+      for (auto l : sp) { std::printf("% 2.3f ", l); }
+      std::printf("\n");
+    }
+    std::printf("\n");
+  }
+
+  void print_eigensystems(atom_diag const &ad) {
+    for (auto sp : ad.get_eigensystems()) {
+      for (auto l : sp.eigenvalues) { std::printf("% 2.3f ", l); }
+      std::printf("\n\n");
+
+      for (int i = 0; i < sp.eigenvalues.size(); i++) {
+        for (int j = 0; j < sp.eigenvalues.size(); j++) { std::printf("% 2.3f ", sp.unitary_matrix(i, j)); }
+        std::printf("\n");
+      }
+      //for (auto u : sp.unitary_matrix) { TRIQS_PRINT(u); }
+      std::printf("\n\n");
+    }
+    std::printf("\n");
+  }
+
+  void print_matrix(triqs::arrays::matrix<double> m) {
+    for (int i = 0; i < first_dim(m); i++) {
+      for (int j = 0; j < second_dim(m); j++) { std::printf("% 5.6f ", m(i, j)); }
+      std::printf("\n");
+    }
+    std::printf("\n\n");
+  }
+
+  void print_binary(unsigned int n, int total_bits) {
+    if (n >= 0) {
+
+      for (int i = 0; i < total_bits; i++) {
+        int bit = (1 << (total_bits - i - 1));
+        if ((n & bit) != 0)
+          std::printf("1");
+        else
+          std::printf("0");
+      }
+      std::printf(" ");
+
+    } else {
+      std::printf(" negative binary? \n");
+    }
+  }
+
   /// Partial sum, tracing over indices above linear_index. Only the linear_index first degrees of freedom will be preserved.
   /**
      * @param ad atom_diag of the system considered here.
@@ -9,7 +57,7 @@ namespace inchworm {
      * @param fct Function to be applied to eigenvalues in atom_diag.
      * @return The partial sum matrix of a function the Hamiltonian.
      */
-  triqs::arrays::matrix<double> partial_sum(triqs::atom_diag::atom_diag<false> const &ad, int linear_index, std::function<double(double)> fct) {
+  triqs::arrays::matrix<double> partial_sum(atom_diag const &ad, int linear_index, std::function<double(double)> fct) {
     //TODO: incorporate in atom_diag and make it a member function.
     int dim_partial = (1 << linear_index);
     int dim_full    = ad.get_full_hilbert_space_dim();
@@ -47,10 +95,106 @@ namespace inchworm {
     return partial_sum;
   }
 
-  triqs::arrays::matrix<double> partial_sum2(triqs::atom_diag::atom_diag<false> const &ad, int linear_index, std::function<double(double)> fct) {
+  std::pair<int, int> find_index(int number, std::vector<std::vector<fock_state_t>> fs) {
+    for (int s = 0; s < fs.size(); s++) {
+      for (int i = 0; i < fs[s].size(); i++) {
+        if (number == fs[s][i]) return std::pair<int, int>(s, i);
+      }
+    }
+    std::printf("error: number not found in the fock states\n");
+    exit(1);
+  }
+
+  scalar_t trace(atom_diag const &ad_full, std::function<double(double)> fct) {
+    scalar_t trace_value = 0.0;
+    auto es_full         = ad_full.get_eigensystems();
+    auto fs_full         = ad_full.get_fock_states();
+
+    for (int s = 0; s < ad_full.n_subspaces(); s++)
+      for (int i = 0; i < ad_full.get_subspace_dim(s); i++) trace_value += fct(es_full[s].eigenvalues[i] + ad_full.get_gs_energy());
+
+    return trace_value;
+  }
+
+  u_frame_t partial_trace(atom_diag const &ad_full, atom_diag const &ad_target, std::function<double(double)> fct) {
     //TODO: incorporate in atom_diag and make it a member function.
-    int dim_partial = (1 << linear_index);
-    int dim_full    = ad.get_full_hilbert_space_dim();
+
+    for (int i = 0; i < (int)ad_target.get_fops().data().size(); i++) {
+      //std::printf("%d %d \n", i, (int)ad_target.get_fops().data().size());
+      if (ad_full.get_fops().data()[i] != ad_target.get_fops().data()[i]) {
+        std::printf("error: the first indices of ad_full should be the same as the one in ad_target.\n");
+        exit(1);
+      }
+
+      //std::cout << ad_full.get_fops().data()[i] << " " << ad_target.get_fops().data()[i] << "\n";
+    }
+    int linear_index = ad_full.get_fops().data().size() - ad_target.get_fops().data().size();
+    //std::printf("li=%d\n",linear_index);
+
+    u_frame_t u_frame_result = make_zero_propagator_frame(ad_target);
+    auto es_full             = ad_full.get_eigensystems();
+    auto fs_full             = ad_full.get_fock_states();
+    auto fs_target           = ad_target.get_fock_states();
+
+    //print_eigensystems(ad_full);
+    for (int s = 0; s < ad_full.n_subspaces(); s++) {
+      for (int i = 0; i < ad_full.get_subspace_dim(s); i++) {
+        printf("  %2lu: ", fs_full[s][i]);
+        print_binary(fs_full[s][i], ad_full.get_fops().data().size());
+      }
+      std::cout << "\n";
+    }
+    std::cout << "\n";
+    //print_eigensystems(ad_target);
+    for (int s = 0; s < ad_target.n_subspaces(); s++) {
+      for (int i = 0; i < ad_target.get_subspace_dim(s); i++) {
+        printf("  %2lu: ", fs_target[s][i]);
+        print_binary(fs_target[s][i], ad_target.get_fops().data().size());
+      }
+      std::cout << "\n";
+    }
+    //return 0.0;
+
+    for (int s = 0; s < ad_full.n_subspaces(); s++) {
+      EXPECTS(es_full[s].eigenvalues.size() == fs_full[s].size());
+      int size    = ad_full.get_subspace_dim(s);
+      auto E_Udag = dagger(es_full[s].unitary_matrix);
+      for (int i = 0; i < size; i++) {
+        //std::printf("%lu ", fs_full[s][i]);
+        for (int j = 0; j < size; j++) E_Udag(i, j) *= fct(es_full[s].eigenvalues[i] + ad_full.get_gs_energy());
+      }
+      //std::printf("\n");
+      auto H = es_full[s].unitary_matrix * E_Udag;
+
+      for (int i = 0; i < size; i++) {
+        uint64_t traced_idx1    = get_MSB(fs_full[s][i], linear_index);
+        uint64_t preserved_idx1 = get_LSB(fs_full[s][i], linear_index);
+
+        for (int j = 0; j < size; j++) {
+          uint64_t traced_idx2    = get_MSB(fs_full[s][j], linear_index);
+          uint64_t preserved_idx2 = get_LSB(fs_full[s][j], linear_index);
+          if (traced_idx1 == traced_idx2) {
+
+            auto [s1, i1] = find_index(preserved_idx1, fs_target);
+            auto [s2, i2] = find_index(preserved_idx2, fs_target);
+            if (s1 != s2) {
+              std::printf("error: both block should be the same here\n");
+              exit(1);
+            }
+
+            u_frame_result[s1](i1, i2) += H(i, j);
+
+          } // partial_sum(preserved_idx1, preserved_idx2) += H(i, j); }
+        }
+      }
+    }
+
+    return u_frame_result;
+
+    /*  
+    int linear_index = 2;
+    int dim_partial  = (1 << linear_index);
+    int dim_full     = ad.get_full_hilbert_space_dim();
     //int factor      = 1;//dim_full / dim_partial;
     EXPECTS(dim_partial < dim_full);
     EXPECTS(dim_full % dim_partial == 0);
@@ -86,6 +230,6 @@ namespace inchworm {
     }
     //std::printf("factor = %d, dim_full= %d, dim_partial= %d\n", factor, dim_full, dim_partial);
     return partial_sum;
+*/
   }
-
 } // namespace inchworm

@@ -1,25 +1,3 @@
-/*******************************************************************************
- *
- * inchworm: A TRIQS based impurity solver
- *
- * Copyright (c) 2019 The Simons foundation
- *   authors: Nils Wentzell
- *
- * inchworm is free software: you can redistribute it and/or modify it under the
- * terms of the GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option) any later
- * version.
- *
- * inchworm is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- *
- * You should have received a copy of the GNU General Public License along with
- * inchworm. If not, see <http://www.gnu.org/licenses/>.
- *
- ******************************************************************************/
-
 #pragma once
 
 #include <triqs/gfs.hpp>
@@ -64,7 +42,6 @@ namespace inchworm {
 
   /// Container type of the propagator
   using u_tau_t   = block_gf<imtime, hyb_target_t>;
-  using u_frame_t = std::vector<matrix_t>;
 
   /// Container type of one-particle Green and Vertex functions in imaginary times
   using h_tau_t = block_gf<imtime, hyb_target_t>;
