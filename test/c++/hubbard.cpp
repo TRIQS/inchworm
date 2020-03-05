@@ -79,8 +79,8 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   // Construct Parameters
   constr_params_t cp;
   cp.beta      = 2.0;
-  int n_site   = 2;
-  cp.gf_struct = {{"up", {0, 1}}, {"dn", {0, 1}}};
+  int n_site   = 1;
+  cp.gf_struct = {{"up", {0}}, {"dn", {0}}};
   cp.n_tau     = 500;
   cp.n_iw      = 250;
 
@@ -94,18 +94,18 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   for (auto const &tau : S.Delta_tau[0].mesh()) {
     double val;
     for (int i = 0; i < 2 * n_site; i++) {
-      for (int j = 0; j < 2 * n_site; j++) {
+      //for (int j = 0; j < 2 * n_site; j++) {
         S.Delta_tau[i][tau] = 0.0;
         for (int n = 0; n < n_bath; n++) {
           if (epsilon[n] > 0.0)
-            val = -theta[i + 2 * n_site * n] * theta[j + 2 * n_site * n]
+            val = -theta[i + 2 * n_site * n] * theta[i + 2 * n_site * n]
                * (std::exp(-((double)tau) * (epsilon[n])) / (1. + std::exp(-cp.beta * epsilon[n])));
           else
-            val = -theta[i + 2 * n_site * n] * theta[j + 2 * n_site * n]
+            val = -theta[i + 2 * n_site * n] * theta[i + 2 * n_site * n]
                * (std::exp(-((double)tau - cp.beta) * (epsilon[n])) / (1. + std::exp(cp.beta * epsilon[n])));
           S.Delta_tau[i][tau] += val;
         }
-      }
+      //}
     }
     //std::printf("hyb = %f, %f \n", val, (double)tau);
   }
