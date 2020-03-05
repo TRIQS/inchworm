@@ -17,21 +17,9 @@
 namespace inchworm {
   using time_diagram_t = diagram::time_diagram_t;
 
-  /// Necessary to use atom_diag block structure for the propagator.
-  /** 
-   * @param ad atom_diag of the system considered here.
-   * @return The gf_struct necessary to call u_tau_t.
-   */
-  //gf_struct_t find_propagator_struct(atom_diag const &ad);
-
-  //u_frame_t make_zero_propagator_frame(atom_diag const &ad);
-  //u_frame_t make_bare_propagator_frame(atom_diag const &ad, double tau, bool set_gs_to_0 = false);
-  //double frobenius_norm(u_frame_t const &u_frame);
-  //double trace(u_frame_t const &u_frame);
-
-  //void init_propagator_frame(u_tau_t &U, u_frame_t const &u_frame, int frame); // faire un constructeur (struct)
-
   u_tau_t make_propagator(atom_diag const &h_diag, int n_tau);
+  void print(u_tau_t u_tau, int frame_number);
+  void assign_u_frame_to_propagator(u_tau_t u_tau, u_frame_t const &u_frame, int frame_number);
 
   /// Function that calculate the product: u_frame = U(tau_0) op U(tau_1-tau_0) op U(tau_2-tau_1) op U(tau_3-tau_2) ... op U(tau-tau_n)
   /// where op is either c_dag or c operator, depending on the configuration

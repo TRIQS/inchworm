@@ -129,6 +129,18 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   std::printf("\n");
   auto ps_bath = trace(ad_bath, [dtau, E0](double E) { return std::exp(-dtau * (E - E0)); });
   print(u_frame, 1. / ps_bath);
+
+  u_tau_t u_tau = make_propagator(ad_atom,3);
+
+  std::printf("\n");
+  print(u_tau,0); std::printf("\n");
+  print(u_tau,1); std::printf("\n");
+  print(u_tau,2); std::printf("\n");
+  print(u_tau,3); std::printf("\n");
+  assign_u_frame_to_propagator(u_tau, u_frame, 1);
+  std::printf("\n");
+
+
 }
 
 MAKE_MAIN

@@ -18,15 +18,25 @@ namespace inchworm {
     return u_tau;
   }
 
-  void print(u_tau_t u_tau) {
-    //for (int bl = 0; bl < u_tau.size(); bl++) { u_tau[bl][frame_number] = u_frame[bl]; }
-    std::cout << u_tau;
+  //
+  void print(u_tau_t u_tau, int frame_number) {
+    for (int bl = 0; bl < u_tau.size(); bl++) { std::cout << u_tau[bl][frame_number]; }
+    std::cout << "\n";
     return;
   }
 
+  //
   void assign_u_frame_to_propagator(u_tau_t u_tau, u_frame_t const &u_frame, int frame_number) {
     for (int bl = 0; bl < u_tau.size(); bl++) { u_tau[bl][frame_number] = u_frame[bl]; }
-    print(u_tau);
+
+    print(u_tau, 0);
+    std::printf("\n");
+    print(u_tau, 1);
+    std::printf("\n");
+    print(u_tau, 2);
+    std::printf("\n");
+    print(u_tau, 3);
+    std::printf("\n");
     return;
   }
 
