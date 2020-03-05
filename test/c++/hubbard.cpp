@@ -19,7 +19,7 @@
  * inchworm. If not, see <http://www.gnu.org/licenses/>.
  *
  ******************************************************************************/
-#include <triqs/atom_diag/partial_trace.hpp>
+#include <inchworm/util.hpp>
 #include <inchworm/solver_core.hpp>
 
 #include <triqs/gfs.hpp>
@@ -79,8 +79,8 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   // Construct Parameters
   constr_params_t cp;
   cp.beta      = 2.0;
-  int n_site   = 1;
-  cp.gf_struct = {{"up", {0}}, {"dn", {0}}}; //, {"up", {1}}, {"dn", {1}}};
+  int n_site   = 2;
+  cp.gf_struct = {{"up", {0, 1}}, {"dn", {0, 1}}};
   cp.n_tau     = 500;
   cp.n_iw      = 250;
 
@@ -88,22 +88,26 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   solver_core S(cp);
   //int up = 0, dn = 1;
   int n_bath       = 1;
-  double theta[]   = {0.1};
+  double theta[]   = {0.1, 0.1}; // size = n_site * n_bath
   double epsilon[] = {-0.3};
 
   for (auto const &tau : S.Delta_tau[0].mesh()) {
     double val;
     for (int i = 0; i < 2 * n_site; i++) {
-      S.Delta_tau[i][tau] = 0.0;
-      for (int n = 0; n < n_bath; n++) {
-        if (epsilon[n] > 0.0)
-          val = -theta[n] * theta[n] * (std::exp(-((double)tau) * (epsilon[n])) / (1. + std::exp(-cp.beta * epsilon[n])));
-        else
-          val = -theta[n] * theta[n] * (std::exp(-((double)tau - cp.beta) * (epsilon[n])) / (1. + std::exp(cp.beta * epsilon[n])));
-        S.Delta_tau[i][tau] += val;
+      for (int j = 0; j < 2 * n_site; j++) {
+        S.Delta_tau[i][tau] = 0.0;
+        for (int n = 0; n < n_bath; n++) {
+          if (epsilon[n] > 0.0)
+            val = -theta[i + 2 * n_site * n] * theta[j + 2 * n_site * n]
+               * (std::exp(-((double)tau) * (epsilon[n])) / (1. + std::exp(-cp.beta * epsilon[n])));
+          else
+            val = -theta[i + 2 * n_site * n] * theta[j + 2 * n_site * n]
+               * (std::exp(-((double)tau - cp.beta) * (epsilon[n])) / (1. + std::exp(cp.beta * epsilon[n])));
+          S.Delta_tau[i][tau] += val;
+        }
       }
     }
-    std::printf("hyb = %f, %f \n", val, (double)tau);
+    //std::printf("hyb = %f, %f \n", val, (double)tau);
   }
 
   std::cout << S.Delta_tau[0];
@@ -143,8 +147,8 @@ TEST(inchworm, HubbardAtom) { // NOLINT
     h -= mu * (n("up", j) + n("dn", j));
 
     for (int i = 0; i < n_bath; i++) {
-      h += theta[i] * (c_dag("up", j) * c("up", i + n_site) + c_dag("up", i + n_site) * c("up", j));
-      h += theta[i] * (c_dag("dn", j) * c("dn", i + n_site) + c_dag("dn", i + n_site) * c("dn", j));
+      h += theta[j] * (c_dag("up", j) * c("up", i + n_site) + c_dag("up", i + n_site) * c("up", j));
+      h += theta[j] * (c_dag("dn", j) * c("dn", i + n_site) + c_dag("dn", i + n_site) * c("dn", j));
       h += epsilon[i] * (n("up", i + n_site) + n("dn", i + n_site));
 
       h_bath += epsilon[i] * (n("up", i) + n("dn", i));

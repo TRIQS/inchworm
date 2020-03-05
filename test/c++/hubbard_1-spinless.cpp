@@ -19,7 +19,7 @@
  * inchworm. If not, see <http://www.gnu.org/licenses/>.
  *
  ******************************************************************************/
-#include <triqs/atom_diag/partial_trace.hpp>
+#include <inchworm/util.hpp>
 #include <inchworm/solver_core.hpp>
 
 #include <triqs/gfs.hpp>

@@ -20,7 +20,7 @@
  *
  ******************************************************************************/
 #include <inchworm/solver_core.hpp>
-#include <triqs/atom_diag/partial_trace.hpp>
+#include <inchworm/util.hpp>
 
 #include <triqs/gfs.hpp>
 #include <triqs/h5.hpp>

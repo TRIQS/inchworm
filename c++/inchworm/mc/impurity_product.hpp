@@ -1,25 +1,5 @@
-/*******************************************************************************
- *
- * inchworm: A TRIQS based impurity solver
- *
- * Copyright (c) 2019 The Simons foundation
- *   authors: Nils Wentzell
- *
- * inchworm is free software: you can redistribute it and/or modify it under the
- * terms of the GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option) any later
- * version.
- *
- * inchworm is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- *
- * You should have received a copy of the GNU General Public License along with
- * inchworm. If not, see <http://www.gnu.org/licenses/>.
- *
- ******************************************************************************/
 #pragma once
+#include "../u_frame.hpp"
 #include "../types.hpp"
 #include "../params.hpp"
 #include "../diagram/diagram.hpp"
@@ -42,13 +22,12 @@ namespace inchworm {
    * @param ad atom_diag of the system considered here.
    * @return The gf_struct necessary to call u_tau_t.
    */
-  gf_struct_t find_propagator_struct(atom_diag const &ad);
+  //gf_struct_t find_propagator_struct(atom_diag const &ad);
 
-  u_frame_t make_zero_propagator_frame(atom_diag const &ad);
-  u_frame_t make_bare_propagator_frame(atom_diag const &ad, double tau, bool set_gs_to_0 = false);
-
-  double frobenius_norm(u_frame_t const &u_frame);
-  double trace(u_frame_t const &u_frame);
+  //u_frame_t make_zero_propagator_frame(atom_diag const &ad);
+  //u_frame_t make_bare_propagator_frame(atom_diag const &ad, double tau, bool set_gs_to_0 = false);
+  //double frobenius_norm(u_frame_t const &u_frame);
+  //double trace(u_frame_t const &u_frame);
 
   //void init_propagator_frame(u_tau_t &U, u_frame_t const &u_frame, int frame); // faire un constructeur (struct)
 

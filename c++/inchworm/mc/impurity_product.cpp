@@ -1,74 +1,27 @@
 #include "./impurity_product.hpp"
 
 namespace inchworm {
-  //
-  triqs::hilbert_space::gf_struct_t find_propagator_struct(atom_diag const &ad) {
-    int n_sub = ad.n_subspaces();
-    triqs::hilbert_space::gf_struct_t propagator_struct;
-
-    std::printf("%d: \n", n_sub);
-    for (int i = 0; i < n_sub; i++) {
-      //int sub_dim = ad.get_subspace_dim(i);
-      std::printf("%d ", ad.get_subspace_dim(i));
-
-      std::vector<std::variant<int, std::string>> l(ad.get_subspace_dim(i));
-      std::iota(l.begin(), l.end(), 0);
-      propagator_struct.push_back(std::make_pair(std::to_string(i), l));
-    }
-    std::printf("\n\n");
-
-    return propagator_struct;
-  }
-
-  //
-  u_frame_t make_zero_propagator_frame(atom_diag const &ad) {
-    u_frame_t u_frame(ad.n_subspaces());
-
-    for (int bl = 0; bl < ad.n_subspaces(); bl++) {
-      u_frame[bl] = matrix_t(ad.get_subspace_dim(bl), ad.get_subspace_dim(bl)); //  use zeros<> ?? check
-      u_frame[bl] = 0;
-    }
-    return u_frame;
-  }
-
-  //
-  u_frame_t make_bare_propagator_frame(atom_diag const &ad, double tau, bool set_gs_to_0) {
-    u_frame_t u_frame(ad.n_subspaces());
-
-    for (int bl = 0; bl < ad.n_subspaces(); bl++) {
-      int dim     = ad.get_subspace_dim(bl);
-      u_frame[bl] = matrix_t(dim, dim); //  use zeros<> ?? check
-      u_frame[bl] = 0;
-      for (int j = 0; j < dim; j++) u_frame[bl](j, j) = std::exp(-tau * (ad.get_eigenvalue(bl, j) + (set_gs_to_0 ? 0. : ad.get_gs_energy())));
-    }
-    return u_frame;
-  }
-
-  // Calculate the Frobenius norm of the u_frame block diagonal matrix:
-  double frobenius_norm(u_frame_t const &u_frame) {
-    double val = 0;
-    for (auto const &B : u_frame) {
-      double norm = frobenius_norm(B);
-      val += norm * norm;
-      //double norm = trace(B);
-      //val += norm ;
-    }
-    return std::sqrt(val);
-    //return val;
-  }
-
-  // calculate the trace of the u_frame block diagonal matrix:
-  double trace(u_frame_t const &u_frame) {
-    double val = 0;
-    for (auto const &B : u_frame) val += trace(B);
-    return val;
-  }
 
   // mettre dans une classe
   u_tau_t make_propagator(atom_diag const &h_diag, int n_tau) {
     // this assign identity to the first frame (or time) of the propagator.
     // Build the propagator
-    auto propagator_struct = find_propagator_struct(h_diag);
+    //auto propagator_struct = find_propagator_struct(h_diag);
+    int n_sub = h_diag.n_subspaces();
+    triqs::hilbert_space::gf_struct_t propagator_struct;
+
+    //std::printf("%d: \n", n_sub);
+    for (int i = 0; i < n_sub; i++) {
+      //int sub_dim = ad.get_subspace_dim(i);
+      //std::printf("%d ", ad.get_subspace_dim(i));
+
+      std::vector<std::variant<int, std::string>> l(h_diag.get_subspace_dim(i));
+      std::iota(l.begin(), l.end(), 0);
+      propagator_struct.push_back(std::make_pair(std::to_string(i), l));
+    }
+    //std::printf("\n\n");
+
+
     auto u_tau             = u_tau_t{{1, Fermion, n_tau}, propagator_struct};
     //auto u_frame = u_frame_t{h_diag};
 

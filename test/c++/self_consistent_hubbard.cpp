@@ -19,7 +19,7 @@
  * inchworm. If not, see <http://www.gnu.org/licenses/>.
  *
  ******************************************************************************/
-#include <triqs/atom_diag/partial_trace.hpp>
+#include <inchworm/util.hpp>
 #include <inchworm/solver_core.hpp>
 
 #include <triqs/gfs.hpp>
@@ -103,10 +103,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
         S.Delta_tau[i][tau] += val;
       }
     }
-    std::printf("hyb = %f, %f \n", val, (double)tau);
   }
-
-  std::cout << S.Delta_tau[0];
 
   std::vector<many_body_op_t> qn;
   qn.resize(1);
@@ -129,7 +126,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   sp.quantum_numbers = qn;
 
   // Solve the impurity model
-  S.solve_single_step(sp);
+  //S.solve_single_step(sp);
 
   // Compare against the reference data
   // h5diff("hubbard.out.h5", "hubbard.ref.h5")
@@ -157,10 +154,20 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   auto ad_bath = triqs::atom_diag::atom_diag<false>(h_bath, fops_bath);
   auto E0      = ad.get_gs_energy();
 
+  for (auto o : ad.get_fops().data()) {
+    std::cout << o << "\n";
+    for (auto v : ad_bath.get_fops().data()) {
+      if (v == o) std::cout << "fit\n";
+      std::cout << v << "\n";
+    }
+  }
+
+  //for (int i = 0; i < ad.get_fops().size(); i++) std::cout << ad.get_fops()[i] << "\n";
   //std::cout << ad.get_full_hilbert_space();
 
-  auto ps      = partial_sum(ad, 2 * n_site, [dtau, E0](double E) { return std::exp(-dtau * (E - E0)); });
-  auto ps_bath = partial_sum(ad_bath, 0, [dtau, E0](double E) { return std::exp(-dtau * (E - E0)); });
+  auto ps = partial_sum2(ad, 2 * n_site, [dtau, E0](double E) { return std::exp(-dtau * (E - E0)); });
+  std::printf("\n");
+  auto ps_bath = partial_sum2(ad_bath, 0, [dtau, E0](double E) { return std::exp(-dtau * (E - E0)); });
   print_matrix(ps / ps_bath(0, 0));
 
   // Store the Result
