@@ -57,7 +57,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   solver_core S(cp);
   //int up = 0, dn = 1;
   int n_bath       = 1;
-  double theta[]   = {0.1};
+  double theta[]   = {0.3};
   double epsilon[] = {-0.3};
 
   for (auto const &tau : S.Delta_tau[0].mesh()) {
@@ -95,7 +95,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   sp.quantum_numbers = qn;
 
   // Solve the impurity model
-  //S.solve_single_step(sp);
+  // S.solve_single_step(sp);
 
   // Compare against the reference data
   // h5diff("hubbard.out.h5", "hubbard.ref.h5")
@@ -109,7 +109,6 @@ TEST(inchworm, HubbardAtom) { // NOLINT
     for (int i = 0; i < n_bath; i++) {
       h_hyb += theta[i] * (c_dag("up", j) * c("up", i + n_site) + c_dag("up", i + n_site) * c("up", j));
       h_hyb += theta[i] * (c_dag("dn", j) * c("dn", i + n_site) + c_dag("dn", i + n_site) * c("dn", j));
-      //h += epsilon[i] * (n("up", i + n_site) + n("dn", i + n_site));
 
       h_bath += epsilon[i] * (n("up", i + n_site) + n("dn", i + n_site));
     }
@@ -120,27 +119,27 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   auto ad_tot  = triqs::atom_diag::atom_diag<false>(h_atom + h_bath + h_hyb, fops_tot);
   auto ad_atom = triqs::atom_diag::atom_diag<false>(h_atom, fops_atom, qn);
   auto ad_bath = triqs::atom_diag::atom_diag<false>(h_bath, fops_bath);
+
+  u_tau_t u_tau = make_ED_propagator(ad_tot, ad_atom, ad_bath, cp.beta, cp.n_tau);
+
+  /*
   auto E0      = ad_tot.get_gs_energy();
-
-  //for (int i = 0; i < ad.get_fops().size(); i++) std::cout << ad.get_fops()[i] << "\n";
-  //std::cout << ad.get_full_hilbert_space();
-
   auto u_frame = partial_trace(ad_tot, ad_atom, [dtau, E0](double E) { return std::exp(-dtau * (E - E0)); });
   std::printf("\n");
-  auto ps_bath = trace(ad_bath, [dtau, E0](double E) { return std::exp(-dtau * (E - E0)); });
-  print(u_frame, 1. / ps_bath);
+  auto Z_bath = trace(ad_bath, [dtau, E0](double E) { return std::exp(-dtau * (E - E0)); });
+  print(u_frame, 1. / Z_bath);
 
-  u_tau_t u_tau = make_propagator(ad_atom,3);
+  u_tau_t u_tau = make_propagator(ad_atom, 3);
+  assign_u_frame_to_propagator(u_tau, u_frame, 1, 1. / Z_bath);
+*/
 
   std::printf("\n");
-  print(u_tau,0); std::printf("\n");
-  print(u_tau,1); std::printf("\n");
-  print(u_tau,2); std::printf("\n");
-  print(u_tau,3); std::printf("\n");
-  assign_u_frame_to_propagator(u_tau, u_frame, 1);
+  for (int i_tau = 0; i_tau < cp.n_tau; i_tau++) { print(u_tau, i_tau); }
   std::printf("\n");
 
-
+  S.solve_self_consistently(sp, u_tau, 0.34*cp.beta , 0.78*cp.beta);
+  std::printf("\n");
+  print(u_tau, cp.beta);
 }
 
 MAKE_MAIN

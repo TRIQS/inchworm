@@ -69,7 +69,7 @@ namespace inchworm {
     //
     _h_loc = solve_params.h_int;
     h_diag = {_h_loc, fops, solve_params.quantum_numbers};
-    u_tau  = make_propagator(h_diag, constr_params.n_tau);
+    u_tau  = make_propagator(h_diag, constr_params.beta, constr_params.n_tau);
     print_eigensystems(h_diag);
   }
 
@@ -97,6 +97,36 @@ namespace inchworm {
     //std::cout << "\n\nnormalization_cte: " << (double)res.u_frame_0th_order[0](0, 0) << "  " << ((double)u_frame_bare[0](0, 0)) << "  " << normalization_cte << "\n";
     std::printf("\n ");
     //for (auto const &B : res.u_frame_0th_order) std::cout << (double) (B/normalization_cte);
+    for (auto &B : res.u_frame_0th_order) {
+      B /= normalization_cte;
+      std::cout << B;
+    }
+    std::printf("\n ");
+    for (auto &B : res.u_frame) {
+      B /= normalization_cte;
+      std::cout << B;
+    }
+    std::cout << "\norder: " << res.average_k << "\n";
+    for (auto o : res.samples_expansion_order) std::printf("%16d ", o);
+    std::printf("\n");
+    for (auto o : res.u_expansion_order) std::printf("% 16.5f ", o / normalization_cte);
+    std::printf("\n");
+  } // namespace inchworm
+
+  void solver_core::solve_self_consistently(solve_params_t const &solve_params, u_tau_t const &u_tau_, double tau_split, double tau_max) {
+
+    // Merge constr_params and solve_params
+    last_solve_params = solve_params;
+    init(solve_params);
+    //double tau_max   = constr_params.beta;
+    //double tau_split = constr_params.beta / 2;
+
+    u_tau = u_tau_;
+    u_frame_bare = make_bare_propagator_frame(h_diag, tau_max, false);
+    auto res     = single_step(solve_params, tau_split, tau_max, false);
+
+    double normalization_cte = (double)res.u_frame_0th_order[0](0, 0) / ((double)u_frame_bare[0](0, 0)); //need to do better at some point
+    std::printf("\n ");
     for (auto &B : res.u_frame_0th_order) {
       B /= normalization_cte;
       std::cout << B;

@@ -1,5 +1,6 @@
 #pragma once
 #include "../u_frame.hpp"
+#include "../util.hpp"
 #include "../types.hpp"
 #include "../params.hpp"
 #include "../diagram/diagram.hpp"
@@ -17,9 +18,10 @@
 namespace inchworm {
   using time_diagram_t = diagram::time_diagram_t;
 
-  u_tau_t make_propagator(atom_diag const &h_diag, int n_tau);
+  u_tau_t make_propagator(atom_diag const &h_diag, double beta, int n_tau);
   void print(u_tau_t u_tau, int frame_number);
-  void assign_u_frame_to_propagator(u_tau_t u_tau, u_frame_t const &u_frame, int frame_number);
+  void assign_u_frame_to_propagator(u_tau_t &u_tau, u_frame_t const &u_frame, int frame_number, scalar_t factor = 1.0);
+  u_tau_t make_ED_propagator(atom_diag const &ad_tot, atom_diag const &ad_atom, atom_diag const &ad_bath, double beta, int n_tau);
 
   /// Function that calculate the product: u_frame = U(tau_0) op U(tau_1-tau_0) op U(tau_2-tau_1) op U(tau_3-tau_2) ... op U(tau-tau_n)
   /// where op is either c_dag or c operator, depending on the configuration

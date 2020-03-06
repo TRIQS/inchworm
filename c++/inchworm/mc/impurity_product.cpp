@@ -2,7 +2,7 @@
 
 namespace inchworm {
 
-  u_tau_t make_propagator(atom_diag const &h_diag, int n_tau) {
+  u_tau_t make_propagator(atom_diag const &h_diag, double beta, int n_tau) {
     // this create the propagator and assign identity to the first frame (or time) of the propagator.
     int n_sub = h_diag.n_subspaces();
     triqs::hilbert_space::gf_struct_t propagator_struct;
@@ -13,9 +13,16 @@ namespace inchworm {
       propagator_struct.push_back(std::make_pair(std::to_string(i), l));
     }
 
-    auto u_tau = u_tau_t{{1, Fermion, n_tau}, propagator_struct};
+    auto u_tau = u_tau_t{{beta, Fermion, n_tau}, propagator_struct};
     for (auto &block : u_tau) block[0] = 1; // identity at time zero
     return u_tau;
+  }
+
+  //
+  void print(u_tau_t u_tau, double tau) {
+    for (int bl = 0; bl < u_tau.size(); bl++) { std::cout << u_tau[bl](tau); }
+    std::cout << "\n";
+    return;
   }
 
   //
@@ -26,18 +33,24 @@ namespace inchworm {
   }
 
   //
-  void assign_u_frame_to_propagator(u_tau_t u_tau, u_frame_t const &u_frame, int frame_number) {
-    for (int bl = 0; bl < u_tau.size(); bl++) { u_tau[bl][frame_number] = u_frame[bl]; }
-
-    print(u_tau, 0);
-    std::printf("\n");
-    print(u_tau, 1);
-    std::printf("\n");
-    print(u_tau, 2);
-    std::printf("\n");
-    print(u_tau, 3);
-    std::printf("\n");
+  void assign_u_frame_to_propagator(u_tau_t &u_tau, u_frame_t const &u_frame, int frame_number, scalar_t factor) {
+    for (int bl = 0; bl < u_tau.size(); bl++) u_tau[bl][frame_number] = factor * u_frame[bl];
     return;
+  }
+
+  u_tau_t make_ED_propagator(atom_diag const &ad_tot, atom_diag const &ad_atom, atom_diag const &ad_bath, double beta, int n_tau) {
+
+    auto E0       = ad_tot.get_gs_energy();
+    u_tau_t u_tau = make_propagator(ad_atom, beta, n_tau);
+
+    for (int i_tau = 0; i_tau < n_tau; i_tau++) {
+      double dtau  = beta * i_tau / (n_tau - 1);
+      auto u_frame = partial_trace(ad_tot, ad_atom, [dtau, E0](double E) { return std::exp(-dtau * (E - E0)); });
+      auto Z_bath  = trace(ad_bath, [dtau, E0](double E) { return std::exp(-dtau * (E - E0)); });
+      assign_u_frame_to_propagator(u_tau, u_frame, i_tau, 1. / Z_bath);
+    }
+
+    return u_tau;
   }
 
   //
