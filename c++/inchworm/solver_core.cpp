@@ -123,21 +123,27 @@ namespace inchworm {
 
     u_tau = u_tau_;
     //u_frame_bare = make_bare_propagator_frame(h_diag, tau_max, false);
-    auto res                  = single_step(solve_params, tau_split, tau_max, false);
-    auto u_frame_zeroth_order = u_tau[0](tau_max - tau_split) * u_tau[0](tau_split);
-    std::cout << (double)u_frame_zeroth_order(0, 0);
+    auto res = single_step(solve_params, tau_split, tau_max, false);
+    //std::cout << (double)u_frame_zeroth_order(0, 0);
     //exit(1);
 
-    double normalization_cte = (double)res.u_frame_0th_order[0](0, 0) / ((double)u_frame_zeroth_order(0, 0)); //need to do better at some point
+    auto u_frame_zeroth_order = u_tau[0](tau_max);
+    //auto u_frame_zeroth_order = u_tau[0](tau_max - tau_split) * u_tau[0](tau_split);
+    //double normalization_cte = (double)res.u_frame_0th_order[0](0, 0) / ((double)u_frame_bare[0](0, 0)); //need to do better at some point
+    //double normalization_cte  = (double)res.u_frame_0th_order[0](0, 0) / ((double)u_frame_zeroth_order(0, 0)); //need to do better at some point
+    double normalization_cte  = (double)res.u_frame_0th_order[0](0, 0) / ((double)u_frame_zeroth_order(0, 0)); //need to do better at some point
     std::printf("\n ");
-    for (auto &B : res.u_frame_0th_order) {
-      B /= normalization_cte;
-      std::cout << B;
+
+    for (int i = 0; i < res.u_frame_0th_order.size(); i++) {
+      auto u_frame_zeroth_order = u_tau[i](tau_max - tau_split) * u_tau[i](tau_split);
+      //B /= normalization_cte;
+      std::cout << (matrix_t)(res.u_frame_0th_order[i] / normalization_cte);
     }
     std::printf("\n ");
-    for (auto &B : res.u_frame) {
-      B /= normalization_cte;
-      std::cout << B;
+    for (int i = 0; i < res.u_frame.size(); i++) {
+      auto u_frame_zeroth_order = u_tau[i](tau_max - tau_split) * u_tau[i](tau_split);
+      //B /= normalization_cte;
+      std::cout << (matrix_t)(res.u_frame[i] / normalization_cte);
     }
     std::cout << "\norder: " << res.average_k << "\n";
     for (auto o : res.samples_expansion_order) std::printf("%16d ", o);

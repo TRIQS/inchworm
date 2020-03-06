@@ -41,7 +41,7 @@ fundamental_operator_set make_fops(int idx1, int idx2) {
 TEST(inchworm, HubbardAtom) { // NOLINT
 
   // System Parameters
-  double U  = 3.0;
+  double U  = 8.0;
   double mu = U / 2.;
   //double h  = 0.1;
 
@@ -57,8 +57,8 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   solver_core S(cp);
   //int up = 0, dn = 1;
   int n_bath       = 1;
-  double theta[]   = {0.15};
-  double epsilon[] = {0.0};
+  double theta[]   = {0.31};
+  double epsilon[] = {-1.0};
 
   for (auto const &tau : S.Delta_tau[0].mesh()) {
     double val;
@@ -85,7 +85,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   // Solve Parameters
   solve_params_t sp;
   sp.h_int           = h_atom;
-  sp.n_cycles        = 10000000;
+  sp.n_cycles        = 1000000;
   sp.length_cycle    = 10;
   sp.n_warmup_cycles = 20;
   sp.max_time        = -1;
@@ -137,7 +137,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   for (int i_tau = 0; i_tau < cp.n_tau; i_tau++) { print(u_tau, i_tau); }
   std::printf("\n");
 
-  double tau_split = 0.39 * cp.beta;
+  double tau_split = 0.29 * cp.beta;
   double tau_max   = 0.78 * cp.beta;
 
   S.solve_self_consistently(sp, u_tau, tau_split, tau_max);
