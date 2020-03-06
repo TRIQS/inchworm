@@ -136,6 +136,7 @@ namespace inchworm {
     auto fs_full             = ad_full.get_fock_states();
     auto fs_target           = ad_target.get_fock_states();
 
+    /*
     //print_eigensystems(ad_full);
     for (int s = 0; s < ad_full.n_subspaces(); s++) {
       for (int i = 0; i < ad_full.get_subspace_dim(s); i++) {
@@ -154,6 +155,7 @@ namespace inchworm {
       std::cout << "\n";
     }
     //return 0.0;
+*/
 
     for (int s = 0; s < ad_full.n_subspaces(); s++) {
       EXPECTS(es_full[s].eigenvalues.size() == fs_full[s].size());

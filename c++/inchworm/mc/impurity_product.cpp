@@ -20,9 +20,7 @@ namespace inchworm {
 
   //
   void print(u_tau_t u_tau, double tau) {
-    for (int bl = 0; bl < u_tau.size(); bl++) { 
-      auto tmp = u_tau[bl](tau);
-      std::cout << tmp; }
+    for (int bl = 0; bl < u_tau.size(); bl++) { std::cout << (matrix_t)u_tau[bl](tau); }
     std::cout << "\n";
     return;
   }
@@ -56,7 +54,7 @@ namespace inchworm {
   }
 
   //
-  u_frame_t propagator_product(atom_diag const &ad, time_diagram_t const &diagram, double tau, u_tau_t const *const u_tau_p) {
+  u_frame_t propagator_product(atom_diag const &ad, time_diagram_t const &diagram, double tau, double tau_split, u_tau_t const *const u_tau_p) {
 
     if (diagram.size() == 0) return make_bare_propagator_frame(ad, tau, false);
 
@@ -77,9 +75,17 @@ namespace inchworm {
       new_bl = initial_bl;
 
       double dtau = diagram.min_tau();
-      if (u_tau_p)
-        new_mat = (*u_tau_p)[initial_bl](dtau);
-      else {
+      //if (u_tau_p) new_mat = (*u_tau_p)[initial_bl](dtau);
+      double dtau2 = 0.0;
+      if (tau_split < diagram.min_tau()) {
+        dtau2 = tau_split;
+        dtau  = tau_split - diagram.min_tau();
+      }
+      //dtau = (i == (diagram.size() - 1) ? tau : diagram.op_list[i + 1].tau) - op.tau;
+      if (u_tau_p) {
+        new_mat = (*u_tau_p)[initial_bl](dtau); // (interpolation)
+        if (dtau2 != 0.0) new_mat = (*u_tau_p)[initial_bl](dtau2) * new_mat;
+      } else {
         new_mat = matrix_t(dim, dim); //zeros?
         new_mat = 0;
         for (int j = 0; j < dim; j++)
@@ -96,10 +102,25 @@ namespace inchworm {
         new_bl  = (op.dag ? ad.cdag_connection(op.linear_index, new_bl) : ad.c_connection(op.linear_index, new_bl));
 
         //std::cout << "new_mat 2: " << new_bl << " \n" << new_mat << "\n\n";
-        dtau = (i == (diagram.size() - 1) ? tau : diagram.op_list[i + 1].tau) - op.tau;
-        if (u_tau_p)
+        dtau2 = 0.0;
+        if (i == (diagram.size() - 1)) {
+          dtau = tau;
+          if ((op.tau < tau_split) and (tau_split < tau)) {
+            dtau2 = tau - tau_split;
+            dtau  = tau_split - op.tau;
+          }
+        } else {
+          dtau = diagram.op_list[i + 1].tau - op.tau;
+          if ((op.tau < tau_split) and (tau_split < diagram.op_list[i + 1].tau)) {
+            dtau2 = diagram.op_list[i + 1].tau - tau_split;
+            dtau  = tau_split - op.tau;
+          }
+        }
+        //dtau = (i == (diagram.size() - 1) ? tau : diagram.op_list[i + 1].tau) - op.tau;
+        if (u_tau_p) {
           new_mat = (*u_tau_p)[new_bl](dtau) * new_mat; // (interpolation)
-        else {
+          if (dtau2 != 0.0) new_mat = (*u_tau_p)[new_bl](dtau2) * new_mat;
+        } else {
           auto _ = triqs::arrays::range();
           for (int j = 0; j < ad.get_subspace_dim(new_bl); j++) {
             //std::printf("new_bl %d, j %d \n", new_bl, j);

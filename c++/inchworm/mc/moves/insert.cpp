@@ -32,7 +32,7 @@ namespace inchworm::moves {
     if (params.use_bare_propagator)
       proposed_u_frame = propagator_product(params.h_diag, diagram, params.tau_max);
     else
-      proposed_u_frame = propagator_product(params.h_diag, diagram, params.tau_max, &params.u_tau);
+      proposed_u_frame = propagator_product(params.h_diag, diagram, params.tau_max, params.tau_split, &params.u_tau);
 
     proposed_w.loc = frobenius_norm(proposed_u_frame);
 

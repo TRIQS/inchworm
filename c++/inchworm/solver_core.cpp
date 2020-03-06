@@ -122,10 +122,13 @@ namespace inchworm {
     //double tau_split = constr_params.beta / 2;
 
     u_tau = u_tau_;
-    u_frame_bare = make_bare_propagator_frame(h_diag, tau_max, false);
-    auto res     = single_step(solve_params, tau_split, tau_max, false);
+    //u_frame_bare = make_bare_propagator_frame(h_diag, tau_max, false);
+    auto res                  = single_step(solve_params, tau_split, tau_max, false);
+    auto u_frame_zeroth_order = u_tau[0](tau_max - tau_split) * u_tau[0](tau_split);
+    std::cout << (double)u_frame_zeroth_order(0, 0);
+    //exit(1);
 
-    double normalization_cte = (double)res.u_frame_0th_order[0](0, 0) / ((double)u_frame_bare[0](0, 0)); //need to do better at some point
+    double normalization_cte = (double)res.u_frame_0th_order[0](0, 0) / ((double)u_frame_zeroth_order(0, 0)); //need to do better at some point
     std::printf("\n ");
     for (auto &B : res.u_frame_0th_order) {
       B /= normalization_cte;
