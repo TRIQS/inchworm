@@ -20,7 +20,9 @@ namespace inchworm {
 
   //
   void print(u_tau_t u_tau, double tau) {
-    for (int bl = 0; bl < u_tau.size(); bl++) { std::cout << u_tau[bl](tau); }
+    for (int bl = 0; bl < u_tau.size(); bl++) { 
+      auto tmp = u_tau[bl](tau);
+      std::cout << tmp; }
     std::cout << "\n";
     return;
   }

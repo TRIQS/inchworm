@@ -85,7 +85,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   // Solve Parameters
   solve_params_t sp;
   sp.h_int           = h_atom;
-  sp.n_cycles        = 1000000;
+  sp.n_cycles        = 10000000;
   sp.length_cycle    = 10;
   sp.n_warmup_cycles = 20;
   sp.max_time        = -1;
@@ -139,7 +139,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
 
   S.solve_self_consistently(sp, u_tau, 0.34*cp.beta , 0.78*cp.beta);
   std::printf("\n");
-  print(u_tau, cp.beta);
+  print(u_tau, 0.78*cp.beta);
 }
 
 MAKE_MAIN
