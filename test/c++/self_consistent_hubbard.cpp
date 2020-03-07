@@ -57,7 +57,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   solver_core S(cp);
   //int up = 0, dn = 1;
   int n_bath       = 1;
-  double theta[]   = {0.31};
+  double theta[]   = {0.0};
   double epsilon[] = {-1.0};
 
   for (auto const &tau : S.Delta_tau[0].mesh()) {
