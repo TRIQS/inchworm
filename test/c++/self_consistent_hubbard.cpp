@@ -57,7 +57,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   solver_core S(cp);
   //int up = 0, dn = 1;
   int n_bath       = 1;
-  double theta[]   = {0.0};
+  double theta[]   = {0.04};
   double epsilon[] = {-1.0};
 
   for (auto const &tau : S.Delta_tau[0].mesh()) {
@@ -138,7 +138,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   std::printf("\n");
 
   double tau_split = 0.29 * cp.beta;
-  double tau_max   = 0.78 * cp.beta;
+  double tau_max   =  cp.beta;
 
   S.solve_self_consistently(sp, u_tau, tau_split, tau_max);
   std::printf("\n\n");
