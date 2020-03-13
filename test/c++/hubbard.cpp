@@ -61,17 +61,19 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   double epsilon[] = {-0.3};
 
   for (auto const &tau : S.Delta_tau[0].mesh()) {
-    double val;
-    for (int i = 0; i < 2 * n_site; i++) {
+    for (int i = 0; i < 2; i++) {
       //for (int j = 0; j < 2 * n_site; j++) {
       S.Delta_tau[i][tau] = 0.0;
       for (int n = 0; n < n_bath; n++) {
+        double val;
         if (epsilon[n] > 0.0)
-          val = -theta[i + 2 * n_site * n] * theta[i + 2 * n_site * n]
-             * (std::exp(-((double)tau) * (epsilon[n])) / (1. + std::exp(-cp.beta * epsilon[n])));
+          val = -theta[n] * theta[n] * (std::exp(-((double)tau) * (epsilon[n])) / (1. + std::exp(-cp.beta * epsilon[n])));
+          //val = -theta[i + 2 * n_site * n] * theta[i + 2 * n_site * n]
+          //   * (std::exp(-((double)tau) * (epsilon[n])) / (1. + std::exp(-cp.beta * epsilon[n])));
         else
-          val = -theta[i + 2 * n_site * n] * theta[i + 2 * n_site * n]
-             * (std::exp(-((double)tau - cp.beta) * (epsilon[n])) / (1. + std::exp(cp.beta * epsilon[n])));
+          val = -theta[n] * theta[n] * (std::exp(-((double)tau - cp.beta) * (epsilon[n])) / (1. + std::exp(cp.beta * epsilon[n])));
+          //val = -theta[i + 2 * n_site * n] * theta[i + 2 * n_site * n]
+          //   * (std::exp(-((double)tau - cp.beta) * (epsilon[n])) / (1. + std::exp(cp.beta * epsilon[n])));
         S.Delta_tau[i][tau] += val;
       }
       //}

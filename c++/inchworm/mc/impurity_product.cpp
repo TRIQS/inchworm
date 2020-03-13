@@ -74,17 +74,17 @@ namespace inchworm {
       if (new_bl == -1) continue;
       new_bl = initial_bl;
 
-      double dtau = diagram.min_tau();
-      //if (u_tau_p) new_mat = (*u_tau_p)[initial_bl](dtau);
+      double dtau  = diagram.min_tau();
       double dtau2 = 0.0;
-      if (tau_split < diagram.min_tau()) {
-        dtau2 = diagram.min_tau() - tau_split;
-        dtau  = tau_split;
-      }
+      //if (u_tau_p) new_mat = (*u_tau_p)[initial_bl](dtau);
       //dtau = (i == (diagram.size() - 1) ? tau : diagram.op_list[i + 1].tau) - op.tau;
       if (u_tau_p) {
+        if (tau_split < diagram.min_tau()) {
+          dtau2 = diagram.min_tau() - tau_split;
+          dtau  = tau_split;
+        }
         new_mat = (*u_tau_p)[initial_bl](dtau); // (interpolation)
-        if (dtau2 != 0.0) new_mat = (*u_tau_p)[initial_bl](dtau2) * new_mat;
+        if (tau_split < diagram.min_tau()) new_mat = (*u_tau_p)[initial_bl](dtau2) * new_mat;
       } else {
         new_mat = matrix_t(dim, dim); //zeros?
         new_mat = 0;
@@ -102,9 +102,10 @@ namespace inchworm {
         new_bl  = (op.dag ? ad.cdag_connection(op.linear_index, new_bl) : ad.c_connection(op.linear_index, new_bl));
 
         //std::cout << "new_mat 2: " << new_bl << " \n" << new_mat << "\n\n";
+        //dtau = (i == (diagram.size() - 1) ? tau : diagram.op_list[i + 1].tau) - op.tau;
         dtau2 = 0.0;
         if (i == (diagram.size() - 1)) {
-          dtau = tau;
+          dtau = tau - op.tau;
           if ((op.tau < tau_split) and (tau_split < tau)) {
             dtau2 = tau - tau_split;
             dtau  = tau_split - op.tau;
@@ -116,7 +117,6 @@ namespace inchworm {
             dtau  = tau_split - op.tau;
           }
         }
-        //dtau = (i == (diagram.size() - 1) ? tau : diagram.op_list[i + 1].tau) - op.tau;
         if (u_tau_p) {
           new_mat = (*u_tau_p)[new_bl](dtau) * new_mat; // (interpolation)
           if (dtau2 != 0.0) new_mat = (*u_tau_p)[new_bl](dtau2) * new_mat;
