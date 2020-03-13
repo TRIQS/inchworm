@@ -87,7 +87,6 @@ namespace inchworm::diagram {
       split_points.push_back(i);
       if constexpr (verbose > 3) std::printf("%d  % 4.3f\n", i, s_time);
     }
-
     // posc[i] is the position of the i^th c in op_list (inverse table of order_index)
     for (int i = 0; i < op_list.size(); i++) {
       if (op_list[i].dag)

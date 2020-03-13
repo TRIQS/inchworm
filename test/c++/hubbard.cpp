@@ -118,8 +118,8 @@ TEST(inchworm, HubbardAtom) { // NOLINT
     h -= mu * (n("up", j) + n("dn", j));
 
     for (int i = 0; i < n_bath; i++) {
-      h += theta[j] * (c_dag("up", j) * c("up", i + n_site) + c_dag("up", i + n_site) * c("up", j));
-      h += theta[j] * (c_dag("dn", j) * c("dn", i + n_site) + c_dag("dn", i + n_site) * c("dn", j));
+      h += theta[i] * (c_dag("up", j) * c("up", i + n_site) + c_dag("up", i + n_site) * c("up", j));
+      h += theta[i] * (c_dag("dn", j) * c("dn", i + n_site) + c_dag("dn", i + n_site) * c("dn", j));
       h += epsilon[i] * (n("up", i + n_site) + n("dn", i + n_site));
 
       h_bath += epsilon[i] * (n("up", i) + n("dn", i));

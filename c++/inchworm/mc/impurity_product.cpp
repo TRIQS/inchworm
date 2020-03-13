@@ -81,7 +81,7 @@ namespace inchworm {
       if (u_tau_p) {
         if (tau_split < diagram.min_tau()) {
           dtau2 = diagram.min_tau() - tau_split;
-          dtau  = tau_split;
+          dtau  = tau_split - 0.;
         }
         new_mat = (*u_tau_p)[initial_bl](dtau); // (interpolation)
         if (tau_split < diagram.min_tau()) new_mat = (*u_tau_p)[initial_bl](dtau2) * new_mat;

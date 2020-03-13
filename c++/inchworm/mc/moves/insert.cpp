@@ -42,7 +42,7 @@ namespace inchworm::moves {
     auto w_loc_ratio = proposed_w.loc / data.w.loc;
     auto t_ratio     = std::pow(params.tau_max * n_fops / (N + 1), 2);
 
-    /*if (proposed_config.size() == 1) {
+    if (proposed_config.size() == 100) {
       std::printf("\n ");
       for (auto &B : proposed_u_frame) { std::cout << B; }
       hyb_mat.print();
@@ -50,7 +50,7 @@ namespace inchworm::moves {
          std::printf("\n\nsign= %d  w_hyb=% 4.7f  w_loc=% 4.7f    old_w_hyb=% 4.7f  old_w_loc=% 4.7f \n", proposed_sign, proposed_w.hyb,
                      proposed_w.loc, data.w.hyb, data.w.loc);
       std::printf("\n\nsign_ratio= %d  w_hyb_ratio=% 4.7f  w_loc_ratio=% 4.7f  t_ratio=% 4.7f\n", sign_ratio, w_hyb_ratio, w_loc_ratio, t_ratio);
-    }*/
+    }
     return sign_ratio * t_ratio * w_loc_ratio * w_hyb_ratio;
   }
 
@@ -58,7 +58,7 @@ namespace inchworm::moves {
   scalar_t insert::accept() {
     //std::printf("\n\nsize=%d\n", proposed_config.size());
     //for (auto const &B : proposed_u_frame) std::cout << B;
-    if (proposed_config.size() == 100) { //params.verbosity == 10) {
+    if (proposed_config.size() == 1) { //params.verbosity == 10) {
       auto diagram = diagram::time_diagram_t(proposed_config.c_list, proposed_config.cdag_list, {});
       print_configuration(diagram);
       auto hyb_mat = diagram::hyb_matrix_t(diagram, params.hyb_adaptor);
