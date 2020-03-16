@@ -41,7 +41,7 @@ fundamental_operator_set make_fops(int N) {
 TEST(inchworm, HubbardAtom) { // NOLINT
 
   // System Parameters
-  double U  = 4.0;
+  double U  = 0.0;
   double mu = U / 2.;
   //double h  = 0.1;
 
@@ -58,7 +58,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   //int up = 0, dn = 1;
   int n_bath       = 1;
   double theta[]   = {0.4}; // size = n_site * n_bath
-  double epsilon[] = {-0.3};
+  double epsilon[] = {0.0};
 
   for (auto const &tau : S.Delta_tau[0].mesh()) {
     for (int i = 0; i < 2; i++) {

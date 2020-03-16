@@ -263,7 +263,7 @@ namespace inchworm::diagram {
 
     //hyb_matrix_t hyb_mat(diagram, hyb_tau);
     hyb_mat.optimize_inclusion_exclusion(); // put some values to zero in hyb matrix (segment of length 2)
-    if (diagram.is_trivial) { return 1; }   // old question: return 0 or det?? 
+    if (diagram.is_trivial) { return 0; }   // old question: return 0 or det?? 
     if (diagram.perturbation_order() == 1) {
       if (std::any_of(begin(diagram.split_points), end(diagram.split_points), [](int i) { return i == 1; }))
         return hyb_mat.det();

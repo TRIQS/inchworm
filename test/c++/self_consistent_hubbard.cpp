@@ -41,7 +41,7 @@ fundamental_operator_set make_fops(int idx1, int idx2) {
 TEST(inchworm, HubbardAtom) { // NOLINT
 
   // System Parameters
-  double U  = 4.0;
+  double U  = 0.;
   double mu = U / 2.;
   //double h  = 0.1;
 
@@ -57,8 +57,8 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   solver_core S(cp);
   //int up = 0, dn = 1;
   int n_bath       = 1;
-  double theta[]   = {0.4};
-  double epsilon[] = {-0.3};
+  double theta[]   = {0.5};
+  double epsilon[] = {0.};
 
   for (auto const &tau : S.Delta_tau[0].mesh()) {
     double val;
@@ -85,7 +85,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   // Solve Parameters
   solve_params_t sp;
   sp.h_int           = h_atom;
-  sp.n_cycles        = 1000000;
+  sp.n_cycles        = 500000;
   sp.length_cycle    = 10;
   sp.n_warmup_cycles = 20;
   sp.max_time        = -1;
@@ -95,7 +95,8 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   sp.quantum_numbers = qn;
 
   // Solve the impurity model
-  // S.solve_single_step(sp);
+  //S.solve_single_step(sp);
+  //exit(0);
 
   // Compare against the reference data
   // h5diff("hubbard.out.h5", "hubbard.ref.h5")
@@ -132,12 +133,12 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   u_tau_t u_tau = make_propagator(ad_atom, 3);
   assign_u_frame_to_propagator(u_tau, u_frame, 1, 1. / Z_bath);
 
-*/
   std::printf("\n");
   for (int i_tau = 0; i_tau < cp.n_tau; i_tau++) { print(u_tau, i_tau); }
   std::printf("\n");
+*/
 
-  double tau_split = 1.00 * cp.beta;
+  double tau_split = 0.50 * cp.beta;
   double tau_max   = 1.00 * cp.beta;
 
   S.solve_self_consistently(sp, u_tau, tau_split, tau_max);

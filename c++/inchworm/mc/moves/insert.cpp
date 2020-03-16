@@ -25,6 +25,8 @@ namespace inchworm::moves {
     else
       proposed_w.hyb = diagram::inclusion_exclusion(diagram, hyb_mat);
 
+    //hyb_mat.print();
+    //std::printf("\n\nproposed_w.hyb=% 4.7f \n", proposed_w.hyb);
     double tol = 1e-12;
     if (std::abs(proposed_w.hyb) < tol) return 0.0;
     //if (proposed_config.size() >5) return 0.0;
@@ -44,11 +46,11 @@ namespace inchworm::moves {
 
     if (proposed_config.size() == 100) {
       std::printf("\n ");
-      for (auto &B : proposed_u_frame) { std::cout << B; }
+      //for (auto &B : proposed_u_frame) { std::cout << B; }
       hyb_mat.print();
-      std::printf("\n\nhyb.det()=% 4.7f \n", hyb_mat.det()),
-         std::printf("\n\nsign= %d  w_hyb=% 4.7f  w_loc=% 4.7f    old_w_hyb=% 4.7f  old_w_loc=% 4.7f \n", proposed_sign, proposed_w.hyb,
-                     proposed_w.loc, data.w.hyb, data.w.loc);
+      std::printf("\n\nhyb.det()=% 4.7f \n", hyb_mat.det());
+      std::printf("\n\nsign= %d  w_hyb=% 4.7f  w_loc=% 4.7f    old_w_hyb=% 4.7f  old_w_loc=% 4.7f \n", proposed_sign, proposed_w.hyb, proposed_w.loc,
+                  data.w.hyb, data.w.loc);
       std::printf("\n\nsign_ratio= %d  w_hyb_ratio=% 4.7f  w_loc_ratio=% 4.7f  t_ratio=% 4.7f\n", sign_ratio, w_hyb_ratio, w_loc_ratio, t_ratio);
     }
     return sign_ratio * t_ratio * w_loc_ratio * w_hyb_ratio;
@@ -58,7 +60,7 @@ namespace inchworm::moves {
   scalar_t insert::accept() {
     //std::printf("\n\nsize=%d\n", proposed_config.size());
     //for (auto const &B : proposed_u_frame) std::cout << B;
-    if (proposed_config.size() == 1) { //params.verbosity == 10) {
+    if (proposed_config.size() == 100) { //params.verbosity == 10) {
       auto diagram = diagram::time_diagram_t(proposed_config.c_list, proposed_config.cdag_list, {});
       print_configuration(diagram);
       auto hyb_mat = diagram::hyb_matrix_t(diagram, params.hyb_adaptor);
