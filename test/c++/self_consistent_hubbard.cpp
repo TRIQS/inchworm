@@ -49,7 +49,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   constr_params_t cp;
   cp.beta      = 2.0;
   int n_site   = 1;
-  cp.gf_struct = {{"up", {0}}, {"dn", {0}}}; //, {"up", {1}}, {"dn", {1}}};
+  cp.gf_struct = {{"up", {0}}, {"dn", {0}}}; 
   cp.n_tau     = 500;
   cp.n_iw      = 250;
 
@@ -57,7 +57,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   solver_core S(cp);
   //int up = 0, dn = 1;
   int n_bath       = 1;
-  double theta[]   = {0.5};
+  double theta[]   = {0.8};
   double epsilon[] = {0.};
 
   for (auto const &tau : S.Delta_tau[0].mesh()) {
@@ -85,7 +85,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   // Solve Parameters
   solve_params_t sp;
   sp.h_int           = h_atom;
-  sp.n_cycles        = 500000;
+  sp.n_cycles        = 1000000;
   sp.length_cycle    = 10;
   sp.n_warmup_cycles = 20;
   sp.max_time        = -1;

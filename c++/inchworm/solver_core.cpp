@@ -128,8 +128,8 @@ namespace inchworm {
     //std::cout << (double)u_frame_zeroth_order(0, 0);
     //exit(1);
 
-    auto u_frame_zeroth_order = u_tau[0](tau_max);
-    //auto u_frame_zeroth_order =   u_tau[0](tau_split) * u_tau[0](tau_max - tau_split);
+    //auto u_frame_zeroth_order = u_tau[0](tau_max);
+    auto u_frame_zeroth_order = u_tau[0](tau_max - tau_split) * u_tau[0](tau_split) ;
     //double normalization_cte = (double)res.u_frame_0th_order[0](0, 0) / ((double)u_frame_bare[0](0, 0)); //need to do better at some point
     //double normalization_cte  = (double)res.u_frame_0th_order[0](0, 0) / ((double)u_frame_zeroth_order(0, 0)); //need to do better at some point
     double normalization_cte  = (double)res.u_frame_0th_order[0](0, 0) / ((double)u_frame_zeroth_order(0, 0)); //need to do better at some point
