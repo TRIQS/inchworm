@@ -10,22 +10,41 @@ tau1 = sy.Symbol('tau_1')
 tau2 = sy.Symbol('tau_2')
 
 taus = sy.Symbol('tau_s')
-f = (cosh(beta*theta/2))**2
+B = sy.Symbol('B')
 
-U = sy.Function('U')(beta)
+t = sy.Symbol('t')
+ts = sy.Symbol('t_s')
 
-#sy.pprint(sy.integrate(x/(x**2+2*x+1), x))
-print U
+#f = (cosh(beta*theta/2))**2
 
-#sy.pprint(sy.integrate(cosh((tau1)*theta/2)**2, tau1))
 
-#sy.pprint(sy.integrate( sy.integrate( (cosh((beta-tau1)*theta/2))**2  * (cosh((tau1-tau2)*theta/2))**2  * (cosh((tau2)*theta/2))**2   , tau1)  , tau2 ))
+#f1 = ((exp(ts-t)   + exp(-(ts-t)))   * (exp(t)    + exp(-t) )) **2
+#f2 = ((exp(beta-t) + exp(-(beta-t))) * (exp(t-ts) + exp(-t+ts) )) **2
 
-sy.pprint( sy.integrate( sy.integrate( \
-            sy.expand((exp((beta-tau1)*theta/2) + exp(-(beta-tau1)*theta/2) + 2) * \
-                     (exp((tau1-tau2)*theta/2) + exp(-(tau1-tau2)*theta/2) + 2) * \
-                     (exp((tau2)*theta/2) + exp(-(tau2)*theta/2) + 2) ) \
-                     , (tau1,0,taus) ),   (tau2,taus,beta) ) )
+f1 = (cosh(ts-t)   * cosh(t)) **2
+f2 = (cosh(B-t) * cosh(t-ts)) **2
+
+
+sy.pprint(f1)
+sy.pprint(f2)
+print 
+
+p1 = sy.simplify( sy.integrate(  f1 , (t,0 ,ts) ))
+p2 = sy.simplify( sy.integrate(  f2 , (t,ts,B) ))
+
+print
+sy.pprint(p1)
+print
+sy.pprint(p2)
+
+print 
+print 
+print 
+print 
+print p1
+print 
+print p2
+#sy.pprint(sy.simplify(p1*p2))
 
 
 exit()

@@ -103,14 +103,15 @@ namespace inchworm {
 
         //std::cout << "new_mat 2: " << new_bl << " \n" << new_mat << "\n\n";
         //dtau = (i == (diagram.size() - 1) ? tau : diagram.op_list[i + 1].tau) - op.tau;
+	
         dtau2 = 0.0;
-        if (i == (diagram.size() - 1)) {
+        if (i == (diagram.size() - 1)) { // if last point of the diagram
           dtau = tau - op.tau;
           if ((op.tau < tau_split) and (tau_split < tau)) {
             dtau2 = tau - tau_split;
             dtau  = tau_split - op.tau;
           }
-        } else {
+        } else { // if not last point of the diagram
           dtau = diagram.op_list[i + 1].tau - op.tau;
           if ((op.tau < tau_split) and (tau_split < diagram.op_list[i + 1].tau)) {
             dtau2 = diagram.op_list[i + 1].tau - tau_split;
