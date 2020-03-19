@@ -37,8 +37,6 @@ namespace inchworm::moves {
       proposed_u_frame = propagator_product(params.h_diag, diagram, params.tau_max, params.tau_split, &params.u_tau);
 
     proposed_w.loc = frobenius_norm(proposed_u_frame);
-
-    proposed_w.loc   = frobenius_norm(proposed_u_frame);
     auto sign_ratio  = proposed_sign / data.sign;
     auto w_hyb_ratio = proposed_w.hyb / data.w.hyb;
     auto w_loc_ratio = proposed_w.loc / data.w.loc;

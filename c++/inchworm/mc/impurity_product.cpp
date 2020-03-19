@@ -56,7 +56,19 @@ namespace inchworm {
   //
   u_frame_t propagator_product(atom_diag const &ad, time_diagram_t const &diagram, double tau, double tau_split, u_tau_t const *const u_tau_p) {
 
-    if (diagram.size() == 0) return make_bare_propagator_frame(ad, tau, false);
+    if (diagram.size() == 0) {
+      if (u_tau_p) {
+        u_frame_t u_frame = make_zero_propagator_frame(ad);
+        double dtau2      = tau - tau_split;
+        double dtau       = tau_split - 0.;
+        for (int bl = 0; bl < ad.n_subspaces(); bl++) {
+          u_frame[bl] = (*u_tau_p)[bl](dtau); // (interpolation)
+          u_frame[bl] = (*u_tau_p)[bl](dtau2) * u_frame[bl];
+        }
+	return u_frame;
+      } else
+        return make_bare_propagator_frame(ad, tau, false);
+    }
 
     constexpr bool set_gs_to_0 = false;
     u_frame_t u_frame          = make_zero_propagator_frame(ad);
@@ -103,7 +115,7 @@ namespace inchworm {
 
         //std::cout << "new_mat 2: " << new_bl << " \n" << new_mat << "\n\n";
         //dtau = (i == (diagram.size() - 1) ? tau : diagram.op_list[i + 1].tau) - op.tau;
-	
+
         dtau2 = 0.0;
         if (i == (diagram.size() - 1)) { // if last point of the diagram
           dtau = tau - op.tau;

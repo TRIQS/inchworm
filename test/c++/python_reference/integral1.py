@@ -25,9 +25,27 @@ f1 = (cosh(ts-t)   * cosh(t)) **2
 f2 = (cosh(B-t) * cosh(t-ts)) **2
 
 
+thet= 0.8
+bet = 2.0
+ta_s= 0.5*bet
+
+t1  = 0.67376 * thet / 2.
+t2  = 1.36633 * thet / 2.
+ts1 = 0.5 * bet * thet / 2.
+b   = bet * thet / 2.
+
+print 1.0 * (f1.subs([(t, t1), (ts, ts1)])) * (f2.subs([(t, t2), (ts, ts1), (B,b)]))
+print
+print thet*thet/2.
+
 sy.pprint(f1)
 sy.pprint(f2)
 print 
+a1 = 0.08928 / 0.08436757
+a2 = 0.52891 / 0.39499137
+a3 = 8.92976 / 2.88053490
+print a1, a2, a3, a2/a1, a3/a2
+exit()
 
 p1 = sy.simplify( sy.integrate(  f1 , (t,0 ,ts) ))
 p2 = sy.simplify( sy.integrate(  f2 , (t,ts,B) ))

@@ -42,7 +42,7 @@ namespace inchworm {
     return out;
   }
 
-  constexpr int MAX_ORDER = 10;
+  constexpr int MAX_ORDER = 7;
   struct single_step_results_t {
     double average_k = 0.0;
     u_frame_t u_frame;
