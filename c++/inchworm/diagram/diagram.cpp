@@ -55,13 +55,13 @@ namespace inchworm::diagram {
       return;
     }
     for (int i = 0, j = order; i < order; i++, j++) {
-      op_list[i].tau          = c[i].tau;
-      op_list[i].linear_index = c[i].linear_index;
+      op_list[i].tau          = c_list[i].tau;
+      op_list[i].linear_index = c_list[i].linear_index;
       op_list[i].dag          = false;
       op_list[i].order_index  = i;
 
-      op_list[j].tau          = cdag[i].tau;
-      op_list[j].linear_index = cdag[i].linear_index;
+      op_list[j].tau          = cdag_list[i].tau;
+      op_list[j].linear_index = cdag_list[i].linear_index;
       op_list[j].dag          = true;
       op_list[j].order_index  = i;
     }

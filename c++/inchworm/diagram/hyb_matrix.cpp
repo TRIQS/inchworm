@@ -24,7 +24,7 @@
 
 namespace inchworm::diagram {
   scalar_t hyb_function_dummy(double dtau) { // for tests purpose only
-    return (1.0 / (0.1 * dtau - 0.5));
+    return (1.0 / (0.8 * (dtau - 0.5)));
   }
 
   hyb_matrix_t::hyb_matrix_t(time_diagram_t const &diagram) : mat(diagram.perturbation_order(), diagram.perturbation_order()), diagram{diagram} {
@@ -33,8 +33,12 @@ namespace inchworm::diagram {
       N++;
       for (auto [j, cdag] : enumerate(diagram.cdag_list)) {
 
-        double dtau = cdag.tau - c.tau;
-        mat(i, j)   = hyb_function_dummy(dtau);
+        //double dtau = cdag.tau - c.tau;
+        //mat(i, j)   = (0.5+j-i)*hyb_function_dummy(dtau);
+        if (i < j)
+          mat(i, j) = -5.12;
+        else
+          mat(i, j) = 5.12;
       }
     }
     size = N;
@@ -78,14 +82,14 @@ namespace inchworm::diagram {
   }
 
   scalar_t hyb_matrix_t::det() {
-/*    if (size == 0)
+    /*    if (size == 0)
       return 1.0;
     else if (size == 1)
       return mat(0, 0);
     else if (size == 2)
       return (mat(0,0)*mat(1,1)-mat(1,0)*mat(0,1));
     else */
-      return determinant(mat);
+    return determinant(mat);
   }
 
   scalar_t hyb_matrix_t::extract_det(std::vector<int> const &list_of_indices) const {
@@ -111,7 +115,7 @@ namespace inchworm::diagram {
     return determinant(m);
   }
 
-  void hyb_matrix_t::print() {
+  void hyb_matrix_t::print() const {
     std::printf("\nhybridization mat: \n");
     for (int i = 0; i < diagram.perturbation_order(); i++) {
       for (int j = 0; j < diagram.perturbation_order(); j++) { std::printf("% 2.7e ", mat(i, j)); }

@@ -1,5 +1,7 @@
 compile_commands.json
 doc/cpp2rst_generated
+
+buildSAN
 build
 build_*
 ./quickvim.sh
@@ -11,3 +13,5 @@ doc/notes/inchworm_notes.log
 doc/notes/inchworm_notes.out
 doc/notes/inchworm_notes.pdf
 
+compile.sh
+compileSAN.sh

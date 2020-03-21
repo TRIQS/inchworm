@@ -44,7 +44,7 @@ namespace inchworm::diagram {
 
   // print one line of segments:
   //
-  void printLine(std::vector<int> const &segments_vector);
+  void print_line(std::vector<int> const &segments_vector);
 
   std::string diagram_string(time_diagram_t const &diagram);
 

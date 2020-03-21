@@ -64,7 +64,7 @@ namespace inchworm::diagram {
 
   // print one line of segments:
   //
-  void printLine(std::vector<int> const &segments_vector) {
+  void print_line(std::vector<int> const &segments_vector) {
     int current_segment = 0;
     std::string string1 = "";
     std::string chars   = "  ";

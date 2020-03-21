@@ -23,6 +23,7 @@ namespace inchworm::moves {
     if (params.use_bare_propagator)
       proposed_w.hyb = hyb_mat.det();
     else
+      //proposed_w.hyb = diagram::proper_enum(diagram, hyb_mat);
       proposed_w.hyb = diagram::inclusion_exclusion(diagram, hyb_mat);
 
     //hyb_mat.print();
@@ -36,15 +37,16 @@ namespace inchworm::moves {
     else
       proposed_u_frame = propagator_product(params.h_diag, diagram, params.tau_max, params.tau_split, &params.u_tau);
 
-    proposed_w.loc = frobenius_norm(proposed_u_frame);
+    proposed_w.loc   = frobenius_norm(proposed_u_frame);
     auto sign_ratio  = proposed_sign / data.sign;
     auto w_hyb_ratio = proposed_w.hyb / data.w.hyb;
     auto w_loc_ratio = proposed_w.loc / data.w.loc;
     auto t_ratio     = std::pow(params.tau_max * n_fops / (N + 1), 2);
 
-    if (proposed_config.size() == 100) {
-      std::printf("\n ");
+    if (proposed_config.size() == 200) {
+      std::printf("\n\n=======\n");
       //for (auto &B : proposed_u_frame) { std::cout << B; }
+      print_configuration(diagram);
       hyb_mat.print();
       std::printf("\n\nhyb.det()=% 4.7f \n", hyb_mat.det());
       std::printf("\n\nsign= %d  w_hyb=% 4.7f  w_loc=% 4.7f    old_w_hyb=% 4.7f  old_w_loc=% 4.7f \n", proposed_sign, proposed_w.hyb, proposed_w.loc,
@@ -58,15 +60,18 @@ namespace inchworm::moves {
   scalar_t insert::accept() {
     //std::printf("\n\nsize=%d\n", proposed_config.size());
     //for (auto const &B : proposed_u_frame) std::cout << B;
-    if (proposed_config.size() == 300) { //params.verbosity == 10) {
-      auto diagram = diagram::time_diagram_t(proposed_config.c_list, proposed_config.cdag_list, {});
+    if (proposed_config.size() == 3) { //params.verbosity == 10) {
+      std::printf("\n\n#######\n\n");
+      auto diagram = diagram::time_diagram_t(proposed_config.c_list, proposed_config.cdag_list, {params.tau_split});
       print_configuration(diagram);
       auto hyb_mat = diagram::hyb_matrix_t(diagram, params.hyb_adaptor);
       hyb_mat.print();
       //std::printf("\n\nsign= %d  t_ratio=% 4.7f  w_hyb=% 4.7f  w_loc=% 4.7f\n", sign, params.tau_max / (proposed_config.size() + 1), proposed_w.hyb, proposed_w.loc);
       for (auto const &B : proposed_u_frame) std::cout << B;
       std::printf("\n\nsign= % d   w_hyb=% 4.7f  w_loc=% 4.7f\n\n\n", proposed_sign, proposed_w.hyb, proposed_w.loc);
-      std::printf("\n\nhyb.det()=% 4.7f \n", hyb_mat.det());
+      //std::printf("proper_enum w.hyb         =% 4.7f \n", diagram::proper_enum(diagram, hyb_mat, 0));
+      //std::printf("inclusion_exclusion w.hyb =% 4.7f \n", diagram::inclusion_exclusion(diagram, hyb_mat,0));
+      //std::printf("hyb.det()=% 4.7f \n", hyb_mat.det());
     }
     data.w       = proposed_w;
     data.u_frame = proposed_u_frame;

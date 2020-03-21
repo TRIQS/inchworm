@@ -59,6 +59,6 @@ namespace inchworm::diagram {
     /// Extract a determinant of sub indices of the matrix
     scalar_t extract_det(std::vector<int> const &list_of_indices) const;
 
-    void print();
+    void print() const;
   };
 } // namespace inchworm::diagram
