@@ -222,8 +222,7 @@ Then (I need to think about it more):
 \begin{align}
 \frac{1}{Z_{\text {bath }}} \operatorname{Tr_B}\Big[T_{\tau} e^{-\beta H_{\text {bath }}} \sum_{p_1 \ldots p_k}  \sum_{p_{1}^{\prime} \ldots p_k^{\prime}} 
 \theta_{p_{1}}^{j_{1}} \theta_{p_{1}^{\prime}}^{j_{1}^{\prime} *} \cdots \theta_{p_{k}}^{j_{k}} \theta_{p_{k}^{\prime}}^{j_{k}^{\prime}*}  
-\\
-\quad \times c_{p_{k}}^{\dagger}\left(\tau_{k}\right) c_{p_{k^{\prime}}}\left(\tau_{k}^{\prime}\right) \cdots c_{p_{1}}^{\dagger}\left(\tau_{1}\right) c_{p_{1}^{\prime}}\left(\tau_{1}^{\prime}\right)\Big]=\operatorname{det} \Delta
+c_{p_{k}}^{\dagger}\left(\tau_{k}\right) c_{p_{k^{\prime}}}\left(\tau_{k}^{\prime}\right) \cdots c_{p_{1}}^{\dagger}\left(\tau_{1}\right) c_{p_{1}^{\prime}}\left(\tau_{1}^{\prime}\right)\Big]=\operatorname{det} \Delta
 \end{align}
 
 Using this last definition, we get:
@@ -236,16 +235,23 @@ U(\beta)=& \sum_k^{\infty}
 d_{j_k}(\tau_k) d_{j_k^\prime}^{\dagger} (\tau_k^\prime) \cdots d_{j_1}(\tau_1) d_{j_1^\prime}^{\dagger} (\tau_1^\prime) \Big] \operatorname{det} \Delta
 \label{eq::normal_order}
 \end{align}
-where $\tau_k > \cdots >\tau_1$ and $\tau_k^\prime > \cdots >\tau_1^\prime$. This is the normal order, i.e. the order that does not have a sign. Practically, we need to order the operators for all the times togheter such that $\tau_{left} > \cdots >\tau_{right}$. This reordering imply a new sign $(-1)^\sigma$ where $\sigma$ is the number of permutation one must do to order all the times starting from the normal order. 
+where $\tau_k > \cdots >\tau_1$ and $\tau_k^\prime > \cdots >\tau_1^\prime$. This is the normal order, i.e. the order that does not have a sign. Practically, we need to order the operators for all the times togheter such that $\tau_a > \tau_b > \cdots >\tau_z$ (here letter indices can refer to any $\tau$ or $\tau^\prime$). This reordering imply a new sign $(-1)^\sigma$ where $\sigma$ is the number of permutation one must do to order all the times starting from the normal order. 
+
+Using the bare time evolution $U_0(\beta) = e^{\beta H_{loc}}$ to express the time of the operator $d_{j_k^\prime}^{\dagger}(\tau_k^\prime)$ and $d_{j_k}(\tau_k)$, and using the notation $O_a$ to refer to the first $d$ or $d^\dagger$, $O_b$ the second and so on:
 \begin{align}
 U(\beta)=& \sum_k^{\infty}
-\int_{0}^{\beta} d \tau_1 \cdots \int_{\tau_{k-1}}^{\beta} d \tau_k
-\int_{0}^{\beta} d \tau_1 \cdots \int_{\tau_{k-1}^\prime}^{\beta} d \tau_k^{\prime}
-\sum_{j_1 \ldots j_k}  \sum_{j_{1}^{\prime} \ldots j_k^{\prime}} 
-\Big[ T_{\tau} e^{-\beta H_\mathrm{loc}}
-d_{j_k}(\tau_k) d_{j_k^\prime}^{\dagger} (\tau_k^\prime) \cdots d_{j_1}(\tau_1) d_{j_1^\prime}^{\dagger} (\tau_1^\prime) \Big] \operatorname{det} \Delta
-\label{eq::normal_order}
+\int_{0}^{\beta} d \tau_a \cdots d \tau_z
+\sum_{a \ldots z} 
+  \Big[ (-1)^\sigma 
+U_0(\beta-\tau_a) O_a 
+U_0(\tau_a-\tau_b) O_b 
+U_0(\tau_b-\tau_c) \cdots
+U_0(\tau_y-\tau_z) O_z
+U_0(\tau_z)
+\Big] \operatorname{det} \Delta
+\label{eq::ordered_order}
 \end{align}
+
 
 \subsection{Specific to my implementation}
 There are many ways to evaluate this $\sigma$. In my implementation, the $d^\dagger$ and $d$ are stored in two vectors, and the time ordered operator in another vector. It is more natural to work with vector where the time is sorted in the ascending order. This is also the order in which we apply the operator in the matrix products. In that case, the number of permutation between the normal order and the sorted order ($\sigma$) is simply the sum of the positions of the $d^\dagger$ operators in the sorted order. 
@@ -328,6 +334,7 @@ U_1(\beta)=
 \end{align}
 
 \subsection{Exact diagonalization simple model}
+\label{ED_simple}
 
 This simple system can be solved exactly
 \begin{align}
@@ -415,45 +422,189 @@ which again is coherent with Eq.~\eqref{eq::zeroth_order} and~\eqref{eq::first_o
 
 
 
+\section{Inchworm}
 
+Up until now, we talked about the propagator, but mainly in the context of CTHYB. The inchworm consist of taking Eq.~\eqref{eq::ordered_order} and splitting at time $\tau_{split}$. 
 
-
-
-
-
-\pagebreak
-
-
-\begin{align} 
-U(\beta)=& \frac{1}{Z_{\text {bath }}}\operatorname{Tr_B} [e^{-\beta (H_a + H_\text{hyb}) }]  
-\\
-U(\beta)=& \frac{1}{Z_{\text {bath }}} \text{Tr}_B\left[
-\sum_{k} \frac{1}{k !} 
-\sum_{a b} 
-e^{-\beta H_\text{loc}}
-\int_{0}^{\beta} 
-\prod_{i=1}^{k} d \tau_{i} d \tau_{i}^{\prime} 
-c_{b_i}\left(\tau_{i}^{\prime}\right)    
-\Delta_{a_i b_i}\left(\tau_{i} - \tau_{i}^{\prime}\right)   
-c_{a_i}^{\dagger}\left(\tau_{i}\right) 
-\right]
+\begin{align}
+  U(\beta)=& \sum_k^{\infty}
+  \int_{0}^{\beta} d \tau_a \cdots d \tau_z
+  \sum_{a \ldots z} 
+  \Big[ (-1)^\sigma 
+  U(\beta-\tau_a) O_a 
+  U(\tau_a-\tau_b) O_b 
+  U(\tau_b-\tau_c) \cdots
+  \nonumber \\
+  &
+  \cdots 
+  O_n
+  U(\tau_{n}-\tau_{split}) 
+  U(\tau_{split}-\tau_{n+1})  
+  O_{n+1}
+  \cdots
+  U(\tau_y-\tau_z) O_z
+  U(\tau_z)
+  \Big] w_{hyb}
+  \label{eq::inchworm_order}
 \end{align}
 
-propagator:
+where $U(\beta)$ is the time evolution operator as calculated in previous section, $w_{hyb}$ is ... 
 
-
-A diagram is a compact way to represent the equations:
-\begin{align} 
-To 
-\\
-be
-\\ 
-done
+Order 0:
+\begin{align}
+  U_0(\beta)=&
+  U(\beta-\tau_{split}) 
+  U(\tau_{split})  
+  \label{eq::inchworm_order0}
 \end{align}
+
+Order 1:
+\begin{align}
+  U_1(\beta)=& \sum_k^{\infty}
+  \int_{0}^{\beta} d \tau_a d \tau_b
+  \sum_{a b} 
+  (-1)^\sigma 
+  U(\beta-\tau_a) O_a 
+  U(\tau_a-\tau_{split}) 
+  U(\tau_{split}-\tau_b)  
+  O_b
+  U(\tau_b)
+  w_{hyb}
+  \label{eq::inchworm_order1}
+\end{align}
+
+And so on. Note that the $\tau_{split}$ must happen in the middle here, otherwise $w_{hyb}=0$. 
+
+
+\subsection{Self consistency check}
+
+Let's go back to the simplest example of the spinless Hubbard model (one site $U=0$, one bath $\epsilon=0$) of sectoin~\ref{ED_bench}. We know that $U(\beta) = \cosh^2 B$ (where $B \equiv \frac{\beta\theta}{2}$). In that simple case, because of Pauli, every vertex must alternate $d$, $d^\dagger$ ...
+
+This simplify the number of topology to consider. We can fraction this calculation in integrals from $0$ to $\tau_{split}$ andfrom $\tau_{split}$ to $\beta$. Let's define, for convenience $c = \cosh(2\Delta t)$, $s = \sinh(2\Delta t)$, $\Delta t = t_b - t_a$ and $t_i = \frac{\theta\tau_i}{2}$, $t_s = \frac{\theta\tau_{split}}{2}$ and express these five integrals, necessary to express order 0 up to order 3:
+
+\begin{align}
+  y_1 (t_a,t_b) &=
+  \int_{t_a}^{t_b} dt_1   
+  U(t_b-t_1) 
+  U(t_1-t_a) 
+  \\
+  &=
+  \frac{1}{8} \Delta t (c+2)
+ +\frac{5}{16} s
+\end{align}
+
+\begin{align}
+  y_2 (t_a,t_b) &=
+  \int_{t_a}^{t_b} dt_2   
+  \int_{t_a}^{t_2} dt_1 
+  U(t_b-t_2) 
+  U(t_2-t_1) 
+  U(t_1-t_a) 
+  \\
+  &=
+  \frac{1}{64} \Delta t^2 (c+4)
+  +\frac{15}{128} \Delta t s
+  +\frac{3}{32} (c-1)
+\end{align}
+
+\begin{align}
+  y_3 (t_a,t_b) &=
+  \int_{t_a}^{t_b} dt_3  
+  \int_{t_a}^{t_3} dt_2 
+  \int_{t_a}^{t_2} dt_1 
+  U(t_b-t_3) 
+  U(t_3-t_2) 
+  U(t_2-t_1) 
+  U(t_1-t_a) 
+  \\
+  &=
+  \frac{1}{768} \Delta t^3 (c+8)
+  +\frac{5}{256} \Delta t^2 s
+  +\frac{1}{1024} \Delta t (57 c-64)
+  +\frac{7}{2048} s
+\end{align}
+
+\begin{align}
+  y_4 (t_a,t_b) &=
+  \int_{t_a}^{t_b} dt_4 
+  \int_{t_a}^{t_4} dt_3 
+  \int_{t_a}^{t_3} dt_2 
+  \int_{t_a}^{t_2} dt_1 
+  U(t_b-t_4) 
+  U(t_4-t_3) 
+  U(t_3-t_2) 
+  U(t_2-t_1) 
+  U(t_1-t_a) 
+  \\
+  &=
+    \frac{1}{12288} \Delta t^4 (c+16)
+  +\frac{25}{12288} \Delta t^3 s
+  +\frac{1}{16384} \Delta t^2 (205 c-320)
+  +\frac{435}{32768} \Delta t s
+  -\frac{5}{512} (c-1)
+\end{align}
+
+\begin{align}
+  y_5 (t_a,t_b) &=
+  \int_{t_a}^{t_b} dt_5 
+  \int_{t_a}^{t_5} dt_4 
+  \int_{t_a}^{t_4} dt_3 
+  \int_{t_a}^{t_3} dt_2 
+  \int_{t_a}^{t_2} dt_1 
+  U(t_b-t_5) 
+  U(t_5-t_4) 
+  U(t_4-t_3) 
+  U(t_3-t_2) 
+  U(t_2-t_1) 
+  U(t_1-t_a) 
+  \\
+  &=
+    \frac{1}{245760} \Delta t^5 (c+32)
+  +\frac{5}{32768} \Delta t^4 s
+  +\frac{1}{65536} \Delta t^3 (107 c-256)
+  +\frac{316}{65536} \Delta t^2 s
+  -\frac{1}{262144} \Delta t  (279c-2304)
+  -\frac{2025}{524288} s
+\end{align}
+
+With these definitions, the orders are:
+
+Order 0:
+\begin{align}
+  U_0(\beta)=&
+  U(\beta-\tau_{split}) 
+  U(\tau_{split})  
+\end{align}
+
+Order 1:
+\begin{align}
+  U_1(\beta)=& 2 y_1(0,t_s) y_1(t_s,B)
+\end{align}
+
+Order 2:
+\begin{align}
+  U_2(\beta)=& 4 y_2(0,t_s) y_2(t_s,B)
+\end{align}
+
+Order 3:
+\begin{align}
+  U_3(\beta)=& 8 \big( y_1(0,t_s) y_5(t_s,B)  + y_2(0,t_s) y_4(t_s,B) +
+      \\& 2 y_3(0,t_s) y_3(t_s,B) + y_4(0,t_s) y_2(t_s,B) + y_5(0,t_s) y_1(t_s,B) \big)
+\end{align}
+
+I skipped some details, for example the factor $2$ in the third term is not a type, it comes from $w_{hyb}$ that we did not explicitly tracked here. The details are left to the user. At the moment of this writing, this is what is tested in the function self$\_$consistendy$\_$hubbard$\_$spinless. Both Monte Carlo and this test agree. But it fails to reproduce the self-consistency result. In the end it does not converge to $U(\beta) = \cosh(\frac{\beta*theta}{2})$.
+
+
+
+\section{Hybridization part}
+
+This section discuss about the omitted part $w_hyb$, which is essentially just the connected terms of the determinant $\text{det} \Delta$. 
 
 In the following two sections, we will explore the formalism used here along a simple example that can be generated with the code \url{https://github.com/TRIQS/inchworm.git} under the tag \Verb#doc_0.1# (commit number \Verb#d0745e5#). After building with \Verb#cmake#, run in the file \Verb#build_directory/test/c++/diagram_analysis# to generate the example below.
 
-\section{Proper diagrams}
+We explore both approach. The first, proper diagram, consist of enumerating all the $k!$ terms (where $k$ is the order of expansion) and determine if they are proper or connected. This next section also define clearly what is this criterion. The second, inclusion-exclusion, is more elaborated and complicated, but faster.
+
+\subsection{Proper diagrams}
 
 \label{sec::proper}
 
@@ -538,7 +689,7 @@ Again, following the same procedure from above, we see that it is evident that t
 Note that this definition of connectivity is different from the one defined usually in the inchworm reference papers. This is a little technical for now, but we intend to use the dressed propagator on both side of the split points, hence not every point on the right side of the split point are connected by default. This is the only difference. But it will also affect the inclusion-exclusion method presented in the next section.
 
 
-\section{Inclusion-exclusion}
+\subsection{Inclusion-exclusion}
 \label{sec::inclu}
 
 This is a very brief summary of the algorithm. It is composed of two important classes: \Verb#segment# and \Verb#set_of_segment# and three important lists: a vector of single \Verb#segment#, a vector of \Verb#set_of_adjacent_segments# and a vector of \Verb#set_of_disjoint_segments#.
@@ -669,7 +820,7 @@ Here the signs shown on the left of the set of segments represent the product of
 
 We iterate the calculation of every segments that are in the list of single segment until the end, using this method. The last (full segment) is somewhat a little different since we do not exclude the last vertex. Indeed, what we want to find here is not the fully connected full segment, it is somewhat different. Hence we need to consider every segment in the vector of \Verb#set_of_disjoint_segments# above. The ``connectivity'' is given by the fact that no individual segment cross the split point. In other words, the final full segment, after the inclusion-exclusion procedure, will only contain ``diagrams'' that are proper by the definition of the Sec.~\ref{sec::proper}
 
-\subsection{Optimizations}
+\subsubsection{Optimizations}
 
 The algorithm presented here already contain one optimization, the first one presented in the paper of ~\cite{boag_inclusion-exclusion_2018}. Indeed, we already expressed everything in terms of adjacent segments only here, in order to simplify the formalism. In this same paper, there is one additonnal optimization is presented, a simple one. We can note that $c(S)$ is always zero for segment of length $2$. In that case, we can simply replace in Eq.~\eqref{eq::hyb_mat} the elements that describe adjacent points (segment of length two) by zero. If we do so, we can ignore every segment of length 2, thus the number of combination of segments is greatly reduced. 
 
@@ -678,6 +829,9 @@ A third optimization is to remove the segment of length $4$ of the type \Verb#x-
 A fourth optimization is to check, just before calculating a new determinant $v(R^j)$ if any of the previously calculated $D^j_{i}$ are zero. If this is the case, we can just skip the determinant calculation of $v(R^j)$.
 
 \section{Monte Carlo}
+
+THE REMAINING SECTIONS are OLD AND NEED TO BE REORGANIZED
+
 
 Suppose an hybridization matrix $\Delta$ of the form:
 \begin{equation}
@@ -800,6 +954,7 @@ The number of time points of the inchworm is given by the number of inching iter
 $U(\tau,\tau^\prime)$ is block diagonal. A first implementation is to take \Verb#atom_diag# and build around it. For this we need to use the constructor which specify the quantum numbers and use only (for now) the charge quantum number. For the propagator, we can use a  \Verb#block_gf<imtime>#. 
 
 \section{Exact diagonalization benchmark}
+\label{ED_bench}
 
 A good benchmark is to calculate the exact propagator we would get with exact diagonalization. The most basic example we can show here is a single interacting site connected to a single bath site. 
 
