@@ -85,7 +85,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   // Solve Parameters
   solve_params_t sp;
   sp.h_int           = h_atom;
-  sp.n_cycles        = 1000000;
+  sp.n_cycles        = 100000;
   sp.length_cycle    = 10;
   sp.n_warmup_cycles = 20;
   sp.max_time        = -1;
@@ -151,21 +151,54 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   double B   = tau_max * theta[0] / 2.;
   double t_s = tau_split * theta[0] / 2.;
 
-  double s1 = std::sinh(B - t_s);
-  double c1 = std::cosh(B - t_s);
+  auto y1 = [](double Dt) {
+    double s2 = std::sinh(2 * Dt);
+    double c2 = std::cosh(2 * Dt);
+    return 1. / 8 * Dt * (c2 + 2.) + 5. / 16 * s2;
+  };
 
-  double p1 = t_s * std::cosh(2 * t_s) / 8 + t_s / 4 + 5 * std::sinh(2 * t_s) / 16;
-  double p2 = (-(B - t_s) * s1 * s1 + 3. * (B - t_s) * c1 * c1 + 5 * s1 * c1) / 8.;
-  //double tmp         = std::cosh(theta[0] * cp.beta / 2.);
-  //double total_serie = std::pow(tmp, 4);
+  auto y2 = [](double Dt) {
+    double s3 = std::sinh(2 * Dt);
+    double c3 = std::cosh(2 * Dt);
+    return 1. / 64 * Dt * Dt * (c3 + 4.) + 15. / 128 * Dt * s3 + 3. / 32 * (c3 - 1.);
+  };
+
+  auto y3 = [](double Dt) {
+    double s4 = std::sinh(2 * Dt);
+    double c4 = std::cosh(2 * Dt);
+    return 1. / 768 * Dt * Dt * Dt * (c4 + 8.) + 5. / 256 * Dt * Dt * s4 + 1. / 1024 * Dt * (57. * c4 - 64.) + 7. / 2048 * s4;
+  };
+
+  auto y4 = [](double Dt) {
+    double s5 = std::sinh(2 * Dt);
+    double c5 = std::cosh(2 * Dt);
+    return 1. / 12288 * Dt * Dt * Dt * Dt * (c5 + 16.) + 25. / 12288 * Dt * Dt * Dt * s5 + 1. / 16384 * Dt * Dt * (205. * c5 - 320.)
+       + 435. / 32768 * Dt * s5 - 5. / 512. * (c5 - 1.);
+  };
+
+  auto y5 = [](double Dt) {
+    double s6 = std::sinh(2 * Dt);
+    double c6 = std::cosh(2 * Dt);
+    return 1. / 245760 * Dt * Dt * Dt * Dt * Dt * (c6 + 32.) + 5. / 32768 * Dt * Dt * Dt * Dt * s6 + 1. / 65536 * Dt * Dt * Dt * (107. * c6 - 256.)
+       + 316. / 65536 * Dt * Dt * s6 - 1. / 262144 * Dt * (279. * c6 - 2304.) - 2025. / 524288 * s6;
+  };
 
   double tmp    = std::cosh(B - t_s) * std::cosh(t_s - 0.0);
   double order0 = tmp * tmp;
-  double order1 = p1 * p2 * 2;
+  std::printf("order 0:       % 4.8f \n", order0);
 
-  std::printf("order 0:   % 4.8f \n", order0);
-  std::printf("order 1:   % 4.8f \n", order1);
-  std::printf("order 0+1: % 4.8f \n", order0 + order1);
+  double order1 = 2*y1(t_s) * y1(B-t_s);  
+  std::printf("order 1:       % 4.8f \n", order1 );
+
+  double order2 = 4*y2(t_s) * y2(B-t_s);
+  std::printf("order 2:       % 4.8f \n", order2 );
+  
+  double order3 = 8.*(y1(t_s) * y5(B-t_s) + y5(t_s) * y1(B-t_s) +
+                      y2(t_s) * y4(B-t_s) + y4(t_s) * y2(B-t_s) +
+	       	      y3(t_s) * y3(B-t_s) * 2.);  // yes two times, becasue of hybridization
+  std::printf("order 3:       % 4.8f \n", order3 );
+
+  std::printf("order 0+1+2+3: % 4.8f \n", order0 + order1 + order2 + order3);
 }
 
 MAKE_MAIN

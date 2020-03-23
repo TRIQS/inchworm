@@ -60,7 +60,7 @@ namespace inchworm::moves {
   scalar_t insert::accept() {
     //std::printf("\n\nsize=%d\n", proposed_config.size());
     //for (auto const &B : proposed_u_frame) std::cout << B;
-    if (proposed_config.size() == 3) { //params.verbosity == 10) {
+    if (proposed_config.size() == 300) { //params.verbosity == 10) {
       std::printf("\n\n#######\n\n");
       auto diagram = diagram::time_diagram_t(proposed_config.c_list, proposed_config.cdag_list, {params.tau_split});
       print_configuration(diagram);

@@ -236,7 +236,16 @@ U(\beta)=& \sum_k^{\infty}
 d_{j_k}(\tau_k) d_{j_k^\prime}^{\dagger} (\tau_k^\prime) \cdots d_{j_1}(\tau_1) d_{j_1^\prime}^{\dagger} (\tau_1^\prime) \Big] \operatorname{det} \Delta
 \label{eq::normal_order}
 \end{align}
-where $\tau_k > \cdots >\tau_1$ and $\tau_k^\prime > \cdots >\tau_1^\prime$. This is the normal order, i.e. the order that does not have a sign. Practically, we need to order the operators for all the times togheter such that $\tau_{left} > \cdots >\tau_{right}$ but there is a sign $(-1)^\sigma$ where $\sigma$ is the number of permutation one must do to order all the times starting from the normal order. 
+where $\tau_k > \cdots >\tau_1$ and $\tau_k^\prime > \cdots >\tau_1^\prime$. This is the normal order, i.e. the order that does not have a sign. Practically, we need to order the operators for all the times togheter such that $\tau_{left} > \cdots >\tau_{right}$. This reordering imply a new sign $(-1)^\sigma$ where $\sigma$ is the number of permutation one must do to order all the times starting from the normal order. 
+\begin{align}
+U(\beta)=& \sum_k^{\infty}
+\int_{0}^{\beta} d \tau_1 \cdots \int_{\tau_{k-1}}^{\beta} d \tau_k
+\int_{0}^{\beta} d \tau_1 \cdots \int_{\tau_{k-1}^\prime}^{\beta} d \tau_k^{\prime}
+\sum_{j_1 \ldots j_k}  \sum_{j_{1}^{\prime} \ldots j_k^{\prime}} 
+\Big[ T_{\tau} e^{-\beta H_\mathrm{loc}}
+d_{j_k}(\tau_k) d_{j_k^\prime}^{\dagger} (\tau_k^\prime) \cdots d_{j_1}(\tau_1) d_{j_1^\prime}^{\dagger} (\tau_1^\prime) \Big] \operatorname{det} \Delta
+\label{eq::normal_order}
+\end{align}
 
 \subsection{Specific to my implementation}
 There are many ways to evaluate this $\sigma$. In my implementation, the $d^\dagger$ and $d$ are stored in two vectors, and the time ordered operator in another vector. It is more natural to work with vector where the time is sorted in the ascending order. This is also the order in which we apply the operator in the matrix products. In that case, the number of permutation between the normal order and the sorted order ($\sigma$) is simply the sum of the positions of the $d^\dagger$ operators in the sorted order. 
