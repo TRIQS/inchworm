@@ -88,7 +88,7 @@ namespace inchworm::diagram {
   // that keep track of the arches that cross the split_point, we name
   // this vector cross_split_point_pile.
   //
-  bool test_diagram_connection(const std::vector<int> &permutation, time_diagram_t const &diagram) {
+  bool test_diagram_connection(const std::vector<int> &permutation, time_diagram_t const &diagram, int verbose) {
 
     std::vector<bool> cross_split_point(diagram.perturbation_order(), false); // for graphic purpose only (to change)
     std::vector<bool> visited(diagram.perturbation_order(), false);
@@ -110,7 +110,7 @@ namespace inchworm::diagram {
       }
     }
 
-    if constexpr (verbose > 2) {
+    if (verbose > 2) {
       std::printf("\n");
       print_graph(permutation, cross_split_point, visited, diagram);
     }
@@ -121,7 +121,7 @@ namespace inchworm::diagram {
       grow_pile(arch, permutation, visited, diagram);
     }
 
-    if constexpr (verbose > 2) print_graph(permutation, cross_split_point, visited, diagram);
+    if (verbose > 2) print_graph(permutation, cross_split_point, visited, diagram);
 
     return std::all_of(visited.begin(), visited.end(), [](bool v) { return v; });
   }
@@ -144,14 +144,17 @@ namespace inchworm::diagram {
       NN += 1;
       int parity = find_parity(permutation);
       value      = 1.0;
-      for (int i = 0; i < permutation.size(); i++) value *= hyb_mat.mat(permutation[i], i);
+      for (int i = 0; i < permutation.size(); i++) {
+        value *= hyb_mat.mat(i,permutation[i]);
+        //if (verbose > 2) std::printf("permutation[i] = %d, i = %d, hyb_mat.mat = % 4.8f  \n", permutation[i], i, hyb_mat.mat(permutation[i], i));
+      }
 
       if (verbose > 2) {
         std::printf("\ndiagram #%d:  permutation (", NN);
         for (auto i : permutation) std::printf("%d ", i);
         std::printf(")");
       }
-      if (test_diagram_connection(permutation, diagram)) {
+      if (test_diagram_connection(permutation, diagram, verbose)) {
         N_proper += 1;
         total_value += parity * value;
         if (verbose > 2) std::printf("proper,   value=% 4.7f, parity=%d\n\n", value, parity);

@@ -85,7 +85,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   // Solve Parameters
   solve_params_t sp;
   sp.h_int           = h_atom;
-  sp.n_cycles        = 100000;
+  sp.n_cycles        = 3000000;
   sp.length_cycle    = 10;
   sp.n_warmup_cycles = 20;
   sp.max_time        = -1;
@@ -93,7 +93,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   sp.post_process    = true;
   sp.measure_sign    = true;
   sp.quantum_numbers = qn;
-  sp.random_seed     = 4534789 + 928374 * mpi::communicator().rank();
+  sp.random_seed     = 1234789 + 928374 * mpi::communicator().rank();
 
   // Solve the impurity model
   //S.solve_single_step(sp);
@@ -139,7 +139,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   std::printf("\n");
 */
 
-  double tau_split = 0.50 * cp.beta;
+  double tau_split = 0.90 * cp.beta;
   double tau_max   = 1.00 * cp.beta;
 
   S.solve_self_consistently(sp, u_tau, tau_split, tau_max);
@@ -187,18 +187,18 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   double order0 = tmp * tmp;
   std::printf("order 0:       % 4.8f \n", order0);
 
-  double order1 = 2*y1(t_s) * y1(B-t_s);  
-  std::printf("order 1:       % 4.8f \n", order1 );
+  double order1 = 2 * y1(t_s) * y1(B - t_s);
+  std::printf("order 1:       % 4.8f \n", order1);
 
-  double order2 = 4*y2(t_s) * y2(B-t_s);
-  std::printf("order 2:       % 4.8f \n", order2 );
-  
-  double order3 = 8.*(y1(t_s) * y5(B-t_s) + y5(t_s) * y1(B-t_s) +
-                      y2(t_s) * y4(B-t_s) + y4(t_s) * y2(B-t_s) +
-	       	      y3(t_s) * y3(B-t_s) * 2.);  // yes two times, becasue of hybridization
-  std::printf("order 3:       % 4.8f \n", order3 );
+  double order2 = 4 * (y2(t_s) * y2(B - t_s));
+  std::printf("order 2:       % 4.8f \n", order2);
 
+  double order3 = -8 * (y1(t_s) * y5(B - t_s) + y2(t_s) * y4(B - t_s) + y4(t_s) * y2(B - t_s) + y5(t_s) * y1(B - t_s));
+  std::printf("order 3:       % 4.8f \n", order3);
+
+  //std::printf("order 0+1+2+3: % 4.8f \n", order0 + order1*2. + order2/4.*6. + order3/36.*24);
   std::printf("order 0+1+2+3: % 4.8f \n", order0 + order1 + order2 + order3);
+  std::printf("\n\ncosh^2(B): % 4.8f \n", std::cosh(B) * std::cosh(B));
 }
 
 MAKE_MAIN

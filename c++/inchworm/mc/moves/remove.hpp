@@ -5,6 +5,7 @@
 
 #include <triqs/mc_tools/random_generator.hpp>
 #include <inchworm/diagram/inclusion_exclusion.hpp>
+#include <inchworm/diagram/proper_enum.hpp>
 
 namespace inchworm::moves {
 

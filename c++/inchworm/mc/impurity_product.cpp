@@ -1,3 +1,4 @@
+#include <iomanip>
 #include "./impurity_product.hpp"
 
 namespace inchworm {
@@ -20,14 +21,14 @@ namespace inchworm {
 
   //
   void print(u_tau_t u_tau, double tau) {
-    for (int bl = 0; bl < u_tau.size(); bl++) { std::cout << (matrix_t)u_tau[bl](tau); }
+    for (int bl = 0; bl < u_tau.size(); bl++) { std::cout << std::setprecision(10) << (matrix_t)u_tau[bl](tau); }
     std::cout << "\n";
     return;
   }
 
   //
   void print(u_tau_t u_tau, int frame_number) {
-    for (int bl = 0; bl < u_tau.size(); bl++) { std::cout << u_tau[bl][frame_number]; }
+    for (int bl = 0; bl < u_tau.size(); bl++) { std::cout << std::setprecision(10) << u_tau[bl][frame_number]; }
     std::cout << "\n";
     return;
   }
@@ -65,7 +66,7 @@ namespace inchworm {
           u_frame[bl] = (*u_tau_p)[bl](dtau); // (interpolation)
           u_frame[bl] = (*u_tau_p)[bl](dtau2) * u_frame[bl];
         }
-	return u_frame;
+        return u_frame;
       } else
         return make_bare_propagator_frame(ad, tau, false);
     }
