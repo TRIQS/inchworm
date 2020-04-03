@@ -57,7 +57,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   solver_core S(cp);
   //int up = 0, dn = 1;
   int n_bath       = 1;
-  double theta[]   = {3.2};
+  double theta[]   = {3.2};//1.41421356237};
   double epsilon[] = {0.};
 
   for (auto const &tau : S.Delta_tau[0].mesh()) {
@@ -85,7 +85,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   // Solve Parameters
   solve_params_t sp;
   sp.h_int           = h_atom;
-  sp.n_cycles        = 3000000;
+  sp.n_cycles        = 100000;
   sp.length_cycle    = 10;
   sp.n_warmup_cycles = 20;
   sp.max_time        = -1;
@@ -93,7 +93,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   sp.post_process    = true;
   sp.measure_sign    = true;
   sp.quantum_numbers = qn;
-  sp.random_seed     = 1234789 + 928374 * mpi::communicator().rank();
+  sp.random_seed     = 12345789 + 928374 * mpi::communicator().rank();
 
   // Solve the impurity model
   //S.solve_single_step(sp);
@@ -139,7 +139,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   std::printf("\n");
 */
 
-  double tau_split = 0.90 * cp.beta;
+  double tau_split = 0.50 * cp.beta;
   double tau_max   = 1.00 * cp.beta;
 
   S.solve_self_consistently(sp, u_tau, tau_split, tau_max);

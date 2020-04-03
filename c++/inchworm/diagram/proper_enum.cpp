@@ -157,7 +157,7 @@ namespace inchworm::diagram {
       if (test_diagram_connection(permutation, diagram, verbose)) {
         N_proper += 1;
         total_value += parity * value;
-        if (verbose > 2) std::printf("proper,   value=% 4.7f, parity=%d\n\n", value, parity);
+        if (verbose > 2) std::printf("PROPER,                value=% 4.7f, parity=%d\n\n", value, parity);
       } else if (verbose > 2)
         std::printf("improper, value=% 4.7f, parity=%d\n\n", value, parity);
     } while (std::next_permutation(permutation.begin(), permutation.end()));

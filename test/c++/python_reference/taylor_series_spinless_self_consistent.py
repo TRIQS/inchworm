@@ -1,6 +1,51 @@
 
 import sympy as sy
 import numpy as np
+
+import re
+
+def propagator_product_for_U0():
+
+ beta = 2.
+ tau_split = 0.5*beta
+ theta = 3.2
+ line = "c(0.052559432586)_0 c^+(1.170881322858)_0 c(1.174520496552)_0 c^+(1.324650712620)_0 c(1.522218051255)_0 c^+(1.564001699808)_0 c(1.914343198276)_0 c^+(1.957088277200)_0"
+ size = 14
+ 
+ 
+ pos = [m.start() for m in re.finditer('\(', line)]
+ #[2,17,30,45,58]
+ 
+ times = [0.0]
+ print 'times'
+ for i in range(len(pos)):
+  tau = float(line[pos[i]+1:pos[i]+1+size])
+  if(tau_split < tau and tau_split> times[-1]):
+    times.append( tau_split )
+  times.append( tau )
+  #print line[pos[i]+1:pos[i]+1+size]  
+ times.append(beta)
+ print times
+ print
+ 
+ product = 1.0
+ print 'product'
+ for i in range(len(times)-1):
+   cosh = np.cosh( (times[i+1]-times[i]) * theta / 2. )
+   product *= cosh*cosh
+   print cosh*cosh
+ 
+ print
+ print product
+
+propagator_product_for_U0()
+exit()
+
+
+
+
+
+
 from sympy.functions import cosh
 
 theta = sy.Symbol('theta')

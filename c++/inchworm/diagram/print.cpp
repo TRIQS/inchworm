@@ -55,9 +55,9 @@ namespace inchworm::diagram {
     print_diag(diagram);
     for (int j = 0; j < diagram.op_list.size(); j++) {
       if (diagram.op_list[j].dag)
-        std::printf(" c(%2.5f)_%d", diagram.op_list[j].tau, diagram.op_list[j].linear_index);
+        std::printf(" c(%2.12f)_%d", diagram.op_list[j].tau, diagram.op_list[j].linear_index);
       else
-        std::printf(" c^+(%2.5f)_%d", diagram.op_list[j].tau, diagram.op_list[j].linear_index);
+        std::printf(" c^+(%2.12f)_%d", diagram.op_list[j].tau, diagram.op_list[j].linear_index);
     }
     std::printf("\n");
   }

@@ -26,7 +26,7 @@ namespace inchworm::measures {
     }
     //average_sign += s;
     //if (qmc_config_data.config.size() == 2)
-    std::printf("%d ", qmc_config_data.config.size());
+    //std::printf("%d ", qmc_config_data.config.size());
     for (int bl = 0; bl < results.u_frame.size(); bl++) results.u_frame[bl] += s * qmc_config_data.u_frame[bl];
 
     if (qmc_config_data.config.size() == 0)
