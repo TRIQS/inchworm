@@ -126,9 +126,14 @@ namespace inchworm {
         exit(1);
       }
 
-      //std::cout << ad_full.get_fops().data()[i] << " " << ad_target.get_fops().data()[i] << "\n";
+      //std::cout << ad_target.get_fops().data()[i] << "\n";
     }
-    int linear_index = ad_full.get_fops().data().size() - ad_target.get_fops().data().size();
+    
+    //for (int i = 0; i < (int)ad_full.get_fops().data().size(); i++) {
+    //  std::cout << " " << ad_full.get_fops().data()[i] << "\n";
+    //}
+
+    int linear_index = ad_target.get_fops().data().size();
     //std::printf("li=%d\n",linear_index);
 
     u_frame_t u_frame_result = make_zero_propagator_frame(ad_target);
@@ -155,14 +160,14 @@ namespace inchworm {
       std::cout << "\n";
     }
     //return 0.0;
-*/
+//*/
 
     for (int s = 0; s < ad_full.n_subspaces(); s++) {
       EXPECTS(es_full[s].eigenvalues.size() == fs_full[s].size());
       int size    = ad_full.get_subspace_dim(s);
       auto E_Udag = dagger(es_full[s].unitary_matrix);
       for (int i = 0; i < size; i++) {
-        //std::printf("%lu ", fs_full[s][i]);
+        //std::printf("-----> %lu   % 4.8f\n ", fs_full[s][i],  fct(es_full[s].eigenvalues[i] + ad_full.get_gs_energy()));
         for (int j = 0; j < size; j++) E_Udag(i, j) *= fct(es_full[s].eigenvalues[i] + ad_full.get_gs_energy());
       }
       //std::printf("\n");
@@ -171,10 +176,12 @@ namespace inchworm {
       for (int i = 0; i < size; i++) {
         uint64_t traced_idx1    = get_MSB(fs_full[s][i], linear_index);
         uint64_t preserved_idx1 = get_LSB(fs_full[s][i], linear_index);
+        //std::printf("%u %u\n", traced_idx1, preserved_idx1);
 
         for (int j = 0; j < size; j++) {
           uint64_t traced_idx2    = get_MSB(fs_full[s][j], linear_index);
           uint64_t preserved_idx2 = get_LSB(fs_full[s][j], linear_index);
+          //std::printf(" %u %u\n", traced_idx2, preserved_idx2);
           if (traced_idx1 == traced_idx2) {
 
             auto [s1, i1] = find_index(preserved_idx1, fs_target);

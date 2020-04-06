@@ -57,15 +57,15 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   solver_core S(cp);
   //int up = 0, dn = 1;
   int n_bath       = 1;
-  double theta[]   = {4.0};//1.41421356237};
-  double epsilon[] = {0.};
+  double theta[]   = {3.2};//1.41421356237};
+  double epsilon[] = {0.2};
 
   for (auto const &tau : S.Delta_tau[0].mesh()) {
     double val;
     for (int i = 0; i < 1 * n_site; i++) {
       S.Delta_tau[i][tau] = 0.0;
       for (int n = 0; n < n_bath; n++) {
-        if (epsilon[n] > 0.0)
+        if (epsilon[n] >= 0.0)
           val = -theta[n] * theta[n] * (std::exp(-((double)tau) * (epsilon[n])) / (1. + std::exp(-cp.beta * epsilon[n])));
         else
           val = -theta[n] * theta[n] * (std::exp(-((double)tau - cp.beta) * (epsilon[n])) / (1. + std::exp(cp.beta * epsilon[n])));
@@ -85,7 +85,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   // Solve Parameters
   solve_params_t sp;
   sp.h_int           = h_atom;
-  sp.n_cycles        = 100000;
+  sp.n_cycles        = 1000000;
   sp.length_cycle    = 10;
   sp.n_warmup_cycles = 20;
   sp.max_time        = -1;
@@ -93,7 +93,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   sp.post_process    = true;
   sp.measure_sign    = true;
   sp.quantum_numbers = qn;
-  sp.random_seed     = 313345789 + 928374 * mpi::communicator().rank();
+  sp.random_seed     = 123345789 + 928374 * mpi::communicator().rank();
 
   // Solve the impurity model
   //S.solve_single_step(sp);
@@ -105,6 +105,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   auto fops_atom = make_fops(0, n_site);
   auto fops_bath = make_fops(n_site, n_site + n_bath);
 
+  std::printf("salut\n");
   auto h_hyb  = 0 * n("up", 0);
   auto h_bath = 0 * n("up", 0);
   for (int j = 0; j < n_site; j++) {
@@ -112,7 +113,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
       h_hyb += theta[i] * (c_dag("up", j) * c("up", i + n_site) + c_dag("up", i + n_site) * c("up", j));
       //h_hyb += theta[i] * (c_dag("dn", j) * c("dn", i + n_site) + c_dag("dn", i + n_site) * c("dn", j));
 
-      h_bath += epsilon[i] * (n("up", i + n_site));
+      h_bath -= epsilon[i] * (n("up", i + n_site));
     }
   }
 
@@ -147,7 +148,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   print(u_tau, tau_split);
   std::printf("\n\n");
   print(u_tau, tau_max);
-
+/*
   double B   = tau_max * theta[0] / 2.;
   double t_s = tau_split * theta[0] / 2.;
 
@@ -199,6 +200,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   //std::printf("order 0+1+2+3: % 4.8f \n", order0 + order1*2. + order2/4.*6. + order3/36.*24);
   std::printf("order 0+1+2+3: % 4.8f \n", order0 + order1 + order2 + order3);
   std::printf("\n\ncosh^2(B): % 4.8f \n", std::cosh(B) * std::cosh(B));
+  */
 }
 
 MAKE_MAIN

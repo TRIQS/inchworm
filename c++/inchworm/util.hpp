@@ -11,10 +11,16 @@
 namespace inchworm {
 
   /// Return the most significant bit (MSB: the leftmost numbers in a binary representation) via an integer.
-  inline uint64_t get_MSB(uint64_t a, int shift) { return (a >> shift); }
+  inline uint64_t get_MSB(uint64_t a, int shift) {
+    //std::printf("MSB %u %u  %u\n", a, shift, (a >> shift));
+    return (a >> shift);
+  }
 
   /// Return the least significant bit (LSB: the rigthmost numbers in a binary representation) via an integer.
-  inline uint64_t get_LSB(uint64_t a, int shift) { return (a % (1 << shift)); }
+  inline uint64_t get_LSB(uint64_t a, int shift) {
+    //std::printf("LSB %u %u  %u\n", a, shift, (a % (1 << shift)));AA
+    return (a % (1 << shift)) ;
+  }
 
   /// Partial sum, tracing over indices above linear_index. Only the linear_index first degrees of freedom will be preserved.
   /**
@@ -28,7 +34,7 @@ namespace inchworm {
   scalar_t trace(atom_diag const &ad_full, std::function<double(double)> fct);
 
   void print_energies(std::vector<std::vector<double>> const &E);
-  void print_eigensystems(atom_diag const &ad); 
+  void print_eigensystems(atom_diag const &ad);
   void print_matrix(triqs::arrays::matrix<double> m);
 
 } // namespace inchworm
