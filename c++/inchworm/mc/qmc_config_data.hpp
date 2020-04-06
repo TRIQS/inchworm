@@ -27,16 +27,17 @@ namespace inchworm {
   struct qmc_config_data_t {
 
     // last accepted paraemeters
-    config_t config;            // last accepted configuration of c and cdag
-    weights_t w;                // weight values of the last accepted configuration
-    u_frame_t u_frame;          // frame of the last accepted configuraiton: just one time frame of a propagator
-    int sign;                   // sign of the last accepted configuration
-    scalar_t normalization_cte; //
+    config_t config;   // last accepted configuration of c and cdag
+    weights_t w;       // weight values of the last accepted configuration
+    u_frame_t u_frame; // frame of the last accepted configuraiton: just one time frame of a propagator
+    int sign;          // sign of the last accepted configuration
+    //scalar_t normalization_cte; //
 
-    qmc_config_data_t(atom_diag const &h_diag, double tau_max) : w{1., 1.}, sign{1} {
-      u_frame           = make_bare_propagator_frame(h_diag, tau_max, false);
-      normalization_cte = u_frame[0](0, 0);
-      std::printf("test %f\n",normalization_cte);
+    qmc_config_data_t(atom_diag const &h_diag, double tau_max, double tau_split = 0.0, u_tau_t const *const u_tau_p = nullptr) : w{1., 1.}, sign{1} {
+      u_frame = make_zeroth_order(h_diag, tau_max, tau_split, u_tau_p);
+      //u_frame           = make_bare_propagator_frame(h_diag, tau_max, false);
+      //normalization_cte = u_frame[0](0, 0);
+      //std::printf("test %f\n",normalization_cte);
     }
 
     //qmc_config_data_t(params_t const &params, atom_diag const &h_diag, u_tau_t const &u_tau, block_gf_const_view<imtime> delta,
@@ -72,6 +73,7 @@ namespace inchworm {
 
     // updated at every inch step:
     u_tau_t const &u_tau; // THE propagator
+    //u_tau_t const *const u_tau_p;
 
     // different at every inch step:
     double tau_max;           // similar to beta, but configuration here does not always goes up to beta. 0 < tau_max <= beta

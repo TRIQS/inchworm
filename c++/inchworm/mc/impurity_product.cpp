@@ -54,22 +54,26 @@ namespace inchworm {
     return u_tau;
   }
 
+  u_frame_t make_zeroth_order(atom_diag const &ad, double tau, double tau_split, u_tau_t const *const u_tau_p) {
+    if (u_tau_p) {
+      u_frame_t u_frame = make_zero_propagator_frame(ad);
+      //for (auto &B : u_frame) std::cout << B;
+
+      double dtau2 = tau - tau_split;
+      double dtau  = tau_split - 0.;
+      for (int bl = 0; bl < ad.n_subspaces(); bl++) {
+        u_frame[bl] = (*u_tau_p)[bl](dtau); // (interpolation)
+        u_frame[bl] = (*u_tau_p)[bl](dtau2) * u_frame[bl];
+      }
+      return u_frame;
+    } else
+      return make_bare_propagator_frame(ad, tau, false);
+  }
+
   //
   u_frame_t propagator_product(atom_diag const &ad, time_diagram_t const &diagram, double tau, double tau_split, u_tau_t const *const u_tau_p) {
 
-    if (diagram.size() == 0) {
-      if (u_tau_p) {
-        u_frame_t u_frame = make_zero_propagator_frame(ad);
-        double dtau2      = tau - tau_split;
-        double dtau       = tau_split - 0.;
-        for (int bl = 0; bl < ad.n_subspaces(); bl++) {
-          u_frame[bl] = (*u_tau_p)[bl](dtau); // (interpolation)
-          u_frame[bl] = (*u_tau_p)[bl](dtau2) * u_frame[bl];
-        }
-        return u_frame;
-      } else
-        return make_bare_propagator_frame(ad, tau, false);
-    }
+    if (diagram.size() == 0) return make_zeroth_order(ad, tau, tau_split, u_tau_p);
 
     constexpr bool set_gs_to_0 = false;
     u_frame_t u_frame          = make_zero_propagator_frame(ad);

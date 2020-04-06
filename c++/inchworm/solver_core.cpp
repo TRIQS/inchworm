@@ -113,7 +113,6 @@ namespace inchworm {
     std::printf("\n");
   } // namespace inchworm
 
-
   void solver_core::solve_self_consistently(solve_params_t const &solve_params, u_tau_t const &u_tau_, double tau_split, double tau_max) {
 
     // Merge constr_params and solve_params
@@ -122,17 +121,17 @@ namespace inchworm {
     //double tau_max   = constr_params.beta;
     //double tau_split = constr_params.beta / 2;
 
-    u_tau = u_tau_;
+    u_tau        = u_tau_;
     u_frame_bare = make_bare_propagator_frame(h_diag, tau_max, false);
-    auto res = single_step(solve_params, tau_split, tau_max, false);
+    auto res     = single_step(solve_params, tau_split, tau_max, false);
     //std::cout << (double)u_frame_zeroth_order(0, 0);
     //exit(1);
 
     //auto u_frame_zeroth_order = u_tau[0](tau_max);
-    auto u_frame_zeroth_order = u_tau[0](tau_max - tau_split) * u_tau[0](tau_split) ;
+    auto u_frame_zeroth_order = u_tau[0](tau_max - tau_split) * u_tau[0](tau_split);
     //double normalization_cte = (double)res.u_frame_0th_order[0](0, 0) / ((double)u_frame_bare[0](0, 0)); //need to do better at some point
     //double normalization_cte  = (double)res.u_frame_0th_order[0](0, 0) / ((double)u_frame_zeroth_order(0, 0)); //need to do better at some point
-    double normalization_cte  = (double)res.u_frame_0th_order[0](0, 0) / ((double)u_frame_zeroth_order(0, 0)); //need to do better at some point
+    double normalization_cte = (double)res.u_frame_0th_order[0](0, 0) / ((double)u_frame_zeroth_order(0, 0)); //need to do better at some point
     std::printf("\n ");
 
     for (int i = 0; i < res.u_frame_0th_order.size(); i++) {
@@ -164,7 +163,7 @@ namespace inchworm {
     auto &rng = mc.get_rng();
 
     // Create Monte-Carlo configuration
-    qmc_config_data_t qmc_config_data{h_diag, tau_max};
+    qmc_config_data_t qmc_config_data{h_diag, tau_max, tau_split, &u_tau};
 
     // Create Monte-Carlo params
     qmc_params_t qmc_params{Delta_tau, map_lin_idx_to_block_inner, h_diag, u_tau, tau_max, tau_split, use_bare_propagator};

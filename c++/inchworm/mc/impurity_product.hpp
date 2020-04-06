@@ -33,8 +33,12 @@ namespace inchworm {
    * @param u_tau Full propagator calculated up until this point.
    * @return u_frame_t, at time tau, resulting from this product.
    */
+
+  //
+  u_frame_t make_zeroth_order(atom_diag const &ad, double tau, double tau_split=0.0, u_tau_t const *const u_tau_p = nullptr);
+
   //u_frame_t propagator_product(atom_diag const &ad, time_diagram_t const &diagram, double tau, u_tau_t const *const u_tau_p = nullptr);
-  u_frame_t propagator_product(atom_diag const &ad, time_diagram_t const &diagram, double tau, double tau_split=-1.0, u_tau_t const *const u_tau_p = nullptr);
+  u_frame_t propagator_product(atom_diag const &ad, time_diagram_t const &diagram, double tau, double tau_split=0.0, u_tau_t const *const u_tau_p = nullptr);
 
   inline std::ostream &operator<<(std::ostream &out, u_frame_t const &u_frame) {
     out << "propagator_frame (size: " << u_frame.size() << ")\n";

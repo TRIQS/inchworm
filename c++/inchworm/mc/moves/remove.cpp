@@ -53,9 +53,9 @@ namespace inchworm::moves {
     //std::printf("yes\n");
     //std::printf("\n\nsize=%d\n", proposed_config.size());
     //for (auto const &B : proposed_u_frame) std::cout << B;
-    if (proposed_config.size() == 1000) {
+    if (proposed_config.size() == 800) {
       auto diagram = diagram::time_diagram_t(proposed_config.c_list, proposed_config.cdag_list, {params.tau_split});
-      if (diagram.split_points[0] == 1) {
+      //if (diagram.split_points[0] == 1) {
         std::printf("\n\n====================================================\n\n");
         print_configuration(diagram);
         auto hyb_mat = diagram::hyb_matrix_t(diagram, params.hyb_adaptor);
@@ -63,12 +63,12 @@ namespace inchworm::moves {
         //std::printf("\n\nsign= %d  t_ratio=% 4.7f  w_hyb=% 4.7f  w_loc=% 4.7f\n", sign, params.tau_max / (proposed_config.size() + 1), proposed_w.hyb, proposed_w.loc);
         for (auto const &B : proposed_u_frame) std::cout << B;
         std::printf("\n\nsign= % d   w_hyb=% 4.7f  w_loc=% 4.7f\n\n\n", proposed_sign, proposed_w.hyb, proposed_w.loc);
-        std::printf("proper_enum w.hyb         =% 4.7f \n", diagram::proper_enum(diagram, hyb_mat, 10));
-        std::printf("inclusion_exclusion w.hyb =% 4.7f \n", diagram::inclusion_exclusion(diagram, hyb_mat, 10));
+        std::printf("proper_enum w.hyb         =% 4.7f \n", diagram::proper_enum(diagram, hyb_mat, 0));
+        std::printf("inclusion_exclusion w.hyb =% 4.7f \n", diagram::inclusion_exclusion(diagram, hyb_mat, 0));
         std::printf("hyb.det()=% 4.7f \n", hyb_mat.det());
-      }
+      //}
     } else {
-      std::printf("%d ", proposed_config.size());
+      //std::printf("%d ", proposed_config.size());
     }
     data.w       = proposed_w;
     data.u_frame = proposed_u_frame;

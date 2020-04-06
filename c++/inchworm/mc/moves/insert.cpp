@@ -60,7 +60,7 @@ namespace inchworm::moves {
   scalar_t insert::accept() {
     //std::printf("\n\nsize=%d\n", proposed_config.size());
     //for (auto const &B : proposed_u_frame) std::cout << B;
-    if (proposed_config.size() == 3) {
+    if (proposed_config.size() == 800) {
       auto diagram = diagram::time_diagram_t(proposed_config.c_list, proposed_config.cdag_list, {params.tau_split});
       if (diagram.split_points[0] == 1) {
         std::printf("\n\n====================================================\n\n");
@@ -75,7 +75,7 @@ namespace inchworm::moves {
         std::printf("hyb.det()=% 4.7f \n", hyb_mat.det());
       }
     } else {
-      std::printf("%d ", proposed_config.size());
+      //std::printf("%d ", proposed_config.size());
     }
     data.w       = proposed_w;
     data.u_frame = proposed_u_frame;
