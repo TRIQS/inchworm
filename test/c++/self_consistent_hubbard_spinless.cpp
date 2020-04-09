@@ -57,8 +57,8 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   solver_core S(cp);
   //int up = 0, dn = 1;
   int n_bath       = 1;
-  double theta[]   = {3.2};//1.41421356237};
-  double epsilon[] = {0.2};
+  double theta[]   = {4.0};//1.41421356237};
+  double epsilon[] = {20.};
 
   for (auto const &tau : S.Delta_tau[0].mesh()) {
     double val;
@@ -93,10 +93,10 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   sp.post_process    = true;
   sp.measure_sign    = true;
   sp.quantum_numbers = qn;
-  sp.random_seed     = 123345789 + 928374 * mpi::communicator().rank();
+  sp.random_seed     = 22345789 + 928374 * mpi::communicator().rank();
 
   // Solve the impurity model
-  //S.solve_single_step(sp);
+  S.solve_single_step(sp);
   //exit(0);
 
   // Compare against the reference data
@@ -113,7 +113,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
       h_hyb += theta[i] * (c_dag("up", j) * c("up", i + n_site) + c_dag("up", i + n_site) * c("up", j));
       //h_hyb += theta[i] * (c_dag("dn", j) * c("dn", i + n_site) + c_dag("dn", i + n_site) * c("dn", j));
 
-      h_bath -= epsilon[i] * (n("up", i + n_site));
+      h_bath += epsilon[i] * (n("up", i + n_site));
     }
   }
 
@@ -148,6 +148,9 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   print(u_tau, tau_split);
   std::printf("\n\n");
   print(u_tau, tau_max);
+  
+  double B   = tau_max * theta[0] / 2.;
+  std::printf("\n\ncosh^2(B): % 4.8f \n", std::cosh(B) * std::cosh(B));
 /*
   double B   = tau_max * theta[0] / 2.;
   double t_s = tau_split * theta[0] / 2.;

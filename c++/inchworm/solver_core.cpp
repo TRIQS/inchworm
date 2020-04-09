@@ -70,7 +70,7 @@ namespace inchworm {
     _h_loc = solve_params.h_int;
     h_diag = {_h_loc, fops, solve_params.quantum_numbers};
     u_tau  = make_propagator(h_diag, constr_params.beta, constr_params.n_tau);
-    print_eigensystems(h_diag);
+    //print_eigensystems(h_diag);
   }
 
   void solver_core::solve(solve_params_t const &solve_params) {
