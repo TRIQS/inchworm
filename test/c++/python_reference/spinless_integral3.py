@@ -10,6 +10,7 @@ plt.ylabel('U-U_{approx}')
 plt.xlabel('theta')
 
 plt.yscale("log")
+plt.xscale("log")
 
 
 
@@ -83,8 +84,8 @@ for ii in range(N):
   full, order0, order1, order2, order3 = calculate_orders(beta,theta_ii,t_s_scale)
   full0 = full  - order0
   full1 = full0 - order1
-  full2 = full1 - order2
-  full3 = full2 - order3
+  full2 = theta_ii**6
+  full3 = order3
   print full, full0, full1, full2, full3
   v_full.append(np.abs(full))
   v_full0.append(np.abs(full0))
@@ -98,8 +99,8 @@ for ii in range(N):
 
 print v_x 
 
-ax.plot(v_x, v_full0, label='order 0');
-ax.plot(v_x, v_full1, label='order 0+1');
+#ax.plot(v_x, v_full0, label='order 0');
+#ax.plot(v_x, v_full1, label='order 0+1');
 ax.plot(v_x, v_full2, label='order 0+1+2');
 ax.plot(v_x, v_full3, label='order 0+1+2+3');
 ax.legend(loc='lower right')

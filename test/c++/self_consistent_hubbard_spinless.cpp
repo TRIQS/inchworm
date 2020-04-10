@@ -47,18 +47,18 @@ TEST(inchworm, HubbardAtom) { // NOLINT
 
   // Construct Parameters
   constr_params_t cp;
-  cp.beta      = 2.0;
+  cp.beta      = 20.0;
   int n_site   = 1;
   cp.gf_struct = {{"up", {0}}};
-  cp.n_tau     = 500;
+  cp.n_tau     = 5000;
   cp.n_iw      = 250;
 
   // Set up the Solver
   solver_core S(cp);
   //int up = 0, dn = 1;
-  int n_bath       = 1;
-  double theta[]   = {4.0};//1.41421356237};
-  double epsilon[] = {20.};
+  int n_bath       = 3;
+  double theta[]   = {1.5,1.5,1.5};
+  double epsilon[] = {20.,20.,20.};
 
   for (auto const &tau : S.Delta_tau[0].mesh()) {
     double val;
@@ -85,7 +85,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   // Solve Parameters
   solve_params_t sp;
   sp.h_int           = h_atom;
-  sp.n_cycles        = 1000000;
+  sp.n_cycles        = 100000;
   sp.length_cycle    = 10;
   sp.n_warmup_cycles = 20;
   sp.max_time        = -1;
@@ -105,7 +105,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   auto fops_atom = make_fops(0, n_site);
   auto fops_bath = make_fops(n_site, n_site + n_bath);
 
-  std::printf("salut\n");
+  //std::printf("salut\n");
   auto h_hyb  = 0 * n("up", 0);
   auto h_bath = 0 * n("up", 0);
   for (int j = 0; j < n_site; j++) {
@@ -140,17 +140,17 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   std::printf("\n");
 */
 
-  double tau_split = 0.50 * cp.beta;
+  double tau_split = 0.90 * cp.beta;
   double tau_max   = 1.00 * cp.beta;
 
   S.solve_self_consistently(sp, u_tau, tau_split, tau_max);
-  std::printf("\n\n");
-  print(u_tau, tau_split);
-  std::printf("\n\n");
+  //std::printf("\n\n");
+  //print(u_tau, tau_split);
+  std::printf("\nexact U(beta):\n");
   print(u_tau, tau_max);
   
-  double B   = tau_max * theta[0] / 2.;
-  std::printf("\n\ncosh^2(B): % 4.8f \n", std::cosh(B) * std::cosh(B));
+  fprint(u_tau, cp.n_tau);
+  
 /*
   double B   = tau_max * theta[0] / 2.;
   double t_s = tau_split * theta[0] / 2.;

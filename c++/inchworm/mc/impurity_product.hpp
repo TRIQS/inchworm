@@ -19,6 +19,7 @@ namespace inchworm {
   using time_diagram_t = diagram::time_diagram_t;
 
   u_tau_t make_propagator(atom_diag const &h_diag, double beta, int n_tau);
+  void fprint(u_tau_t u_tau, int N_tau);
   void print(u_tau_t u_tau, int frame_number);
   void print(u_tau_t u_tau, double tau);
   void assign_u_frame_to_propagator(u_tau_t &u_tau, u_frame_t const &u_frame, int frame_number, scalar_t factor = 1.0);

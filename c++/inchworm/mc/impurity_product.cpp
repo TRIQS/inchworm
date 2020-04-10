@@ -20,6 +20,17 @@ namespace inchworm {
   }
 
   //
+  void fprint(u_tau_t u_tau, int N_tau) {
+    FILE *f = fopen("u_tau.dat", "w");
+    for (int i_tau = 0; i_tau < N_tau; i_tau++) {
+      fprintf(f, "\n %d  ", i_tau);
+      for (int bl = 0; bl < u_tau.size(); bl++) fprintf(f, " % 4.8f", ((matrix_t)u_tau[bl][i_tau])(0, 0));
+    }
+    fclose(f);
+    return;
+  }
+
+  //
   void print(u_tau_t u_tau, double tau) {
     for (int bl = 0; bl < u_tau.size(); bl++) { std::cout << std::setprecision(10) << (matrix_t)u_tau[bl](tau); }
     std::cout << "\n";
