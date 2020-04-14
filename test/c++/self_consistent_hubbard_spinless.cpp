@@ -47,18 +47,18 @@ TEST(inchworm, HubbardAtom) { // NOLINT
 
   // Construct Parameters
   constr_params_t cp;
-  cp.beta      = 20.0;
+  cp.beta      = 2.0;
   int n_site   = 1;
   cp.gf_struct = {{"up", {0}}};
-  cp.n_tau     = 5000;
+  cp.n_tau     = 150;
   cp.n_iw      = 250;
 
   // Set up the Solver
   solver_core S(cp);
   //int up = 0, dn = 1;
   int n_bath       = 3;
-  double theta[]   = {1.5,1.5,1.5};
-  double epsilon[] = {20.,20.,20.};
+  double theta[]   = {1.5, -1.5, 0.3};
+  double epsilon[] = {5., 4., 3.};
 
   for (auto const &tau : S.Delta_tau[0].mesh()) {
     double val;
@@ -96,7 +96,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   sp.random_seed     = 22345789 + 928374 * mpi::communicator().rank();
 
   // Solve the impurity model
-  S.solve_single_step(sp);
+  //S.solve_single_step(sp);
   //exit(0);
 
   // Compare against the reference data
@@ -140,18 +140,119 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   std::printf("\n");
 */
 
-  double tau_split = 0.90 * cp.beta;
+  double tau_split = 0.97 * cp.beta;
   double tau_max   = 1.00 * cp.beta;
 
-  S.solve_self_consistently(sp, u_tau, tau_split, tau_max);
+  //S.solve_self_consistently(sp, u_tau, tau_split, tau_max);
   //std::printf("\n\n");
   //print(u_tau, tau_split);
   std::printf("\nexact U(beta):\n");
   print(u_tau, tau_max);
-  
-  fprint(u_tau, cp.n_tau);
-  
-/*
+
+  //fprint(u_tau, cp.n_tau);
+
+  double order0[2];
+  double order1[2];
+  double order2[2];
+
+  for (int bl = 0; bl < 2; bl++) {
+    double integral = 0.0;
+    double dtau1    = tau_max / cp.n_tau;
+    for (int i_tau = 0; i_tau < cp.n_tau; i_tau++) {
+      for (int j_tau = 0; j_tau < cp.n_tau; j_tau++) {
+        double tau1 = tau_max * i_tau / (cp.n_tau + 1);
+        double tau2 = tau_max * j_tau / (cp.n_tau + 1);
+
+        if ((tau1 <= tau_split) and (tau_split <= tau2) and (tau2 < tau_max)) {
+          double factor = 1.0;
+          if (tau_split == tau1) factor *= 0.5;
+          if (tau_split == tau2) factor *= 0.5;
+          if (0.0 == tau1) factor *= 0.5;
+          if (tau_max == tau2) factor *= 0.5;
+
+          //std::printf("tau1 =% f, tau2 =% f  \n", tau1, tau2);
+          //std::printf("% f  % f  % f  % f \n", tau1, tau_split - tau1, tau2 - tau_split, tau_max - tau2);
+          //fflush(stdout);
+
+          //std::printf("salut\n"); fflush(stdout);
+          double u_tau1 = u_tau[bl](tau1 - 0.0)(0, 0);
+          double u_tau2 = u_tau[1 - bl](tau_split - tau1)(0, 0);
+          double u_tau3 = u_tau[1 - bl](tau2 - tau_split)(0, 0);
+          double u_tau4 = u_tau[bl](tau_max - tau2)(0, 0);
+
+          double w_hyb;
+          if (bl == 1)
+            w_hyb = S.Delta_tau[0](tau2 - tau1)(0, 0);
+          else
+            w_hyb = -S.Delta_tau[0](cp.beta + tau1 - tau2)(0, 0);
+
+          if (bl == 0) factor = -factor;
+          integral += factor * dtau1 * dtau1 * u_tau1 * u_tau2 * u_tau3 * u_tau4 * w_hyb;
+        }
+      }
+    }
+    order0[bl] = (double)(u_tau[bl](tau_max - tau_split)(0, 0) * u_tau[bl](tau_split)(0, 0));
+    order1[bl] = integral;
+
+    //std::printf("\norder0 = %f  \n", order0);
+    //std::printf("order1 = %f  \n", integral);
+    //std::printf("\nsum = %f  \n", integral + order0);
+  }
+
+  for (int bl = 0; bl < 2; bl++) {
+    double integral = 0.0;
+    double dtau1    = tau_max / cp.n_tau;
+    for (int i_tau = 0; i_tau < cp.n_tau; i_tau++) {
+      for (int j_tau = 0; j_tau < cp.n_tau; j_tau++) {
+        for (int k_tau = 0; k_tau < cp.n_tau; k_tau++) {
+          for (int l_tau = 0; l_tau < cp.n_tau; l_tau++) {
+            double tau1  = tau_max * i_tau / (cp.n_tau + 1);
+            double tau2  = tau_max * j_tau / (cp.n_tau + 1);
+            double tau1p = tau_max * k_tau / (cp.n_tau + 1);
+            double tau2p = tau_max * l_tau / (cp.n_tau + 1);
+
+            if ((tau1 <= tau1p) and (tau1p <= tau_split) and (tau_split <= tau2) and (tau2 <= tau2p) and (tau2p < tau_max)) {
+              double factor = 1.0;
+              //if (tau_split == tau1) factor *= 0.5;
+              //if (tau_split == tau2) factor *= 0.5;
+              //if (0.0 == tau1) factor *= 0.5;
+              //if (tau_max == tau2) factor *= 0.5;
+              //std::printf("tau1 =% f, tau2 =% f  \n", tau1, tau2);
+              //std::printf("% f  % f  % f  % f \n", tau1, tau_split - tau1, tau2 - tau_split, tau_max - tau2);
+              //fflush(stdout);
+
+              //std::printf("salut\n"); fflush(stdout);
+              double u_tau1 = u_tau[bl](tau1 - 0.0)(0, 0);
+              double u_tau2 = u_tau[1 - bl](tau1p - tau1)(0, 0);
+              double u_tau3 = u_tau[bl](tau_split - tau1p)(0, 0);
+              double u_tau4 = u_tau[bl](tau2 - tau_split)(0, 0);
+              double u_tau5 = u_tau[1 - bl](tau2p - tau2)(0, 0);
+              double u_tau6 = u_tau[bl](tau_max - tau2)(0, 0);
+
+              double w_hyb;
+              if (bl == 0)
+                w_hyb = S.Delta_tau[0](tau2p - tau1)(0, 0) * S.Delta_tau[0](cp.beta + tau1p - tau2)(0, 0);
+              else
+                w_hyb = S.Delta_tau[0](tau2 - tau1p)(0, 0) * S.Delta_tau[0](cp.beta + tau1 - tau2p)(0, 0);
+
+              integral += factor * dtau1 * dtau1 * dtau1 * dtau1 * u_tau1 * u_tau2 * u_tau3 * u_tau4 * u_tau5 * u_tau6 * w_hyb;
+            }
+          }
+        }
+      }
+    }
+    order2[bl] = integral;
+    //std::printf("order2 = %f  \n", integral);
+  }
+
+  for (int bl = 0; bl < 2; bl++) {
+    std::printf("\norder0 = %f", order0[bl]);
+    std::printf("\norder1 = %f ", order1[bl]);
+    std::printf("\norder2 = %f ", order2[bl]);
+    std::printf("\nsum = %f  \n", order0[bl] + order1[bl] + order2[bl]);
+  }
+
+  /*
   double B   = tau_max * theta[0] / 2.;
   double t_s = tau_split * theta[0] / 2.;
 

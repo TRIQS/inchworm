@@ -23,8 +23,9 @@ namespace inchworm {
   void fprint(u_tau_t u_tau, int N_tau) {
     FILE *f = fopen("u_tau.dat", "w");
     for (int i_tau = 0; i_tau < N_tau; i_tau++) {
-      fprintf(f, "\n %d  ", i_tau);
+      fprintf(f, "%d  ", i_tau);
       for (int bl = 0; bl < u_tau.size(); bl++) fprintf(f, " % 4.8f", ((matrix_t)u_tau[bl][i_tau])(0, 0));
+      fprintf(f, "\n");
     }
     fclose(f);
     return;
