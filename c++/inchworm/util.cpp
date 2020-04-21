@@ -111,8 +111,11 @@ namespace inchworm {
     auto fs_full         = ad_full.get_fock_states();
 
     for (int s = 0; s < ad_full.n_subspaces(); s++)
-      for (int i = 0; i < ad_full.get_subspace_dim(s); i++) trace_value += fct(es_full[s].eigenvalues[i] + ad_full.get_gs_energy());
-
+      for (int i = 0; i < ad_full.get_subspace_dim(s); i++) {
+	scalar_t val = fct(es_full[s].eigenvalues[i] + ad_full.get_gs_energy());
+	trace_value += val;
+	//std::printf("s=%d, i=%d, val= %f\n", s, i, val);
+      }
     return trace_value;
   }
 

@@ -50,25 +50,25 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   cp.beta      = 2.0;
   int n_site   = 1;
   cp.gf_struct = {{"up", {0}}};
-  cp.n_tau     = 150;
+  cp.n_tau     = 500;
   cp.n_iw      = 250;
 
   // Set up the Solver
   solver_core S(cp);
   //int up = 0, dn = 1;
-  int n_bath       = 3;
-  double theta[]   = {1.5, -1.5, 0.3};
-  double epsilon[] = {5., 4., 3.};
+  int n_bath       = 1;
+  double theta[]   = {2.0, 0.5,0.5, 0.5,0.5, 0.5,0.5, 0.5};
+  double epsilon[] = {4.0,-.00,.00,-.00,.00,-.00,.00,-.00};
 
   for (auto const &tau : S.Delta_tau[0].mesh()) {
     double val;
     for (int i = 0; i < 1 * n_site; i++) {
       S.Delta_tau[i][tau] = 0.0;
       for (int n = 0; n < n_bath; n++) {
-        if (epsilon[n] >= 0.0)
-          val = -theta[n] * theta[n] * (std::exp(-((double)tau) * (epsilon[n])) / (1. + std::exp(-cp.beta * epsilon[n])));
-        else
-          val = -theta[n] * theta[n] * (std::exp(-((double)tau - cp.beta) * (epsilon[n])) / (1. + std::exp(cp.beta * epsilon[n])));
+        //if (epsilon[n] >= 0.0)
+        //val = -theta[n] * theta[n] * (std::exp(-((double)tau) * (epsilon[n])) / (1. + std::exp(-cp.beta * epsilon[n])));
+        //else
+        val = -theta[n] * theta[n] * (std::exp(-((double)tau - cp.beta) * (epsilon[n])) / (1. + std::exp(cp.beta * epsilon[n])));
         S.Delta_tau[i][tau] += val;
       }
     }
@@ -96,7 +96,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   sp.random_seed     = 22345789 + 928374 * mpi::communicator().rank();
 
   // Solve the impurity model
-  //S.solve_single_step(sp);
+  S.solve_single_step(sp);
   //exit(0);
 
   // Compare against the reference data
@@ -106,8 +106,8 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   auto fops_bath = make_fops(n_site, n_site + n_bath);
 
   //std::printf("salut\n");
-  auto h_hyb  = 0 * n("up", 0);
-  auto h_bath = 0 * n("up", 0);
+  auto h_hyb  = 0.0 * n("up", 0);
+  auto h_bath = 0.0 * n("up", 0);
   for (int j = 0; j < n_site; j++) {
     for (int i = 0; i < n_bath; i++) {
       h_hyb += theta[i] * (c_dag("up", j) * c("up", i + n_site) + c_dag("up", i + n_site) * c("up", j));
@@ -122,6 +122,13 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   auto ad_tot  = triqs::atom_diag::atom_diag<false>(h_atom + h_bath + h_hyb, fops_tot);
   auto ad_atom = triqs::atom_diag::atom_diag<false>(h_atom, fops_atom, qn);
   auto ad_bath = triqs::atom_diag::atom_diag<false>(h_bath, fops_bath);
+
+  std::printf("\nad_tot:\n");
+  //print_eigensystems(ad_tot);
+  std::printf("\nad_atom:\n");
+  //print_eigensystems(ad_atom);
+  std::printf("\nad_bath:\n");
+  //print_eigensystems(ad_bath);
 
   u_tau_t u_tau = make_ED_propagator(ad_tot, ad_atom, ad_bath, cp.beta, cp.n_tau);
 
@@ -140,79 +147,93 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   std::printf("\n");
 */
 
-  double tau_split = 0.97 * cp.beta;
+  double tau_split = 0.95 * cp.beta;
   double tau_max   = 1.00 * cp.beta;
 
-  //S.solve_self_consistently(sp, u_tau, tau_split, tau_max);
+  S.solve_self_consistently(sp, u_tau, tau_split, tau_max);
   //std::printf("\n\n");
   //print(u_tau, tau_split);
   std::printf("\nexact U(beta):\n");
   print(u_tau, tau_max);
 
-  //fprint(u_tau, cp.n_tau);
+  fprint(u_tau, cp.n_tau);
 
-  double order0[2];
-  double order1[2];
-  double order2[2];
+  double order_0[2];
+  double order_1[2];
+  double order_2[2];
 
+  int N_tau = 4000;
   for (int bl = 0; bl < 2; bl++) {
     double integral = 0.0;
-    double dtau1    = tau_max / cp.n_tau;
-    for (int i_tau = 0; i_tau < cp.n_tau; i_tau++) {
-      for (int j_tau = 0; j_tau < cp.n_tau; j_tau++) {
-        double tau1 = tau_max * i_tau / (cp.n_tau + 1);
-        double tau2 = tau_max * j_tau / (cp.n_tau + 1);
+    double dtau1    = tau_split / (N_tau - 1.);
+    double dtau2    = (tau_max - tau_split) / (N_tau - 1.);
+    for (int i_tau = 0; i_tau < N_tau; i_tau++) {
+      for (int j_tau = 0; j_tau < N_tau; j_tau++) {
+        double tau1 = (tau_split)*i_tau / (N_tau - 1.);
+        double tau2 = (tau_max - tau_split) * j_tau / (N_tau - 1.) + tau_split;
 
-        if ((tau1 <= tau_split) and (tau_split <= tau2) and (tau2 < tau_max)) {
-          double factor = 1.0;
-          if (tau_split == tau1) factor *= 0.5;
-          if (tau_split == tau2) factor *= 0.5;
-          if (0.0 == tau1) factor *= 0.5;
-          if (tau_max == tau2) factor *= 0.5;
+        //if ((tau1 <= tau_split) and (tau_split <= tau2) and (tau2 < tau_max)) {
+        double factor = 1.0;
+        if (0 == i_tau) factor *= 0.5;
+        if (N_tau - 1 == i_tau) factor *= 0.5;
+        if (0 == j_tau) factor *= 0.5;
+        if (N_tau - 1 == j_tau) factor *= 0.5;
 
-          //std::printf("tau1 =% f, tau2 =% f  \n", tau1, tau2);
-          //std::printf("% f  % f  % f  % f \n", tau1, tau_split - tau1, tau2 - tau_split, tau_max - tau2);
-          //fflush(stdout);
+        //std::printf("tau1 =% f, tau2 =% f  \n", tau1, tau2);
+        //std::printf("% f  % f  % f  % f \n", tau1, tau_split - tau1, tau2 - tau_split, tau_max - tau2);
+        //fflush(stdout);
 
-          //std::printf("salut\n"); fflush(stdout);
-          double u_tau1 = u_tau[bl](tau1 - 0.0)(0, 0);
-          double u_tau2 = u_tau[1 - bl](tau_split - tau1)(0, 0);
-          double u_tau3 = u_tau[1 - bl](tau2 - tau_split)(0, 0);
-          double u_tau4 = u_tau[bl](tau_max - tau2)(0, 0);
+        //std::printf("salut\n"); fflush(stdout);
+        double u_tau1 = u_tau[bl](tau1 - 0.0)(0, 0);
+        double u_tau2 = u_tau[1 - bl](tau_split - tau1)(0, 0);
+        double u_tau3 = u_tau[1 - bl](tau2 - tau_split)(0, 0);
+        double u_tau4 = u_tau[bl](tau_max - tau2)(0, 0);
 
-          double w_hyb;
-          if (bl == 1)
-            w_hyb = S.Delta_tau[0](tau2 - tau1)(0, 0);
-          else
-            w_hyb = -S.Delta_tau[0](cp.beta + tau1 - tau2)(0, 0);
+        double w_hyb;
+        if (bl == 0)
+          w_hyb = S.Delta_tau[0](tau2 - tau1)(0, 0);
+        else
+          w_hyb = -S.Delta_tau[0](cp.beta + tau1 - tau2)(0, 0);
 
-          if (bl == 0) factor = -factor;
-          integral += factor * dtau1 * dtau1 * u_tau1 * u_tau2 * u_tau3 * u_tau4 * w_hyb;
-        }
+        if (bl == 0) factor = -factor;
+        integral += factor * dtau1 * dtau2 * u_tau1 * u_tau2 * u_tau3 * u_tau4 * w_hyb;
+        //}
       }
     }
-    order0[bl] = (double)(u_tau[bl](tau_max - tau_split)(0, 0) * u_tau[bl](tau_split)(0, 0));
-    order1[bl] = integral;
+    order_0[bl] = (double)(u_tau[bl](tau_max - tau_split)(0, 0) * u_tau[bl](tau_split)(0, 0));
+    order_1[bl] = integral;
 
     //std::printf("\norder0 = %f  \n", order0);
     //std::printf("order1 = %f  \n", integral);
     //std::printf("\nsum = %f  \n", integral + order0);
   }
 
+  ///*
+
+  N_tau = 80;
   for (int bl = 0; bl < 2; bl++) {
     double integral = 0.0;
-    double dtau1    = tau_max / cp.n_tau;
-    for (int i_tau = 0; i_tau < cp.n_tau; i_tau++) {
-      for (int j_tau = 0; j_tau < cp.n_tau; j_tau++) {
-        for (int k_tau = 0; k_tau < cp.n_tau; k_tau++) {
-          for (int l_tau = 0; l_tau < cp.n_tau; l_tau++) {
-            double tau1  = tau_max * i_tau / (cp.n_tau + 1);
-            double tau2  = tau_max * j_tau / (cp.n_tau + 1);
-            double tau1p = tau_max * k_tau / (cp.n_tau + 1);
-            double tau2p = tau_max * l_tau / (cp.n_tau + 1);
+    double dtau1    = tau_split / (N_tau - 1.);
+    double dtau2    = (tau_max - tau_split) / (N_tau - 1.);
+    for (int i_tau = 0; i_tau < N_tau; i_tau++) {
+      for (int j_tau = 0; j_tau < N_tau; j_tau++) {
+        for (int k_tau = 0; k_tau < N_tau; k_tau++) {
+          for (int l_tau = 0; l_tau < N_tau; l_tau++) {
+            double tau1  = (tau_split)*i_tau / (N_tau - 1.);
+            double tau1p = (tau_split)*j_tau / (N_tau - 1.);
+            double tau2  = (tau_max - tau_split) * k_tau / (N_tau - 1.) + tau_split;
+            double tau2p = (tau_max - tau_split) * l_tau / (N_tau - 1.) + tau_split;
 
-            if ((tau1 <= tau1p) and (tau1p <= tau_split) and (tau_split <= tau2) and (tau2 <= tau2p) and (tau2p < tau_max)) {
+            if ((tau1 < tau1p) and (tau2 < tau2p)) {
               double factor = 1.0;
+              if (0 == i_tau) factor *= 0.5;
+              if (0 == j_tau) factor *= 0.5;
+              if (0 == k_tau) factor *= 0.5;
+              if (0 == l_tau) factor *= 0.5;
+              if (N_tau - 1 == i_tau) factor *= 0.5;
+              if (N_tau - 1 == j_tau) factor *= 0.5;
+              if (N_tau - 1 == k_tau) factor *= 0.5;
+              if (N_tau - 1 == l_tau) factor *= 0.5;
               //if (tau_split == tau1) factor *= 0.5;
               //if (tau_split == tau2) factor *= 0.5;
               //if (0.0 == tau1) factor *= 0.5;
@@ -235,24 +256,24 @@ TEST(inchworm, HubbardAtom) { // NOLINT
               else
                 w_hyb = S.Delta_tau[0](tau2 - tau1p)(0, 0) * S.Delta_tau[0](cp.beta + tau1 - tau2p)(0, 0);
 
-              integral += factor * dtau1 * dtau1 * dtau1 * dtau1 * u_tau1 * u_tau2 * u_tau3 * u_tau4 * u_tau5 * u_tau6 * w_hyb;
+              integral += factor * dtau1 * dtau1 * dtau2 * dtau2 * u_tau1 * u_tau2 * u_tau3 * u_tau4 * u_tau5 * u_tau6 * w_hyb;
             }
           }
         }
       }
     }
-    order2[bl] = integral;
+    order_2[bl] = integral;
     //std::printf("order2 = %f  \n", integral);
-  }
+  } //*/
 
   for (int bl = 0; bl < 2; bl++) {
-    std::printf("\norder0 = %f", order0[bl]);
-    std::printf("\norder1 = %f ", order1[bl]);
-    std::printf("\norder2 = %f ", order2[bl]);
-    std::printf("\nsum = %f  \n", order0[bl] + order1[bl] + order2[bl]);
+    std::printf("\norder0 = %f", order_0[bl]);
+    std::printf("\norder1 = %f ", order_1[bl]);
+    std::printf("\norder2 = %f ", order_2[bl]);
+    std::printf("\nsum = %f  \n\n", order_0[bl] + order_1[bl] + order_2[bl]);
   }
 
-  /*
+  //*
   double B   = tau_max * theta[0] / 2.;
   double t_s = tau_split * theta[0] / 2.;
 
@@ -304,7 +325,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   //std::printf("order 0+1+2+3: % 4.8f \n", order0 + order1*2. + order2/4.*6. + order3/36.*24);
   std::printf("order 0+1+2+3: % 4.8f \n", order0 + order1 + order2 + order3);
   std::printf("\n\ncosh^2(B): % 4.8f \n", std::cosh(B) * std::cosh(B));
-  */
+  //*/
 }
 
 MAKE_MAIN

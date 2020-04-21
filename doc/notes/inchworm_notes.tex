@@ -589,10 +589,10 @@ Order 2:
 Order 3:
 \begin{align}
   U_3(\beta)=& 8 \big( y_1(0,t_s) y_5(t_s,B)  + y_2(0,t_s) y_4(t_s,B) +
-      \\& 2 y_3(0,t_s) y_3(t_s,B) + y_4(0,t_s) y_2(t_s,B) + y_5(0,t_s) y_1(t_s,B) \big)
+      \\& y_4(0,t_s) y_2(t_s,B) + y_5(0,t_s) y_1(t_s,B) \big)
 \end{align}
 
-I skipped some details, for example the factor $2$ in the third term is not a type, it comes from $w_{hyb}$ that we did not explicitly tracked here. The details are left to the user. At the moment of this writing, this is what is tested in the function self$\_$consistendy$\_$hubbard$\_$spinless. Both Monte Carlo and this test agree. But it fails to reproduce the self-consistency result. In the end it does not converge to $U(\beta) = \cosh(\frac{\beta*theta}{2})$.
+I skipped some details, from $w_{hyb}$ that we did not explicitly tracked here. The details are left to the user. At the moment of this writing, this is what is tested in the function self$\_$consistendy$\_$hubbard$\_$spinless. Both Monte Carlo and this test agree. But it fails to reproduce the self-consistency result. In the end it does not converge to $U(\beta) = \cosh(\frac{\beta*theta}{2})$.
 
 
 
