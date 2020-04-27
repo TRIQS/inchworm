@@ -130,13 +130,13 @@ namespace inchworm {
     double normalization_cte = (double)res.u_frame_0th_order[0](0, 0) / ((double)u_frame_zeroth_order(0, 0)); //need to do better at some point
     std::printf("\n ");
 
-    //std::printf("\n U_0(beta):\n");
-    //for (int i = 0; i < res.u_frame.size(); i++) {
-    //  auto u_frame_zeroth_order = u_tau[i](tau_max - tau_split) * u_tau[i](tau_split);
-    //  std::cout << (matrix_t)(u_frame_zeroth_order / normalization_cte);
-    //}
- 
-    //std::printf("\n ");
+    std::printf("\n U_0(beta):\n");
+    for (int i = 0; i < res.u_frame.size(); i++) {
+      auto u_frame_zeroth_order_tmp = u_tau[i](tau_max - tau_split) * u_tau[i](tau_split);
+      std::printf("% 4.8f\n", ((double) u_frame_zeroth_order_tmp(0,0)));
+    }
+    std::printf("\n ");
+
     std::printf("\ninchworm U(beta):\n");
     for (int i = 0; i < res.u_frame.size(); i++) {
       std::cout << (matrix_t)(res.u_frame[i] / normalization_cte);

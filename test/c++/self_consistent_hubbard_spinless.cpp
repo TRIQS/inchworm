@@ -57,8 +57,8 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   solver_core S(cp);
   //int up = 0, dn = 1;
   int n_bath       = 1;
-  double theta[]   = {2.0, 0.5,0.5, 0.5,0.5, 0.5,0.5, 0.5};
-  double epsilon[] = {4.0,-.00,.00,-.00,.00,-.00,.00,-.00};
+  double theta[]   = {0.2};
+  double epsilon[] = {10.5};
 
   for (auto const &tau : S.Delta_tau[0].mesh()) {
     double val;
@@ -99,6 +99,25 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   S.solve_single_step(sp);
   //exit(0);
 
+  double tau_split = 0.95 * cp.beta;
+  double tau_max   = 1.00 * cp.beta;
+  double B         = tau_max * epsilon[0];
+  double t_s       = tau_split * epsilon[0];
+
+  double eB = std::exp(B);
+  double es = std::exp(t_s);
+  double cm = theta[0] * theta[0] / (epsilon[0] * epsilon[0] * (1. + std::exp(-B)));
+  double c_ = theta[0] * theta[0] / (epsilon[0] * epsilon[0] * (1. + std::exp(B)));
+
+  double U1[] = {-c_ * (1. - eB + B), cm * (-1. + 1. / eB + B)};
+
+  double U0t[] = {1. - c_ * (2. - eB / es + B - es), 1. + cm * (-2. + es / eB + B + 1. / es)};
+  double U1t[] = {-c_ * (eB - es) * (1. / es - 1), -cm * (1. / eB - 1. / es) * (es - 1)};
+
+  std::printf("cthyb - order 0:  % 4.8f     % 4.8f \n", 1.0, 1.0);
+  std::printf("        order 1:  % 4.8f     % 4.8f \n", U1[0], U1[1]);
+  std::printf("\n        sum:      % 4.8f     % 4.8f \n", 1. + U1[0], 1. + U1[1]);
+
   // Compare against the reference data
   // h5diff("hubbard.out.h5", "hubbard.ref.h5")
   auto fops_tot  = make_fops(0, n_site + n_bath);
@@ -123,13 +142,6 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   auto ad_atom = triqs::atom_diag::atom_diag<false>(h_atom, fops_atom, qn);
   auto ad_bath = triqs::atom_diag::atom_diag<false>(h_bath, fops_bath);
 
-  std::printf("\nad_tot:\n");
-  //print_eigensystems(ad_tot);
-  std::printf("\nad_atom:\n");
-  //print_eigensystems(ad_atom);
-  std::printf("\nad_bath:\n");
-  //print_eigensystems(ad_bath);
-
   u_tau_t u_tau = make_ED_propagator(ad_tot, ad_atom, ad_bath, cp.beta, cp.n_tau);
 
   /*
@@ -147,9 +159,6 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   std::printf("\n");
 */
 
-  double tau_split = 0.95 * cp.beta;
-  double tau_max   = 1.00 * cp.beta;
-
   S.solve_self_consistently(sp, u_tau, tau_split, tau_max);
   //std::printf("\n\n");
   //print(u_tau, tau_split);
@@ -157,6 +166,10 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   print(u_tau, tau_max);
 
   fprint(u_tau, cp.n_tau);
+
+  std::printf("\ninchw - order 0:  % 4.8f     % 4.8f \n", U0t[0], U0t[1]);
+  std::printf("        order 1:  % 4.8f     % 4.8f \n", U1t[0], U1t[1]);
+  std::printf("\n        sum:      % 4.8f     % 4.8f \n", U0t[0] + U1t[0], U0t[1] + U1t[1]);
 
   double order_0[2];
   double order_1[2];
@@ -273,7 +286,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
     std::printf("\nsum = %f  \n\n", order_0[bl] + order_1[bl] + order_2[bl]);
   }
 
-  //*
+  /*
   double B   = tau_max * theta[0] / 2.;
   double t_s = tau_split * theta[0] / 2.;
 

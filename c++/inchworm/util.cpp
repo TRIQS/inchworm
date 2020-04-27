@@ -60,7 +60,7 @@ namespace inchworm {
   triqs::arrays::matrix<double> partial_sum(atom_diag const &ad, int linear_index, std::function<double(double)> fct) {
     //TODO: incorporate in atom_diag and make it a member function.
     int dim_partial = (1 << linear_index);
-    int dim_full    = ad.get_full_hilbert_space_dim();
+    //int dim_full    = ad.get_full_hilbert_space_dim();
     //int factor      = 1;//dim_full / dim_partial;
     EXPECTS(dim_partial < dim_full);
     EXPECTS(dim_full % dim_partial == 0);
@@ -112,9 +112,9 @@ namespace inchworm {
 
     for (int s = 0; s < ad_full.n_subspaces(); s++)
       for (int i = 0; i < ad_full.get_subspace_dim(s); i++) {
-	scalar_t val = fct(es_full[s].eigenvalues[i] + ad_full.get_gs_energy());
-	trace_value += val;
-	//std::printf("s=%d, i=%d, val= %f\n", s, i, val);
+        scalar_t val = fct(es_full[s].eigenvalues[i] + ad_full.get_gs_energy());
+        trace_value += val;
+        //std::printf("s=%d, i=%d, val= %f\n", s, i, val);
       }
     return trace_value;
   }
@@ -131,7 +131,7 @@ namespace inchworm {
 
       //std::cout << ad_target.get_fops().data()[i] << "\n";
     }
-    
+
     //for (int i = 0; i < (int)ad_full.get_fops().data().size(); i++) {
     //  std::cout << " " << ad_full.get_fops().data()[i] << "\n";
     //}
