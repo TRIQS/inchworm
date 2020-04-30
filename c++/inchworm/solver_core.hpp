@@ -66,6 +66,8 @@ namespace inchworm {
     single_step_results_t single_step(solve_params_t const &solve_params, double tau_split, double tau_max, bool use_bare_propagator);
     void solve_single_step(solve_params_t const &solve_params);
     void solve_self_consistently(solve_params_t const &solve_params, u_tau_t const &u_tau_, double tau_split, double tau_max);
+    void solve_inchworm(solve_params_t const &solve_params);
+
 
     // Struct containing the parameters relevant for the solve process
     std::optional<solve_params_t> last_solve_params;

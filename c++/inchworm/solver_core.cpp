@@ -127,25 +127,57 @@ namespace inchworm {
     auto res     = single_step(solve_params, tau_split, tau_max, false);
 
     auto u_frame_zeroth_order = u_tau[0](tau_max - tau_split) * u_tau[0](tau_split);
-    double normalization_cte = (double)res.u_frame_0th_order[0](0, 0) / ((double)u_frame_zeroth_order(0, 0)); //need to do better at some point
+    double normalization_cte  = (double)res.u_frame_0th_order[0](0, 0) / ((double)u_frame_zeroth_order(0, 0)); //need to do better at some point
     std::printf("\n ");
 
-    std::printf("\n U_0(beta):\n");
+    std::printf("\ninchworm U_0(beta):\n");
     for (int i = 0; i < res.u_frame.size(); i++) {
-      auto u_frame_zeroth_order_tmp = u_tau[i](tau_max - tau_split) * u_tau[i](tau_split);
-      std::printf("% 4.8f\n", ((double) u_frame_zeroth_order_tmp(0,0)));
+      printf("% 4.12f *", (double)u_tau[i](tau_split)(0, 0));
+      printf("% 4.12f =", (double)u_tau[i](tau_max - tau_split)(0, 0));
+      auto u_frame_zeroth_order = u_tau[i](tau_split) * u_tau[i](tau_max - tau_split);
+      printf("% 4.12f\n", (double)(u_frame_zeroth_order(0, 0)));
     }
-    std::printf("\n ");
 
-    std::printf("\ninchworm U(beta):\n");
-    for (int i = 0; i < res.u_frame.size(); i++) {
-      std::cout << (matrix_t)(res.u_frame[i] / normalization_cte);
-    }
+    std::printf("\n##################\ninchworm U(beta):\n");
+    for (int i = 0; i < res.u_frame.size(); i++) { std::cout << (matrix_t)(res.u_frame[i] / normalization_cte); }
     std::cout << "\n\norder: " << res.average_k << "\n";
     for (auto o : res.samples_expansion_order) std::printf("%16d ", o);
     std::printf("\n");
     for (auto o : res.u_expansion_order) std::printf("% 16.5f ", o / normalization_cte);
     std::printf("\n");
+  } // namespace inchworm
+
+  void solver_core::solve_inchworm(solve_params_t const &solve_params) {
+
+    // Merge constr_params and solve_params
+    //last_solve_params = solve_params;
+    init(solve_params);
+    //double tau_max   = constr_params.beta;
+    //double tau_split = constr_params.beta / 2;
+    double beta = constr_params.beta;
+    int n_tau   = constr_params.beta;
+
+    for (int n = 0; n < n_tau; n++) {
+
+      double tau_split = beta * n / (n_tau - 1);
+      double tau_max   = beta * (n + 1) / (n_tau - 1);
+
+      bool use_bare_propagator = (n == 0 ? true : false);
+      u_frame_bare             = make_bare_propagator_frame(h_diag, tau_max, false);
+      auto res                 = single_step(solve_params, tau_split, tau_max, use_bare_propagator);
+
+      auto u_frame_zeroth_order = u_tau[0](tau_max - tau_split) * u_tau[0](tau_split);
+      double normalization_cte  = (double)res.u_frame_0th_order[0](0, 0) / ((double)u_frame_zeroth_order(0, 0)); //need to do better at some point
+      std::printf("\n ");
+
+      std::printf("\ninchworm U(beta):\n");
+      for (int i = 0; i < res.u_frame.size(); i++) { std::cout << (matrix_t)(res.u_frame[i] / normalization_cte); }
+      std::cout << "\n\norder: " << res.average_k << "\n";
+      for (auto o : res.samples_expansion_order) std::printf("%16d ", o);
+      std::printf("\n");
+      for (auto o : res.u_expansion_order) std::printf("% 16.5f ", o / normalization_cte);
+      std::printf("\n");
+    }
   } // namespace inchworm
 
   //------------------------------

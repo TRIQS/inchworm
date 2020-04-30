@@ -60,7 +60,7 @@ namespace inchworm {
       double dtau  = beta * i_tau / (n_tau - 1);
       auto u_frame = partial_trace(ad_tot, ad_atom, [dtau, E0](double E) { return std::exp(-dtau * (E - E0)); });
       auto Z_bath  = trace(ad_bath, [dtau, E0](double E) { return std::exp(-dtau * (E - E0)); });
-      assign_u_frame_to_propagator(u_tau, u_frame, i_tau, 1. / Z_bath);
+      assign_u_frame_to_propagator(u_tau, u_frame, i_tau, 1. / Z_bath );
     }
 
     return u_tau;

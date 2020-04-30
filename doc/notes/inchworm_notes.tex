@@ -462,7 +462,6 @@ Order 1:
 \begin{align}
   U_1(\beta)=& \sum_k^{\infty}
   \int_{0}^{\beta} d \tau_a d \tau_b
-  \sum_{a b} 
   (-1)^\sigma 
   U(\beta-\tau_a) O_a 
   U(\tau_a-\tau_{split}) 
@@ -592,7 +591,106 @@ Order 3:
       \\& y_4(0,t_s) y_2(t_s,B) + y_5(0,t_s) y_1(t_s,B) \big)
 \end{align}
 
-I skipped some details, from $w_{hyb}$ that we did not explicitly tracked here. The details are left to the user. At the moment of this writing, this is what is tested in the function self$\_$consistendy$\_$hubbard$\_$spinless. Both Monte Carlo and this test agree. But it fails to reproduce the self-consistency result. In the end it does not converge to $U(\beta) = \cosh(\frac{\beta*theta}{2})$.
+I skipped some details, from $w_{hyb}$ that we did not explicitly tracked here. The details are left to the user. At the moment of this writing, this is what is tested in the function self$\_$consistendy$\_$hubbard$\_$spinless. Both Monte Carlo and this test agree. But it fails to reproduce the self-consistency result. In the end it does not converge to $U(\beta) = \cosh(\frac{\beta*theta}{2})$. It seems to be a question of ergodicity (a lot of the configurations gives zero just because bath energy is null). To investigate more, we need to look at the same kind of analysis but with $\epsilon>0$.
+
+\subsection{Finite $\epsilon$}
+
+We proceed first with exact diagonalization as in section~\ref{ED_simple}. For this system we have
+\begin{align}
+H=
+H_\text{loc} + H_\text{bath} + H_\text{hyb}=
+\begin{blockarray}{ccccc}
+& \ket{00} & \ket{01} & \ket{10} & \ket{11} \\
+\begin{block}{c(cccc)}
+\bra{00} & 0&0&0&0\\
+\bra{01} & 0&0&\theta&0\\
+\bra{10} & 0&\theta&\epsilon&0\\
+\bra{11} & 0&0&0&\epsilon\\
+\end{block}
+\end{blockarray}
+\end{align}
+
+Now technique is the same, but the result is much more complicated because diagonalization produce a lot of squareroots and such. With the help of sympy, we can find the low expansion order of the propagator, which is:
+
+\begin{align}
+  U_{00}(\tau_{m}) 
+  &= 1+ \frac{\theta^2}{\epsilon^2} 
+  \frac{1}{1+e^{\tau_{m}\epsilon}}
+  ( e^{\tau_{m}\epsilon} -\tau_{m}\epsilon - 1)
+  + O(\theta^4)
+  \\
+  U_{11}(\tau_{m}) 
+  &= 1+ \frac{\theta^2}{\epsilon^2} 
+  \frac{1}{1+e^{-\tau_{m}\epsilon}}
+  ( e^{-\tau_{m}\epsilon} -\tau_{m}\epsilon - 1)
+  + O(\theta^4)
+\end{align}
+
+where $\tau_{m}$ is the $\tau$ at which we want to evaluate the inchworm. The indices are the diagonal block of the propagator. This will be only valid for very small $\theta$.
+
+Now this is the exact propagator from our formalism. We can compare that to the low order expansion of the ct-hyb and the inchworm.
+
+First, ct-hyb:
+
+\begin{align}
+  U^0_{00}(\tau_{m}) &= U^0_{11}(\tau_{m}) = e^{-\tau_{m} H_{loc}} = 1
+  \\
+  U^1_{00}(\tau_{m}) &= 
+  \int_{0}^{\beta} d \tau_a 
+  \int_{\tau_a}^{\beta} d \tau_b
+  U^0_{00}(\tau_m-\tau_a) d 
+  U^0_{00}(\tau_a-\tau_b) d^\dag
+  U^0_{00}(\tau_b)
+  w_{hyb}
+  \\
+  &= \int_{0}^{\beta} d \tau_a 
+     \int_{\tau_a}^{\beta} d \tau_b
+     \frac{-\theta^2 e^{-(\tau_1-\tau_1^\prime-\beta)\epsilon}}{1+e^{\beta\epsilon} }
+  \\ 
+  &= \frac{\theta^2}{\epsilon^2} 
+  \frac{1}{1+e^{\tau_m\epsilon}}
+  ( e^{\beta \epsilon} -\tau_m\epsilon - 1)
+\end{align}
+
+
+
+Inchworm:
+\begin{align}
+  \tilde{U}^0_{00}(\tau_{m}) &= U_{00}(\tau_{m}-\tau_s) U_{00}(\tau_s)
+  \\
+  &= 1 + U^1_{00}(\tau_{m}-\tau_s) + U^1_{00}(\tau_{m}) + O(\theta^4)
+  \\
+  &= 
+  1 + \frac{\theta^2}{\epsilon^2} 
+  \frac{1}{1+e^{\tau_m \epsilon}}
+  ( e^{(\tau_m-\tau_s)\epsilon} + e^{\tau_s\epsilon} -\tau_m\epsilon - 2)
+  \\
+  \tilde{U}^1_{00}(\tau_{m}) &= 
+  \int_{0}^{\beta} d \tau_a 
+  \int_{\tau_a}^{\beta} d \tau_b
+  U^0_{00}(\tau_m-\tau_a) 
+  d
+  U^0_{00}(\tau_a-\tau_{s})
+  U^0_{00}(\tau_{s}-\tau_b)
+  d^\dag
+  U^0_{00}(\tau_b)
+  \frac{-\theta^2 e^{-(\tau_1-\tau_1^\prime-\beta)\epsilon}}{1+e^{\beta\epsilon} } +O(\theta^4)
+  \\
+  &= 
+  \int_{0}^{\beta} d \tau_a 
+  \int_{\tau_a}^{\beta} d \tau_b
+  \frac{-\theta^2 e^{-(\tau_1-\tau_1^\prime-\beta)\epsilon}}{1+e^{\beta\epsilon} } +O(\theta^4)
+  \\
+  &= \frac{\theta^2}{\epsilon^2} \frac{1}{1+e^{\tau_m \epsilon}} (e^{\tau_m\epsilon} -  e^{\tau_s\epsilon}) (e^{\tau_s\epsilon} - 1) +O(\theta^4)
+  \\
+  &= \frac{\theta^2}{\epsilon^2} \frac{1}{1+e^{\tau_m \epsilon}} (e^{(\tau_m-\tau_s)\epsilon} - 1 - e^{\tau_m\epsilon} +e^{\tau_s\epsilon}) +O(\theta^4)
+  \\
+  \tilde{U}^0_{00}(\tau_{m}) + \tilde{U}^1_{00}(\tau_{m})&=  U^0_{00}(\tau_{m}) + U^1_{00}(\tau_{m})
+  \\
+  &= 1 + \frac{\theta^2}{\epsilon^2}
+  \frac{1}{1+e^{\tau_m\epsilon}}
+  ( e^{\tau_m\epsilon} -\tau_m\epsilon - 1) +O(\theta^4)
+\end{align}
 
 
 

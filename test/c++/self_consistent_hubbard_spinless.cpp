@@ -58,7 +58,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   //int up = 0, dn = 1;
   int n_bath       = 1;
   double theta[]   = {0.2};
-  double epsilon[] = {10.5};
+  double epsilon[] = {-10.5};
 
   for (auto const &tau : S.Delta_tau[0].mesh()) {
     double val;
@@ -213,7 +213,8 @@ TEST(inchworm, HubbardAtom) { // NOLINT
         //}
       }
     }
-    order_0[bl] = (double)(u_tau[bl](tau_max - tau_split)(0, 0) * u_tau[bl](tau_split)(0, 0));
+    int sign = -1;
+    order_0[bl] = (double)( (u_tau[bl](tau_max - tau_split)(0, 0) * u_tau[bl](tau_split)(0, 0)) );
     order_1[bl] = integral;
 
     //std::printf("\norder0 = %f  \n", order0);
@@ -286,6 +287,9 @@ TEST(inchworm, HubbardAtom) { // NOLINT
     std::printf("\nsum = %f  \n\n", order_0[bl] + order_1[bl] + order_2[bl]);
   }
 
+
+  //S.solve_inchworm(sp);
+  
   /*
   double B   = tau_max * theta[0] / 2.;
   double t_s = tau_split * theta[0] / 2.;
