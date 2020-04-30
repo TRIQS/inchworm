@@ -56,9 +56,9 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   // Set up the Solver
   solver_core S(cp);
   //int up = 0, dn = 1;
-  int n_bath       = 1;
-  double theta[]   = {0.2};
-  double epsilon[] = {-10.5};
+  int n_bath       = 3;
+  double theta[]   = {1.0,2.5,-2.0};
+  double epsilon[] = {1.5,-4.0,2.3};
 
   for (auto const &tau : S.Delta_tau[0].mesh()) {
     double val;
@@ -85,7 +85,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   // Solve Parameters
   solve_params_t sp;
   sp.h_int           = h_atom;
-  sp.n_cycles        = 100000;
+  sp.n_cycles        = 1000000;
   sp.length_cycle    = 10;
   sp.n_warmup_cycles = 20;
   sp.max_time        = -1;
@@ -99,7 +99,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   S.solve_single_step(sp);
   //exit(0);
 
-  double tau_split = 0.95 * cp.beta;
+  double tau_split = 0.90 * cp.beta;
   double tau_max   = 1.00 * cp.beta;
   double B         = tau_max * epsilon[0];
   double t_s       = tau_split * epsilon[0];
@@ -223,7 +223,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
     //std::printf("\nsum = %f  \n", integral + order0);
   }
 
-  ///*
+  /*
 
   N_tau = 80;
   for (int bl = 0; bl < 2; bl++) {

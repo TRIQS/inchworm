@@ -87,8 +87,8 @@ namespace inchworm {
     // Merge constr_params and solve_params
     last_solve_params = solve_params;
     init(solve_params);
-    double tau_max   = constr_params.beta;
-    double tau_split = constr_params.beta / 2;
+    double tau_max   = 1.0*constr_params.beta;
+    double tau_split = 0.8*constr_params.beta;
 
     u_frame_bare = make_bare_propagator_frame(h_diag, tau_max, false);
     auto res     = single_step(solve_params, tau_split, tau_max, true);
@@ -102,7 +102,7 @@ namespace inchworm {
     //  std::cout << B;
     //}
     //std::printf("\n ");
-    std::printf("\ncthyb U(beta):\n");
+    std::printf("\n##################\ncthyb U(0.9*beta):\n");
     for (auto &B : res.u_frame) {
       B /= normalization_cte;
       std::cout << B;
