@@ -51,15 +51,16 @@ namespace inchworm {
     return;
   }
 
-  u_tau_t make_ED_propagator(atom_diag const &ad_tot, atom_diag const &ad_atom, atom_diag const &ad_bath, double beta, int n_tau) {
+  u_tau_t make_ED_propagator(atom_diag const &ad_tot, atom_diag const &ad_atom, atom_diag const &ad_bath,  double beta, int n_tau) {
 
     auto E0       = ad_tot.get_gs_energy();
     u_tau_t u_tau = make_propagator(ad_atom, beta, n_tau);
 
     for (int i_tau = 0; i_tau < n_tau; i_tau++) {
       double dtau  = beta * i_tau / (n_tau - 1);
-      auto u_frame = partial_trace(ad_tot, ad_atom, [dtau, E0](double E) { return std::exp(-dtau * (E - E0)); });
-      auto Z_bath  = trace(ad_bath, [dtau, E0](double E) { return std::exp(-dtau * (E - E0)); });
+      //auto u_frame = partial_trace(ad_tot, ad_atom, [dtau, E0](double E) { return std::exp(-dtau * (E - E0)); });
+      auto u_frame = partial_trace_bath(ad_tot, ad_atom, ad_bath, beta, dtau);
+      auto Z_bath  = trace(ad_bath, [beta, E0](double E) { return std::exp(-beta * E); });
       assign_u_frame_to_propagator(u_tau, u_frame, i_tau, 1. / Z_bath );
     }
 

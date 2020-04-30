@@ -119,6 +119,103 @@ namespace inchworm {
     return trace_value;
   }
 
+  u_frame_t partial_trace_bath(atom_diag const &ad_full, atom_diag const &ad_target, atom_diag const &ad_bath, double beta, double dtau) {
+    //TODO: incorporate in atom_diag and make it a member function.
+
+    for (int i = 0; i < (int)ad_target.get_fops().data().size(); i++) {
+      //std::printf("%d %d \n", i, (int)ad_target.get_fops().data().size());
+      if (ad_full.get_fops().data()[i] != ad_target.get_fops().data()[i]) {
+        std::printf("error: the first indices of ad_full should be the same as the one in ad_target.\n");
+        exit(1);
+      }
+
+      //std::cout << ad_target.get_fops().data()[i] << "\n";
+    }
+
+    //for (int i = 0; i < (int)ad_full.get_fops().data().size(); i++) {
+    //  std::cout << " " << ad_full.get_fops().data()[i] << "\n";
+    //}
+
+    int linear_index = ad_target.get_fops().data().size();
+    //std::printf("li=%d\n",linear_index);
+
+    u_frame_t u_frame_result = make_zero_propagator_frame(ad_target);
+    auto es_full             = ad_full.get_eigensystems();
+    auto fs_full             = ad_full.get_fock_states();
+    auto fs_target           = ad_target.get_fock_states();
+    auto es_bath             = ad_bath.get_eigensystems();
+    auto fs_bath             = ad_bath.get_fock_states();
+
+    //    auto fs_bath             = ad_bath.get_fock_states();
+    /*
+    //print_eigensystems(ad_full);
+    for (int s = 0; s < ad_full.n_subspaces(); s++) {
+      for (int i = 0; i < ad_full.get_subspace_dim(s); i++) {
+        printf("  %2lu: ", fs_full[s][i]);
+        print_binary(fs_full[s][i], ad_full.get_fops().data().size());
+      }
+      std::cout << "\n";
+    }
+    std::cout << "\n";
+    //print_eigensystems(ad_target);
+    for (int s = 0; s < ad_target.n_subspaces(); s++) {
+      for (int i = 0; i < ad_target.get_subspace_dim(s); i++) {
+        printf("  %2lu: ", fs_target[s][i]);
+        print_binary(fs_target[s][i], ad_target.get_fops().data().size());
+      }
+      std::cout << "\n";
+    }
+    //return 0.0;
+//*/
+
+    for (int s = 0; s < ad_full.n_subspaces(); s++) {
+      EXPECTS(es_full[s].eigenvalues.size() == fs_full[s].size());
+      int size    = ad_full.get_subspace_dim(s);
+      auto E_Udag = dagger(es_full[s].unitary_matrix);
+
+      for (int i = 0; i < size; i++) {
+        //std::printf("-----> %lu   % 4.8f\n ", fs_full[s][i],  fct(es_full[s].eigenvalues[i] + ad_full.get_gs_energy()));
+        for (int j = 0; j < size; j++) E_Udag(i, j) *= std::exp(-dtau * (es_full[s].eigenvalues[i] + ad_full.get_gs_energy()));
+        //fct(es_full[s].eigenvalues[i] + ad_full.get_gs_energy());
+      }
+      //std::printf("\n");
+      auto H = es_full[s].unitary_matrix * E_Udag;
+      //for (int i = 0; i < size; i++) {
+      //  for (int j = 0; j < size; j++) H(i, j) *= std::exp(-dtau * (es_bath_full[s].eigenvalues[i] + ad_bath_full.get_gs_energy()));
+      //}
+
+      for (int i = 0; i < size; i++) {
+        uint64_t traced_idx1    = get_MSB(fs_full[s][i], linear_index); // the traced indices are the bath indices
+        uint64_t preserved_idx1 = get_LSB(fs_full[s][i], linear_index); // the preserved indices are the impurity indices
+        //std::printf("%u %u\n", traced_idx1, preserved_idx1);
+
+        for (int j = 0; j < size; j++) {
+          uint64_t traced_idx2    = get_MSB(fs_full[s][j], linear_index);
+          uint64_t preserved_idx2 = get_LSB(fs_full[s][j], linear_index);
+          //std::printf(" %u %u\n", traced_idx2, preserved_idx2);
+          if (traced_idx1 == traced_idx2) {
+
+            auto [s1, i1] = find_index(preserved_idx1, fs_target);
+            auto [s2, i2] = find_index(preserved_idx2, fs_target);
+
+            auto [s3, i3] = find_index(traced_idx1, fs_bath);
+            auto [s4, i4] = find_index(traced_idx2, fs_bath);
+
+            if (s1 != s2) {
+              std::printf("error: both block should be the same here\n");
+              exit(1);
+            }
+
+            u_frame_result[s1](i1, i2) += H(i, j) * std::exp(-(beta - dtau) * (es_bath[s3].eigenvalues[i3] + ad_bath.get_gs_energy()));
+
+          } // partial_sum(preserved_idx1, preserved_idx2) += H(i, j); }
+        }
+      }
+    }
+
+    return u_frame_result;
+  }
+
   u_frame_t partial_trace(atom_diag const &ad_full, atom_diag const &ad_target, std::function<double(double)> fct) {
     //TODO: incorporate in atom_diag and make it a member function.
 

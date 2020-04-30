@@ -137,10 +137,11 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   }
 
   //std::printf("\n\n");
-  auto dtau    = cp.beta;
-  auto ad_tot  = triqs::atom_diag::atom_diag<false>(h_atom + h_bath + h_hyb, fops_tot);
-  auto ad_atom = triqs::atom_diag::atom_diag<false>(h_atom, fops_atom, qn);
-  auto ad_bath = triqs::atom_diag::atom_diag<false>(h_bath, fops_bath);
+  auto dtau         = cp.beta;
+  auto ad_tot       = triqs::atom_diag::atom_diag<false>(h_atom + h_bath + h_hyb, fops_tot);
+  auto ad_atom      = triqs::atom_diag::atom_diag<false>(h_atom, fops_atom, qn);
+  auto ad_bath      = triqs::atom_diag::atom_diag<false>(h_bath, fops_bath);
+  //auto ad_bath_full = triqs::atom_diag::atom_diag<false>(h_bath, fops_tot);
 
   u_tau_t u_tau = make_ED_propagator(ad_tot, ad_atom, ad_bath, cp.beta, cp.n_tau);
 
@@ -162,7 +163,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   S.solve_self_consistently(sp, u_tau, tau_split, tau_max);
   //std::printf("\n\n");
   //print(u_tau, tau_split);
-  std::printf("\nexact U(beta):\n");
+  std::printf("\n##################\nexact U(beta):\n");
   print(u_tau, tau_max);
 
   fprint(u_tau, cp.n_tau);
@@ -213,8 +214,8 @@ TEST(inchworm, HubbardAtom) { // NOLINT
         //}
       }
     }
-    int sign = -1;
-    order_0[bl] = (double)( (u_tau[bl](tau_max - tau_split)(0, 0) * u_tau[bl](tau_split)(0, 0)) );
+    int sign    = -1;
+    order_0[bl] = (double)((u_tau[bl](tau_max - tau_split)(0, 0) * u_tau[bl](tau_split)(0, 0)));
     order_1[bl] = integral;
 
     //std::printf("\norder0 = %f  \n", order0);
@@ -287,9 +288,8 @@ TEST(inchworm, HubbardAtom) { // NOLINT
     std::printf("\nsum = %f  \n\n", order_0[bl] + order_1[bl] + order_2[bl]);
   }
 
-
   //S.solve_inchworm(sp);
-  
+
   /*
   double B   = tau_max * theta[0] / 2.;
   double t_s = tau_split * theta[0] / 2.;
