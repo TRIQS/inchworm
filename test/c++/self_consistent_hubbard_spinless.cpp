@@ -33,7 +33,7 @@ fundamental_operator_set make_fops(int idx1, int idx2) {
   fundamental_operator_set fops;
   for (int i = idx1; i < idx2; i++) {
     fops.insert("up", i);
-    //fops.insert("dn", i);
+    fops.insert("dn", i);
   }
   return fops;
 }
@@ -41,34 +41,35 @@ fundamental_operator_set make_fops(int idx1, int idx2) {
 TEST(inchworm, HubbardAtom) { // NOLINT
 
   // System Parameters
-  double U  = 0.;
+  double U  = 4.;
   double mu = U / 2.;
   //double h  = 0.1;
 
   // Construct Parameters
   constr_params_t cp;
-  cp.beta      = 2.0;
-  int n_site   = 1;
-  cp.gf_struct = {{"up", {0}}};
+  cp.beta    = 2.0;
+  int n_site = 1;
+  //cp.gf_struct = {{"up", {0}}};
+  cp.gf_struct = {{"up", {0}}, {"dn", {0}}};
   cp.n_tau     = 500;
   cp.n_iw      = 250;
 
   // Set up the Solver
   solver_core S(cp);
   //int up = 0, dn = 1;
-  int n_bath       = 3;
-  double theta[]   = {1.0,2.5,-2.0};
-  double epsilon[] = {1.5,-4.0,2.3};
+  int n_bath       = 2;
+  double theta[]   = {0.4,0.5};
+  double epsilon[] = {0.9,-0.4};
 
   for (auto const &tau : S.Delta_tau[0].mesh()) {
     double val;
-    for (int i = 0; i < 1 * n_site; i++) {
+    for (int i = 0; i < 2 * n_site; i++) {
       S.Delta_tau[i][tau] = 0.0;
       for (int n = 0; n < n_bath; n++) {
-        //if (epsilon[n] >= 0.0)
-        //val = -theta[n] * theta[n] * (std::exp(-((double)tau) * (epsilon[n])) / (1. + std::exp(-cp.beta * epsilon[n])));
-        //else
-        val = -theta[n] * theta[n] * (std::exp(-((double)tau - cp.beta) * (epsilon[n])) / (1. + std::exp(cp.beta * epsilon[n])));
+        if (epsilon[n] >= 0.0)
+          val = -theta[n] * theta[n] * (std::exp(-((double)tau) * (epsilon[n])) / (1. + std::exp(-cp.beta * epsilon[n])));
+        else
+          val = -theta[n] * theta[n] * (std::exp(-((double)tau - cp.beta) * (epsilon[n])) / (1. + std::exp(cp.beta * epsilon[n])));
         S.Delta_tau[i][tau] += val;
       }
     }
@@ -78,8 +79,8 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   qn.resize(1);
   auto h_atom = 0 * (n("up", 0));
   for (int j = 0; j < n_site; j++) {
-    qn[0] += n("up", j);
-    h_atom += -mu * (n("up", j));
+    qn[0] += n("up", j) + n("dn", j);
+    h_atom += U * n("up", j) * n("dn", j) - mu * (n("up", j) + n("dn", j));
   }
 
   // Solve Parameters
@@ -101,6 +102,8 @@ TEST(inchworm, HubbardAtom) { // NOLINT
 
   double tau_split = 0.90 * cp.beta;
   double tau_max   = 1.00 * cp.beta;
+
+  /*
   double B         = tau_max * epsilon[0];
   double t_s       = tau_split * epsilon[0];
 
@@ -117,6 +120,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   std::printf("cthyb - order 0:  % 4.8f     % 4.8f \n", 1.0, 1.0);
   std::printf("        order 1:  % 4.8f     % 4.8f \n", U1[0], U1[1]);
   std::printf("\n        sum:      % 4.8f     % 4.8f \n", 1. + U1[0], 1. + U1[1]);
+  */
 
   // Compare against the reference data
   // h5diff("hubbard.out.h5", "hubbard.ref.h5")
@@ -128,19 +132,21 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   auto h_hyb  = 0.0 * n("up", 0);
   auto h_bath = 0.0 * n("up", 0);
   for (int j = 0; j < n_site; j++) {
+    h_hyb += U * (n("up", j) * n("dn", j));
+    h_hyb -= mu * (n("up", j) + n("dn", j));
     for (int i = 0; i < n_bath; i++) {
       h_hyb += theta[i] * (c_dag("up", j) * c("up", i + n_site) + c_dag("up", i + n_site) * c("up", j));
-      //h_hyb += theta[i] * (c_dag("dn", j) * c("dn", i + n_site) + c_dag("dn", i + n_site) * c("dn", j));
+      h_hyb += theta[i] * (c_dag("dn", j) * c("dn", i + n_site) + c_dag("dn", i + n_site) * c("dn", j));
 
-      h_bath += epsilon[i] * (n("up", i + n_site));
+      h_bath += epsilon[i] * (n("up", i + n_site) + n("dn", i + n_site));
     }
   }
 
   //std::printf("\n\n");
-  auto dtau         = cp.beta;
-  auto ad_tot       = triqs::atom_diag::atom_diag<false>(h_atom + h_bath + h_hyb, fops_tot);
-  auto ad_atom      = triqs::atom_diag::atom_diag<false>(h_atom, fops_atom, qn);
-  auto ad_bath      = triqs::atom_diag::atom_diag<false>(h_bath, fops_bath);
+  auto dtau    = cp.beta;
+  auto ad_tot  = triqs::atom_diag::atom_diag<false>(h_atom + h_bath + h_hyb, fops_tot);
+  auto ad_atom = triqs::atom_diag::atom_diag<false>(h_atom, fops_atom, qn);
+  auto ad_bath = triqs::atom_diag::atom_diag<false>(h_bath, fops_bath);
   //auto ad_bath_full = triqs::atom_diag::atom_diag<false>(h_bath, fops_tot);
 
   u_tau_t u_tau = make_ED_propagator(ad_tot, ad_atom, ad_bath, cp.beta, cp.n_tau);
@@ -166,6 +172,31 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   std::printf("\n##################\nexact U(beta):\n");
   print(u_tau, tau_max);
 
+  double x           = theta[0] * cp.beta;
+  double tmp         = std::cosh(theta[0] * cp.beta / 2.);
+  double total_serie = std::pow(tmp, 4);
+
+  double order1 = (1. / 2.) * std::pow(x, 2);
+  double order2 = (5. / 48.) * std::pow(x, 4);
+  double order3 = (17. / 1440.) * std::pow(x, 6);
+  double order4 = (13. / 16128.) * std::pow(x, 8);
+  double order5 = (257. / 7257600.) * std::pow(x, 10);
+  double order6 = (41. / 38320128.) * std::pow(x, 12);
+  double order7 = (4097. / 174356582400.) * std::pow(x, 14);
+  double order8 = (3277. / 8369115955200.) * std::pow(x, 16);
+
+  std::printf("order 0: % 4.8f \n", 1.0);
+  std::printf("order 1: % 4.8f \n", order1);
+  std::printf("order 2: % 4.8f \n", order2);
+  std::printf("order 3: % 4.8f \n", order3);
+  std::printf("order 4: % 4.8f \n", order4);
+  std::printf("order 5: % 4.8f \n", order5);
+  std::printf("order 6: % 4.8f \n", order6);
+  std::printf("order 7: % 4.8f \n", order7);
+  std::printf("order 8: % 4.8f \n", order8);
+  std::printf("\n\ntotal : % 4.8f \n", total_serie);
+
+  /*
   fprint(u_tau, cp.n_tau);
 
   std::printf("\ninchw - order 0:  % 4.8f     % 4.8f \n", U0t[0], U0t[1]);
@@ -222,7 +253,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
     //std::printf("order1 = %f  \n", integral);
     //std::printf("\nsum = %f  \n", integral + order0);
   }
-
+  */
   /*
 
   N_tau = 80;
@@ -279,7 +310,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
     }
     order_2[bl] = integral;
     //std::printf("order2 = %f  \n", integral);
-  } //*/
+  } //*
 
   for (int bl = 0; bl < 2; bl++) {
     std::printf("\norder0 = %f", order_0[bl]);
