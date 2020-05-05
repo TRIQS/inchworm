@@ -25,6 +25,9 @@ namespace inchworm {
   void assign_u_frame_to_propagator(u_tau_t &u_tau, u_frame_t const &u_frame, int frame_number, scalar_t factor = 1.0);
   u_tau_t make_ED_propagator(atom_diag const &ad_tot, atom_diag const &ad_atom, atom_diag const &ad_bath, double beta, int n_tau);
 
+  //
+  u_frame_t make_zeroth_order(atom_diag const &ad, double tau, double tau_split = 0.0, u_tau_t const *const u_tau_p = nullptr);
+
   /// Function that calculate the product: u_frame = U(tau_0) op U(tau_1-tau_0) op U(tau_2-tau_1) op U(tau_3-tau_2) ... op U(tau-tau_n)
   /// where op is either c_dag or c operator, depending on the configuration
   /** 
@@ -35,11 +38,9 @@ namespace inchworm {
    * @return u_frame_t, at time tau, resulting from this product.
    */
 
-  //
-  u_frame_t make_zeroth_order(atom_diag const &ad, double tau, double tau_split=0.0, u_tau_t const *const u_tau_p = nullptr);
-
   //u_frame_t propagator_product(atom_diag const &ad, time_diagram_t const &diagram, double tau, u_tau_t const *const u_tau_p = nullptr);
-  u_frame_t propagator_product(atom_diag const &ad, time_diagram_t const &diagram, double tau, double tau_split=0.0, u_tau_t const *const u_tau_p = nullptr);
+  u_frame_t propagator_product(atom_diag const &ad, time_diagram_t const &diagram, double tau, double tau_split = 0.0,
+                               u_tau_t const *const u_tau_p = nullptr);
 
   inline std::ostream &operator<<(std::ostream &out, u_frame_t const &u_frame) {
     out << "propagator_frame (size: " << u_frame.size() << ")\n";

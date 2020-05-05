@@ -62,8 +62,8 @@ namespace inchworm {
     int dim_partial = (1 << linear_index);
     //int dim_full    = ad.get_full_hilbert_space_dim();
     //int factor      = 1;//dim_full / dim_partial;
-    EXPECTS(dim_partial < dim_full);
-    EXPECTS(dim_full % dim_partial == 0);
+    //EXPECTS(dim_partial < dim_full);
+    //EXPECTS(dim_full % dim_partial == 0);
 
     triqs::arrays::matrix<double> partial_sum(dim_partial, dim_partial);
     partial_sum = 0;

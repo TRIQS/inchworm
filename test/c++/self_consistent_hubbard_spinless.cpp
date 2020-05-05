@@ -27,6 +27,7 @@
 #include <triqs/test_tools/gfs.hpp>
 
 using namespace inchworm;
+namespace ndaa = triqs::arrays;
 
 // Prepare funcdamental operator set
 fundamental_operator_set make_fops(int idx1, int idx2) {
@@ -41,14 +42,16 @@ fundamental_operator_set make_fops(int idx1, int idx2) {
 TEST(inchworm, HubbardAtom) { // NOLINT
 
   // System Parameters
-  double U  = 4.;
-  double mu = U / 2.;
+  double U  = 4.0;
+  double mu = 0.0; //U / 2.;
   //double h  = 0.1;
 
   // Construct Parameters
   constr_params_t cp;
   cp.beta    = 2.0;
   int n_site = 1;
+  int n_bath = 3;
+  int n_spin = 2;
   //cp.gf_struct = {{"up", {0}}};
   cp.gf_struct = {{"up", {0}}, {"dn", {0}}};
   cp.n_tau     = 500;
@@ -56,10 +59,11 @@ TEST(inchworm, HubbardAtom) { // NOLINT
 
   // Set up the Solver
   solver_core S(cp);
-  //int up = 0, dn = 1;
-  int n_bath       = 2;
-  double theta[]   = {0.4,0.5};
-  double epsilon[] = {0.9,-0.4};
+
+  //ndaa::array<double,2> theta1= {{3,4},{4,8}};
+
+  double theta[]   = {1.5, -1.0, 1.7};
+  double epsilon[] = {-2.0, 0.4, 1.5};
 
   for (auto const &tau : S.Delta_tau[0].mesh()) {
     double val;
@@ -80,7 +84,8 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   auto h_atom = 0 * (n("up", 0));
   for (int j = 0; j < n_site; j++) {
     qn[0] += n("up", j) + n("dn", j);
-    h_atom += U * n("up", j) * n("dn", j) - mu * (n("up", j) + n("dn", j));
+    h_atom += U * n("up", j) * n("dn", j);
+    h_atom -= mu * (n("up", j) + n("dn", j));
   }
 
   // Solve Parameters
@@ -94,7 +99,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   sp.post_process    = true;
   sp.measure_sign    = true;
   sp.quantum_numbers = qn;
-  sp.random_seed     = 22345789 + 928374 * mpi::communicator().rank();
+  sp.random_seed     = 12345789 + 928374 * mpi::communicator().rank();
 
   // Solve the impurity model
   S.solve_single_step(sp);
@@ -132,13 +137,12 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   auto h_hyb  = 0.0 * n("up", 0);
   auto h_bath = 0.0 * n("up", 0);
   for (int j = 0; j < n_site; j++) {
-    h_hyb += U * (n("up", j) * n("dn", j));
-    h_hyb -= mu * (n("up", j) + n("dn", j));
     for (int i = 0; i < n_bath; i++) {
       h_hyb += theta[i] * (c_dag("up", j) * c("up", i + n_site) + c_dag("up", i + n_site) * c("up", j));
       h_hyb += theta[i] * (c_dag("dn", j) * c("dn", i + n_site) + c_dag("dn", i + n_site) * c("dn", j));
 
       h_bath += epsilon[i] * (n("up", i + n_site) + n("dn", i + n_site));
+      //h_bath += mu * (n("up", i + n_site) + n("dn", i + n_site));
     }
   }
 

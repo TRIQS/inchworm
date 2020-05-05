@@ -33,7 +33,7 @@ namespace inchworm::moves {
     //if (proposed_config.size() >5) return 0.0;
 
     if (params.use_bare_propagator)
-      proposed_u_frame = propagator_product(params.h_diag, diagram, params.tau_max);
+      proposed_u_frame = propagator_product(params.h_diag, diagram, params.tau_max, 0, nullptr);
     else
       proposed_u_frame = propagator_product(params.h_diag, diagram, params.tau_max, params.tau_split, &params.u_tau);
 

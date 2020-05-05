@@ -41,8 +41,8 @@ fundamental_operator_set make_fops(int N) {
 TEST(inchworm, HubbardAtom) { // NOLINT
 
   // System Parameters
-  double U  = 0.0;
-  double mu = U / 2.;
+  double U  = -1.0;
+  double mu = 0.0; //U / 2.;
   //double h  = 0.1;
 
   // Construct Parameters
@@ -66,14 +66,13 @@ TEST(inchworm, HubbardAtom) { // NOLINT
       S.Delta_tau[i][tau] = 0.0;
       for (int n = 0; n < n_bath; n++) {
         double val;
-        if (epsilon[n] > 0.0)
-          val = -theta[n] * theta[n] * (std::exp(-((double)tau) * (epsilon[n])) / (1. + std::exp(-cp.beta * epsilon[n])));
-          //val = -theta[i + 2 * n_site * n] * theta[i + 2 * n_site * n]
-          //   * (std::exp(-((double)tau) * (epsilon[n])) / (1. + std::exp(-cp.beta * epsilon[n])));
+        if (epsilon[n] > 0.0) val = -theta[n] * theta[n] * (std::exp(-((double)tau) * (epsilon[n])) / (1. + std::exp(-cp.beta * epsilon[n])));
+        //val = -theta[i + 2 * n_site * n] * theta[i + 2 * n_site * n]
+        //   * (std::exp(-((double)tau) * (epsilon[n])) / (1. + std::exp(-cp.beta * epsilon[n])));
         else
           val = -theta[n] * theta[n] * (std::exp(-((double)tau - cp.beta) * (epsilon[n])) / (1. + std::exp(cp.beta * epsilon[n])));
-          //val = -theta[i + 2 * n_site * n] * theta[i + 2 * n_site * n]
-          //   * (std::exp(-((double)tau - cp.beta) * (epsilon[n])) / (1. + std::exp(cp.beta * epsilon[n])));
+        //val = -theta[i + 2 * n_site * n] * theta[i + 2 * n_site * n]
+        //   * (std::exp(-((double)tau - cp.beta) * (epsilon[n])) / (1. + std::exp(cp.beta * epsilon[n])));
         S.Delta_tau[i][tau] += val;
       }
       //}
@@ -94,7 +93,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   // Solve Parameters
   solve_params_t sp;
   sp.h_int           = h_int;
-  sp.n_cycles        = 1000000;
+  sp.n_cycles        = 100000;
   sp.length_cycle    = 10;
   sp.n_warmup_cycles = 20;
   sp.max_time        = -1;

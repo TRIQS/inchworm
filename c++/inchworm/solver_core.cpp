@@ -74,12 +74,6 @@ namespace inchworm {
   }
 
   void solver_core::solve(solve_params_t const &solve_params) {
-
-    // Merge constr_params and solve_params
-    last_solve_params = solve_params;
-    init(solve_params);
-    //for
-    single_step(solve_params, constr_params.beta / 2, constr_params.beta, true);
   }
 
   void solver_core::solve_single_step(solve_params_t const &solve_params) {
@@ -87,8 +81,8 @@ namespace inchworm {
     // Merge constr_params and solve_params
     last_solve_params = solve_params;
     init(solve_params);
-    double tau_max   = 1.0*constr_params.beta;
-    double tau_split = 1.0*constr_params.beta;
+    double tau_max   = 1.0 * constr_params.beta;
+    double tau_split = 0.0;
 
     u_frame_bare = make_bare_propagator_frame(h_diag, tau_max, false);
     auto res     = single_step(solve_params, tau_split, tau_max, true);
@@ -107,6 +101,7 @@ namespace inchworm {
       B /= normalization_cte;
       std::cout << B;
     }
+
     std::cout << "\n\norder: " << res.average_k << "\n";
     for (auto o : res.samples_expansion_order) std::printf("%16d ", o);
     std::printf("\n");
@@ -190,8 +185,11 @@ namespace inchworm {
     // Capture random number generator
     auto &rng = mc.get_rng();
 
+    u_tau_t *u_tau_p = &u_tau;
+    if (use_bare_propagator) u_tau_p = nullptr;
+
     // Create Monte-Carlo configuration
-    qmc_config_data_t qmc_config_data{h_diag, tau_max, tau_split, &u_tau};
+    qmc_config_data_t qmc_config_data{h_diag, tau_max, tau_split, u_tau_p};
 
     // Create Monte-Carlo params
     qmc_params_t qmc_params{Delta_tau, map_lin_idx_to_block_inner, h_diag, u_tau, tau_max, tau_split, use_bare_propagator};
