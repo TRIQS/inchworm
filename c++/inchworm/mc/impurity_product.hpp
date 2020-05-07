@@ -48,7 +48,7 @@ namespace inchworm {
     return out;
   }
 
-  constexpr int MAX_ORDER = 7;
+  constexpr int MAX_ORDER = 7; // just for printing
   struct single_step_results_t {
     double average_k = 0.0;
     u_frame_t u_frame;
@@ -58,6 +58,22 @@ namespace inchworm {
     single_step_results_t(atom_diag const &h_diag) : u_expansion_order(MAX_ORDER, 0), samples_expansion_order(MAX_ORDER, 0) {
       u_frame           = make_zero_propagator_frame(h_diag);
       u_frame_0th_order = u_frame;
+    };
+
+    void normalize(double normalization_cte) {
+      for (auto &Bl : u_frame) Bl /= normalization_cte;
+      for (auto &Bl : u_frame_0th_order) Bl /= normalization_cte;
+      for (auto &o : u_expansion_order) o /= normalization_cte;
+    };
+
+    void print() {
+      for (auto &Bl : u_frame) std::cout << Bl;
+
+      std::printf("\n\norder breakdown: \n");
+      for (auto &o : samples_expansion_order) std::printf("%16d ", o);
+      std::printf("\n");
+      for (auto &o : u_expansion_order) std::printf("% 16.5f ", o);
+      std::printf("\n");
     };
   };
 

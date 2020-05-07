@@ -56,16 +56,18 @@ namespace inchworm {
      *
      * @param solve_params_t Set of parameters specific to the INCHWORM run
      */
-    CPP2PY_ARG_AS_DICT
-    void solve(solve_params_t const &solve_params);
+    //CPP2PY_ARG_AS_DICT
+    //void solve(solve_params_t const &solve_params);
 
     // Struct containing the parameters relevant for the solver construction
     constr_params_t constr_params;
 
     void init(solve_params_t const &solve_params);
+
     single_step_results_t single_step(solve_params_t const &solve_params, double tau_split, double tau_max, bool use_bare_propagator);
-    void solve_single_step(solve_params_t const &solve_params);
-    void solve_self_consistently(solve_params_t const &solve_params, u_tau_t const &u_tau_, double tau_split, double tau_max);
+    single_step_results_t solve_single_step(solve_params_t const &solve_params);
+    single_step_results_t solve_self_consistently(solve_params_t const &solve_params, u_tau_t const &u_tau_, double tau_split, double tau_max);
+
     void solve_inchworm(solve_params_t const &solve_params);
 
 

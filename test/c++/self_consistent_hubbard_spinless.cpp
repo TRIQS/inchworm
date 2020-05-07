@@ -27,71 +27,63 @@
 #include <triqs/test_tools/gfs.hpp>
 
 using namespace inchworm;
-namespace ndaa = triqs::arrays;
+//namespace nda = triqs::arrays;
+using mat_t = triqs::arrays::array<double, 2>;
+using vec_t = triqs::arrays::array<double, 1>;
 
 // Prepare funcdamental operator set
-fundamental_operator_set make_fops(int idx1, int idx2) {
+fundamental_operator_set make_fops(int idx1, int idx2, int n_spin) {
   fundamental_operator_set fops;
   for (int i = idx1; i < idx2; i++) {
     fops.insert("up", i);
-    fops.insert("dn", i);
+    if (n_spin == 2) fops.insert("dn", i);
   }
   return fops;
 }
 
-TEST(inchworm, HubbardAtom) { // NOLINT
-
-  // System Parameters
-  double U  = 4.0;
-  double mu = 0.0; //U / 2.;
-  //double h  = 0.1;
-
-  // Construct Parameters
-  constr_params_t cp;
-  cp.beta    = 2.0;
-  int n_site = 1;
-  int n_bath = 3;
-  int n_spin = 2;
-  //cp.gf_struct = {{"up", {0}}};
-  cp.gf_struct = {{"up", {0}}, {"dn", {0}}};
-  cp.n_tau     = 500;
-  cp.n_iw      = 250;
-
+void self_consistent_hubbard(int n_site, int n_bath, int n_spin, double U, double mu, constr_params_t const &cp, mat_t const &theta,
+                             vec_t const &epsilon, double tau_max, double tau_split) {
   // Set up the Solver
   solver_core S(cp);
 
-  //ndaa::array<double,2> theta1= {{3,4},{4,8}};
-
-  double theta[]   = {1.5, -1.0, 1.7};
-  double epsilon[] = {-2.0, 0.4, 1.5};
-
   for (auto const &tau : S.Delta_tau[0].mesh()) {
     double val;
-    for (int i = 0; i < 2 * n_site; i++) {
-      S.Delta_tau[i][tau] = 0.0;
-      for (int n = 0; n < n_bath; n++) {
-        if (epsilon[n] >= 0.0)
-          val = -theta[n] * theta[n] * (std::exp(-((double)tau) * (epsilon[n])) / (1. + std::exp(-cp.beta * epsilon[n])));
-        else
-          val = -theta[n] * theta[n] * (std::exp(-((double)tau - cp.beta) * (epsilon[n])) / (1. + std::exp(cp.beta * epsilon[n])));
-        S.Delta_tau[i][tau] += val;
+
+    for (int block = 0; block < cp.gf_struct.size(); block++) {
+      for (int i = 0; i < n_site; i++) {
+        for (int j = 0; j < n_site; j++) {
+          S.Delta_tau[block][tau] = 0.0;
+          for (int n = 0; n < n_bath; n++) {
+            if (epsilon(n) >= 0.0)
+              val = -theta(i, n) * theta(j, n) * (std::exp(-((double)tau) * (epsilon(n))) / (1. + std::exp(-cp.beta * epsilon(n))));
+            else
+              val = -theta(i, n) * theta(j, n) * (std::exp(-((double)tau - cp.beta) * (epsilon(n))) / (1. + std::exp(cp.beta * epsilon(n))));
+            S.Delta_tau[block][tau](i, j) += val;
+            if (n_spin == 2) S.Delta_tau[block][tau](i, j) += val; // spin-down
+          }
+        }
       }
     }
   }
 
   std::vector<many_body_op_t> qn;
   qn.resize(1);
-  auto h_atom = 0 * (n("up", 0));
+  auto h_atom = 0 * n("up", 0);
   for (int j = 0; j < n_site; j++) {
-    qn[0] += n("up", j) + n("dn", j);
-    h_atom += U * n("up", j) * n("dn", j);
-    h_atom -= mu * (n("up", j) + n("dn", j));
+    qn[0] += n("up", j);
+    h_atom -= mu * n("up", j);
+
+    if (n_spin == 2) {
+      qn[0] += n("dn", j);
+      h_atom -= mu * n("dn", j);
+      h_atom += U * n("up", j) * n("dn", j);
+    }
   }
 
   // Solve Parameters
   solve_params_t sp;
   sp.h_int           = h_atom;
-  sp.n_cycles        = 1000000;
+  sp.n_cycles        = 100000;
   sp.length_cycle    = 10;
   sp.n_warmup_cycles = 20;
   sp.max_time        = -1;
@@ -102,11 +94,9 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   sp.random_seed     = 12345789 + 928374 * mpi::communicator().rank();
 
   // Solve the impurity model
-  S.solve_single_step(sp);
+  auto result_cthyb = S.solve_single_step(sp);
   //exit(0);
 
-  double tau_split = 0.90 * cp.beta;
-  double tau_max   = 1.00 * cp.beta;
 
   /*
   double B         = tau_max * epsilon[0];
@@ -129,25 +119,27 @@ TEST(inchworm, HubbardAtom) { // NOLINT
 
   // Compare against the reference data
   // h5diff("hubbard.out.h5", "hubbard.ref.h5")
-  auto fops_tot  = make_fops(0, n_site + n_bath);
-  auto fops_atom = make_fops(0, n_site);
-  auto fops_bath = make_fops(n_site, n_site + n_bath);
+  auto fops_tot  = make_fops(0, n_site + n_bath, n_spin);
+  auto fops_atom = make_fops(0, n_site, n_spin);
+  auto fops_bath = make_fops(n_site, n_site + n_bath, n_spin);
 
   //std::printf("salut\n");
   auto h_hyb  = 0.0 * n("up", 0);
   auto h_bath = 0.0 * n("up", 0);
-  for (int j = 0; j < n_site; j++) {
-    for (int i = 0; i < n_bath; i++) {
-      h_hyb += theta[i] * (c_dag("up", j) * c("up", i + n_site) + c_dag("up", i + n_site) * c("up", j));
-      h_hyb += theta[i] * (c_dag("dn", j) * c("dn", i + n_site) + c_dag("dn", i + n_site) * c("dn", j));
+  for (int i = 0; i < n_site; i++) {
+    for (int k = 0; k < n_bath; k++) {
+      h_hyb += theta(i, k) * (c_dag("up", i) * c("up", k + n_site) + c_dag("up", k + n_site) * c("up", i));
+      h_bath += epsilon(k) * n("up", k + n_site);
 
-      h_bath += epsilon[i] * (n("up", i + n_site) + n("dn", i + n_site));
+      if (n_spin == 2) {
+        h_hyb += theta(i, k) * (c_dag("dn", i) * c("dn", k + n_site) + c_dag("dn", k + n_site) * c("dn", i));
+        h_bath += epsilon(k) * n("dn", k + n_site);
+      }
       //h_bath += mu * (n("up", i + n_site) + n("dn", i + n_site));
     }
   }
 
   //std::printf("\n\n");
-  auto dtau    = cp.beta;
   auto ad_tot  = triqs::atom_diag::atom_diag<false>(h_atom + h_bath + h_hyb, fops_tot);
   auto ad_atom = triqs::atom_diag::atom_diag<false>(h_atom, fops_atom, qn);
   auto ad_bath = triqs::atom_diag::atom_diag<false>(h_bath, fops_bath);
@@ -155,27 +147,18 @@ TEST(inchworm, HubbardAtom) { // NOLINT
 
   u_tau_t u_tau = make_ED_propagator(ad_tot, ad_atom, ad_bath, cp.beta, cp.n_tau);
 
-  /*
-  auto E0      = ad_tot.get_gs_energy();
-  auto u_frame = partial_trace(ad_tot, ad_atom, [dtau, E0](double E) { return std::exp(-dtau * (E - E0)); });
-  std::printf("\n");
-  auto Z_bath = trace(ad_bath, [dtau, E0](double E) { return std::exp(-dtau * (E - E0)); });
-  print(u_frame, 1. / Z_bath);
-
-  u_tau_t u_tau = make_propagator(ad_atom, 3);
-  assign_u_frame_to_propagator(u_tau, u_frame, 1, 1. / Z_bath);
-
-  std::printf("\n");
-  for (int i_tau = 0; i_tau < cp.n_tau; i_tau++) { print(u_tau, i_tau); }
-  std::printf("\n");
-*/
-
-  S.solve_self_consistently(sp, u_tau, tau_split, tau_max);
+  auto result_sc = S.solve_self_consistently(sp, u_tau, tau_split, tau_max);
   //std::printf("\n\n");
   //print(u_tau, tau_split);
   std::printf("\n##################\nexact U(beta):\n");
   print(u_tau, tau_max);
 
+  //u_tau[bl][cp.n_tau];
+
+  //for (int bl = 0; bl < result_sc.u_frame.size(); bl++) EXPECT_NEAR(u_tau[bl][cp.n_tau](0,0), result_sc.u_frame[bl](0,0), 0.1);
+
+  /*
+  mat_t theta1= {{3,4},{4,8}};
   double x           = theta[0] * cp.beta;
   double tmp         = std::cosh(theta[0] * cp.beta / 2.);
   double total_serie = std::pow(tmp, 4);
@@ -199,7 +182,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   std::printf("order 7: % 4.8f \n", order7);
   std::printf("order 8: % 4.8f \n", order8);
   std::printf("\n\ntotal : % 4.8f \n", total_serie);
-
+  */
   /*
   fprint(u_tau, cp.n_tau);
 
@@ -314,7 +297,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
     }
     order_2[bl] = integral;
     //std::printf("order2 = %f  \n", integral);
-  } //*
+  } 
 
   for (int bl = 0; bl < 2; bl++) {
     std::printf("\norder0 = %f", order_0[bl]);
@@ -325,7 +308,7 @@ TEST(inchworm, HubbardAtom) { // NOLINT
 
   //S.solve_inchworm(sp);
 
-  /*
+  
   double B   = tau_max * theta[0] / 2.;
   double t_s = tau_split * theta[0] / 2.;
 
@@ -377,7 +360,48 @@ TEST(inchworm, HubbardAtom) { // NOLINT
   //std::printf("order 0+1+2+3: % 4.8f \n", order0 + order1*2. + order2/4.*6. + order3/36.*24);
   std::printf("order 0+1+2+3: % 4.8f \n", order0 + order1 + order2 + order3);
   std::printf("\n\ncosh^2(B): % 4.8f \n", std::cosh(B) * std::cosh(B));
-  //*/
+  */
 }
 
+TEST(inchworm, Hubbard_1site) { 
+
+  constr_params_t cp;
+  cp.beta      = 2.0;
+  cp.gf_struct = {{"up", {0}}, {"dn", {0}}};
+  cp.n_tau = 500;
+  cp.n_iw  = 250;
+  
+  mat_t theta   = {{1.0, -1.0, 1.1}};
+  vec_t epsilon = {-2.0, 0.4, 1.5};
+  self_consistent_hubbard(1, 3, 2, 4.0, 0.0, cp, theta, epsilon, cp.beta, cp.beta*0.9);
+}
+
+TEST(inchworm, Hubbard_1site_spinless) { 
+
+  constr_params_t cp;
+  cp.beta      = 2.0;
+  cp.gf_struct = {{"up", {0}}};
+  cp.n_tau = 500;
+  cp.n_iw  = 250;
+
+  mat_t theta   = {{1.5, -1.0, 1.7}};
+  vec_t epsilon = {-2.0, 0.4, 1.5};
+  self_consistent_hubbard(1, 3, 1, 4.0, 0.0, cp, theta, epsilon, cp.beta, cp.beta*0.9);
+}
+
+/*
+TEST(inchworm, Hubbard_2sites) { // NOLINT
+
+  constr_params_t cp;
+  cp.beta      = 2.0;
+  cp.gf_struct = {{"up", {0, 1}}};
+  //cp.gf_struct = {{"up", {0, 1}}, {"dn", {0, 1}}};
+  cp.n_tau = 500;
+  cp.n_iw  = 250;
+
+  triqs::arrays::array<double, 2> theta   = {{1.5}, {-1.0}};
+  triqs::arrays::array<double, 1> epsilon = {-2.0};
+  self_consistent_hubbard(2, 1, 1, 4.0, 0.0, cp, theta, epsilon);
+}
+*/
 MAKE_MAIN
