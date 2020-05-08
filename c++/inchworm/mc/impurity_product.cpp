@@ -57,10 +57,10 @@ namespace inchworm {
     u_tau_t u_tau = make_propagator(ad_atom, beta, n_tau);
 
     for (int i_tau = 0; i_tau < n_tau; i_tau++) {
-      double dtau  = beta * i_tau / (n_tau - 1);
+      double dtau = beta * i_tau / (n_tau - 1);
       //auto u_frame = partial_trace(ad_tot, ad_atom, [dtau, E0](double E) { return std::exp(-dtau * E); });
       auto u_frame = partial_trace_bath(ad_tot, ad_atom, ad_bath, beta, dtau);
-      auto Z_bath = trace(ad_bath, [beta, E0](double E) { return std::exp(-beta * E); });
+      auto Z_bath  = trace(ad_bath, [beta, E0](double E) { return std::exp(-beta * E); });
       //auto Z_bath2  = trace(ad_bath, [dtau, beta, E0](double E) { return std::exp(-(beta-dtau) * E); });
       assign_u_frame_to_propagator(u_tau, u_frame, i_tau, 1. / Z_bath);
     }
@@ -118,12 +118,17 @@ namespace inchworm {
         new_mat = (*u_tau_p)[initial_bl](dtau); // (interpolation)
         if (tau_split < diagram.min_tau()) new_mat = (*u_tau_p)[initial_bl](dtau2) * new_mat;
       } else {
-        new_mat = matrix_t(dim, dim); //zeros?
-        new_mat = 0;
-        for (int j = 0; j < dim; j++)
-          new_mat(j, j) =
-             std::exp(-dtau * (ad.get_eigenvalue(initial_bl, j) + (ad.get_gs_energy()))); // Create time-evolution matrix e^-H(tau-tau_max)
+        //new_mat = matrix_t(dim, dim); //zeros?
+        //new_mat = 0;
+        auto E_Udag = dagger((ad.get_eigensystems())[initial_bl].unitary_matrix);
+        for (int i = 0; i < dim; i++)
+          for (int j = 0; j < dim; j++)                                                            //new_mat(j, j) =
+            E_Udag *= std::exp(-dtau * (ad.get_eigenvalue(initial_bl, j) + (ad.get_gs_energy()))); // Create time-evolution matrix e^-H(tau-tau_max)
+                                                                                                   //new_mat(j, j) =
+        //   std::exp(-dtau * (ad.get_eigenvalue(initial_bl, j) + (ad.get_gs_energy()))); // Create time-evolution matrix e^-H(tau-tau_max)
+        new_mat = (ad.get_eigensystems())[initial_bl].unitary_matrix * E_Udag;
       }
+
       //std::cout << "after\n" << new_mat << "\n\n";
 
       for (int i = 0; i < diagram.size(); i++) {
@@ -155,14 +160,23 @@ namespace inchworm {
           new_mat = (*u_tau_p)[new_bl](dtau) * new_mat; // (interpolation)
           if (dtau2 != 0.0) new_mat = (*u_tau_p)[new_bl](dtau2) * new_mat;
         } else {
-          dtau   = (i == (diagram.size() - 1) ? tau : diagram.op_list[i + 1].tau) - op.tau;
-          auto _ = triqs::arrays::range();
-          for (int j = 0; j < ad.get_subspace_dim(new_bl); j++) {
-            //std::printf("new_bl %d, j %d \n", new_bl, j);
-            //std::printf("ad.get_subspace_dim(new_bl) = %d \n", ad.get_subspace_dim(new_bl));
-            new_mat(j, _) *=                                                            // ATTENTION!
-               std::exp(-dtau * (ad.get_eigenvalue(new_bl, j) + (ad.get_gs_energy()))); // bare imaginary time evolution
-          }
+          dtau = (i == (diagram.size() - 1) ? tau : diagram.op_list[i + 1].tau) - op.tau;
+          //auto _ = triqs::arrays::range();
+
+          //std::cout << dagger((ad.get_eigensystems())[new_bl].unitary_matrix) << "\n";
+          matrix_t E_Udag_mat = dagger((ad.get_eigensystems())[new_bl].unitary_matrix) * new_mat;
+          for (int j = 0; j < ad.get_subspace_dim(new_bl); j++) //new_mat(j, j) =
+            for (int k = 0; k < ad.get_subspace_dim(new_bl); k++)
+              E_Udag_mat(j, k) = E_Udag_mat(j, k)
+                 * std::exp(-dtau * (ad.get_eigenvalue(new_bl, j) + (ad.get_gs_energy()))); // Create time-evolution matrix e^-H(tau-tau_max)
+          new_mat = (ad.get_eigensystems())[new_bl].unitary_matrix * E_Udag_mat;
+
+          //for (int j = 0; j < ad.get_subspace_dim(new_bl); j++) {
+          //std::printf("new_bl %d, j %d \n", new_bl, j);
+          //std::printf("ad.get_subspace_dim(new_bl) = %d \n", ad.get_subspace_dim(new_bl));
+          //  new_mat(j, _) *=                                                            // ATTENTION!
+          //     std::exp(-dtau * (ad.get_eigenvalue(new_bl, j) + (ad.get_gs_energy()))); // bare imaginary time evolution
+          //}
         }
         //std::cout << "new_mat 3: " << new_bl << " \n" << new_mat << "\n\n\n\n";
       }

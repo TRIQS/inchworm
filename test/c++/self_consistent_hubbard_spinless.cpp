@@ -41,7 +41,7 @@ fundamental_operator_set make_fops(int idx1, int idx2, int n_spin) {
   return fops;
 }
 
-void self_consistent_hubbard(int n_site, int n_bath, int n_spin, double U, double mu, constr_params_t const &cp, mat_t const &theta,
+void self_consistent_hubbard(int n_site, int n_bath, int n_spin, double U, double mu, double t, constr_params_t const &cp, mat_t const &theta,
                              vec_t const &epsilon, double tau_max, double tau_split) {
   // Set up the Solver
   solver_core S(cp);
@@ -78,6 +78,12 @@ void self_consistent_hubbard(int n_site, int n_bath, int n_spin, double U, doubl
       h_atom -= mu * n("dn", j);
       h_atom += U * n("up", j) * n("dn", j);
     }
+    for (int i = 0; i < n_site; i++) {
+      if (i != j) {
+        h_atom -= t * c_dag("up", i) * c("up", j);
+        if (n_spin == 2) h_atom -= t * c_dag("dn", i) * c("dn", j);
+      }
+    }
   }
 
   // Solve Parameters
@@ -96,7 +102,6 @@ void self_consistent_hubbard(int n_site, int n_bath, int n_spin, double U, doubl
   // Solve the impurity model
   auto result_cthyb = S.solve_single_step(sp);
   //exit(0);
-
 
   /*
   double B         = tau_max * epsilon[0];
@@ -363,6 +368,7 @@ void self_consistent_hubbard(int n_site, int n_bath, int n_spin, double U, doubl
   */
 }
 
+/*
 TEST(inchworm, Hubbard_1site) { 
 
   constr_params_t cp;
@@ -373,7 +379,7 @@ TEST(inchworm, Hubbard_1site) {
   
   mat_t theta   = {{1.0, -1.0, 1.1}};
   vec_t epsilon = {-2.0, 0.4, 1.5};
-  self_consistent_hubbard(1, 3, 2, 4.0, 0.0, cp, theta, epsilon, cp.beta, cp.beta*0.9);
+  self_consistent_hubbard(1, 3, 2, 4.0, 0.0, 0.0, cp, theta, epsilon, cp.beta, cp.beta*0.9);
 }
 
 TEST(inchworm, Hubbard_1site_spinless) { 
@@ -386,10 +392,10 @@ TEST(inchworm, Hubbard_1site_spinless) {
 
   mat_t theta   = {{1.5, -1.0, 1.7}};
   vec_t epsilon = {-2.0, 0.4, 1.5};
-  self_consistent_hubbard(1, 3, 1, 4.0, 0.0, cp, theta, epsilon, cp.beta, cp.beta*0.9);
+  self_consistent_hubbard(1, 3, 1, 4.0, 0.0, 0.0, cp, theta, epsilon, cp.beta, cp.beta*0.9);
 }
+*/
 
-/*
 TEST(inchworm, Hubbard_2sites) { // NOLINT
 
   constr_params_t cp;
@@ -401,7 +407,7 @@ TEST(inchworm, Hubbard_2sites) { // NOLINT
 
   triqs::arrays::array<double, 2> theta   = {{1.5}, {-1.0}};
   triqs::arrays::array<double, 1> epsilon = {-2.0};
-  self_consistent_hubbard(2, 1, 1, 4.0, 0.0, cp, theta, epsilon);
+  self_consistent_hubbard(2, 1, 1, 4.0, 0.0, 0.0, cp, theta, epsilon, cp.beta, cp.beta * 0.9);
 }
-*/
+
 MAKE_MAIN
