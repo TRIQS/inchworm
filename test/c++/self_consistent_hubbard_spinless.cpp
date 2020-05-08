@@ -50,21 +50,24 @@ void self_consistent_hubbard(int n_site, int n_bath, int n_spin, double U, doubl
     double val;
 
     for (int block = 0; block < cp.gf_struct.size(); block++) {
+      S.Delta_tau[block][tau] = 0.0;
       for (int i = 0; i < n_site; i++) {
         for (int j = 0; j < n_site; j++) {
-          S.Delta_tau[block][tau] = 0.0;
           for (int n = 0; n < n_bath; n++) {
             if (epsilon(n) >= 0.0)
               val = -theta(i, n) * theta(j, n) * (std::exp(-((double)tau) * (epsilon(n))) / (1. + std::exp(-cp.beta * epsilon(n))));
             else
               val = -theta(i, n) * theta(j, n) * (std::exp(-((double)tau - cp.beta) * (epsilon(n))) / (1. + std::exp(cp.beta * epsilon(n))));
             S.Delta_tau[block][tau](i, j) += val;
+	    //std::printf("%d %d % 4.8f\n",i,j,val);
             if (n_spin == 2) S.Delta_tau[block][tau](i, j) += val; // spin-down
           }
         }
       }
     }
   }
+ 
+  //exit(0);
 
   std::vector<many_body_op_t> qn;
   qn.resize(1);
