@@ -59,14 +59,16 @@ void self_consistent_hubbard(int n_site, int n_bath, int n_spin, double U, doubl
             else
               val = -theta(i, n) * theta(j, n) * (std::exp(-((double)tau - cp.beta) * (epsilon(n))) / (1. + std::exp(cp.beta * epsilon(n))));
             S.Delta_tau[block][tau](i, j) += val;
-	    //std::printf("%d %d % 4.8f\n",i,j,val);
             if (n_spin == 2) S.Delta_tau[block][tau](i, j) += val; // spin-down
           }
         }
       }
     }
   }
- 
+
+  for (int block = 0; block < cp.gf_struct.size(); block++)
+    for (int i = 0; i < n_site; i++)
+      for (int j = 0; j < n_site; j++) std::printf("%d %d % 4.8f\n", i, j, S.Delta_tau[block][cp.n_tau-1](i, j));
   //exit(0);
 
   std::vector<many_body_op_t> qn;
@@ -92,7 +94,7 @@ void self_consistent_hubbard(int n_site, int n_bath, int n_spin, double U, doubl
   // Solve Parameters
   solve_params_t sp;
   sp.h_int           = h_atom;
-  sp.n_cycles        = 100000;
+  sp.n_cycles        = 50000;
   sp.length_cycle    = 10;
   sp.n_warmup_cycles = 20;
   sp.max_time        = -1;
@@ -408,9 +410,9 @@ TEST(inchworm, Hubbard_2sites) { // NOLINT
   cp.n_tau = 500;
   cp.n_iw  = 250;
 
-  triqs::arrays::array<double, 2> theta   = {{1.5}, {-1.0}};
-  triqs::arrays::array<double, 1> epsilon = {-2.0};
-  self_consistent_hubbard(2, 1, 1, 4.0, 0.0, 0.0, cp, theta, epsilon, cp.beta, cp.beta * 0.9);
+  triqs::arrays::array<double, 2> theta   = {{1., 0.5}, {-0.5, 1.}};
+  triqs::arrays::array<double, 1> epsilon = {0.0, 0.0};
+  self_consistent_hubbard(2, 2, 1, 0.0, 0.0, 1.0, cp, theta, epsilon, cp.beta, cp.beta * 0.9);
 }
 
 MAKE_MAIN

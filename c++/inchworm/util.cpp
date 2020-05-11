@@ -213,6 +213,10 @@ namespace inchworm {
       }
     }
 
+    for (int s1 = 0; s1 < ad_target.n_subspaces(); s1++) {
+      u_frame_result[s1] = ((ad_target.get_eigensystems())[s1].unitary_matrix * u_frame_result[s1]) * dagger((ad_target.get_eigensystems())[s1].unitary_matrix);
+    }
+
     return u_frame_result;
   }
 

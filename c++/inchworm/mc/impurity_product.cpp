@@ -57,10 +57,10 @@ namespace inchworm {
     u_tau_t u_tau = make_propagator(ad_atom, beta, n_tau);
 
     for (int i_tau = 0; i_tau < n_tau; i_tau++) {
-      double dtau  = beta * i_tau / (n_tau - 1);
+      double dtau = beta * i_tau / (n_tau - 1);
       //auto u_frame = partial_trace(ad_tot, ad_atom, [dtau, E0](double E) { return std::exp(-dtau * E); });
       auto u_frame = partial_trace_bath(ad_tot, ad_atom, ad_bath, beta, dtau);
-      auto Z_bath = trace(ad_bath, [beta, E0](double E) { return std::exp(-beta * E); });
+      auto Z_bath  = trace(ad_bath, [beta, E0](double E) { return std::exp(-beta * E); });
       //auto Z_bath2  = trace(ad_bath, [dtau, beta, E0](double E) { return std::exp(-(beta-dtau) * E); });
       assign_u_frame_to_propagator(u_tau, u_frame, i_tau, 1. / Z_bath);
     }
@@ -123,6 +123,17 @@ namespace inchworm {
         for (int j = 0; j < dim; j++)
           new_mat(j, j) =
              std::exp(-dtau * (ad.get_eigenvalue(initial_bl, j) + (ad.get_gs_energy()))); // Create time-evolution matrix e^-H(tau-tau_max)
+        //for (int i = 0; i < dim; i++)
+        //  for (int j = 0; j < dim; j++)
+        //    E_Udag *= std::exp(-dtau * (ad.get_eigenvalue(initial_bl, j) + (ad.get_gs_energy()))); // Create time-evolution matrix e^-H(tau-tau_max)
+        //new_mat = (ad.get_eigensystems())[initial_bl].unitary_matrix * E_Udag;
+
+        //auto E_Udag_mat = dagger((ad.get_eigensystems())[initial_bl].unitary_matrix);
+        //auto _  = triqs::arrays::range();
+        //for (int j = 0; j < dim; j++)
+        //  E_Udag_mat(j, _) = E_Udag_mat(j, _)
+        //     * std::exp(-dtau * (ad.get_eigenvalue(initial_bl, j) + (ad.get_gs_energy()))); // Create time-evolution matrix e^-H(tau-tau_max)
+        //new_mat = (ad.get_eigensystems())[initial_bl].unitary_matrix * E_Udag_mat;
       }
       //std::cout << "after\n" << new_mat << "\n\n";
 
@@ -155,14 +166,30 @@ namespace inchworm {
           new_mat = (*u_tau_p)[new_bl](dtau) * new_mat; // (interpolation)
           if (dtau2 != 0.0) new_mat = (*u_tau_p)[new_bl](dtau2) * new_mat;
         } else {
-          dtau   = (i == (diagram.size() - 1) ? tau : diagram.op_list[i + 1].tau) - op.tau;
           auto _ = triqs::arrays::range();
+          dtau = (i == (diagram.size() - 1) ? tau : diagram.op_list[i + 1].tau) - op.tau;
+
           for (int j = 0; j < ad.get_subspace_dim(new_bl); j++) {
-            //std::printf("new_bl %d, j %d \n", new_bl, j);
-            //std::printf("ad.get_subspace_dim(new_bl) = %d \n", ad.get_subspace_dim(new_bl));
             new_mat(j, _) *=                                                            // ATTENTION!
                std::exp(-dtau * (ad.get_eigenvalue(new_bl, j) + (ad.get_gs_energy()))); // bare imaginary time evolution
           }
+
+          //dtau = (i == (diagram.size() - 1) ? tau : diagram.op_list[i + 1].tau) - op.tau;
+
+          //std::cout << dagger((ad.get_eigensystems())[new_bl].unitary_matrix) << "\n";
+          //matrix_t E_Udag_mat = dagger((ad.get_eigensystems())[new_bl].unitary_matrix) * new_mat;
+          //auto _ = triqs::arrays::range();
+          //for (int j = 0; j < ad.get_subspace_dim(new_bl); j++)
+          //  E_Udag_mat(j, _) = E_Udag_mat(j, _)
+          //     * std::exp(-dtau * (ad.get_eigenvalue(new_bl, j) + (ad.get_gs_energy()))); // Create time-evolution matrix e^-H(tau-tau_max)
+          //new_mat = (ad.get_eigensystems())[new_bl].unitary_matrix * E_Udag_mat;
+
+          //for (int j = 0; j < ad.get_subspace_dim(new_bl); j++) {
+          //std::printf("new_bl %d, j %d \n", new_bl, j);
+          //std::printf("ad.get_subspace_dim(new_bl) = %d \n", ad.get_subspace_dim(new_bl));
+          //  new_mat(j, _) *=                                                            // ATTENTION!
+          //     std::exp(-dtau * (ad.get_eigenvalue(new_bl, j) + (ad.get_gs_energy()))); // bare imaginary time evolution
+          //}
         }
         //std::cout << "new_mat 3: " << new_bl << " \n" << new_mat << "\n\n\n\n";
       }
