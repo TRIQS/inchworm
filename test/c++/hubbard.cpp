@@ -136,17 +136,18 @@ void self_consistent_hubbard(int n_site, int n_bath, int n_spin, double U, doubl
   //std::printf("salut\n");
   auto h_hyb  = 0.0 * n("up", 0);
   auto h_bath = 0.0 * n("up", 0);
+
   for (int i = 0; i < n_site; i++) {
     for (int k = 0; k < n_bath; k++) {
       h_hyb += theta(i, k) * (c_dag("up", i) * c("up", k + n_site) + c_dag("up", k + n_site) * c("up", i));
-      h_bath += epsilon(k) * n("up", k + n_site);
-
-      if (n_spin == 2) {
-        h_hyb += theta(i, k) * (c_dag("dn", i) * c("dn", k + n_site) + c_dag("dn", k + n_site) * c("dn", i));
-        h_bath += epsilon(k) * n("dn", k + n_site);
-      }
-      //h_bath += mu * (n("up", i + n_site) + n("dn", i + n_site));
+      if (n_spin == 2) h_hyb += theta(i, k) * (c_dag("dn", i) * c("dn", k + n_site) + c_dag("dn", k + n_site) * c("dn", i));
     }
+    //h_bath += mu * (n("up", i + n_site) + n("dn", i + n_site));
+  }
+
+  for (int k = 0; k < n_bath; k++) {
+    h_bath += epsilon(k) * n("up", k + n_site);
+    if (n_spin == 2) h_bath += epsilon(k) * n("dn", k + n_site);
   }
 
   //std::printf("\n\n");
@@ -373,6 +374,7 @@ void self_consistent_hubbard(int n_site, int n_bath, int n_spin, double U, doubl
   */
 }
 
+/*
 TEST(inchworm, Hubbard_1site_spinless) {
 
   constr_params_t cp;
@@ -385,9 +387,8 @@ TEST(inchworm, Hubbard_1site_spinless) {
   vec_t epsilon = {-2.0, 0.4, 1.5};
   self_consistent_hubbard(1, 3, 1, 0.0, 2.0, 0.0, cp, theta, epsilon, cp.beta, cp.beta * 0.9);
 }
+*/
 
-
-/*
 TEST(inchworm, Hubbard_1site) { 
 
   constr_params_t cp;
@@ -398,9 +399,8 @@ TEST(inchworm, Hubbard_1site) {
   
   mat_t theta   = {{1.0, -1.0, 1.1}};
   vec_t epsilon = {-2.0, 0.4, 1.5};
-  self_consistent_hubbard(1, 3, 2, 0.0, 0.0, 0.0, cp, theta, epsilon, cp.beta, cp.beta*0.9);
+  self_consistent_hubbard(1, 3, 2, 4.0, 0.0, 0.0, cp, theta, epsilon, cp.beta, cp.beta*0.9);
 }
-*/
 
 /*
 TEST(inchworm, Hubbard_2sites) { // NOLINT
