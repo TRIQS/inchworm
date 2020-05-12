@@ -68,7 +68,7 @@ void self_consistent_hubbard(int n_site, int n_bath, int n_spin, double U, doubl
 
   for (int block = 0; block < cp.gf_struct.size(); block++)
     for (int i = 0; i < n_site; i++)
-      for (int j = 0; j < n_site; j++) std::printf("%d %d % 4.8f\n", i, j, S.Delta_tau[block][cp.n_tau-1](i, j));
+      for (int j = 0; j < n_site; j++) std::printf("%d %d % 4.8f\n", i, j, S.Delta_tau[block][cp.n_tau - 1](i, j));
   //exit(0);
 
   std::vector<many_body_op_t> qn;
@@ -373,6 +373,20 @@ void self_consistent_hubbard(int n_site, int n_bath, int n_spin, double U, doubl
   */
 }
 
+TEST(inchworm, Hubbard_1site_spinless) {
+
+  constr_params_t cp;
+  cp.beta      = 2.0;
+  cp.gf_struct = {{"up", {0}}};
+  cp.n_tau     = 500;
+  cp.n_iw      = 250;
+
+  mat_t theta   = {{1.5, -1.0, 1.7}};
+  vec_t epsilon = {-2.0, 0.4, 1.5};
+  self_consistent_hubbard(1, 3, 1, 0.0, 2.0, 0.0, cp, theta, epsilon, cp.beta, cp.beta * 0.9);
+}
+
+
 /*
 TEST(inchworm, Hubbard_1site) { 
 
@@ -384,35 +398,24 @@ TEST(inchworm, Hubbard_1site) {
   
   mat_t theta   = {{1.0, -1.0, 1.1}};
   vec_t epsilon = {-2.0, 0.4, 1.5};
-  self_consistent_hubbard(1, 3, 2, 4.0, 0.0, 0.0, cp, theta, epsilon, cp.beta, cp.beta*0.9);
-}
-
-TEST(inchworm, Hubbard_1site_spinless) { 
-
-  constr_params_t cp;
-  cp.beta      = 2.0;
-  cp.gf_struct = {{"up", {0}}};
-  cp.n_tau = 500;
-  cp.n_iw  = 250;
-
-  mat_t theta   = {{1.5, -1.0, 1.7}};
-  vec_t epsilon = {-2.0, 0.4, 1.5};
-  self_consistent_hubbard(1, 3, 1, 4.0, 0.0, 0.0, cp, theta, epsilon, cp.beta, cp.beta*0.9);
+  self_consistent_hubbard(1, 3, 2, 0.0, 0.0, 0.0, cp, theta, epsilon, cp.beta, cp.beta*0.9);
 }
 */
 
+/*
 TEST(inchworm, Hubbard_2sites) { // NOLINT
 
   constr_params_t cp;
   cp.beta      = 2.0;
-  cp.gf_struct = {{"up", {0, 1}}};
-  //cp.gf_struct = {{"up", {0, 1}}, {"dn", {0, 1}}};
+  //cp.gf_struct = {{"up", {0, 1}}};
+  cp.gf_struct = {{"up", {0, 1}}, {"dn", {0, 1}}};
   cp.n_tau = 500;
   cp.n_iw  = 250;
 
-  triqs::arrays::array<double, 2> theta   = {{1., 0.5}, {-0.5, 1.}};
-  triqs::arrays::array<double, 1> epsilon = {0.0, 0.0};
-  self_consistent_hubbard(2, 2, 1, 0.0, 0.0, 1.0, cp, theta, epsilon, cp.beta, cp.beta * 0.9);
-}
 
+  triqs::arrays::array<double, 2> theta   = {{0.0, 0.}, {0., 0.0}};
+  triqs::arrays::array<double, 1> epsilon = {0.0, 0.0};
+  self_consistent_hubbard(2, 2, 2, 0.0, 0.0, 1.0, cp, theta, epsilon, cp.beta, cp.beta * 0.9);
+}
+*/
 MAKE_MAIN
