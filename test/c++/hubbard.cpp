@@ -59,7 +59,7 @@ void self_consistent_hubbard(int n_site, int n_bath, int n_spin, double U, doubl
             else
               val = -theta(i, n) * theta(j, n) * (std::exp(-((double)tau - cp.beta) * (epsilon(n))) / (1. + std::exp(cp.beta * epsilon(n))));
             S.Delta_tau[block][tau](i, j) += val;
-            if (n_spin == 2) S.Delta_tau[block][tau](i, j) += val; // spin-down
+            //if (n_spin == 2) S.Delta_tau[block][tau](i, j) += val; // spin-down
           }
         }
       }
@@ -397,9 +397,9 @@ TEST(inchworm, Hubbard_1site) {
   cp.n_tau = 500;
   cp.n_iw  = 250;
   
-  mat_t theta   = {{1.0, -1.0, 1.1}};
+  mat_t theta   = {{0.9, -1.0, 1.1}};
   vec_t epsilon = {-2.0, 0.4, 1.5};
-  self_consistent_hubbard(1, 3, 2, 4.0, 0.0, 0.0, cp, theta, epsilon, cp.beta, cp.beta*0.9);
+  self_consistent_hubbard(1, 3, 2, 4.0, -1.0, 0.0, cp, theta, epsilon, cp.beta, cp.beta*0.9);
 }
 
 /*
