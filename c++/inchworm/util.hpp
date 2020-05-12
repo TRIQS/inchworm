@@ -31,7 +31,6 @@ namespace inchworm {
      */
   triqs::arrays::matrix<double> partial_sum(atom_diag const &ad, int linear_index, std::function<double(double)> fct);
   u_frame_t partial_trace_bath(atom_diag const &ad_full, atom_diag const &ad_target, atom_diag const &ad_bath, double beta, double dtau);
-  u_frame_t partial_trace(atom_diag const &ad_full, atom_diag const &ad_target, std::function<double(double)> fct);
   scalar_t trace(atom_diag const &ad_full, std::function<double(double)> fct);
 
   void print_energies(std::vector<std::vector<double>> const &E);

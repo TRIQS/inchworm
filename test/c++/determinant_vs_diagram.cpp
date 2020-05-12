@@ -68,7 +68,7 @@ TEST(inchworm, benchmark_both_random) {
   int N = 4;
   //int sp_max    = 4;
   int order_min = 2; // order 0 is a special case that fails for now.
-  int order_max = 3; // order 9 and above are quite slow
+  int order_max = 5; // order 9 and above are quite slow
   double beta   = 1.0;
 
   for (int order = order_min; order <= order_max; order++)

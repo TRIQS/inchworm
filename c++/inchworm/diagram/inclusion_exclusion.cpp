@@ -193,14 +193,14 @@ namespace inchworm::diagram {
     std::vector<int> range_of_vertex(segments_list[segment_numero].size);
     std::iota(range_of_vertex.begin(), range_of_vertex.end(), segments_list[segment_numero].pos1);
 
-    if (verbose) {
+    if (verbose > 2) {
       std::printf("range of vertex: ");
       for (auto o : range_of_vertex) std::printf("%d ", o);
       hyb_mat.print();
     }
 
     segments_list[segment_numero].value += hyb_mat.extract_det(range_of_vertex);
-    if (verbose) std::printf("\nsegment[%d]= % 4.8f\n\n", hyb_mat.extract_det(range_of_vertex), segment_numero);
+    if (verbose>2) std::printf("\nsegment[%d]= % 4.8f\n\n", hyb_mat.extract_det(range_of_vertex), segment_numero);
 
     for (auto subs : set_disjoint_list) {
       if ((not special) and not((segments_list[segment_numero].pos1 <= subs.pos1) and (segments_list[segment_numero].pos2 > subs.pos2))) continue;
@@ -280,9 +280,10 @@ namespace inchworm::diagram {
         return 0.0;
     };
 
-    if (verbose) {
+    if (verbose) 
       std::printf("\n\n##################\nINCLUSION-EXCLUSION:\n");
-      if (verbose) hyb_mat.print();
+    if (verbose >1) {
+      if (verbose > 2) hyb_mat.print();
       std::printf("list of single segements:\n");
       print_diag(diagram);
     }

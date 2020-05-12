@@ -56,8 +56,8 @@ namespace inchworm {
      *
      * @param solve_params_t Set of parameters specific to the INCHWORM run
      */
-    //CPP2PY_ARG_AS_DICT
-    //void solve(solve_params_t const &solve_params);
+    CPP2PY_ARG_AS_DICT
+    void solve(solve_params_t const &solve_params);
 
     // Struct containing the parameters relevant for the solver construction
     constr_params_t constr_params;

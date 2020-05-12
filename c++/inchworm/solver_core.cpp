@@ -51,6 +51,8 @@ namespace inchworm {
 
   // -------------------------------------------------------------------------------
 
+  void solver_core::solve(solve_params_t const &solve_params) {}
+
   void solver_core::init(solve_params_t const &solve_params) {
 
     // Reset the results
@@ -73,6 +75,9 @@ namespace inchworm {
     //print_eigensystems(h_diag);
   }
 
+
+  //------------------------------
+  // first step only (ct-hyb)
   single_step_results_t solver_core::solve_single_step(solve_params_t const &solve_params) {
 
     // Merge constr_params and solve_params
@@ -93,8 +98,10 @@ namespace inchworm {
     return res;
   } // namespace inchworm
 
-  single_step_results_t solver_core::solve_self_consistently(solve_params_t const &solve_params, u_tau_t const &u_tau_, double tau_split, double tau_max) {
-
+  //------------------------------
+  // self consistent solution (one step, with U(beta) calculated from ED)
+  single_step_results_t solver_core::solve_self_consistently(solve_params_t const &solve_params, u_tau_t const &u_tau_, double tau_split,
+                                                             double tau_max) {
     // Merge constr_params and solve_params
     last_solve_params = solve_params;
     init(solve_params);
@@ -155,6 +162,7 @@ namespace inchworm {
   } // namespace inchworm
 
   //------------------------------
+  // one Monte Carlo step calculation
   single_step_results_t solver_core::single_step(solve_params_t const &solve_params, double tau_split, double tau_max, bool use_bare_propagator) {
 
     params_t params(constr_params, solve_params);

@@ -33,12 +33,9 @@ namespace inchworm::diagram {
       N++;
       for (auto [j, cdag] : enumerate(diagram.cdag_list)) {
 
-        //double dtau = cdag.tau - c.tau;
-        //mat(i, j)   = (0.5+j-i)*hyb_function_dummy(dtau);
-        if (i < j)
-          mat(i, j) = -5.12;
-        else
-          mat(i, j) = 5.12;
+        double dtau = cdag.tau - c.tau;
+        mat(i, j)   = (0.5 + j - i) * hyb_function_dummy(dtau);
+        if (i < j) mat(i, j) = -mat(i, j);
       }
     }
     size = N;
@@ -53,7 +50,7 @@ namespace inchworm::diagram {
       for (auto [j, cdag] : enumerate(diagram.cdag_list)) {
         //std::printf("\ni %d  j %d    %f",i,j, hyb_tau(c.tau, c.linear_index, cdag.tau, cdag.linear_index));
         //std::printf(" %f %d   %f %d \n",c.tau, c.linear_index, cdag.tau, cdag.linear_index );
-        mat(i,j) = hyb_tau(c.tau, c.linear_index, cdag.tau, cdag.linear_index);
+        mat(i, j) = hyb_tau(c.tau, c.linear_index, cdag.tau, cdag.linear_index);
       }
     }
     size = N;
