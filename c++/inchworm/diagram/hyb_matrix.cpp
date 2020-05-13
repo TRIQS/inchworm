@@ -65,12 +65,12 @@ namespace inchworm::diagram {
         if (not diagram.op_list[k].dag and diagram.op_list[k + 1].dag) { // segment of length 2
           int it          = diagram.op_list[k + 1].order_index;
           int it_dag      = diagram.op_list[k].order_index;
-          mat(it, it_dag) = 0.;
+          mat(it_dag, it) = 0.;
           //if constexpr (verbose) std::printf("order_indices  %d %d\n", diagram.op_list[k + 1].order_index, diagram.op_list[k].order_index);
         } else if (diagram.op_list[k].dag and not diagram.op_list[k + 1].dag) { // segment on length 2
           int it          = diagram.op_list[k].order_index;
           int it_dag      = diagram.op_list[k + 1].order_index;
-          mat(it, it_dag) = 0.;
+          mat(it_dag, it) = 0.;
           //if constexpr (verbose) std::printf("order_indices   %d %d\n", diagram.op_list[k].order_index, diagram.op_list[k+1].order_index);
         }
       }

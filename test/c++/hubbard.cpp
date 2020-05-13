@@ -412,9 +412,9 @@ TEST(inchworm, Hubbard_2sites) { // NOLINT
   cp.n_tau = 500;
   cp.n_iw  = 250;
 
-  triqs::arrays::array<double, 2> theta   = {{0.9, 0.5}, {-0.3, 1.1}};
-  triqs::arrays::array<double, 1> epsilon = {0.7, -0.7};
-  self_consistent_hubbard(2, 2, 1, 4.0, -2.0, 1.0, cp, theta, epsilon, cp.beta, cp.beta * 0.9);
+  triqs::arrays::array<double, 2> theta   = {{-1.3, 1.8}, {-1.3, 1.2}};
+  triqs::arrays::array<double, 1> epsilon = {0.9, -0.3};
+  self_consistent_hubbard(2, 2, 1, 4.0, -3.0, 1.0, cp, theta, epsilon, cp.beta, cp.beta * 0.9);
   //self_consistent_hubbard(2, 2, 2, 0.0, 0.0, 0.0, cp, theta, epsilon, cp.beta, cp.beta * 0.9);
   //-->self_consistent_hubbard(2, 2, 2, 0.0, 0.0, 0.0, cp, theta, epsilon, cp.beta, cp.beta * 0.9);
   ///self_consistent_hubbard(2, 2, 2, 4.0, -2.0, 1.0, cp, theta, epsilon, cp.beta, cp.beta * 0.9);
