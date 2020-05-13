@@ -19,7 +19,6 @@
 %\usepackage{titlesec}
 \usepackage{blkarray}
 
-
 \setlength{\parskip}{\baselineskip}%
 \setlength{\parindent}{0pt}%
 
@@ -162,8 +161,7 @@
 \newcommand{\bra}[1]{\langle #1 \vert}
 \newcommand{\ket}[1]{\vert #1 \rangle}
 \newcommand{\braket}[2]{\langle #1 \vert #2 \rangle}
-
-
+\newcommand{\ZB}{Z_{\text {B }}}
 
 Notes on the implementation of the inchworm in triqs.
 
@@ -172,12 +170,14 @@ Notes on the implementation of the inchworm in triqs.
 
 Following the 2011 review's notation, we calculate the imaginary time evolution operator defined as:
 \begin{align}
-U(\beta)=& \frac{1}{Z_{\text {bath }}} \operatorname{Tr_B} [e^{-\beta H }] 
+U(\tau, \beta)=& \frac{1}{\ZB} \operatorname{Tr_B} [e^{-(\beta-\tau) H_B } e^{-\tau H }] 
+\\
+\ZB =& \operatorname{Tr_B} [e^{-\beta H_B }] 
 \end{align}
 
-In interaction representation, where $H=H_a+H_\text{hyb}$, and the expansion is done on $H_\text{hyb}$
+In interaction representation, where $H=H_B+H_\text{loc}+H_\text{hyb}$. The expansion is done on $H_\text{hyb}$
 \begin{align}
-U(\beta)=& \frac{1}{Z_{\text {bath }}} \operatorname{Tr_B} [e^{-\beta (H_a + H_\text{hyb}) }]  
+U(\tau, \beta)=& \frac{1}{\ZB} \operatorname{Tr_B} [e^{-(\beta - \tau) H_B } e^{-\tau (H_B + H_{loc} + H_\text{hyb}) }]  
 \\ 
 =&  \sum_{k=0}^{\infty} \int_{0}^{\beta} d \tau_{1} \cdots \int_{\tau_{k-1}}^{\beta} d \tau_{k} \int_{0}^{\beta} d \tau_{1}^{\prime} \cdots \int_{\tau_{k^{\prime}-1}}^{\beta} d \tau_{k}^{\prime} \\
 & \times \operatorname{Tr_B}\left[T_{\tau} e^{-\beta H_{a}} \tilde{H}_{\mathrm{hyb}}\left(\tau_{k}\right) \tilde{H}_{\mathrm{hyb}}^{\dagger}\left(\tau_{k}^{\prime}\right) \cdots\right. \left.\times \tilde{H}_{\mathrm{hyb}}\left(\tau_{1}\right) \tilde{H}_{\mathrm{hyb}}^{\dagger}\left(\tau_{1}^{\prime}\right)\right]
@@ -188,7 +188,7 @@ $H_{\mathrm{hyb}}=\sum_{p j}\left(\theta_{p}^{j} c_{p}^{\dagger} d_{j}+\theta_{p
 After that: 
 
 \begin{align}
-U(\beta)=& \frac{1}{Z_{\text {bath }}}\sum_{k=0}^{\infty}   \int_{0}^{\beta} d \tau_{1} \cdots \int_{\tau_{k-1}}^{\beta} d \tau_{k} \int_{0}^{\beta} d \tau_{1}^{\prime} \cdots \int_{\tau_{k-1}^{\prime}}^{\beta} d \tau_{k}^{\prime} \\
+U(\tau,\beta)=& \frac{1}{\ZB}\sum_{k=0}^{\infty}   \int_{0}^{\beta} d \tau_{1} \cdots \int_{\tau_{k-1}}^{\beta} d \tau_{k} \int_{0}^{\beta} d \tau_{1}^{\prime} \cdots \int_{\tau_{k-1}^{\prime}}^{\beta} d \tau_{k}^{\prime} \\
 & \times \sum_{j_1^{(\prime)} \cdots j_k^{(\prime)}} \sum_{p_1^{(\prime)} \cdots  p_k^{(\prime)}} 
 \theta_{p_{1}}^{j_{1}} \theta_{p_{1}^{\prime}}^{j_{1}^{\prime}*} \cdots \theta_{p_{k}}^{j_{k}} \theta_{p_{k}^{\prime}}^{j_k^{\prime}*} \\
 & \times \operatorname{Tr_B}\left[T_{\tau} e^{-\beta H_{a}} d_{j_{k}}\left(\tau_{k}\right) c_{p_{k}}^{\dagger}\left(\tau_{k}\right) c_{p_{k^{\prime}}}\left(\tau_{k}^{\prime}\right)   d_{j_{k}^{\prime}}^{\dagger}\left(\tau_{k}^{\prime}\right) \right.\\
@@ -197,7 +197,7 @@ U(\beta)=& \frac{1}{Z_{\text {bath }}}\sum_{k=0}^{\infty}   \int_{0}^{\beta} d \
 
 With and $H_a=H_\mathrm{loc}+H_\mathrm{bath}$ we can reorder: 
 \begin{align}
-U(\beta)=& \frac{1}{Z_{\text {bath }}}\sum_{k=0}^{\infty}  \int_{0}^{\beta} d \tau_{1} \cdots \int_{\tau_{k-1}}^{\beta} d \tau_{k} \int_{0}^{\beta} d \tau_{1}^{\prime} \cdots \int_{\tau_{k-1}^{\prime}}^{\beta} d \tau_{k}^{\prime} \\
+U(\beta)=& \frac{1}{\ZB}\sum_{k=0}^{\infty}  \int_{0}^{\beta} d \tau_{1} \cdots \int_{\tau_{k-1}}^{\beta} d \tau_{k} \int_{0}^{\beta} d \tau_{1}^{\prime} \cdots \int_{\tau_{k-1}^{\prime}}^{\beta} d \tau_{k}^{\prime} \\
 & \times \sum_{j_1^{(\prime)} \cdots j_k^{(\prime)}} \sum_{p_1^{(\prime)} \cdots  p_k^{(\prime)}} 
 \theta_{p_{1}}^{j_{1}} \theta_{p_{1}^{\prime}}^{j_{1}^{\prime}*} \cdots \theta_{p_{k}}^{j_{k}} \theta_{p_{k}^{\prime}}^{j_k^{\prime}*} \\
 & \times \left[T_{\tau} e^{-\beta H_{\mathrm{loc}}} d_{j_{k}}\left(\tau_{k}\right) d_{j_{k}^{\prime}}^{\dagger}\left(\tau_{k}^{\prime}\right) \cdots d_{j_{1}}\left(\tau_{1}\right) d_{j_{1}^{\prime}}^{\dagger}\left(\tau_{1}^{\prime}\right)\right] \\
@@ -207,7 +207,7 @@ U(\beta)=& \frac{1}{Z_{\text {bath }}}\sum_{k=0}^{\infty}  \int_{0}^{\beta} d \t
 
 We define the hybridization partition of the bath (with $k$ electron) as:
 \begin{align}
-Z_{\mathrm{bath}}=\operatorname{Tr} e^{-\beta H_{\mathrm{bath}}}=\prod_{\sigma} \prod_{p}^k \left(1+e^{-\beta \epsilon_{p}}\right)
+Z_{\mathrm{B}}=\operatorname{Tr} e^{-\beta H_{\mathrm{B}}}=\prod_{\sigma} \prod_{p}^k \left(1+e^{-\beta \epsilon_{p}}\right)
 \end{align}
 
 For every electron $p$, the energy is given by:
@@ -220,7 +220,7 @@ For every electron $p$, the energy is given by:
 
 Then (I need to think about it more):
 \begin{align}
-\frac{1}{Z_{\text {bath }}} \operatorname{Tr_B}\Big[T_{\tau} e^{-\beta H_{\text {bath }}} \sum_{p_1 \ldots p_k}  \sum_{p_{1}^{\prime} \ldots p_k^{\prime}} 
+\frac{1}{\ZB} \operatorname{Tr_B}\Big[T_{\tau} e^{-\beta H_{\text {B }}} \sum_{p_1 \ldots p_k}  \sum_{p_{1}^{\prime} \ldots p_k^{\prime}} 
 \theta_{p_{1}}^{j_{1}} \theta_{p_{1}^{\prime}}^{j_{1}^{\prime} *} \cdots \theta_{p_{k}}^{j_{k}} \theta_{p_{k}^{\prime}}^{j_{k}^{\prime}*}  
 c_{p_{k}}^{\dagger}\left(\tau_{k}\right) c_{p_{k^{\prime}}}\left(\tau_{k}^{\prime}\right) \cdots c_{p_{1}}^{\dagger}\left(\tau_{1}\right) c_{p_{1}^{\prime}}\left(\tau_{1}^{\prime}\right)\Big]=\operatorname{det} \Delta
 \end{align}
@@ -256,169 +256,6 @@ U_0(\tau_z)
 \subsection{Specific to my implementation}
 There are many ways to evaluate this $\sigma$. In my implementation, the $d^\dagger$ and $d$ are stored in two vectors, and the time ordered operator in another vector. It is more natural to work with vector where the time is sorted in the ascending order. This is also the order in which we apply the operator in the matrix products. In that case, the number of permutation between the normal order and the sorted order ($\sigma$) is simply the sum of the positions of the $d^\dagger$ operators in the sorted order. 
 
-\subsection{Simple model exact values}
-
-
-Zeroth order: 
-\begin{align}
-U_0(\beta)=&  e^{-\beta H_\mathrm{loc}}
-\label{eq::zeroth_order}
-\end{align}
-
-First order: 
-\begin{align}
-U_1(\beta)=&  \int_{0}^{\beta} d \tau_1 \int_0^{\beta} d \tau_1^{\prime}
-\sum_{j_1 j_1^\prime}  
-\Big[ T_{\tau} e^{-\beta H_\mathrm{loc}}
-d_{j_1}(\tau_1) d_{j_1^\prime}^{\dagger} (\tau_1^\prime) \Big] \Delta_{j_1 j_1^\prime} ( \tau_1 - \tau_1^\prime)
-\end{align}
-
-For an extremely simple case (one site, spinless, $U=0$, $H_\text{loc}=0$, one bath $\epsilon=0$, $\Delta=-\frac{\theta^2}{2}$):
-\begin{align}
-U_1(\beta)=& \int_{0}^{\beta} d \tau_1 \int_0^{\beta} d \tau_1^{\prime} \sum_{j_1 j_1^\prime} 
-\Big[ T_{\tau} d_{j_1}(\tau_1) d_{j_1^\prime}^{\dagger} (\tau_1^\prime) \Big]   
-\frac{\theta^2}{2}
-\\
-=& 
-\Bigg(\frac{\beta^2}{2}
-\Bigg[  
-\begin{pmatrix} -1&0\\ 0&0\\ \end{pmatrix}
-+
-\begin{pmatrix} 0&0\\ 0&-1\\ \end{pmatrix}
-\Bigg]  
-\Bigg) 
-\frac{-\theta^2}{2}
-\\
-=& \frac{(\beta \theta)^2}{4} I_{2 \times 2}
-\label{eq::first_order}
-\end{align}
-
-Another simple case is the same model, but with spin. The only difference is the sum $\sum_{j_1 j_1^\prime}$ where the only allowed terms are the ones with $j_1=j_1^\prime$ since we have no hybridization between both spins. In that case, the first order becomes:
-\begin{align}
-U_1(\beta)=
-\left(\frac{\beta^2}{2}
-\left[
-\begin{pmatrix} 
-  1&&&\\ 
-  &0&&\\ 
-  &&1&\\ 
-  &&&0\\ 
-\end{pmatrix}
-+
-\begin{pmatrix} 
-  0&&&\\ 
-  &1&&\\ 
-  &&0&\\ 
-  &&&1\\ 
-\end{pmatrix}
-+
-\begin{pmatrix} 
-  1&&&\\ 
-  &1&&\\ 
-  &&0&\\ 
-  &&&0\\ 
-\end{pmatrix}
-+
-\begin{pmatrix} 
-  0&&&\\ 
-  &0&&\\ 
-  &&1&\\ 
-  &&&1\\ 
-\end{pmatrix}
-\right]
-\right)
-\frac{\theta^2}{2}
-=
-\frac{(\beta \theta)^2}{2} I_{4 \times 4}
-\label{eq::first_order2}
-\end{align}
-
-\subsection{Exact diagonalization simple model}
-\label{ED_simple}
-
-This simple system can be solved exactly
-\begin{align}
-U(\beta)=& \frac{1}{Z_{\text {bath }}}\operatorname{Tr_B} [e^{-\beta (H_\text{loc} + H_\text{bath} + H_\text{hyb}) }]  
-\end{align}
-
-for a spinless model, this simply becomes
-\begin{align}
-H=
-H_\text{loc} + H_\text{bath} + H_\text{hyb}=
-\begin{blockarray}{ccccc}
-& \ket{00} & \ket{01} & \ket{10} & \ket{11} \\
-\begin{block}{c(cccc)}
-\bra{00} & 0&0&0&0\\
-\bra{01} & 0&0&\theta&0\\
-\bra{10} & 0&\theta&0&0\\
-\bra{11} & 0&0&0&0\\
-\end{block}
-\end{blockarray}
-\end{align}
-
-\begin{align}
-D = U H U^\dagger=
-\begin{pmatrix}
-0&0&0&0\\
-0&\theta&0&0\\
-0&0&-\theta&0\\
-0&0&0&0\\
-\end{pmatrix}
-&&
-e^{-\beta D} =
-\begin{pmatrix}
-1&0&0&0\\
-0&e^{-\beta \theta}&0&0\\
-0&0&e^{\beta \theta}&0\\
-0&0&0&1\\
-\end{pmatrix}
-\end{align}
-
-\begin{align}
-e^{-\beta H} = e^{-\beta U^\dagger D U} = U^\dagger e^{-\beta D} U  =
-\begin{pmatrix}
-1&0&0&0\\
-0&\cosh(\beta \theta)&\sinh(\beta \theta)&0\\
-0&\sinh(\beta \theta)&\cosh(\beta \theta)&0\\
-0&0&0&1\\
-\end{pmatrix}
-\end{align}
-
-\begin{align}
-Z_{\text {bath }} = \operatorname{Tr_B}[ e^{-\beta H_\text{bath} }  ] = 2
-\end{align}
-
-\begin{align}
-U(\beta)=& \frac{1}{Z_{\text {bath }}} e^{-\beta H} = \frac{\cosh(\beta \theta)+1}{2} I_{2 \times 2}
-\end{align}
-
-using trigonometric identity and the serie expansion around $\theta=0$, we obtain:
-\begin{align}
-U(\beta)=& \cosh^2\bigg(\frac{\beta \theta}{2}\bigg) I_{2 \times 2}
-=
-\bigg(
-1
-+\frac{\beta^{2} \theta^{2}}{4}
-+\frac{\beta^{4} \theta^{4}}{48}
-+\frac{\beta^{6} \theta^{6}}{1440}
-+\cdots \bigg)
-I_{2 \times 2}
-\end{align}
-
-The zeroth order of the expansion is the same as Eq.~\eqref{eq::zeroth_order} (with $H_\text{loc}=0$) and the
-first order here is the same as the Eq.~\eqref{eq::first_order}, which is a good self-consistency check. For the same system but with a spin (without hybridization between spins), we have:
-\begin{align}
-U_{spin}(\beta)= U_{spinless}(\beta) \otimes  U_{spinless}(\beta) = \cosh^4\bigg(\frac{\beta \theta}{2}\bigg) I_{4 \times 4}
-=
-\bigg(
-1
-+\frac{\beta^{2} \theta^{2}}{2}
-+\frac{5 \beta^{4} \theta^{4}}{48}
-+\frac{17 \beta^{6} \theta^{6}}{1440}
-+\cdots \bigg)
-I_{4 \times 4}
-\end{align}
-which again is coherent with Eq.~\eqref{eq::zeroth_order} and~\eqref{eq::first_order2}.
 
 
 
@@ -475,228 +312,11 @@ Order 1:
 And so on. Note that the $\tau_{split}$ must happen in the middle here, otherwise $w_{hyb}=0$. 
 
 
-\subsection{Self consistency check}
-
-Let's go back to the simplest example of the spinless Hubbard model (one site $U=0$, one bath $\epsilon=0$) of sectoin~\ref{ED_bench}. We know that $U(\beta) = \cosh^2 B$ (where $B \equiv \frac{\beta\theta}{2}$). In that simple case, because of Pauli, every vertex must alternate $d$, $d^\dagger$ ...
-
-This simplify the number of topology to consider. We can fraction this calculation in integrals from $0$ to $\tau_{split}$ andfrom $\tau_{split}$ to $\beta$. Let's define, for convenience $c = \cosh(2\Delta t)$, $s = \sinh(2\Delta t)$, $\Delta t = t_b - t_a$ and $t_i = \frac{\theta\tau_i}{2}$, $t_s = \frac{\theta\tau_{split}}{2}$ and express these five integrals, necessary to express order 0 up to order 3:
-
-\begin{align}
-  y_1 (t_a,t_b) &=
-  \int_{t_a}^{t_b} dt_1   
-  U(t_b-t_1) 
-  U(t_1-t_a) 
-  \\
-  &=
-  \frac{1}{8} \Delta t (c+2)
- +\frac{5}{16} s
-\end{align}
-
-\begin{align}
-  y_2 (t_a,t_b) &=
-  \int_{t_a}^{t_b} dt_2   
-  \int_{t_a}^{t_2} dt_1 
-  U(t_b-t_2) 
-  U(t_2-t_1) 
-  U(t_1-t_a) 
-  \\
-  &=
-  \frac{1}{64} \Delta t^2 (c+4)
-  +\frac{15}{128} \Delta t s
-  +\frac{3}{32} (c-1)
-\end{align}
-
-\begin{align}
-  y_3 (t_a,t_b) &=
-  \int_{t_a}^{t_b} dt_3  
-  \int_{t_a}^{t_3} dt_2 
-  \int_{t_a}^{t_2} dt_1 
-  U(t_b-t_3) 
-  U(t_3-t_2) 
-  U(t_2-t_1) 
-  U(t_1-t_a) 
-  \\
-  &=
-  \frac{1}{768} \Delta t^3 (c+8)
-  +\frac{5}{256} \Delta t^2 s
-  +\frac{1}{1024} \Delta t (57 c-64)
-  +\frac{7}{2048} s
-\end{align}
-
-\begin{align}
-  y_4 (t_a,t_b) &=
-  \int_{t_a}^{t_b} dt_4 
-  \int_{t_a}^{t_4} dt_3 
-  \int_{t_a}^{t_3} dt_2 
-  \int_{t_a}^{t_2} dt_1 
-  U(t_b-t_4) 
-  U(t_4-t_3) 
-  U(t_3-t_2) 
-  U(t_2-t_1) 
-  U(t_1-t_a) 
-  \\
-  &=
-    \frac{1}{12288} \Delta t^4 (c+16)
-  +\frac{25}{12288} \Delta t^3 s
-  +\frac{1}{16384} \Delta t^2 (205 c-320)
-  +\frac{435}{32768} \Delta t s
-  -\frac{5}{512} (c-1)
-\end{align}
-
-\begin{align}
-  y_5 (t_a,t_b) &=
-  \int_{t_a}^{t_b} dt_5 
-  \int_{t_a}^{t_5} dt_4 
-  \int_{t_a}^{t_4} dt_3 
-  \int_{t_a}^{t_3} dt_2 
-  \int_{t_a}^{t_2} dt_1 
-  U(t_b-t_5) 
-  U(t_5-t_4) 
-  U(t_4-t_3) 
-  U(t_3-t_2) 
-  U(t_2-t_1) 
-  U(t_1-t_a) 
-  \\
-  &=
-    \frac{1}{245760} \Delta t^5 (c+32)
-  +\frac{5}{32768} \Delta t^4 s
-  +\frac{1}{65536} \Delta t^3 (107 c-256)
-  +\frac{316}{65536} \Delta t^2 s
-  -\frac{1}{262144} \Delta t  (279c-2304)
-  -\frac{2025}{524288} s
-\end{align}
-
-With these definitions, the orders are:
-
-Order 0:
-\begin{align}
-  U_0(\beta)=&
-  U(\beta-\tau_{split}) 
-  U(\tau_{split})  
-\end{align}
-
-Order 1:
-\begin{align}
-  U_1(\beta)=& 2 y_1(0,t_s) y_1(t_s,B)
-\end{align}
-
-Order 2:
-\begin{align}
-  U_2(\beta)=& 4 y_2(0,t_s) y_2(t_s,B)
-\end{align}
-
-Order 3:
-\begin{align}
-  U_3(\beta)=& 8 \big( y_1(0,t_s) y_5(t_s,B)  + y_2(0,t_s) y_4(t_s,B) +
-      \\& y_4(0,t_s) y_2(t_s,B) + y_5(0,t_s) y_1(t_s,B) \big)
-\end{align}
-
-I skipped some details, from $w_{hyb}$ that we did not explicitly tracked here. The details are left to the user. At the moment of this writing, this is what is tested in the function self$\_$consistendy$\_$hubbard$\_$spinless. Both Monte Carlo and this test agree. But it fails to reproduce the self-consistency result. In the end it does not converge to $U(\beta) = \cosh(\frac{\beta*theta}{2})$. It seems to be a question of ergodicity (a lot of the configurations gives zero just because bath energy is null). To investigate more, we need to look at the same kind of analysis but with $\epsilon>0$.
-
-\subsection{Finite $\epsilon$}
-
-We proceed first with exact diagonalization as in section~\ref{ED_simple}. For this system we have
-\begin{align}
-H=
-H_\text{loc} + H_\text{bath} + H_\text{hyb}=
-\begin{blockarray}{ccccc}
-& \ket{00} & \ket{01} & \ket{10} & \ket{11} \\
-\begin{block}{c(cccc)}
-\bra{00} & 0&0&0&0\\
-\bra{01} & 0&0&\theta&0\\
-\bra{10} & 0&\theta&\epsilon&0\\
-\bra{11} & 0&0&0&\epsilon\\
-\end{block}
-\end{blockarray}
-\end{align}
-
-Now technique is the same, but the result is much more complicated because diagonalization produce a lot of squareroots and such. With the help of sympy, we can find the low expansion order of the propagator, which is:
-
-\begin{align}
-  U_{00}(\tau_{m}) 
-  &= 1+ \frac{\theta^2}{\epsilon^2} 
-  \frac{1}{1+e^{\tau_{m}\epsilon}}
-  ( e^{\tau_{m}\epsilon} -\tau_{m}\epsilon - 1)
-  + O(\theta^4)
-  \\
-  U_{11}(\tau_{m}) 
-  &= 1+ \frac{\theta^2}{\epsilon^2} 
-  \frac{1}{1+e^{-\tau_{m}\epsilon}}
-  ( e^{-\tau_{m}\epsilon} -\tau_{m}\epsilon - 1)
-  + O(\theta^4)
-\end{align}
-
-where $\tau_{m}$ is the $\tau$ at which we want to evaluate the inchworm. The indices are the diagonal block of the propagator. This will be only valid for very small $\theta$.
-
-Now this is the exact propagator from our formalism. We can compare that to the low order expansion of the ct-hyb and the inchworm.
-
-First, ct-hyb:
-
-\begin{align}
-  U^0_{00}(\tau_{m}) &= U^0_{11}(\tau_{m}) = e^{-\tau_{m} H_{loc}} = 1
-  \\
-  U^1_{00}(\tau_{m}) &= 
-  \int_{0}^{\beta} d \tau_a 
-  \int_{\tau_a}^{\beta} d \tau_b
-  U^0_{00}(\tau_m-\tau_a) d 
-  U^0_{00}(\tau_a-\tau_b) d^\dag
-  U^0_{00}(\tau_b)
-  w_{hyb}
-  \\
-  &= \int_{0}^{\beta} d \tau_a 
-     \int_{\tau_a}^{\beta} d \tau_b
-     \frac{-\theta^2 e^{-(\tau_1-\tau_1^\prime-\beta)\epsilon}}{1+e^{\beta\epsilon} }
-  \\ 
-  &= \frac{\theta^2}{\epsilon^2} 
-  \frac{1}{1+e^{\tau_m\epsilon}}
-  ( e^{\beta \epsilon} -\tau_m\epsilon - 1)
-\end{align}
-
-
-
-Inchworm:
-\begin{align}
-  \tilde{U}^0_{00}(\tau_{m}) &= U_{00}(\tau_{m}-\tau_s) U_{00}(\tau_s)
-  \\
-  &= 1 + U^1_{00}(\tau_{m}-\tau_s) + U^1_{00}(\tau_{m}) + O(\theta^4)
-  \\
-  &= 
-  1 + \frac{\theta^2}{\epsilon^2} 
-  \frac{1}{1+e^{\tau_m \epsilon}}
-  ( e^{(\tau_m-\tau_s)\epsilon} + e^{\tau_s\epsilon} -\tau_m\epsilon - 2)
-  \\
-  \tilde{U}^1_{00}(\tau_{m}) &= 
-  \int_{0}^{\beta} d \tau_a 
-  \int_{\tau_a}^{\beta} d \tau_b
-  U^0_{00}(\tau_m-\tau_a) 
-  d
-  U^0_{00}(\tau_a-\tau_{s})
-  U^0_{00}(\tau_{s}-\tau_b)
-  d^\dag
-  U^0_{00}(\tau_b)
-  \frac{-\theta^2 e^{-(\tau_1-\tau_1^\prime-\beta)\epsilon}}{1+e^{\beta\epsilon} } +O(\theta^4)
-  \\
-  &= 
-  \int_{0}^{\beta} d \tau_a 
-  \int_{\tau_a}^{\beta} d \tau_b
-  \frac{-\theta^2 e^{-(\tau_1-\tau_1^\prime-\beta)\epsilon}}{1+e^{\beta\epsilon} } +O(\theta^4)
-  \\
-  &= \frac{\theta^2}{\epsilon^2} \frac{1}{1+e^{\tau_m \epsilon}} (e^{\tau_m\epsilon} -  e^{\tau_s\epsilon}) (e^{\tau_s\epsilon} - 1) +O(\theta^4)
-  \\
-  &= \frac{\theta^2}{\epsilon^2} \frac{1}{1+e^{\tau_m \epsilon}} (e^{(\tau_m-\tau_s)\epsilon} - 1 - e^{\tau_m\epsilon} +e^{\tau_s\epsilon}) +O(\theta^4)
-  \\
-  \tilde{U}^0_{00}(\tau_{m}) + \tilde{U}^1_{00}(\tau_{m})&=  U^0_{00}(\tau_{m}) + U^1_{00}(\tau_{m})
-  \\
-  &= 1 + \frac{\theta^2}{\epsilon^2}
-  \frac{1}{1+e^{\tau_m\epsilon}}
-  ( e^{\tau_m\epsilon} -\tau_m\epsilon - 1) +O(\theta^4)
-\end{align}
-
 
 
 \section{Hybridization part}
 
-This section discuss about the omitted part $w_hyb$, which is essentially just the connected terms of the determinant $\text{det} \Delta$. 
+This section discuss about the omitted part $w_{hyb}$, which is essentially just the connected terms of the determinant $\text{det} \Delta$. 
 
 In the following two sections, we will explore the formalism used here along a simple example that can be generated with the code \url{https://github.com/TRIQS/inchworm.git} under the tag \Verb#doc_0.1# (commit number \Verb#d0745e5#). After building with \Verb#cmake#, run in the file \Verb#build_directory/test/c++/diagram_analysis# to generate the example below.
 
@@ -1047,12 +667,17 @@ One good starting point is to use the basis where the Hamiltonian of the cluster
 
 The number of time points of the inchworm is given by the number of inching iterations. For time between iterations we can use (linear) interpolations.
 
-\section{Propagator implementation}
 
-$U(\tau,\tau^\prime)$ is block diagonal. A first implementation is to take \Verb#atom_diag# and build around it. For this we need to use the constructor which specify the quantum numbers and use only (for now) the charge quantum number. For the propagator, we can use a  \Verb#block_gf<imtime>#. 
 
-\section{Exact diagonalization benchmark}
-\label{ED_bench}
+
+
+
+
+\appendix
+
+
+\section{Partial Trace in Triqs}
+\label{partial_trace_bench}
 
 A good benchmark is to calculate the exact propagator we would get with exact diagonalization. The most basic example we can show here is a single interacting site connected to a single bath site. 
 
@@ -1229,88 +854,402 @@ This benchmark, although a little too simple, can be easily generalized to a big
 
 
 
-%\bibliographystyle{apsrev4-1}
-%\bibliography{inclus}
 
 
 
-%merlin.mbs apsrev4-1.bst 2010-07-25 4.21a (PWD, AO, DPC) hacked
-%Control: key (0)
-%Control: author (72) initials jnrlst
-%Control: editor formatted (1) identically to author
-%Control: production of article title (-1) disabled
-%Control: page (0) single
-%Control: year (1) truncated
-%Control: production of eprint (0) enabled
-\begin{thebibliography}{1}%
-\makeatletter
-\providecommand \@ifxundefined [1]{%
- \@ifx{#1\undefined}
-}%
-\providecommand \@ifnum [1]{%
- \ifnum #1\expandafter \@firstoftwo
- \else \expandafter \@secondoftwo
- \fi
-}%
-\providecommand \@ifx [1]{%
- \ifx #1\expandafter \@firstoftwo
- \else \expandafter \@secondoftwo
- \fi
-}%
-\providecommand \natexlab [1]{#1}%
-\providecommand \enquote  [1]{``#1''}%
-\providecommand \bibnamefont  [1]{#1}%
-\providecommand \bibfnamefont [1]{#1}%
-\providecommand \citenamefont [1]{#1}%
-\providecommand \href@noop [0]{\@secondoftwo}%
-\providecommand \href [0]{\begingroup \@sanitize@url \@href}%
-\providecommand \@href[1]{\@@startlink{#1}\@@href}%
-\providecommand \@@href[1]{\endgroup#1\@@endlink}%
-\providecommand \@sanitize@url [0]{\catcode `\\12\catcode `\$12\catcode
-  `\&12\catcode `\#12\catcode `\^12\catcode `\_12\catcode `\%12\relax}%
-\providecommand \@@startlink[1]{}%
-\providecommand \@@endlink[0]{}%
-\providecommand \url  [0]{\begingroup\@sanitize@url \@url }%
-\providecommand \@url [1]{\endgroup\@href {#1}{\urlprefix }}%
-\providecommand \urlprefix  [0]{URL }%
-\providecommand \Eprint [0]{\href }%
-\providecommand \doibase [0]{http://dx.doi.org/}%
-\providecommand \selectlanguage [0]{\@gobble}%
-\providecommand \bibinfo  [0]{\@secondoftwo}%
-\providecommand \bibfield  [0]{\@secondoftwo}%
-\providecommand \translation [1]{[#1]}%
-\providecommand \BibitemOpen [0]{}%
-\providecommand \bibitemStop [0]{}%
-\providecommand \bibitemNoStop [0]{.\EOS\space}%
-\providecommand \EOS [0]{\spacefactor3000\relax}%
-\providecommand \BibitemShut  [1]{\csname bibitem#1\endcsname}%
-\let\auto@bib@innerbib\@empty
-%</preamble>
-\bibitem [{\citenamefont {Boag}\ \emph {et~al.}()\citenamefont {Boag},
-  \citenamefont {Gull},\ and\ \citenamefont
-  {Cohen}}]{boag_inclusion-exclusion_2018}%
-  \BibitemOpen
-  \bibfield  {author} {
-    \bibinfo {author} {\bibfnamefont {A.}~\bibnamefont
-  {Boag}}, 
-    \bibinfo {author} {\bibfnamefont {E.}~\bibnamefont {Gull}}, \ and\
-    \bibinfo {author} {\bibfnamefont {G.}~\bibnamefont {Cohen}},\ } \href
-  {\doibase 10.1103/PhysRevB.98.115152} {\ \textbf {\bibinfo {volume} {98}},\
-  \bibinfo {pages} {115152} \bibinfo {year} (2018) }\BibitemShut {NoStop}%
-\end{thebibliography}%
 
+
+\section{Simple model exact values}
+
+\subsection{Integrals}
+
+Zeroth order: 
+\begin{align}
+U_0(\beta)=&  e^{-\beta H_\mathrm{loc}}
+\label{eq::zeroth_order}
+\end{align}
+
+First order: 
+\begin{align}
+U_1(\beta)=&  \int_{0}^{\beta} d \tau_1 \int_0^{\beta} d \tau_1^{\prime}
+\sum_{j_1 j_1^\prime}  
+\Big[ T_{\tau} e^{-\beta H_\mathrm{loc}}
+d_{j_1}(\tau_1) d_{j_1^\prime}^{\dagger} (\tau_1^\prime) \Big] \Delta_{j_1 j_1^\prime} ( \tau_1 - \tau_1^\prime)
+\end{align}
+
+For an extremely simple case (one site, spinless, $U=0$, $H_\text{loc}=0$, one bath $\epsilon=0$, $\Delta=-\frac{\theta^2}{2}$):
+\begin{align}
+U_1(\beta)=& \int_{0}^{\beta} d \tau_1 \int_0^{\beta} d \tau_1^{\prime} \sum_{j_1 j_1^\prime} 
+\Big[ T_{\tau} d_{j_1}(\tau_1) d_{j_1^\prime}^{\dagger} (\tau_1^\prime) \Big]   
+\frac{\theta^2}{2}
+\\
+=& 
+\Bigg(\frac{\beta^2}{2}
+\Bigg[  
+\begin{pmatrix} -1&0\\ 0&0\\ \end{pmatrix}
++
+\begin{pmatrix} 0&0\\ 0&-1\\ \end{pmatrix}
+\Bigg]  
+\Bigg) 
+\frac{-\theta^2}{2}
+\\
+=& \frac{(\beta \theta)^2}{4} I_{2 \times 2}
+\label{eq::first_order}
+\end{align}
+
+Another simple case is the same model, but with spin. The only difference is the sum $\sum_{j_1 j_1^\prime}$ where the only allowed terms are the ones with $j_1=j_1^\prime$ since we have no hybridization between both spins. In that case, the first order becomes:
+\begin{align}
+U_1(\beta)=
+\left(\frac{\beta^2}{2}
+\left[
+\begin{pmatrix} 
+  1&&&\\ 
+  &0&&\\ 
+  &&1&\\ 
+  &&&0\\ 
+\end{pmatrix}
++
+\begin{pmatrix} 
+  0&&&\\ 
+  &1&&\\ 
+  &&0&\\ 
+  &&&1\\ 
+\end{pmatrix}
++
+\begin{pmatrix} 
+  1&&&\\ 
+  &1&&\\ 
+  &&0&\\ 
+  &&&0\\ 
+\end{pmatrix}
++
+\begin{pmatrix} 
+  0&&&\\ 
+  &0&&\\ 
+  &&1&\\ 
+  &&&1\\ 
+\end{pmatrix}
+\right]
+\right)
+\frac{\theta^2}{2}
+=
+\frac{(\beta \theta)^2}{2} I_{4 \times 4}
+\label{eq::first_order2}
+\end{align}
+
+\subsection{Exact diagonalization simple model}
+\label{ED_simple}
+
+This simple system can be solved exactly
+\begin{align}
+U(\beta)=& \frac{1}{\ZB}\operatorname{Tr_B} [e^{-\beta (H_\text{loc} + H_\text{bath} + H_\text{hyb}) }]  
+\end{align}
+
+for a spinless model, this simply becomes
+\begin{align}
+H=
+H_\text{loc} + H_\text{bath} + H_\text{hyb}=
+\begin{blockarray}{ccccc}
+& \ket{00} & \ket{01} & \ket{10} & \ket{11} \\
+\begin{block}{c(cccc)}
+\bra{00} & 0&0&0&0\\
+\bra{01} & 0&0&\theta&0\\
+\bra{10} & 0&\theta&0&0\\
+\bra{11} & 0&0&0&0\\
+\end{block}
+\end{blockarray}
+\end{align}
+
+\begin{align}
+D = U H U^\dagger=
+\begin{pmatrix}
+0&0&0&0\\
+0&\theta&0&0\\
+0&0&-\theta&0\\
+0&0&0&0\\
+\end{pmatrix}
+&&
+e^{-\beta D} =
+\begin{pmatrix}
+1&0&0&0\\
+0&e^{-\beta \theta}&0&0\\
+0&0&e^{\beta \theta}&0\\
+0&0&0&1\\
+\end{pmatrix}
+\end{align}
+
+\begin{align}
+e^{-\beta H} = e^{-\beta U^\dagger D U} = U^\dagger e^{-\beta D} U  =
+\begin{pmatrix}
+1&0&0&0\\
+0&\cosh(\beta \theta)&\sinh(\beta \theta)&0\\
+0&\sinh(\beta \theta)&\cosh(\beta \theta)&0\\
+0&0&0&1\\
+\end{pmatrix}
+\end{align}
+
+\begin{align}
+\ZB = \operatorname{Tr_B}[ e^{-\beta H_\text{bath} }  ] = 2
+\end{align}
+
+\begin{align}
+U(\beta)=& \frac{1}{\ZB} e^{-\beta H} = \frac{\cosh(\beta \theta)+1}{2} I_{2 \times 2}
+\end{align}
+
+using trigonometric identity and the serie expansion around $\theta=0$, we obtain:
+\begin{align}
+U(\beta)=& \cosh^2\bigg(\frac{\beta \theta}{2}\bigg) I_{2 \times 2}
+=
+\bigg(
+1
++\frac{\beta^{2} \theta^{2}}{4}
++\frac{\beta^{4} \theta^{4}}{48}
++\frac{\beta^{6} \theta^{6}}{1440}
++\cdots \bigg)
+I_{2 \times 2}
+\end{align}
+
+The zeroth order of the expansion is the same as Eq.~\eqref{eq::zeroth_order} (with $H_\text{loc}=0$) and the
+first order here is the same as the Eq.~\eqref{eq::first_order}, which is a good self-consistency check. For the same system but with a spin (without hybridization between spins), we have:
+\begin{align}
+U_{spin}(\beta)= U_{spinless}(\beta) \otimes  U_{spinless}(\beta) = \cosh^4\bigg(\frac{\beta \theta}{2}\bigg) I_{4 \times 4}
+=
+\bigg(
+1
++\frac{\beta^{2} \theta^{2}}{2}
++\frac{5 \beta^{4} \theta^{4}}{48}
++\frac{17 \beta^{6} \theta^{6}}{1440}
++\cdots \bigg)
+I_{4 \times 4}
+\end{align}
+which again is coherent with Eq.~\eqref{eq::zeroth_order} and~\eqref{eq::first_order2}.
+
+
+
+
+\subsection{Self consistency check}
+
+Let's go back to the simplest example of the spinless Hubbard model (one site $U=0$, one bath $\epsilon=0$) of sectoin~\ref{ED_bench}. We know that $U(\beta) = \cosh^2 B$ (where $B \equiv \frac{\beta\theta}{2}$). In that simple case, because of Pauli, every vertex must alternate $d$, $d^\dagger$ ...
+
+This simplify the number of topology to consider. We can fraction this calculation in integrals from $0$ to $\tau_{split}$ andfrom $\tau_{split}$ to $\beta$. Let's define, for convenience $c = \cosh(2\Delta t)$, $s = \sinh(2\Delta t)$, $\Delta t = t_b - t_a$ and $t_i = \frac{\theta\tau_i}{2}$, $t_s = \frac{\theta\tau_{split}}{2}$ and express these five integrals, necessary to express order 0 up to order 3:
+
+\begin{align}
+  y_1 (t_a,t_b) &=
+  \int_{t_a}^{t_b} dt_1   
+  U(t_b-t_1) 
+  U(t_1-t_a) 
+  \\
+  &=
+  \frac{1}{8} \Delta t (c+2)
+ +\frac{5}{16} s
+\end{align}
+
+\begin{align}
+  y_2 (t_a,t_b) &=
+  \int_{t_a}^{t_b} dt_2   
+  \int_{t_a}^{t_2} dt_1 
+  U(t_b-t_2) 
+  U(t_2-t_1) 
+  U(t_1-t_a) 
+  \\
+  &=
+  \frac{1}{64} \Delta t^2 (c+4)
+  +\frac{15}{128} \Delta t s
+  +\frac{3}{32} (c-1)
+\end{align}
+
+\begin{align}
+  y_3 (t_a,t_b) &=
+  \int_{t_a}^{t_b} dt_3  
+  \int_{t_a}^{t_3} dt_2 
+  \int_{t_a}^{t_2} dt_1 
+  U(t_b-t_3) 
+  U(t_3-t_2) 
+  U(t_2-t_1) 
+  U(t_1-t_a) 
+  \\
+  &=
+  \frac{1}{768} \Delta t^3 (c+8)
+  +\frac{5}{256} \Delta t^2 s
+  +\frac{1}{1024} \Delta t (57 c-64)
+  +\frac{7}{2048} s
+\end{align}
+
+\begin{align}
+  y_4 (t_a,t_b) &=
+  \int_{t_a}^{t_b} dt_4 
+  \int_{t_a}^{t_4} dt_3 
+  \int_{t_a}^{t_3} dt_2 
+  \int_{t_a}^{t_2} dt_1 
+  U(t_b-t_4) 
+  U(t_4-t_3) 
+  U(t_3-t_2) 
+  U(t_2-t_1) 
+  U(t_1-t_a) 
+  \\
+  &=
+    \frac{1}{12288} \Delta t^4 (c+16)
+  +\frac{25}{12288} \Delta t^3 s
+  +\frac{1}{16384} \Delta t^2 (205 c-320)
+  +\frac{435}{32768} \Delta t s
+  -\frac{5}{512} (c-1)
+\end{align}
+
+\begin{align}
+  y_5 (t_a,t_b) &=
+  \int_{t_a}^{t_b} dt_5 
+  \int_{t_a}^{t_5} dt_4 
+  \int_{t_a}^{t_4} dt_3 
+  \int_{t_a}^{t_3} dt_2 
+  \int_{t_a}^{t_2} dt_1 
+  U(t_b-t_5) 
+  U(t_5-t_4) 
+  U(t_4-t_3) 
+  U(t_3-t_2) 
+  U(t_2-t_1) 
+  U(t_1-t_a) 
+  \\
+  &=
+    \frac{1}{245760} \Delta t^5 (c+32)
+  +\frac{5}{32768} \Delta t^4 s
+  +\frac{1}{65536} \Delta t^3 (107 c-256)
+  +\frac{316}{65536} \Delta t^2 s
+  -\frac{1}{262144} \Delta t  (279c-2304)
+  -\frac{2025}{524288} s
+\end{align}
+
+With these definitions, the orders are:
+
+Order 0:
+\begin{align}
+  U_0(\beta)=&
+  U(\beta-\tau_{split}) 
+  U(\tau_{split})  
+\end{align}
+
+Order 1:
+\begin{align}
+  U_1(\beta)=& 2 y_1(0,t_s) y_1(t_s,B)
+\end{align}
+
+Order 2:
+\begin{align}
+  U_2(\beta)=& 4 y_2(0,t_s) y_2(t_s,B)
+\end{align}
+
+Order 3:
+\begin{align}
+  U_3(\beta)=& 8 \big( y_1(0,t_s) y_5(t_s,B)  + y_2(0,t_s) y_4(t_s,B) +
+      \\& y_4(0,t_s) y_2(t_s,B) + y_5(0,t_s) y_1(t_s,B) \big)
+\end{align}
+
+I skipped some details, from $w_{hyb}$ that we did not explicitly tracked here. The details are left to the user. At the moment of this writing, this is what is tested in the function self$\_$consistendy$\_$hubbard$\_$spinless. Both Monte Carlo and this test agree. But it fails to reproduce the self-consistency result. In the end it does not converge to $U(\beta) = \cosh(\frac{\beta*theta}{2})$. It seems to be a question of ergodicity (a lot of the configurations gives zero just because bath energy is null). To investigate more, we need to look at the same kind of analysis but with $\epsilon>0$.
+
+\subsection{Finite $\epsilon$}
+
+We proceed first with exact diagonalization as in section~\ref{ED_simple}. For this system we have
+\begin{align}
+H=
+H_\text{loc} + H_\text{bath} + H_\text{hyb}=
+\begin{blockarray}{ccccc}
+& \ket{00} & \ket{01} & \ket{10} & \ket{11} \\
+\begin{block}{c(cccc)}
+\bra{00} & 0&0&0&0\\
+\bra{01} & 0&0&\theta&0\\
+\bra{10} & 0&\theta&\epsilon&0\\
+\bra{11} & 0&0&0&\epsilon\\
+\end{block}
+\end{blockarray}
+\end{align}
+
+Now technique is the same, but the result is much more complicated because diagonalization produce a lot of squareroots and such. With the help of sympy, we can find the low expansion order of the propagator, which is:
+
+\begin{align}
+  U_{00}(\tau_{m}) 
+  &= 1+ \frac{\theta^2}{\epsilon^2} 
+  \frac{1}{1+e^{\tau_{m}\epsilon}}
+  ( e^{\tau_{m}\epsilon} -\tau_{m}\epsilon - 1)
+  + O(\theta^4)
+  \\
+  U_{11}(\tau_{m}) 
+  &= 1+ \frac{\theta^2}{\epsilon^2} 
+  \frac{1}{1+e^{-\tau_{m}\epsilon}}
+  ( e^{-\tau_{m}\epsilon} -\tau_{m}\epsilon - 1)
+  + O(\theta^4)
+\end{align}
+
+where $\tau_{m}$ is the $\tau$ at which we want to evaluate the inchworm. The indices are the diagonal block of the propagator. This will be only valid for very small $\theta$.
+
+Now this is the exact propagator from our formalism. We can compare that to the low order expansion of the ct-hyb and the inchworm.
+
+First, ct-hyb:
+
+\begin{align}
+  U^0_{00}(\tau_{m}) &= U^0_{11}(\tau_{m}) = e^{-\tau_{m} H_{loc}} = 1
+  \\
+  U^1_{00}(\tau_{m}) &= 
+  \int_{0}^{\beta} d \tau_a 
+  \int_{\tau_a}^{\beta} d \tau_b
+  U^0_{00}(\tau_m-\tau_a) d 
+  U^0_{00}(\tau_a-\tau_b) d^\dag
+  U^0_{00}(\tau_b)
+  w_{hyb}
+  \\
+  &= \int_{0}^{\beta} d \tau_a 
+     \int_{\tau_a}^{\beta} d \tau_b
+     \frac{-\theta^2 e^{-(\tau_1-\tau_1^\prime-\beta)\epsilon}}{1+e^{\beta\epsilon} }
+  \\ 
+  &= \frac{\theta^2}{\epsilon^2} 
+  \frac{1}{1+e^{\tau_m\epsilon}}
+  ( e^{\beta \epsilon} -\tau_m\epsilon - 1)
+\end{align}
+
+
+
+Inchworm:
+\begin{align}
+  \tilde{U}^0_{00}(\tau_{m}) &= U_{00}(\tau_{m}-\tau_s) U_{00}(\tau_s)
+  \\
+  &= 1 + U^1_{00}(\tau_{m}-\tau_s) + U^1_{00}(\tau_{m}) + O(\theta^4)
+  \\
+  &= 
+  1 + \frac{\theta^2}{\epsilon^2} 
+  \frac{1}{1+e^{\tau_m \epsilon}}
+  ( e^{(\tau_m-\tau_s)\epsilon} + e^{\tau_s\epsilon} -\tau_m\epsilon - 2)
+  \\
+  \tilde{U}^1_{00}(\tau_{m}) &= 
+  \int_{0}^{\beta} d \tau_a 
+  \int_{\tau_a}^{\beta} d \tau_b
+  U^0_{00}(\tau_m-\tau_a) 
+  d
+  U^0_{00}(\tau_a-\tau_{s})
+  U^0_{00}(\tau_{s}-\tau_b)
+  d^\dag
+  U^0_{00}(\tau_b)
+  \frac{-\theta^2 e^{-(\tau_1-\tau_1^\prime-\beta)\epsilon}}{1+e^{\beta\epsilon} } +O(\theta^4)
+  \\
+  &= 
+  \int_{0}^{\beta} d \tau_a 
+  \int_{\tau_a}^{\beta} d \tau_b
+  \frac{-\theta^2 e^{-(\tau_1-\tau_1^\prime-\beta)\epsilon}}{1+e^{\beta\epsilon} } +O(\theta^4)
+  \\
+  &= \frac{\theta^2}{\epsilon^2} \frac{1}{1+e^{\tau_m \epsilon}} (e^{\tau_m\epsilon} -  e^{\tau_s\epsilon}) (e^{\tau_s\epsilon} - 1) +O(\theta^4)
+  \\
+  &= \frac{\theta^2}{\epsilon^2} \frac{1}{1+e^{\tau_m \epsilon}} (e^{(\tau_m-\tau_s)\epsilon} - 1 - e^{\tau_m\epsilon} +e^{\tau_s\epsilon}) +O(\theta^4)
+  \\
+  \tilde{U}^0_{00}(\tau_{m}) + \tilde{U}^1_{00}(\tau_{m})&=  U^0_{00}(\tau_{m}) + U^1_{00}(\tau_{m})
+  \\
+  &= 1 + \frac{\theta^2}{\epsilon^2}
+  \frac{1}{1+e^{\tau_m\epsilon}}
+  ( e^{\tau_m\epsilon} -\tau_m\epsilon - 1) +O(\theta^4)
+\end{align}
+
+
+
+
+\bibliographystyle{apsrev4-1}
+\bibliography{inclus}
 
 
 \end{document}
-
-
-
-
-
-
-
-
-
-
-
 

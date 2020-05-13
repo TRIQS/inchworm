@@ -157,13 +157,12 @@ void self_consistent_hubbard(int n_site, int n_bath, int n_spin, double U, doubl
   //auto ad_bath_full = triqs::atom_diag::atom_diag<false>(h_bath, fops_tot);
 
   u_tau_t u_tau = make_ED_propagator(ad_tot, ad_atom, ad_bath, cp.beta, cp.n_tau);
+  std::printf("\n##################\nexact U(beta):\n");
+  print(u_tau, tau_max);
 
   auto result_sc = S.solve_self_consistently(sp, u_tau, tau_split, tau_max);
   //std::printf("\n\n");
   //print(u_tau, tau_split);
-  std::printf("\n##################\nexact U(beta):\n");
-  print(u_tau, tau_max);
-
   //u_tau[bl][cp.n_tau];
 
   //for (int bl = 0; bl < result_sc.u_frame.size(); bl++) EXPECT_NEAR(u_tau[bl][cp.n_tau](0,0), result_sc.u_frame[bl](0,0), 0.1);
@@ -389,6 +388,7 @@ TEST(inchworm, Hubbard_1site_spinless) {
 }
 */
 
+/*
 TEST(inchworm, Hubbard_1site) { 
 
   constr_params_t cp;
@@ -401,21 +401,23 @@ TEST(inchworm, Hubbard_1site) {
   vec_t epsilon = {-2.0, 0.4, 1.5};
   self_consistent_hubbard(1, 3, 2, 4.0, -1.0, 0.0, cp, theta, epsilon, cp.beta, cp.beta*0.9);
 }
+*/
 
-/*
 TEST(inchworm, Hubbard_2sites) { // NOLINT
 
   constr_params_t cp;
   cp.beta      = 2.0;
-  //cp.gf_struct = {{"up", {0, 1}}};
-  cp.gf_struct = {{"up", {0, 1}}, {"dn", {0, 1}}};
+  cp.gf_struct = {{"up", {0, 1}}};
+  //cp.gf_struct = {{"up", {0, 1}}, {"dn", {0, 1}}};
   cp.n_tau = 500;
   cp.n_iw  = 250;
 
-
-  triqs::arrays::array<double, 2> theta   = {{0.0, 0.}, {0., 0.0}};
-  triqs::arrays::array<double, 1> epsilon = {0.0, 0.0};
-  self_consistent_hubbard(2, 2, 2, 0.0, 0.0, 1.0, cp, theta, epsilon, cp.beta, cp.beta * 0.9);
+  triqs::arrays::array<double, 2> theta   = {{0.9, 0.5}, {-0.3, 1.1}};
+  triqs::arrays::array<double, 1> epsilon = {0.7, -0.7};
+  self_consistent_hubbard(2, 2, 1, 4.0, -2.0, 1.0, cp, theta, epsilon, cp.beta, cp.beta * 0.9);
+  //self_consistent_hubbard(2, 2, 2, 0.0, 0.0, 0.0, cp, theta, epsilon, cp.beta, cp.beta * 0.9);
+  //-->self_consistent_hubbard(2, 2, 2, 0.0, 0.0, 0.0, cp, theta, epsilon, cp.beta, cp.beta * 0.9);
+  ///self_consistent_hubbard(2, 2, 2, 4.0, -2.0, 1.0, cp, theta, epsilon, cp.beta, cp.beta * 0.9);
 }
-*/
+
 MAKE_MAIN
