@@ -105,7 +105,7 @@ void self_consistent_hubbard(int n_site, int n_bath, int n_spin, double U, doubl
   sp.random_seed     = 12345789 + 928374 * mpi::communicator().rank();
 
   // Solve the impurity model
-  auto result_cthyb = S.solve_single_step(sp);
+  //auto result_cthyb = S.solve_single_step(sp, true, 0.0, tau_max);
   //exit(0);
 
   /*
@@ -139,8 +139,12 @@ void self_consistent_hubbard(int n_site, int n_bath, int n_spin, double U, doubl
 
   for (int i = 0; i < n_site; i++) {
     for (int k = 0; k < n_bath; k++) {
-      h_hyb += theta(i, k) * (c_dag("up", i) * c("up", k + n_site) + c_dag("up", k + n_site) * c("up", i));
-      if (n_spin == 2) h_hyb += theta(i, k) * (c_dag("dn", i) * c("dn", k + n_site) + c_dag("dn", k + n_site) * c("dn", i));
+      h_hyb += theta(i, k) * (c_dag("up", i) * c("up", k + n_site));
+      h_hyb += theta(i, k) * (c_dag("up", k + n_site) * c("up", i));
+      if (n_spin == 2) {
+        h_hyb += theta(i, k) * (c_dag("dn", i) * c("dn", k + n_site));
+        h_hyb += theta(i, k) * (c_dag("dn", k + n_site) * c("dn", i));
+      }
     }
     //h_bath += mu * (n("up", i + n_site) + n("dn", i + n_site));
   }
@@ -155,12 +159,24 @@ void self_consistent_hubbard(int n_site, int n_bath, int n_spin, double U, doubl
   auto ad_atom = triqs::atom_diag::atom_diag<false>(h_atom, fops_atom, qn);
   auto ad_bath = triqs::atom_diag::atom_diag<false>(h_bath, fops_bath);
   //auto ad_bath_full = triqs::atom_diag::atom_diag<false>(h_bath, fops_tot);
+  //print_eigensystems(ad_tot);
 
   u_tau_t u_tau = make_ED_propagator(ad_tot, ad_atom, ad_bath, cp.beta, cp.n_tau);
   std::printf("\n##################\nexact U(beta):\n");
   print(u_tau, tau_max);
 
+  int NN = 10;
+
+  for (int n = 0; n < NN; n++) {
+    std::printf("\n\ninchworm step ED %d\n", n);
+    double tau_max1   = cp.beta * (double)(n + 1) / (double)NN;
+    print(u_tau, tau_max1);
+  }
+
   auto result_sc = S.solve_self_consistently(sp, u_tau, tau_split, tau_max);
+
+  S.solve_inchworm(sp);
+
   //std::printf("\n\n");
   //print(u_tau, tau_split);
   //u_tau[bl][cp.n_tau];
@@ -373,7 +389,6 @@ void self_consistent_hubbard(int n_site, int n_bath, int n_spin, double U, doubl
   */
 }
 
-/*
 TEST(inchworm, Hubbard_1site_spinless) {
 
   constr_params_t cp;
@@ -381,12 +396,12 @@ TEST(inchworm, Hubbard_1site_spinless) {
   cp.gf_struct = {{"up", {0}}};
   cp.n_tau     = 500;
   cp.n_iw      = 250;
+  //cp.n_step      = 250;
 
   mat_t theta   = {{1.5, -1.0, 1.7}};
   vec_t epsilon = {-2.0, 0.4, 1.5};
   self_consistent_hubbard(1, 3, 1, 0.0, 2.0, 0.0, cp, theta, epsilon, cp.beta, cp.beta * 0.9);
 }
-*/
 
 /*
 TEST(inchworm, Hubbard_1site) { 
@@ -401,7 +416,6 @@ TEST(inchworm, Hubbard_1site) {
   vec_t epsilon = {-2.0, 0.4, 1.5};
   self_consistent_hubbard(1, 3, 2, 4.0, -1.0, 0.0, cp, theta, epsilon, cp.beta, cp.beta*0.9);
 }
-*/
 
 TEST(inchworm, Hubbard_2sites) { // NOLINT
 
@@ -412,12 +426,26 @@ TEST(inchworm, Hubbard_2sites) { // NOLINT
   cp.n_tau = 500;
   cp.n_iw  = 250;
 
-  triqs::arrays::array<double, 2> theta   = {{-1.3, 1.8}, {-1.3, 1.2}};
+  triqs::arrays::array<double, 2> theta   = {{0.9, 0.5}, {0.3, 1.1}};
   triqs::arrays::array<double, 1> epsilon = {0.9, -0.3};
   self_consistent_hubbard(2, 2, 1, 4.0, -3.0, 1.0, cp, theta, epsilon, cp.beta, cp.beta * 0.9);
-  //self_consistent_hubbard(2, 2, 2, 0.0, 0.0, 0.0, cp, theta, epsilon, cp.beta, cp.beta * 0.9);
+}
+
+TEST(inchworm, Hubbard_2sites) { // NOLINT
+
+  constr_params_t cp;
+  cp.beta = 2.0;
+  //cp.gf_struct = {{"up", {0, 1}}};
+  cp.gf_struct = {{"up", {0, 1}}, {"dn", {0, 1}}};
+  cp.n_tau     = 500;
+  cp.n_iw      = 250;
+
+  triqs::arrays::array<double, 2> theta   = {{-0.5, 0.3}, {-0.2, 1.0}};
+  triqs::arrays::array<double, 1> epsilon = {0.0, 0.0};
+  self_consistent_hubbard(2, 2, 2, 0.0, 0.0, 0.0, cp, theta, epsilon, cp.beta, cp.beta * 0.9);
   //-->self_consistent_hubbard(2, 2, 2, 0.0, 0.0, 0.0, cp, theta, epsilon, cp.beta, cp.beta * 0.9);
   ///self_consistent_hubbard(2, 2, 2, 4.0, -2.0, 1.0, cp, theta, epsilon, cp.beta, cp.beta * 0.9);
 }
+*/
 
 MAKE_MAIN

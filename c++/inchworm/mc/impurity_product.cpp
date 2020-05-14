@@ -24,7 +24,7 @@ namespace inchworm {
     FILE *f = fopen("u_tau.dat", "w");
     for (int i_tau = 0; i_tau < N_tau; i_tau++) {
       fprintf(f, "%d  ", i_tau);
-      for (int bl = 0; bl < u_tau.size(); bl++) fprintf(f, " % 4.8f", ((matrix_t)u_tau[bl][i_tau])(0, 0));
+      for (int bl = 0; bl < u_tau.size(); bl++) print_matrix((matrix_t)u_tau[bl][i_tau]);
       fprintf(f, "\n");
     }
     fclose(f);
@@ -33,7 +33,7 @@ namespace inchworm {
 
   //
   void print(u_tau_t u_tau, double tau) {
-    for (int bl = 0; bl < u_tau.size(); bl++) { std::cout << std::setprecision(10) << (matrix_t)u_tau[bl](tau); }
+    for (int bl = 0; bl < u_tau.size(); bl++) { print_matrix((matrix_t)u_tau[bl](tau)); }
     std::cout << "\n";
     return;
   }
@@ -167,7 +167,7 @@ namespace inchworm {
           if (dtau2 != 0.0) new_mat = (*u_tau_p)[new_bl](dtau2) * new_mat;
         } else {
           auto _ = triqs::arrays::range();
-          dtau = (i == (diagram.size() - 1) ? tau : diagram.op_list[i + 1].tau) - op.tau;
+          dtau   = (i == (diagram.size() - 1) ? tau : diagram.op_list[i + 1].tau) - op.tau;
 
           for (int j = 0; j < ad.get_subspace_dim(new_bl); j++) {
             new_mat(j, _) *=                                                            // ATTENTION!
@@ -198,4 +198,14 @@ namespace inchworm {
     return u_frame;
   }
 
+  void single_step_results_t::print() {
+
+    for (auto &Bl : u_frame) { print_matrix(Bl); }
+
+    std::printf("\n\norder breakdown: \n");
+    for (auto &o : samples_expansion_order) std::printf("%16d ", o);
+    std::printf("\n");
+    for (auto &o : u_expansion_order) std::printf("% 16.5f ", o);
+    std::printf("\n");
+  }
 } // namespace inchworm

@@ -66,15 +66,9 @@ namespace inchworm {
       for (auto &o : u_expansion_order) o /= normalization_cte;
     };
 
-    void print() {
-      for (auto &Bl : u_frame) std::cout << Bl;
-
-      std::printf("\n\norder breakdown: \n");
-      for (auto &o : samples_expansion_order) std::printf("%16d ", o);
-      std::printf("\n");
-      for (auto &o : u_expansion_order) std::printf("% 16.5f ", o);
-      std::printf("\n");
-    };
+    void print();
+   
+    
   };
 
 } // namespace inchworm

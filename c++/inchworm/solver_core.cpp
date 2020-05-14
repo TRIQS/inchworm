@@ -75,25 +75,37 @@ namespace inchworm {
     //print_eigensystems(h_diag);
   }
 
-
   //------------------------------
-  // first step only (ct-hyb)
-  single_step_results_t solver_core::solve_single_step(solve_params_t const &solve_params) {
+  // one step solving
+  single_step_results_t solver_core::solve_single_step(solve_params_t const &solve_params, bool use_bare_propagator, double tau_split,
+                                                       double tau_max) {
 
     // Merge constr_params and solve_params
     last_solve_params = solve_params;
     init(solve_params);
-    double tau_max   = 1.0 * constr_params.beta;
-    double tau_split = 0.0;
+    //double tau_max   = 1.0 * constr_params.beta;
+    //double tau_split = 0.0;
 
     u_frame_bare = make_bare_propagator_frame(h_diag, tau_max, false);
-    auto res     = single_step(solve_params, tau_split, tau_max, true);
+    auto res     = single_step(solve_params, tau_split, tau_max, use_bare_propagator);
 
-    double normalization_cte = (double)res.u_frame_0th_order[0](0, 0) / ((double)u_frame_bare[0](0, 0)); //need to do better at some point
+    double normalization_cte;
+    if (use_bare_propagator) {
+      normalization_cte = (double)res.u_frame_0th_order[0](0, 0) / ((double)u_frame_bare[0](0, 0));
+      std::printf("\n\n##################\ncthyb U(tau_max):\n");
+    } else {
+      auto u_frame_zeroth_order = u_tau[0](tau_max - tau_split) * u_tau[0](tau_split);
+      normalization_cte         = (double)res.u_frame_0th_order[0](0, 0) / ((double)u_frame_zeroth_order(0, 0)); //need to do better at some point
+      std::printf("\n\n##################\ninchworm U(tau_max):\n");
+    }
 
-    std::printf("\n\n##################\ncthyb U(beta):\n");
     res.normalize(normalization_cte);
     res.print();
+
+    //double normalization_cte = (double)res.u_frame_0th_order[0](0, 0) / ((double)u_frame_bare[0](0, 0)); //need to do better at some point
+
+    //res.normalize(normalization_cte);
+    //res.print();
 
     return res;
   } // namespace inchworm
@@ -136,28 +148,32 @@ namespace inchworm {
     //double tau_max   = constr_params.beta;
     //double tau_split = constr_params.beta / 2;
     double beta = constr_params.beta;
-    int n_tau   = constr_params.beta;
+    int n_tau   = 10; // FIXME
 
     for (int n = 0; n < n_tau; n++) {
+      std::printf("\n\ninchworm step %d\n", n);
 
-      double tau_split = beta * n / (n_tau - 1);
-      double tau_max   = beta * (n + 1) / (n_tau - 1);
+      double tau_split = beta * (double) n / (double) n_tau;
+      double tau_max   = beta * (double) (n + 1) / (double)  n_tau;
 
       bool use_bare_propagator = (n == 0);
       u_frame_bare             = make_bare_propagator_frame(h_diag, tau_max, false);
       auto res                 = single_step(solve_params, tau_split, tau_max, use_bare_propagator);
 
-      auto u_frame_zeroth_order = u_tau[0](tau_max - tau_split) * u_tau[0](tau_split);
-      double normalization_cte  = (double)res.u_frame_0th_order[0](0, 0) / ((double)u_frame_zeroth_order(0, 0)); //need to do better at some point
-      std::printf("\n ");
+      double normalization_cte;
+      if (use_bare_propagator) {
+        normalization_cte = (double)res.u_frame_0th_order[0](0, 0) / ((double)u_frame_bare[0](0, 0));
+        std::printf("\n\n##################\ncthyb U(tau_max):\n");
+      } else {
+        auto u_frame_zeroth_order = u_tau[0](tau_max - tau_split) * u_tau[0](tau_split);
+        normalization_cte         = (double)res.u_frame_0th_order[0](0, 0) / ((double)u_frame_zeroth_order(0, 0)); //need to do better at some point
+        std::printf("\n\n##################\ninchworm U(tau_max):\n");
+      }
 
-      std::printf("\ninchworm U(beta):\n");
-      for (int i = 0; i < res.u_frame.size(); i++) { std::cout << (matrix_t)(res.u_frame[i] / normalization_cte); }
-      std::cout << "\n\norder: " << res.average_k << "\n";
-      for (auto o : res.samples_expansion_order) std::printf("%16d ", o);
-      std::printf("\n");
-      for (auto o : res.u_expansion_order) std::printf("% 16.5f ", o / normalization_cte);
-      std::printf("\n");
+      res.normalize(normalization_cte);
+      res.print();
+      
+      assign_u_frame_to_propagator(u_tau, res.u_frame, n+1, 1.);
     }
   } // namespace inchworm
 

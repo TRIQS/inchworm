@@ -26,11 +26,24 @@ namespace inchworm {
   }
 
   void print_matrix(triqs::arrays::matrix<double> m) {
+
     for (int i = 0; i < first_dim(m); i++) {
-      for (int j = 0; j < second_dim(m); j++) { std::printf("% 5.6f ", m(i, j)); }
-      std::printf("\n");
+      std::printf("\n [");
+      for (int j = 0; j < second_dim(m); j++) {
+        if (std::abs(m(i, j)) < 1e-12)
+          std::printf("      .      ");
+        else
+          std::printf("% 13.6f", m(i, j));
+      }
+      std::printf("]");
     }
-    std::printf("\n\n");
+    std::printf("\n");
+
+    //for (int i = 0; i < first_dim(m); i++) {
+    //  for (int j = 0; j < second_dim(m); j++) { std::printf("% 5.6f ", m(i, j)); }
+    //  std::printf("\n");
+    //}
+    //std::printf("\n\n");
   }
 
   void print_binary(unsigned int n, int total_bits) {
@@ -184,6 +197,7 @@ namespace inchworm {
       //  for (int j = 0; j < size; j++) H(i, j) *= std::exp(-dtau * (es_bath_full[s].eigenvalues[i] + ad_bath_full.get_gs_energy()));
       //}
 
+      //print_matrix(H);
       for (int i = 0; i < size; i++) {
         uint64_t traced_idx1    = get_MSB(fs_full[s][i], linear_index); // the traced indices are the bath indices
         uint64_t preserved_idx1 = get_LSB(fs_full[s][i], linear_index); // the preserved indices are the impurity indices
@@ -206,6 +220,7 @@ namespace inchworm {
               exit(1);
             }
 
+            // the exponential function factor corresponds to e^[-(beta - tau) * H_bath]
             u_frame_result[s1](i1, i2) += H(i, j) * std::exp(-(beta - dtau) * (es_bath[s3].eigenvalues[i3] + ad_bath.get_gs_energy()));
 
           } // partial_sum(preserved_idx1, preserved_idx2) += H(i, j); }
@@ -215,7 +230,8 @@ namespace inchworm {
 
     // basis transformation to the atom_diag of the impurity
     for (int s1 = 0; s1 < ad_loc.n_subspaces(); s1++) {
-      u_frame_result[s1] = ((ad_loc.get_eigensystems())[s1].unitary_matrix * u_frame_result[s1]) * dagger((ad_loc.get_eigensystems())[s1].unitary_matrix);
+      u_frame_result[s1] =
+         ((ad_loc.get_eigensystems())[s1].unitary_matrix * u_frame_result[s1]) * dagger((ad_loc.get_eigensystems())[s1].unitary_matrix);
     }
 
     return u_frame_result;

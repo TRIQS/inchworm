@@ -58,6 +58,7 @@ namespace inchworm {
 
       if (bl != bl_dag) return 0.; // important: there should be no finite terms of the hybridization between different [bl]ock.
       double dtau = tau_dag - tau;
+      //std::printf("salut % 4.8f  % 4.8f  % 4.8f \n",dtau, tau_dag, tau);
       if (dtau >= 0.) {
         //std::printf("test1: %d %d   % 4.8e\n", (hyb_tau[bl])(dtau)(in_dag, in), in_dag, in);
         return (hyb_tau[bl])(dtau)(in_dag, in);
