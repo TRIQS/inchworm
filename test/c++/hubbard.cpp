@@ -94,7 +94,7 @@ void self_consistent_hubbard(int n_site, int n_bath, int n_spin, double U, doubl
   // Solve Parameters
   solve_params_t sp;
   sp.h_int           = h_atom;
-  sp.n_cycles        = 500000;
+  sp.n_cycles        = 50000;
   sp.length_cycle    = 10;
   sp.n_warmup_cycles = 20;
   sp.max_time        = -1;
@@ -173,10 +173,10 @@ void self_consistent_hubbard(int n_site, int n_bath, int n_spin, double U, doubl
     print(u_tau, tau_max1);
   }
 
-  auto result_sc = S.solve_self_consistently(sp, u_tau, 2./NN, 3./NN);
+  //auto result_sc = S.solve_self_consistently(sp, u_tau, cp.beta*9./NN, cp.beta*10./NN);
   //auto result_sc = S.solve_self_consistently(sp, u_tau, tau_split, tau_max);
 
-  exit(0);
+  //exit(0);
   S.solve_inchworm(sp);
 
   //std::printf("\n\n");

@@ -71,7 +71,7 @@ namespace inchworm {
     //
     _h_loc = solve_params.h_int;
     h_diag = {_h_loc, fops, solve_params.quantum_numbers};
-    u_tau  = make_propagator(h_diag, constr_params.beta, constr_params.n_tau);
+    u_tau  = make_propagator(h_diag, constr_params.beta, 11);
     //print_eigensystems(h_diag);
   }
 
