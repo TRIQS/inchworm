@@ -12,6 +12,8 @@
 #include <triqs/utility/callbacks.hpp>
 #include <triqs/mc_tools/mc_generic.hpp>
 
+#define N_STEP 10
+
 namespace inchworm {
 
   solver_core::solver_core(constr_params_t const &p) : gf_struct(p.gf_struct), constr_params(p) {
@@ -71,7 +73,7 @@ namespace inchworm {
     //
     _h_loc = solve_params.h_int;
     h_diag = {_h_loc, fops, solve_params.quantum_numbers};
-    u_tau  = make_propagator(h_diag, constr_params.beta, 11);
+    u_tau  = make_propagator(h_diag, constr_params.beta, N_STEP+1);
     //print_eigensystems(h_diag);
   }
 
@@ -148,13 +150,13 @@ namespace inchworm {
     //double tau_max   = constr_params.beta;
     //double tau_split = constr_params.beta / 2;
     double beta = constr_params.beta;
-    int n_tau   = 10; // FIXME
+    //int n_tau   = 10; // FIXME
 
-    for (int n = 0; n < n_tau; n++) {
+    for (int n = 0; n < N_STEP; n++) {
       std::printf("\n\ninchworm step %d\n", n);
 
-      double tau_split = beta * (double) n / (double) n_tau;
-      double tau_max   = beta * (double) (n + 1) / (double)  n_tau;
+      double tau_split = beta * (double) n / (double) N_STEP;
+      double tau_max   = beta * (double) (n + 1) / (double)  N_STEP;
 
       bool use_bare_propagator = (n == 0);
       u_frame_bare             = make_bare_propagator_frame(h_diag, tau_max, false);
