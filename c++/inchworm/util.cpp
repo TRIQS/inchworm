@@ -129,10 +129,10 @@ namespace inchworm {
   u_frame_t partial_trace_bath(atom_diag const &ad_full, atom_diag const &ad_loc, atom_diag const &ad_bath, double beta, double dtau) {
     //TODO: incorporate in atom_diag and make it a member function: not possible anymore.
 
-    for (int i = 0; i < (int)ad_bath.get_fops().data().size(); i++) {
+    for (int i = 0; i < (int)ad_loc.get_fops().data().size(); i++) {
       //std::printf("%d %d \n", i, (int)ad_loc.get_fops().data().size());
-      if (ad_full.get_fops().data()[i] != ad_bath.get_fops().data()[i]) {
-        std::printf("error: the first indices of ad_full should be the same as the one in ad_bath (which means that baths should be all defined first).\n");
+      if (ad_full.get_fops().data()[i] != ad_loc.get_fops().data()[i]) {
+        std::printf("error: the first indices of ad_full should be the same as the one in ad_loc.\n");
         exit(1);
       }
 
@@ -143,7 +143,7 @@ namespace inchworm {
     //  std::cout << " " << ad_full.get_fops().data()[i] << "\n";
     //}
 
-    int linear_index = ad_bath.get_fops().data().size();
+    int linear_index = ad_loc.get_fops().data().size();
     //std::printf("li=%d\n",linear_index);
 
     u_frame_t u_frame_result = make_zero_propagator_frame(ad_loc);
@@ -202,13 +202,13 @@ namespace inchworm {
 
       //print_matrix(H);
       for (int i = 0; i < size; i++) {
-        uint64_t traced_idx1    = get_LSB(fs_full[s][i], linear_index); // the traced indices are the bath indices
-        uint64_t preserved_idx1 = get_MSB(fs_full[s][i], linear_index); // the preserved indices are the impurity indices
+        uint64_t traced_idx1    = get_MSB(fs_full[s][i], linear_index); // the traced indices are the bath indices
+        uint64_t preserved_idx1 = get_LSB(fs_full[s][i], linear_index); // the preserved indices are the impurity indices
         //std::printf("%u %u\n", traced_idx1, preserved_idx1);
 
         for (int j = 0; j < size; j++) {
-          uint64_t traced_idx2    = get_LSB(fs_full[s][j], linear_index);
-          uint64_t preserved_idx2 = get_MSB(fs_full[s][j], linear_index);
+          uint64_t traced_idx2    = get_MSB(fs_full[s][j], linear_index);
+          uint64_t preserved_idx2 = get_LSB(fs_full[s][j], linear_index);
           //std::printf(" %u %u\n", traced_idx2, preserved_idx2);
           if (traced_idx1 == traced_idx2) {
 

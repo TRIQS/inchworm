@@ -77,34 +77,15 @@ void self_consistent_hubbard(int n_site, int n_bath, int n_spin, double U, doubl
       for (int j = 0; j < n_site; j++) std::printf("%d %d % 4.8f\n", i, j, S.Delta_tau[block][cp.n_tau - 1](i, j));
   //exit(0);
 
-  auto h_int = 0 * n("up", 0);
-  for (int j = 0; j < n_bath; j++) {
-    h_int -= mu * n("up", j);
-
-    if (n_spin == 2) {
-      h_int -= mu * n("dn", j);
-      h_int += U * n("up", j) * n("dn", j);
-    }
-    for (int i = 0; i < n_site; i++) {
-      //for (int i = 0; i < n_site; i++) {
-      if (i != j) {
-        h_int -= t * c_dag("up", i) * c("up", j);
-        if (n_spin == 2) h_int -= t * c_dag("dn", i) * c("dn", j);
-      }
-    }
-  }
-
-  // note h_atom = h_int, except that the indices are not the same. Design problem, shoveled in the future.
   auto h_atom = 0 * n("up", 0);
-  for (int j = n_bath; j < n_bath + n_site; j++) {
+  for (int j = 0; j < n_site; j++) {
     h_atom -= mu * n("up", j);
 
     if (n_spin == 2) {
       h_atom -= mu * n("dn", j);
       h_atom += U * n("up", j) * n("dn", j);
     }
-    for (int i = n_bath; i < n_bath + n_site; i++) {
-      //for (int i = 0; i < n_site; i++) {
+    for (int i = 0; i < n_site; i++) {
       if (i != j) {
         h_atom -= t * c_dag("up", i) * c("up", j);
         if (n_spin == 2) h_atom -= t * c_dag("dn", i) * c("dn", j);
@@ -114,15 +95,13 @@ void self_consistent_hubbard(int n_site, int n_bath, int n_spin, double U, doubl
 
   // Compare against the reference data
   // h5diff("hubbard.out.h5", "hubbard.ref.h5")
-  auto [fops_int, qn_int] = make_fops(0, n_site, n_spin);
-  
   auto [fops_tot, qn_tot]   = make_fops(0, n_site + n_bath, n_spin);
-  auto [fops_atom, qn_atom] = make_fops(n_bath, n_bath + n_site, n_spin);
-  auto [fops_bath, qn_bath] = make_fops(0, n_bath, n_spin);
+  auto [fops_atom, qn_atom] = make_fops(0, n_site, n_spin);
+  auto [fops_bath, qn_bath] = make_fops(n_site, n_site + n_bath, n_spin);
 
   // Solve Parameters
   solve_params_t sp;
-  sp.h_int           = h_int;
+  sp.h_int           = h_atom;
   sp.n_cycles        = 5000;
   sp.length_cycle    = 10;
   sp.n_warmup_cycles = 20;
@@ -130,7 +109,7 @@ void self_consistent_hubbard(int n_site, int n_bath, int n_spin, double U, doubl
   sp.verbosity       = 3;
   sp.post_process    = true;
   sp.measure_sign    = true;
-  sp.quantum_numbers = qn_int;
+  sp.quantum_numbers = qn_atom;
   sp.random_seed     = 12345789 + 928374 * mpi::communicator().rank();
 
   /*
@@ -155,26 +134,26 @@ void self_consistent_hubbard(int n_site, int n_bath, int n_spin, double U, doubl
   //std::printf("%d %d %d\n",fops_tot.size(), fops_atom.size(), fops_bath.size());
 
   //std::printf("salut\n");
-  auto h_hyb  = 0.0 * n("up", n_site);
-  auto h_bath = 0.0 * n("up", 0);
+  auto h_hyb  = 0.0 * n("up", 0);
+  auto h_bath = 0.0 * n("up", n_site);
 
   //std::vector<many_body_op_t> qn_tot;
 
   for (int i = 0; i < n_site; i++) {
     for (int k = 0; k < n_bath; k++) {
-      h_hyb += theta(i, k) * (c_dag("up", i + n_bath) * c("up", k));
-      h_hyb += theta(i, k) * (c_dag("up", k) * c("up", i + n_bath));
+      h_hyb += theta(i, k) * (c_dag("up", i) * c("up", k + n_site));
+      h_hyb += theta(i, k) * (c_dag("up", k + n_site) * c("up", i));
       if (n_spin == 2) {
-        h_hyb += theta(i, k) * (c_dag("dn", i + n_bath) * c("dn", k));
-        h_hyb += theta(i, k) * (c_dag("dn", k) * c("dn", i + n_bath));
+        h_hyb += theta(i, k) * (c_dag("dn", i) * c("dn", k + n_site));
+        h_hyb += theta(i, k) * (c_dag("dn", k + n_site) * c("dn", i));
       }
     }
     //h_bath += mu * (n("up", i + n_site) + n("dn", i + n_site));
   }
 
   for (int k = 0; k < n_bath; k++) {
-    h_bath += epsilon(k) * n("up", k);
-    if (n_spin == 2) h_bath += epsilon(k) * n("dn", k);
+    h_bath += epsilon(k) * n("up", k + n_site);
+    if (n_spin == 2) h_bath += epsilon(k) * n("dn", k + n_site);
   }
 
   //std::printf("\n\n");
@@ -322,12 +301,13 @@ TEST(inchworm, Hubbard_1site_spinless) {
   cp.n_iw      = 250;
   //cp.n_step      = 250;
 
-  mat_t theta = {{1.5, -1.0, 1.7}};
+  mat_t theta   = {{1.5, -1.0, 1.7}};
   //vec_t epsilon = {0.0, 0.0, 0.0};
   vec_t epsilon = {-2.0, 0.4, 1.5};
   self_consistent_hubbard(1, 3, 1, 0.0, 0.0, 0.0, cp, theta, epsilon, cp.beta, cp.beta * 0.9);
   //self_consistent_hubbard(1, 3, 1, 0.0, 2.0, 0.0, cp, theta, epsilon, cp.beta, cp.beta * 0.9);
 }
+
 
 TEST(inchworm, Hubbard_1site) { 
 
@@ -357,7 +337,6 @@ TEST(inchworm, Hubbard_2sites) { // NOLINT
 }
 */
 
-//*
 TEST(inchworm, Hubbard_2sites) { // NOLINT
 
   constr_params_t cp;
@@ -373,6 +352,5 @@ TEST(inchworm, Hubbard_2sites) { // NOLINT
   //-->self_consistent_hubbard(2, 2, 2, 0.0, 0.0, 0.0, cp, theta, epsilon, cp.beta, cp.beta * 0.9);
   ///self_consistent_hubbard(2, 2, 2, 4.0, -2.0, 1.0, cp, theta, epsilon, cp.beta, cp.beta * 0.9);
 }
-//*/
 
 MAKE_MAIN
