@@ -32,13 +32,19 @@ using mat_t = triqs::arrays::array<double, 2>;
 using vec_t = triqs::arrays::array<double, 1>;
 
 // Prepare funcdamental operator set
-fundamental_operator_set make_fops(int idx1, int idx2, int n_spin) {
+std::pair<fundamental_operator_set, std::vector<many_body_op_t>> make_fops(int idx1, int idx2, int n_spin) {
   fundamental_operator_set fops;
+  std::vector<many_body_op_t> qn;
+  qn.resize(1);
   for (int i = idx1; i < idx2; i++) {
     fops.insert("up", i);
-    if (n_spin == 2) fops.insert("dn", i);
+    qn[0] += n("up", i);
+    if (n_spin == 2) {
+      fops.insert("dn", i);
+      qn[0] += n("dn", i);
+    }
   }
-  return fops;
+  return std::pair<fundamental_operator_set, std::vector<many_body_op_t>>(fops, qn);
 }
 
 void self_consistent_hubbard(int n_site, int n_bath, int n_spin, double U, double mu, double t, constr_params_t const &cp, mat_t const &theta,
@@ -71,19 +77,34 @@ void self_consistent_hubbard(int n_site, int n_bath, int n_spin, double U, doubl
       for (int j = 0; j < n_site; j++) std::printf("%d %d % 4.8f\n", i, j, S.Delta_tau[block][cp.n_tau - 1](i, j));
   //exit(0);
 
-  std::vector<many_body_op_t> qn;
-  qn.resize(1);
+  auto h_int = 0 * n("up", 0);
+  for (int j = 0; j < n_bath; j++) {
+    h_int -= mu * n("up", j);
+
+    if (n_spin == 2) {
+      h_int -= mu * n("dn", j);
+      h_int += U * n("up", j) * n("dn", j);
+    }
+    for (int i = 0; i < n_site; i++) {
+      //for (int i = 0; i < n_site; i++) {
+      if (i != j) {
+        h_int -= t * c_dag("up", i) * c("up", j);
+        if (n_spin == 2) h_int -= t * c_dag("dn", i) * c("dn", j);
+      }
+    }
+  }
+
+  // note h_atom = h_int, except that the indices are not the same. Design problem, shoveled in the future.
   auto h_atom = 0 * n("up", 0);
-  for (int j = 0; j < n_site; j++) {
-    qn[0] += n("up", j);
+  for (int j = n_bath; j < n_bath + n_site; j++) {
     h_atom -= mu * n("up", j);
 
     if (n_spin == 2) {
-      qn[0] += n("dn", j);
       h_atom -= mu * n("dn", j);
       h_atom += U * n("up", j) * n("dn", j);
     }
-    for (int i = 0; i < n_site; i++) {
+    for (int i = n_bath; i < n_bath + n_site; i++) {
+      //for (int i = 0; i < n_site; i++) {
       if (i != j) {
         h_atom -= t * c_dag("up", i) * c("up", j);
         if (n_spin == 2) h_atom -= t * c_dag("dn", i) * c("dn", j);
@@ -91,22 +112,26 @@ void self_consistent_hubbard(int n_site, int n_bath, int n_spin, double U, doubl
     }
   }
 
+  // Compare against the reference data
+  // h5diff("hubbard.out.h5", "hubbard.ref.h5")
+  auto [fops_int, qn_int] = make_fops(0, n_site, n_spin);
+  
+  auto [fops_tot, qn_tot]   = make_fops(0, n_site + n_bath, n_spin);
+  auto [fops_atom, qn_atom] = make_fops(n_bath, n_bath + n_site, n_spin);
+  auto [fops_bath, qn_bath] = make_fops(0, n_bath, n_spin);
+
   // Solve Parameters
   solve_params_t sp;
-  sp.h_int           = h_atom;
-  sp.n_cycles        = 50000;
+  sp.h_int           = h_int;
+  sp.n_cycles        = 5000;
   sp.length_cycle    = 10;
   sp.n_warmup_cycles = 20;
   sp.max_time        = -1;
   sp.verbosity       = 3;
   sp.post_process    = true;
   sp.measure_sign    = true;
-  sp.quantum_numbers = qn;
+  sp.quantum_numbers = qn_int;
   sp.random_seed     = 12345789 + 928374 * mpi::communicator().rank();
-
-  // Solve the impurity model
-  //auto result_cthyb = S.solve_single_step(sp, true, 0.0, tau_max);
-  //exit(0);
 
   /*
   double B         = tau_max * epsilon[0];
@@ -127,57 +152,63 @@ void self_consistent_hubbard(int n_site, int n_bath, int n_spin, double U, doubl
   std::printf("\n        sum:      % 4.8f     % 4.8f \n", 1. + U1[0], 1. + U1[1]);
   */
 
-  // Compare against the reference data
-  // h5diff("hubbard.out.h5", "hubbard.ref.h5")
-  auto fops_tot  = make_fops(0, n_site + n_bath, n_spin);
-  auto fops_atom = make_fops(0, n_site, n_spin);
-  auto fops_bath = make_fops(n_site, n_site + n_bath, n_spin);
+  //std::printf("%d %d %d\n",fops_tot.size(), fops_atom.size(), fops_bath.size());
 
   //std::printf("salut\n");
-  auto h_hyb  = 0.0 * n("up", 0);
+  auto h_hyb  = 0.0 * n("up", n_site);
   auto h_bath = 0.0 * n("up", 0);
+
+  //std::vector<many_body_op_t> qn_tot;
 
   for (int i = 0; i < n_site; i++) {
     for (int k = 0; k < n_bath; k++) {
-      h_hyb += theta(i, k) * (c_dag("up", i) * c("up", k + n_site));
-      h_hyb += theta(i, k) * (c_dag("up", k + n_site) * c("up", i));
+      h_hyb += theta(i, k) * (c_dag("up", i + n_bath) * c("up", k));
+      h_hyb += theta(i, k) * (c_dag("up", k) * c("up", i + n_bath));
       if (n_spin == 2) {
-        h_hyb += theta(i, k) * (c_dag("dn", i) * c("dn", k + n_site));
-        h_hyb += theta(i, k) * (c_dag("dn", k + n_site) * c("dn", i));
+        h_hyb += theta(i, k) * (c_dag("dn", i + n_bath) * c("dn", k));
+        h_hyb += theta(i, k) * (c_dag("dn", k) * c("dn", i + n_bath));
       }
     }
     //h_bath += mu * (n("up", i + n_site) + n("dn", i + n_site));
   }
 
   for (int k = 0; k < n_bath; k++) {
-    h_bath += epsilon(k) * n("up", k + n_site);
-    if (n_spin == 2) h_bath += epsilon(k) * n("dn", k + n_site);
+    h_bath += epsilon(k) * n("up", k);
+    if (n_spin == 2) h_bath += epsilon(k) * n("dn", k);
   }
 
   //std::printf("\n\n");
-  auto ad_tot  = triqs::atom_diag::atom_diag<false>(h_atom + h_bath + h_hyb, fops_tot);
-  auto ad_atom = triqs::atom_diag::atom_diag<false>(h_atom, fops_atom, qn);
-  auto ad_bath = triqs::atom_diag::atom_diag<false>(h_bath, fops_bath);
+  auto ad_tot  = triqs::atom_diag::atom_diag<false>(h_atom + h_bath + h_hyb, fops_tot, qn_tot);
+  auto ad_atom = triqs::atom_diag::atom_diag<false>(h_atom, fops_atom, qn_atom);
+  auto ad_bath = triqs::atom_diag::atom_diag<false>(h_bath, fops_bath, qn_bath);
   //auto ad_bath_full = triqs::atom_diag::atom_diag<false>(h_bath, fops_tot);
-  //print_eigensystems(ad_tot);
+  std::printf("ad_tot\n");
+  print_atom_diag(ad_tot);
+  std::printf("ad_atom\n");
+  print_atom_diag(ad_atom);
+  std::printf("ad_bath\n");
+  print_atom_diag(ad_bath);
 
   u_tau_t u_tau = make_ED_propagator(ad_tot, ad_atom, ad_bath, cp.beta, cp.n_tau);
+  //u_tau_t u_tau = make_ED_propagator(ad_tot, ad_atom, ad_bath, cp.beta, 2);
+  //exit(0);
   std::printf("\n##################\nexact U(beta):\n");
   print(u_tau, tau_max);
 
   int NN = 10;
 
-  for (int n = 0; n < NN; n++) {
-    std::printf("\n\ninchworm step ED %d\n", n);
-    double tau_max1   = cp.beta * (double)(n + 1) / (double)NN;
-    print(u_tau, tau_max1);
-  }
+  //for (int n = 0; n < NN; n++) {
+  //  std::printf("\n\ninchworm step ED %d\n", n);
+  //  double tau_max1   = cp.beta * (double)(n + 1) / (double)NN;
+  //  print(u_tau, tau_max1);
+  //}
 
-  //auto result_sc = S.solve_self_consistently(sp, u_tau, cp.beta*9./NN, cp.beta*10./NN);
-  //auto result_sc = S.solve_self_consistently(sp, u_tau, tau_split, tau_max);
+  // Solve the impurity model
+  auto result_cthyb = S.solve_single_step(sp, true, 0.0, tau_max);
+  auto result_sc    = S.solve_self_consistently(sp, u_tau, tau_split, tau_max);
 
   //exit(0);
-  S.solve_inchworm(sp);
+  //S.solve_inchworm(sp);
 
   //std::printf("\n\n");
   //print(u_tau, tau_split);
@@ -222,120 +253,10 @@ void self_consistent_hubbard(int n_site, int n_bath, int n_spin, double U, doubl
   double order_1[2];
   double order_2[2];
 
-  int N_tau = 4000;
-  for (int bl = 0; bl < 2; bl++) {
-    double integral = 0.0;
-    double dtau1    = tau_split / (N_tau - 1.);
-    double dtau2    = (tau_max - tau_split) / (N_tau - 1.);
-    for (int i_tau = 0; i_tau < N_tau; i_tau++) {
-      for (int j_tau = 0; j_tau < N_tau; j_tau++) {
-        double tau1 = (tau_split)*i_tau / (N_tau - 1.);
-        double tau2 = (tau_max - tau_split) * j_tau / (N_tau - 1.) + tau_split;
-
-        //if ((tau1 <= tau_split) and (tau_split <= tau2) and (tau2 < tau_max)) {
-        double factor = 1.0;
-        if (0 == i_tau) factor *= 0.5;
-        if (N_tau - 1 == i_tau) factor *= 0.5;
-        if (0 == j_tau) factor *= 0.5;
-        if (N_tau - 1 == j_tau) factor *= 0.5;
-
-        //std::printf("tau1 =% f, tau2 =% f  \n", tau1, tau2);
-        //std::printf("% f  % f  % f  % f \n", tau1, tau_split - tau1, tau2 - tau_split, tau_max - tau2);
-        //fflush(stdout);
-
-        //std::printf("salut\n"); fflush(stdout);
-        double u_tau1 = u_tau[bl](tau1 - 0.0)(0, 0);
-        double u_tau2 = u_tau[1 - bl](tau_split - tau1)(0, 0);
-        double u_tau3 = u_tau[1 - bl](tau2 - tau_split)(0, 0);
-        double u_tau4 = u_tau[bl](tau_max - tau2)(0, 0);
-
-        double w_hyb;
-        if (bl == 0)
-          w_hyb = S.Delta_tau[0](tau2 - tau1)(0, 0);
-        else
-          w_hyb = -S.Delta_tau[0](cp.beta + tau1 - tau2)(0, 0);
-
-        if (bl == 0) factor = -factor;
-        integral += factor * dtau1 * dtau2 * u_tau1 * u_tau2 * u_tau3 * u_tau4 * w_hyb;
-        //}
-      }
-    }
-    int sign    = -1;
-    order_0[bl] = (double)((u_tau[bl](tau_max - tau_split)(0, 0) * u_tau[bl](tau_split)(0, 0)));
-    order_1[bl] = integral;
-
-    //std::printf("\norder0 = %f  \n", order0);
-    //std::printf("order1 = %f  \n", integral);
-    //std::printf("\nsum = %f  \n", integral + order0);
-  }
   */
   /*
 
-  N_tau = 80;
-  for (int bl = 0; bl < 2; bl++) {
-    double integral = 0.0;
-    double dtau1    = tau_split / (N_tau - 1.);
-    double dtau2    = (tau_max - tau_split) / (N_tau - 1.);
-    for (int i_tau = 0; i_tau < N_tau; i_tau++) {
-      for (int j_tau = 0; j_tau < N_tau; j_tau++) {
-        for (int k_tau = 0; k_tau < N_tau; k_tau++) {
-          for (int l_tau = 0; l_tau < N_tau; l_tau++) {
-            double tau1  = (tau_split)*i_tau / (N_tau - 1.);
-            double tau1p = (tau_split)*j_tau / (N_tau - 1.);
-            double tau2  = (tau_max - tau_split) * k_tau / (N_tau - 1.) + tau_split;
-            double tau2p = (tau_max - tau_split) * l_tau / (N_tau - 1.) + tau_split;
-
-            if ((tau1 < tau1p) and (tau2 < tau2p)) {
-              double factor = 1.0;
-              if (0 == i_tau) factor *= 0.5;
-              if (0 == j_tau) factor *= 0.5;
-              if (0 == k_tau) factor *= 0.5;
-              if (0 == l_tau) factor *= 0.5;
-              if (N_tau - 1 == i_tau) factor *= 0.5;
-              if (N_tau - 1 == j_tau) factor *= 0.5;
-              if (N_tau - 1 == k_tau) factor *= 0.5;
-              if (N_tau - 1 == l_tau) factor *= 0.5;
-              //if (tau_split == tau1) factor *= 0.5;
-              //if (tau_split == tau2) factor *= 0.5;
-              //if (0.0 == tau1) factor *= 0.5;
-              //if (tau_max == tau2) factor *= 0.5;
-              //std::printf("tau1 =% f, tau2 =% f  \n", tau1, tau2);
-              //std::printf("% f  % f  % f  % f \n", tau1, tau_split - tau1, tau2 - tau_split, tau_max - tau2);
-              //fflush(stdout);
-
-              //std::printf("salut\n"); fflush(stdout);
-              double u_tau1 = u_tau[bl](tau1 - 0.0)(0, 0);
-              double u_tau2 = u_tau[1 - bl](tau1p - tau1)(0, 0);
-              double u_tau3 = u_tau[bl](tau_split - tau1p)(0, 0);
-              double u_tau4 = u_tau[bl](tau2 - tau_split)(0, 0);
-              double u_tau5 = u_tau[1 - bl](tau2p - tau2)(0, 0);
-              double u_tau6 = u_tau[bl](tau_max - tau2)(0, 0);
-
-              double w_hyb;
-              if (bl == 0)
-                w_hyb = S.Delta_tau[0](tau2p - tau1)(0, 0) * S.Delta_tau[0](cp.beta + tau1p - tau2)(0, 0);
-              else
-                w_hyb = S.Delta_tau[0](tau2 - tau1p)(0, 0) * S.Delta_tau[0](cp.beta + tau1 - tau2p)(0, 0);
-
-              integral += factor * dtau1 * dtau1 * dtau2 * dtau2 * u_tau1 * u_tau2 * u_tau3 * u_tau4 * u_tau5 * u_tau6 * w_hyb;
-            }
-          }
-        }
-      }
-    }
-    order_2[bl] = integral;
-    //std::printf("order2 = %f  \n", integral);
-  } 
-
-  for (int bl = 0; bl < 2; bl++) {
-    std::printf("\norder0 = %f", order_0[bl]);
-    std::printf("\norder1 = %f ", order_1[bl]);
-    std::printf("\norder2 = %f ", order_2[bl]);
-    std::printf("\nsum = %f  \n\n", order_0[bl] + order_1[bl] + order_2[bl]);
-  }
-
   //S.solve_inchworm(sp);
-
   
   double B   = tau_max * theta[0] / 2.;
   double t_s = tau_split * theta[0] / 2.;
@@ -391,6 +312,7 @@ void self_consistent_hubbard(int n_site, int n_bath, int n_spin, double U, doubl
   */
 }
 
+/*
 TEST(inchworm, Hubbard_1site_spinless) {
 
   constr_params_t cp;
@@ -400,14 +322,13 @@ TEST(inchworm, Hubbard_1site_spinless) {
   cp.n_iw      = 250;
   //cp.n_step      = 250;
 
-  mat_t theta   = {{1.5, -1.0, 1.7}};
+  mat_t theta = {{1.5, -1.0, 1.7}};
   //vec_t epsilon = {0.0, 0.0, 0.0};
   vec_t epsilon = {-2.0, 0.4, 1.5};
   self_consistent_hubbard(1, 3, 1, 0.0, 0.0, 0.0, cp, theta, epsilon, cp.beta, cp.beta * 0.9);
   //self_consistent_hubbard(1, 3, 1, 0.0, 2.0, 0.0, cp, theta, epsilon, cp.beta, cp.beta * 0.9);
 }
 
-/*
 TEST(inchworm, Hubbard_1site) { 
 
   constr_params_t cp;
@@ -434,7 +355,9 @@ TEST(inchworm, Hubbard_2sites) { // NOLINT
   triqs::arrays::array<double, 1> epsilon = {0.9, -0.3};
   self_consistent_hubbard(2, 2, 1, 4.0, -3.0, 1.0, cp, theta, epsilon, cp.beta, cp.beta * 0.9);
 }
+*/
 
+//*
 TEST(inchworm, Hubbard_2sites) { // NOLINT
 
   constr_params_t cp;
@@ -444,12 +367,12 @@ TEST(inchworm, Hubbard_2sites) { // NOLINT
   cp.n_tau     = 500;
   cp.n_iw      = 250;
 
-  triqs::arrays::array<double, 2> theta   = {{-0.5, 0.3}, {-0.2, 1.0}};
-  triqs::arrays::array<double, 1> epsilon = {0.0, 0.0};
-  self_consistent_hubbard(2, 2, 2, 0.0, 0.0, 0.0, cp, theta, epsilon, cp.beta, cp.beta * 0.9);
+  triqs::arrays::array<double, 2> theta   = {{1.0, 0.0, 0.0}, {1.0, 0.0, 0.0}};
+  triqs::arrays::array<double, 1> epsilon = {0.0, 0.0, 0.0};
+  self_consistent_hubbard(2, 1, 2, 0.0, 0.0, 0.0, cp, theta, epsilon, cp.beta, cp.beta * 0.9);
   //-->self_consistent_hubbard(2, 2, 2, 0.0, 0.0, 0.0, cp, theta, epsilon, cp.beta, cp.beta * 0.9);
   ///self_consistent_hubbard(2, 2, 2, 4.0, -2.0, 1.0, cp, theta, epsilon, cp.beta, cp.beta * 0.9);
 }
-*/
+//*/
 
 MAKE_MAIN

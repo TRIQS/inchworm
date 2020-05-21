@@ -1,6 +1,22 @@
 #include "./util.hpp"
 
+#define NUM_BITS 10
+
 namespace inchworm {
+
+  uint64_t get_MSB(uint64_t a, int shift) {
+    //std::printf("\nMSB %d ", shift);
+    //print_binary(a, NUM_BITS);
+    //print_binary(a >> shift, NUM_BITS - shift);
+    return (a >> shift);
+  }
+
+  uint64_t get_LSB(uint64_t a, int shift) {
+    //std::printf("\nLSB %d ", shift);
+    //print_binary(a, NUM_BITS);
+    //print_binary((a % (1 << shift)), shift);
+    return (a % (1 << shift));
+  }
 
   void print_energies(std::vector<std::vector<double>> const &E) {
     for (auto sp : E) {
@@ -25,15 +41,38 @@ namespace inchworm {
     std::printf("\n");
   }
 
+  void print_atom_diag(atom_diag const &ad) {
+
+    int N = 0;
+    for (int s = 0; s < ad.n_subspaces(); s++) {
+      auto sp     = ad.get_eigensystems()[s];
+      auto E_Udag = dagger(sp.unitary_matrix);
+      for (int i = 0; i < sp.eigenvalues.size(); i++) {
+        for (int j = 0; j < sp.eigenvalues.size(); j++) E_Udag(i, j) *= sp.eigenvalues[i] + ad.get_gs_energy();
+      }
+      auto H = sp.unitary_matrix * E_Udag;
+
+      std::printf("\nblock: %d \n   ", N++);
+      auto fss = ad.get_fock_states()[s];
+      for (int i = 0; i < ad.get_subspace_dim(s); i++) {
+        printf("  ");
+        print_binary(fss[i], ad.get_fops().data().size());
+      }
+      std::printf("\n");
+      print_matrix(H);
+    }
+    std::printf("\n");
+  }
+
   void print_matrix(triqs::arrays::matrix<double> m) {
 
     for (int i = 0; i < first_dim(m); i++) {
       std::printf("\n [");
       for (int j = 0; j < second_dim(m); j++) {
         if (std::abs(m(i, j)) < 1e-12)
-          std::printf("      .      ");
+          std::printf("    .    ");
         else
-          std::printf("% 13.6f", m(i, j));
+          std::printf("% 9.4f", m(i, j));
       }
       std::printf("]");
     }
@@ -63,51 +102,6 @@ namespace inchworm {
     }
   }
 
-  /// Partial sum, tracing over indices above linear_index. Only the linear_index first degrees of freedom will be preserved.
-  /**
-     * @param ad atom_diag of the system considered here.
-     * @param linear_index The linear index (i.e. number) of fundamental operator to be perserved, as defined by the fundamental operator set.
-     * @param fct Function to be applied to eigenvalues in atom_diag.
-     * @return The partial sum matrix of a function the Hamiltonian.
-     */
-  triqs::arrays::matrix<double> partial_sum(atom_diag const &ad, int linear_index, std::function<double(double)> fct) {
-    //TODO: incorporate in atom_diag and make it a member function.
-    int dim_partial = (1 << linear_index);
-    //int dim_full    = ad.get_full_hilbert_space_dim();
-    //int factor      = 1;//dim_full / dim_partial;
-    //EXPECTS(dim_partial < dim_full);
-    //EXPECTS(dim_full % dim_partial == 0);
-
-    triqs::arrays::matrix<double> partial_sum(dim_partial, dim_partial);
-    partial_sum = 0;
-
-    auto es = ad.get_eigensystems();
-    auto fs = ad.get_fock_states();
-    EXPECTS(es.size() == fs.size());
-
-    for (int s = 0; s < ad.n_subspaces(); s++) {
-      EXPECTS(es[s].eigenvalues.size() == fs[s].size());
-      int size    = ad.get_subspace_dim(s);
-      auto E_Udag = dagger(es[s].unitary_matrix);
-      for (int i = 0; i < size; i++)
-        for (int j = 0; j < size; j++) E_Udag(i, j) *= fct(es[s].eigenvalues[i] + ad.get_gs_energy());
-      auto H = es[s].unitary_matrix * E_Udag;
-
-      for (int i = 0; i < size; i++) {
-        uint64_t traced_idx1    = get_MSB(fs[s][i], linear_index);
-        uint64_t preserved_idx1 = get_LSB(fs[s][i], linear_index);
-
-        for (int j = 0; j < size; j++) {
-          uint64_t traced_idx2    = get_MSB(fs[s][j], linear_index);
-          uint64_t preserved_idx2 = get_LSB(fs[s][j], linear_index);
-          if (traced_idx1 == traced_idx2) { partial_sum(preserved_idx1, preserved_idx2) += H(i, j); } // / factor; }
-        }
-      }
-    }
-    //std::printf("factor = %d, dim_full= %d, dim_partial= %d\n", factor, dim_full, dim_partial);
-    return partial_sum;
-  }
-
   std::pair<int, int> find_index(int number, std::vector<std::vector<fock_state_t>> fs) {
     for (int s = 0; s < fs.size(); s++) {
       for (int i = 0; i < fs[s].size(); i++) {
@@ -133,12 +127,12 @@ namespace inchworm {
   }
 
   u_frame_t partial_trace_bath(atom_diag const &ad_full, atom_diag const &ad_loc, atom_diag const &ad_bath, double beta, double dtau) {
-    //TODO: incorporate in atom_diag and make it a member function.
+    //TODO: incorporate in atom_diag and make it a member function: not possible anymore.
 
-    for (int i = 0; i < (int)ad_loc.get_fops().data().size(); i++) {
+    for (int i = 0; i < (int)ad_bath.get_fops().data().size(); i++) {
       //std::printf("%d %d \n", i, (int)ad_loc.get_fops().data().size());
-      if (ad_full.get_fops().data()[i] != ad_loc.get_fops().data()[i]) {
-        std::printf("error: the first indices of ad_full should be the same as the one in ad_loc.\n");
+      if (ad_full.get_fops().data()[i] != ad_bath.get_fops().data()[i]) {
+        std::printf("error: the first indices of ad_full should be the same as the one in ad_bath (which means that baths should be all defined first).\n");
         exit(1);
       }
 
@@ -149,13 +143,13 @@ namespace inchworm {
     //  std::cout << " " << ad_full.get_fops().data()[i] << "\n";
     //}
 
-    int linear_index = ad_loc.get_fops().data().size();
+    int linear_index = ad_bath.get_fops().data().size();
     //std::printf("li=%d\n",linear_index);
 
     u_frame_t u_frame_result = make_zero_propagator_frame(ad_loc);
     auto es_full             = ad_full.get_eigensystems();
     auto fs_full             = ad_full.get_fock_states();
-    auto fs_target           = ad_loc.get_fock_states();
+    auto fs_loc              = ad_loc.get_fock_states();
     auto es_bath             = ad_bath.get_eigensystems();
     auto fs_bath             = ad_bath.get_fock_states();
 
@@ -173,13 +167,13 @@ namespace inchworm {
     //print_eigensystems(ad_loc);
     for (int s = 0; s < ad_loc.n_subspaces(); s++) {
       for (int i = 0; i < ad_loc.get_subspace_dim(s); i++) {
-        printf("  %2lu: ", fs_target[s][i]);
-        print_binary(fs_target[s][i], ad_loc.get_fops().data().size());
+        printf("  %2lu: ", fs_loc[s][i]);
+        print_binary(fs_loc[s][i], ad_loc.get_fops().data().size());
       }
       std::cout << "\n";
     }
+    */
     //return 0.0;
-//*/
 
     for (int s = 0; s < ad_full.n_subspaces(); s++) {
       EXPECTS(es_full[s].eigenvalues.size() == fs_full[s].size());
@@ -193,24 +187,33 @@ namespace inchworm {
       }
       //std::printf("\n");
       auto H = es_full[s].unitary_matrix * E_Udag;
+
+      std::printf("\nH[%d] %d \n   ", s);
+      auto fss = ad_full.get_fock_states()[s];
+      for (int i = 0; i < ad_full.get_subspace_dim(s); i++) {
+        printf("  ");
+        print_binary(fss[i], ad_full.get_fops().data().size());
+      }
+    
+      print_matrix(H);
       //for (int i = 0; i < size; i++) {
       //  for (int j = 0; j < size; j++) H(i, j) *= std::exp(-dtau * (es_bath_full[s].eigenvalues[i] + ad_bath_full.get_gs_energy()));
       //}
 
       //print_matrix(H);
       for (int i = 0; i < size; i++) {
-        uint64_t traced_idx1    = get_MSB(fs_full[s][i], linear_index); // the traced indices are the bath indices
-        uint64_t preserved_idx1 = get_LSB(fs_full[s][i], linear_index); // the preserved indices are the impurity indices
+        uint64_t traced_idx1    = get_LSB(fs_full[s][i], linear_index); // the traced indices are the bath indices
+        uint64_t preserved_idx1 = get_MSB(fs_full[s][i], linear_index); // the preserved indices are the impurity indices
         //std::printf("%u %u\n", traced_idx1, preserved_idx1);
 
         for (int j = 0; j < size; j++) {
-          uint64_t traced_idx2    = get_MSB(fs_full[s][j], linear_index);
-          uint64_t preserved_idx2 = get_LSB(fs_full[s][j], linear_index);
+          uint64_t traced_idx2    = get_LSB(fs_full[s][j], linear_index);
+          uint64_t preserved_idx2 = get_MSB(fs_full[s][j], linear_index);
           //std::printf(" %u %u\n", traced_idx2, preserved_idx2);
           if (traced_idx1 == traced_idx2) {
 
-            auto [s1, i1] = find_index(preserved_idx1, fs_target);
-            auto [s2, i2] = find_index(preserved_idx2, fs_target);
+            auto [s1, i1] = find_index(preserved_idx1, fs_loc);
+            auto [s2, i2] = find_index(preserved_idx2, fs_loc);
 
             auto [s3, i3] = find_index(traced_idx1, fs_bath);
             auto [s4, i4] = find_index(traced_idx2, fs_bath);
@@ -230,6 +233,14 @@ namespace inchworm {
 
     // basis transformation to the atom_diag of the impurity
     for (int s1 = 0; s1 < ad_loc.n_subspaces(); s1++) {
+      std::printf("\nu[%d] \n   ", s1);
+      auto fss1 = ad_loc.get_fock_states()[s1];
+      for (int i = 0; i < ad_loc.get_subspace_dim(s1); i++) {
+        printf("  ");
+        print_binary(fss1[i], ad_loc.get_fops().data().size());
+      }
+      std::printf("\n");
+      print_matrix(u_frame_result[s1]);
       u_frame_result[s1] =
          ((ad_loc.get_eigensystems())[s1].unitary_matrix * u_frame_result[s1]) * dagger((ad_loc.get_eigensystems())[s1].unitary_matrix);
     }

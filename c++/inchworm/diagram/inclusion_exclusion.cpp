@@ -47,6 +47,7 @@ namespace inchworm::diagram {
     std::vector<segment_t> seg_list;
     int N = diagram.op_list.size();
 
+    //std::printf("split point: %d \n",diagram.split_points[0]);
     int N_segment = 0;
     for (int i = 0; i < N - 1; i++)                           //starting position of segment
       for (int a = smallest_segment; a < N - i + 1; a += 2) { //length of segment

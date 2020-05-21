@@ -46,10 +46,10 @@ void compare_both_methods(std::vector<double> &tau1, std::vector<double> &tau2, 
 
   //int N_proper = find_proper_diagrams(diagram);
   //hyb_mat.print();
-  scalar_t value_proper = proper_enum(diagram, hyb_mat, 1);
+  scalar_t value_proper = proper_enum(diagram, hyb_mat, 2);
   //std::printf("c_k = % 4.6e\n", value_proper);
 
-  scalar_t value_inclus = inclusion_exclusion(diagram, hyb_mat, 1);
+  scalar_t value_inclus = inclusion_exclusion(diagram, hyb_mat, 2);
   //std::printf("c_k = % 4.6e\n\n\n", value_inclus);
 
   std::printf("proper-enum         c_k = % 4.6e\n", value_proper);
