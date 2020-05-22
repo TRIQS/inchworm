@@ -188,6 +188,7 @@ namespace inchworm {
       //std::printf("\n");
       auto H = es_full[s].unitary_matrix * E_Udag;
 
+      /*
       std::printf("\nH[%d] %d \n   ", s);
       auto fss = ad_full.get_fock_states()[s];
       for (int i = 0; i < ad_full.get_subspace_dim(s); i++) {
@@ -196,6 +197,8 @@ namespace inchworm {
       }
     
       print_matrix(H);
+      */
+
       //for (int i = 0; i < size; i++) {
       //  for (int j = 0; j < size; j++) H(i, j) *= std::exp(-dtau * (es_bath_full[s].eigenvalues[i] + ad_bath_full.get_gs_energy()));
       //}
@@ -233,6 +236,7 @@ namespace inchworm {
 
     // basis transformation to the atom_diag of the impurity
     for (int s1 = 0; s1 < ad_loc.n_subspaces(); s1++) {
+      /*
       std::printf("\nu[%d] \n   ", s1);
       auto fss1 = ad_loc.get_fock_states()[s1];
       for (int i = 0; i < ad_loc.get_subspace_dim(s1); i++) {
@@ -241,6 +245,7 @@ namespace inchworm {
       }
       std::printf("\n");
       print_matrix(u_frame_result[s1]);
+      */
       u_frame_result[s1] =
          ((ad_loc.get_eigensystems())[s1].unitary_matrix * u_frame_result[s1]) * dagger((ad_loc.get_eigensystems())[s1].unitary_matrix);
     }

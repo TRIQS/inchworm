@@ -205,7 +205,8 @@ namespace inchworm::diagram {
 
     for (auto subs : set_disjoint_list) {
       if ((not special) and not((segments_list[segment_numero].pos1 <= subs.pos1) and (segments_list[segment_numero].pos2 > subs.pos2))) continue;
-      if (special and (subs.list.size() == 1)
+      
+      if (special and (subs.list.size() == 1) // this is the special case where we evaluate the full segment (at the end). We still need to exclude the itself.
           and ((segments_list[segment_numero].pos1 == subs.pos1) and (segments_list[segment_numero].pos2 == subs.pos2)))
         continue; // this is tricky, might have to change this at some point
 

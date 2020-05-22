@@ -32,18 +32,22 @@ using mat_t = triqs::arrays::array<double, 2>;
 using vec_t = triqs::arrays::array<double, 1>;
 
 // Prepare funcdamental operator set
-std::pair<fundamental_operator_set, std::vector<many_body_op_t>> make_fops(int idx1, int idx2, int n_spin) {
+std::pair<fundamental_operator_set, std::vector<many_body_op_t>> make_fops(int n_site, int n_bath, int linear_index, int n_spin) {
   fundamental_operator_set fops;
   std::vector<many_body_op_t> qn;
   qn.resize(1);
-  for (int i = idx1; i < idx2; i++) {
-    fops.insert("up", i);
-    qn[0] += n("up", i);
-    if (n_spin == 2) {
-      fops.insert("dn", i);
-      qn[0] += n("dn", i);
+  for (int spin = 0; spin < n_spin; spin++)
+    for (int i = 0; i < n_site; i++) {
+      auto sp = ((spin == 0) ? "up" : "dn");
+      fops.insert(sp, i);
+      qn[0] += n(sp, i);
     }
-  }
+  for (int spin = 0; spin < n_spin; spin++)
+    for (int i = linear_index; i < linear_index + n_bath; i++) {
+      auto sp = ((spin == 0) ? "up" : "dn");
+      fops.insert(sp, i);
+      qn[0] += n(sp, i);
+    }
   return std::pair<fundamental_operator_set, std::vector<many_body_op_t>>(fops, qn);
 }
 
@@ -95,9 +99,9 @@ void self_consistent_hubbard(int n_site, int n_bath, int n_spin, double U, doubl
 
   // Compare against the reference data
   // h5diff("hubbard.out.h5", "hubbard.ref.h5")
-  auto [fops_tot, qn_tot]   = make_fops(0, n_site + n_bath, n_spin);
-  auto [fops_atom, qn_atom] = make_fops(0, n_site, n_spin);
-  auto [fops_bath, qn_bath] = make_fops(n_site, n_site + n_bath, n_spin);
+  auto [fops_tot, qn_tot]   = make_fops(n_site, n_bath, n_site, n_spin);
+  auto [fops_atom, qn_atom] = make_fops(n_site, 0, n_site, n_spin);
+  auto [fops_bath, qn_bath] = make_fops(0, n_bath, n_site, n_spin);
 
   // Solve Parameters
   solve_params_t sp;
@@ -346,9 +350,9 @@ TEST(inchworm, Hubbard_2sites) { // NOLINT
   cp.n_tau     = 500;
   cp.n_iw      = 250;
 
-  triqs::arrays::array<double, 2> theta   = {{1.0, 0.0, 0.0}, {1.0, 0.0, 0.0}};
+  triqs::arrays::array<double, 2> theta   = {{-0.2, 0.3, -0.9}, {0.9, 0.4, 1.0}};
   triqs::arrays::array<double, 1> epsilon = {0.0, 0.0, 0.0};
-  self_consistent_hubbard(2, 1, 2, 0.0, 0.0, 0.0, cp, theta, epsilon, cp.beta, cp.beta * 0.9);
+  self_consistent_hubbard(2, 2, 2, 0.0, 0.0, 0.0, cp, theta, epsilon, cp.beta, cp.beta * 0.9);
   //-->self_consistent_hubbard(2, 2, 2, 0.0, 0.0, 0.0, cp, theta, epsilon, cp.beta, cp.beta * 0.9);
   ///self_consistent_hubbard(2, 2, 2, 4.0, -2.0, 1.0, cp, theta, epsilon, cp.beta, cp.beta * 0.9);
 }
