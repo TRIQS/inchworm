@@ -161,10 +161,11 @@ void self_consistent_hubbard(int n_site, int n_bath, int n_spin, double U, doubl
   }
 
   //std::printf("\n\n");
-  auto ad_tot  = triqs::atom_diag::atom_diag<false>(h_atom + h_bath + h_hyb, fops_tot, qn_tot);
+  auto ad_tot  = triqs::atom_diag::atom_diag<false>(h_atom + h_bath + h_hyb, fops_tot);
   auto ad_atom = triqs::atom_diag::atom_diag<false>(h_atom, fops_atom, qn_atom);
-  auto ad_bath = triqs::atom_diag::atom_diag<false>(h_bath, fops_bath, qn_bath);
+  auto ad_bath = triqs::atom_diag::atom_diag<false>(h_bath, fops_bath);
   //auto ad_bath_full = triqs::atom_diag::atom_diag<false>(h_bath, fops_tot);
+
   std::printf("ad_tot\n");
   print_atom_diag(ad_tot);
   std::printf("ad_atom\n");
@@ -197,7 +198,11 @@ void self_consistent_hubbard(int n_site, int n_bath, int n_spin, double U, doubl
   //print(u_tau, tau_split);
   //u_tau[bl][cp.n_tau];
 
-  //for (int bl = 0; bl < result_sc.u_frame.size(); bl++) EXPECT_NEAR(u_tau[bl][cp.n_tau](0,0), result_sc.u_frame[bl](0,0), 0.1);
+  //((matrix_t) u_tau[0][cp.n_tau-1]).hello();
+  //result_sc.u_frame[0].hello();
+
+  //for (int bl = 0; bl < result_sc.u_frame.size(); bl++) EXPECT_ARRAY_NEAR(((matrix_t)u_tau[bl][cp.n_tau - 1]), result_cthyb.u_frame[bl], 0.3);
+  //for (int bl = 0; bl < result_sc.u_frame.size(); bl++) EXPECT_ARRAY_NEAR(((matrix_t)u_tau[bl][cp.n_tau - 1]), result_sc.u_frame[bl], 0.1);
 
   /*
   mat_t theta1= {{3,4},{4,8}};
@@ -305,7 +310,7 @@ TEST(inchworm, Hubbard_1site_spinless) {
   cp.n_iw      = 250;
   //cp.n_step      = 250;
 
-  mat_t theta   = {{1.5, -1.0, 1.7}};
+  mat_t theta = {{1.5, -1.0, 1.7}};
   //vec_t epsilon = {0.0, 0.0, 0.0};
   vec_t epsilon = {-2.0, 0.4, 1.5};
   self_consistent_hubbard(1, 3, 1, 0.0, 0.0, 0.0, cp, theta, epsilon, cp.beta, cp.beta * 0.9);
@@ -313,18 +318,18 @@ TEST(inchworm, Hubbard_1site_spinless) {
 }
 //*/
 
-//*
-TEST(inchworm, Hubbard_1site) { 
+/*
+TEST(inchworm, Hubbard_1site) {
 
   constr_params_t cp;
   cp.beta      = 2.0;
   cp.gf_struct = {{"up", {0}}, {"dn", {0}}};
-  cp.n_tau = 500;
-  cp.n_iw  = 250;
-  
+  cp.n_tau     = 500;
+  cp.n_iw      = 250;
+
   mat_t theta   = {{0.9, -1.0, 1.1}};
-  vec_t epsilon = {-2.0, 0.4, 1.5};
-  self_consistent_hubbard(1, 3, 2, 0.0, 0.0, 0.0, cp, theta, epsilon, cp.beta, cp.beta*0.9);
+  vec_t epsilon = {1.0,-2.0,0.0};
+  self_consistent_hubbard(1, 3, 2, 4.0, -2.0, 0.0, cp, theta, epsilon, cp.beta, cp.beta * 0.9);
 }
 //*/
 
@@ -344,7 +349,7 @@ TEST(inchworm, Hubbard_2sites) { // NOLINT
 }
 //*/
 
-/*
+//*
 TEST(inchworm, Hubbard_2sites) { // NOLINT
 
   constr_params_t cp;
@@ -354,11 +359,10 @@ TEST(inchworm, Hubbard_2sites) { // NOLINT
   cp.n_tau     = 500;
   cp.n_iw      = 250;
 
-  triqs::arrays::array<double, 2> theta   = {{-0.2, 0.3, -0.9}, {0.9, 0.4, 1.0}};
-  triqs::arrays::array<double, 1> epsilon = {0.0, 0.0, 0.0};
-  self_consistent_hubbard(2, 2, 2, 0.0, 0.0, 0.0, cp, theta, epsilon, cp.beta, cp.beta * 0.9);
-  //-->self_consistent_hubbard(2, 2, 2, 0.0, 0.0, 0.0, cp, theta, epsilon, cp.beta, cp.beta * 0.9);
-  ///self_consistent_hubbard(2, 2, 2, 4.0, -2.0, 1.0, cp, theta, epsilon, cp.beta, cp.beta * 0.9);
+  triqs::arrays::array<double, 2> theta   = {{-0.0, 0.3, -0.9}, {0.0, 0.4, 1.0}};
+  triqs::arrays::array<double, 1> epsilon = {0.0, -1.0, 1.2};
+  //self_consistent_hubbard(2, 2, 2, 0.0, 0.0, 0.0, cp, theta, epsilon, cp.beta, cp.beta * 0.9);
+  self_consistent_hubbard(2, 1, 2, 4.0, 0.0, 0.0, cp, theta, epsilon, cp.beta, cp.beta * 0.9);
 }
 //*/
 
