@@ -200,7 +200,11 @@ namespace inchworm {
 
   void single_step_results_t::print() {
 
-    for (auto &Bl : u_frame) { print_matrix(Bl); }
+    for (auto Bl: u_frame) {
+    //for (int bl; bl < u_frame.size(); bl++) {
+      //print_fundamental_operator_set();
+      print_matrix(Bl);
+    }
 
     std::printf("\n\norder breakdown: \n");
     for (auto &o : samples_expansion_order) std::printf("%16d ", o);

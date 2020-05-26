@@ -85,6 +85,21 @@ namespace inchworm {
     //std::printf("\n\n");
   }
 
+  /*
+  void print_fundamental_operator_set(fundamental_operator_set const &fops) {
+
+    for (int s = 0; s < fops.size(); s++) {
+      std::printf("\n%d: \n   ", s);
+      //auto fss = ad.get_fock_states()[s];
+      for (int i = 0; i < fops[s].size(); i++) {
+        printf("  ");
+        print_binary(fops[s][i], fops.data().size());
+      }
+      std::printf("\n");
+    }
+  }
+  */
+
   void print_binary(unsigned int n, int total_bits) {
     if (n >= 0) {
 
@@ -227,7 +242,7 @@ namespace inchworm {
             }
 
             // the exponential function factor corresponds to e^[-(beta - tau) * H_bath]
-            u_frame_result[s1](i1, i2) += H(i, j) * std::exp(-(beta - dtau) * (es_bath[s3].eigenvalues[i3] + ad_bath.get_gs_energy()));
+            u_frame_result[s2](i1, i2) += H(i, j) * std::exp(-(beta - dtau) * (es_bath[s3].eigenvalues[i3] + ad_bath.get_gs_energy()));
 
           } // partial_sum(preserved_idx1, preserved_idx2) += H(i, j); }
         }
@@ -247,7 +262,7 @@ namespace inchworm {
       print_matrix(u_frame_result[s1]);
       */
       u_frame_result[s1] =
-         ((ad_loc.get_eigensystems())[s1].unitary_matrix * u_frame_result[s1]) * dagger((ad_loc.get_eigensystems())[s1].unitary_matrix);
+         dagger((ad_loc.get_eigensystems())[s1].unitary_matrix) * u_frame_result[s1] * ((ad_loc.get_eigensystems())[s1].unitary_matrix);
     }
 
     return u_frame_result;

@@ -33,5 +33,6 @@ namespace inchworm {
   void print_eigensystems(atom_diag const &ad);
   void print_atom_diag(atom_diag const &ad);
   void print_matrix(triqs::arrays::matrix<double> m);
+  //void print_fundamental_operator_set(fundamental_operator_set const &fops);
 
 } // namespace inchworm
