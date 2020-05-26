@@ -64,25 +64,19 @@ namespace inchworm {
     std::printf("\n");
   }
 
-  void print_matrix(triqs::arrays::matrix<double> m) {
+  void print_matrix(triqs::arrays::matrix<double> m, scalar_t factor) {
 
     for (int i = 0; i < first_dim(m); i++) {
       std::printf("\n [");
       for (int j = 0; j < second_dim(m); j++) {
-        if (std::abs(m(i, j)) < 1e-12)
-          std::printf("    .    ");
+        if (std::abs(m(i, j)) < 1e-100)
+          std::printf("   .      ");
         else
-          std::printf("% 9.4f", m(i, j));
+          std::printf("% 10.2e", m(i, j)*factor);
       }
       std::printf("]");
     }
     std::printf("\n");
-
-    //for (int i = 0; i < first_dim(m); i++) {
-    //  for (int j = 0; j < second_dim(m); j++) { std::printf("% 5.6f ", m(i, j)); }
-    //  std::printf("\n");
-    //}
-    //std::printf("\n\n");
   }
 
   /*

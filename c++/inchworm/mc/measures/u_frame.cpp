@@ -19,8 +19,8 @@ namespace inchworm::measures {
     //int factor = 1;
     //scalar_t cte = std::pow(qmc_config_data.normalization_cte, qmc_config_data.config.size());
     int f1 = factorial(qmc_config_data.config.size());
-    double factor = 1.;//(double) factorial(2*qmc_config_data.config.size())/ ((double) f1*f1);
-    scalar_t s = sign / (qmc_config_data.w.loc*factor);
+    //double factor = 1.;//(double) factorial(2*qmc_config_data.config.size())/ ((double) f1*f1);
+    scalar_t s = sign / (qmc_config_data.w.loc);//*factor);
     if (qmc_config_data.config.size() < MAX_ORDER) {
       results.u_expansion_order[qmc_config_data.config.size()] += s * qmc_config_data.u_frame[0](0, 0);
     }

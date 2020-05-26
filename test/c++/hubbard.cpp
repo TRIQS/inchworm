@@ -106,7 +106,7 @@ void self_consistent_hubbard(int n_site, int n_bath, int n_spin, double U, doubl
   // Solve Parameters
   solve_params_t sp;
   sp.h_int           = h_atom;
-  sp.n_cycles        = 50000;
+  sp.n_cycles        = 500000;
   sp.length_cycle    = 10;
   sp.n_warmup_cycles = 20;
   sp.max_time        = -1;
@@ -353,16 +353,16 @@ TEST(inchworm, Hubbard_2sites) { // NOLINT
 TEST(inchworm, Hubbard_2sites) { // NOLINT
 
   constr_params_t cp;
-  cp.beta = 2.0;
+  cp.beta = 10.0;
   //cp.gf_struct = {{"up", {0, 1}}};
   cp.gf_struct = {{"up", {0, 1}}, {"dn", {0, 1}}};
   cp.n_tau     = 500;
   cp.n_iw      = 250;
 
-  triqs::arrays::array<double, 2> theta   = {{-1.2, 0.3, -0.9}, {1.3, 0.4, 1.0}};
-  triqs::arrays::array<double, 1> epsilon = {2.0, -1.0, 1.2};
+  triqs::arrays::array<double, 2> theta   = {{0.1, -0.3, -0.4}, {0.1, 0.2, 0.4}};
+  triqs::arrays::array<double, 1> epsilon = {1.0, -1.0, 1.2};
   //self_consistent_hubbard(2, 2, 2, 0.0, 0.0, 0.0, cp, theta, epsilon, cp.beta, cp.beta * 0.9);
-  self_consistent_hubbard(2, 1, 2, 4.0, 1.0, 0.0, cp, theta, epsilon, cp.beta, cp.beta * 0.9);
+  self_consistent_hubbard(2, 3, 2, 4.0, -1.0, 1.0, cp, theta, epsilon, cp.beta, cp.beta * 0.9);
 }
 //*/
 

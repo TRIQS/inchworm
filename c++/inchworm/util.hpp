@@ -32,7 +32,7 @@ namespace inchworm {
   void print_energies(std::vector<std::vector<double>> const &E);
   void print_eigensystems(atom_diag const &ad);
   void print_atom_diag(atom_diag const &ad);
-  void print_matrix(triqs::arrays::matrix<double> m);
+  void print_matrix(triqs::arrays::matrix<double> m, scalar_t factor = 1.0);
   //void print_fundamental_operator_set(fundamental_operator_set const &fops);
 
 } // namespace inchworm
