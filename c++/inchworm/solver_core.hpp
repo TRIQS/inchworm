@@ -64,11 +64,17 @@ namespace inchworm {
 
     void init(solve_params_t const &solve_params);
 
-    single_step_results_t single_step(solve_params_t const &solve_params, double tau_split, double tau_max, bool use_bare_propagator);
-    single_step_results_t solve_single_step(solve_params_t const &solve_params, bool use_bare_propagator, double tau_split, double tau_max);
+    // solve cthyb (no split point + bare propagator):
+    single_step_results_t solve_cthyb(solve_params_t const &solve_params, double tau_max);
+
+    // self consistent solution (one step, with precalculated U(beta) from ED)
     single_step_results_t solve_self_consistently(solve_params_t const &solve_params, u_tau_t const &u_tau_, double tau_split, double tau_max);
 
-    void solve_inchworm(solve_params_t const &solve_params);
+    // The inching solution:
+    void solve_inchworm(solve_params_t const &solve_params); // FIXME: this return nothing, it calculate u_tau, but nothing is done with it for now.
+
+    // one Monte Carlo step calculation (common to the 3 solve scheme above):
+    single_step_results_t single_step(solve_params_t const &solve_params, double tau_split, double tau_max, bool use_bare_propagator);
 
     // Struct containing the parameters relevant for the solve process
     std::optional<solve_params_t> last_solve_params;

@@ -15,7 +15,7 @@ namespace inchworm::moves {
     if (not proposed_config.try_erase(i, i_dag)) return 0; //data is not modified in this case
 
     //std::printf("\nremoving:");
-    auto diagram  = diagram::time_diagram_t{proposed_config.c_list, proposed_config.cdag_list, {params.tau_split}};
+    auto diagram  = diagram::time_diagram_t{proposed_config.d_list, proposed_config.d_dag_list, {params.tau_split}};
     auto hyb_mat  = diagram::hyb_matrix_t(diagram, params.hyb_adaptor);
     proposed_sign = diagram.sign();
 
@@ -54,7 +54,7 @@ namespace inchworm::moves {
     //std::printf("\n\nsize=%d\n", proposed_config.size());
     //for (auto const &B : proposed_u_frame) std::cout << B;
     if (proposed_config.size() == 800) {
-      auto diagram = diagram::time_diagram_t(proposed_config.c_list, proposed_config.cdag_list, {params.tau_split});
+      auto diagram = diagram::time_diagram_t(proposed_config.d_list, proposed_config.d_dag_list, {params.tau_split});
       //if (diagram.split_points[0] == 1) {
       std::printf("\n\n====================================================\n\n");
       print_configuration(diagram);

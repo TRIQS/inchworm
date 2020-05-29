@@ -2,9 +2,7 @@
 
 #include "./post_process.hpp"
 
-//#include "./mc/measures/sign.hpp"
 #include "./mc/measures/u_frame.hpp"
-#include "./mc/measures/average_k.hpp"
 
 #include "./mc/moves/insert.hpp"
 #include "./mc/moves/remove.hpp"
@@ -16,17 +14,14 @@
 
 namespace inchworm {
 
+  //------------------------------
+  // Constructor:
   solver_core::solver_core(constr_params_t const &p) : gf_struct(p.gf_struct), constr_params(p) {
 
-    // Initialize the non-interacting Green function
-    //G0_iw = block_gf<imfreq>{{p.beta, Fermion, p.n_iw}, p.gf_struct};
-
-    // Initialize the result containers
+    // Initialize the hybridization function
     Delta_tau = h_tau_t{{p.beta, Fermion, p.n_tau}, p.gf_struct};
-    //G_iw  = G0_iw;
 
-    // determine basis of operators to use
-    //fundamental_operator_set fops;
+    // Determine basis of operators to use
     int n_fops = 0;
     for (auto const &bl : gf_struct) {
       for (auto const &a : bl.second) {
@@ -35,26 +30,25 @@ namespace inchworm {
       }
     }
 
-    // setup the linear index map
-    //std::map<std::pair<int, int>, int> linindex;
+    // Setup the linear index map (link Green function structure to fundamental operator set):
     int block_index = 0;
     for (auto const &bl : gf_struct) {
       int inner_index = 0;
       for (auto const &a : bl.second) {
-        //linindex[std::make_pair(block_index, inner_index)] = fops[{bl.first, a}];
         map_lin_idx_to_block_inner[fops[{bl.first, a}]] = std::make_pair(block_index, inner_index);
         inner_index++;
       }
       block_index++;
     }
-
-    //Sigma_iw = G0_iw;
   }
 
   // -------------------------------------------------------------------------------
 
+  //------------------------------
+  // FIXME: to be done. For now there is no vanilla solve()
   void solver_core::solve(solve_params_t const &solve_params) {}
 
+  // Common initilization to any solving scheme:
   void solver_core::init(solve_params_t const &solve_params) {
 
     // Reset the results
@@ -73,67 +67,63 @@ namespace inchworm {
     //
     _h_loc = solve_params.h_int;
     h_diag = {_h_loc, fops, solve_params.quantum_numbers};
-    u_tau  = make_propagator(h_diag, constr_params.beta, N_STEP+1);
+    u_tau  = make_propagator(h_diag, constr_params.beta, N_STEP + 1);
     //print_eigensystems(h_diag);
   }
 
   //------------------------------
-  // one step solving
-  single_step_results_t solver_core::solve_single_step(solve_params_t const &solve_params, bool use_bare_propagator, double tau_split,
-                                                       double tau_max) {
+  // solve cthyb (no split point + bare propagator):
+  single_step_results_t solver_core::solve_cthyb(solve_params_t const &solve_params, double tau_max) {
 
     // Merge constr_params and solve_params
     last_solve_params = solve_params;
-    init(solve_params);
-    //double tau_max   = 1.0 * constr_params.beta;
-    //double tau_split = 0.0;
 
+    // Initialize:
+    init(solve_params);
+
+    // use_bare_propagator == cthyb (no split point).
+    double tau_split         = 0.0;
+    bool use_bare_propagator = true;
+
+    // u_frame recipient:
     u_frame_bare = make_bare_propagator_frame(h_diag, tau_max, false);
     auto res     = single_step(solve_params, tau_split, tau_max, use_bare_propagator);
 
-    double normalization_cte;
-    if (use_bare_propagator) {
-      normalization_cte = (double)res.u_frame_0th_order[0](0, 0) / ((double)u_frame_bare[0](0, 0));
-      std::printf("\n\n##################\ncthyb U(tau_max):\n");
-    } else {
-      auto u_frame_zeroth_order = u_tau[0](tau_max - tau_split) * u_tau[0](tau_split);
-      normalization_cte         = (double)res.u_frame_0th_order[0](0, 0) / ((double)u_frame_zeroth_order(0, 0)); //need to do better at some point
-      std::printf("\n\n##################\ninchworm U(tau_max):\n");
-    }
+    // Finding the ratio between theoretical zeroth order and Monte Carlo sampled zeroth order.
+    // Usually first value of u_frame is the most significant, due to order of eigenvalues.
+    scalar_t normalization_cte = (double)res.u_frame_0th_order[0](0, 0) / ((double)u_frame_bare[0](0, 0));
+    std::printf("\n\n##################\ncthyb U(tau_max):\n");
 
     res.normalize(normalization_cte);
     res.print();
-
-    //double normalization_cte = (double)res.u_frame_0th_order[0](0, 0) / ((double)u_frame_bare[0](0, 0)); //need to do better at some point
-
-    //res.normalize(normalization_cte);
-    //res.print();
 
     return res;
   } // namespace inchworm
 
   //------------------------------
-  // self consistent solution (one step, with U(beta) calculated from ED)
+  // self consistent solution (one step, with precalculated U(beta) from ED)
   single_step_results_t solver_core::solve_self_consistently(solve_params_t const &solve_params, u_tau_t const &u_tau_, double tau_split,
                                                              double tau_max) {
     // Merge constr_params and solve_params
     last_solve_params = solve_params;
+
+    // Initialize:
     init(solve_params);
 
-    u_tau        = u_tau_;
+    // precalculated propagator:
+    u_tau = u_tau_;
+
+    // u_frame recipient:
     u_frame_bare = make_bare_propagator_frame(h_diag, tau_max, false);
-    auto res     = single_step(solve_params, tau_split, tau_max, false);
 
+    // calculation of the solution:
+    auto res = single_step(solve_params, tau_split, tau_max, false);
+
+    // determine u_frame at zerothr order exactly:
     auto u_frame_zeroth_order = u_tau[0](tau_max - tau_split) * u_tau[0](tau_split);
-    double normalization_cte  = (double)res.u_frame_0th_order[0](0, 0) / ((double)u_frame_zeroth_order(0, 0)); //need to do better at some point
 
-    //std::printf("\ninchworm U_0(beta):\n");
-    //for (int i = 0; i < res.u_frame.size(); i++) {
-    //  printf("% 4.12f *", (double)u_tau[i](tau_split)(0, 0));
-    //  printf("% 4.12f =", (double)u_tau[i](tau_max - tau_split)(0, 0));
-    //  auto u_frame_zeroth_order = u_tau[i](tau_split) * u_tau[i](tau_max - tau_split);
-    //  printf("% 4.12f\n", (double)(u_frame_zeroth_order(0, 0)));
-    //}
+    // finding the ratio between theoretical zeroth order and Monte Carlo sampled zeroth order:
+    scalar_t normalization_cte = (double)res.u_frame_0th_order[0](0, 0) / ((double)u_frame_zeroth_order(0, 0)); //need to do better at some point
 
     std::printf("\n##################\ninchworm U(beta):\n");
     res.normalize(normalization_cte);
@@ -142,27 +132,41 @@ namespace inchworm {
     return res;
   } // namespace inchworm
 
+  //------------------------------
+  // The inching solution:
   void solver_core::solve_inchworm(solve_params_t const &solve_params) {
 
-    // Merge constr_params and solve_params
-    //last_solve_params = solve_params;
+    // Initialize:
     init(solve_params);
-    //double tau_max   = constr_params.beta;
-    //double tau_split = constr_params.beta / 2;
     double beta = constr_params.beta;
-    //int n_tau   = 10; // FIXME
 
-    for (int n = 0; n < N_STEP; n++) {
+    // loop on different inchworm steps
+    for (
+       int n = 0; n < N_STEP;
+       n++) { // FIXME: create a parameter. (at first it was the paramter n_tau, but it is important it is a different one). Now it is just a preprocessor variable. To be done.
       std::printf("\n\ninchworm step %d\n", n);
 
-      double tau_split = beta * (double) n / (double) N_STEP;
-      double tau_max   = beta * (double) (n + 1) / (double)  N_STEP;
+      // define the tau_split and tau_max for this specific inchworm step.
+      //
+      // |===================================|----------------------|__________________|
+      // 0                                tau_split              tau_max              beta
+      //
+      // tau_split < tau_max <= beta
+      //
+      double tau_split = beta * (double)n / (double)N_STEP;
+      double tau_max   = beta * (double)(n + 1) / (double)N_STEP;
 
+      // use bare propagator (cthyb) only on the first inchworm iteration:
       bool use_bare_propagator = (n == 0);
-      u_frame_bare             = make_bare_propagator_frame(h_diag, tau_max, false);
-      auto res                 = single_step(solve_params, tau_split, tau_max, use_bare_propagator);
 
-      double normalization_cte;
+      // u_frame recipient:
+      u_frame_bare = make_bare_propagator_frame(h_diag, tau_max, false);
+    
+      // calculation of the Monte Carlo solution:
+      auto res     = single_step(solve_params, tau_split, tau_max, use_bare_propagator);
+
+      // determination of normalization constant:
+      scalar_t normalization_cte;
       if (use_bare_propagator) {
         normalization_cte = (double)res.u_frame_0th_order[0](0, 0) / ((double)u_frame_bare[0](0, 0));
         std::printf("\n\n##################\ncthyb U(tau_max):\n");
@@ -174,13 +178,14 @@ namespace inchworm {
 
       res.normalize(normalization_cte);
       res.print();
-      
-      assign_u_frame_to_propagator(u_tau, res.u_frame, n+1, 1.);
+
+      // assign u_frame to the propagator u_tau, in order to be able to use it in next iteration
+      assign_u_frame_to_propagator(u_tau, res.u_frame, n + 1, 1.);
     }
   } // namespace inchworm
 
   //------------------------------
-  // one Monte Carlo step calculation
+  // one Monte Carlo step calculation (common to all solve scheme above):
   single_step_results_t solver_core::single_step(solve_params_t const &solve_params, double tau_split, double tau_max, bool use_bare_propagator) {
 
     params_t params(constr_params, solve_params);
@@ -190,6 +195,7 @@ namespace inchworm {
     // Capture random number generator
     auto &rng = mc.get_rng();
 
+    // necessary:
     u_tau_t *u_tau_p = &u_tau;
     if (use_bare_propagator) u_tau_p = nullptr;
 
@@ -198,16 +204,15 @@ namespace inchworm {
 
     // Create Monte-Carlo params
     qmc_params_t qmc_params{Delta_tau, map_lin_idx_to_block_inner, h_diag, u_tau, tau_max, tau_split, use_bare_propagator};
-    //params, h_diag, u_tau, _Delta_tau, map_lin_idx_to_block_inner};
 
     mc.add_move(moves::insert{qmc_config_data, qmc_params, rng}, "insert move");
     mc.add_move(moves::remove{qmc_config_data, qmc_params, rng}, "remove move");
 
+    // initialize result container:
     single_step_results_t results(h_diag);
+
     // Register all measurements
-    //mc.add_measure(measures::sign{params, qmc_config_data, results}, "sign measurement");
     mc.add_measure(measures::u_frame{params, qmc_config_data, results}, "propagator measurement");
-    mc.add_measure(measures::average_k{params, qmc_config_data, results}, "average perturbation order");
 
     // Perform QMC run and collect results
     mc.warmup_and_accumulate(params.n_warmup_cycles, params.n_cycles, params.length_cycle, triqs::utility::clock_callback(params.max_time));

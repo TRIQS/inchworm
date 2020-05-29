@@ -1,7 +1,7 @@
 #include "./u_frame.hpp"
 
 namespace inchworm {
-  //
+  // Create an empty frame (block diagonal matrix: vector of matrix_t)
   u_frame_t make_zero_propagator_frame(atom_diag const &ad) {
     u_frame_t u_frame(ad.n_subspaces());
 
@@ -12,7 +12,7 @@ namespace inchworm {
     return u_frame;
   }
 
-  //
+  // initialize bare propagator frame U_0 = exp(-tau H_loc) in the diagonal basis of H_loc
   u_frame_t make_bare_propagator_frame(atom_diag const &ad, double tau, bool set_gs_to_0) {
     u_frame_t u_frame(ad.n_subspaces());
 

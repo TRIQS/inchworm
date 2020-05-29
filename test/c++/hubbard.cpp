@@ -64,12 +64,11 @@ void self_consistent_hubbard(int n_site, int n_bath, int n_spin, double U, doubl
       for (int i = 0; i < n_site; i++) {
         for (int j = 0; j < n_site; j++) {
           for (int n = 0; n < n_bath; n++) {
-            if (epsilon(n) >= 0.0)
+            if (epsilon(n) >= 0.0) // to avoid numerical instability, assign hyb differently depending on the sign of epsilon(n).
               val = -theta(i, n) * theta(j, n) * (std::exp(-((double)tau) * (epsilon(n))) / (1. + std::exp(-cp.beta * epsilon(n))));
             else
               val = -theta(i, n) * theta(j, n) * (std::exp(-((double)tau - cp.beta) * (epsilon(n))) / (1. + std::exp(cp.beta * epsilon(n))));
             S.Delta_tau[block][tau](i, j) += val;
-            //if (n_spin == 2) S.Delta_tau[block][tau](i, j) += val; // spin-down
           }
         }
       }
@@ -106,7 +105,7 @@ void self_consistent_hubbard(int n_site, int n_bath, int n_spin, double U, doubl
   // Solve Parameters
   solve_params_t sp;
   sp.h_int           = h_atom;
-  sp.n_cycles        = 500000;
+  sp.n_cycles        = 50000;
   sp.length_cycle    = 10;
   sp.n_warmup_cycles = 20;
   sp.max_time        = -1;
@@ -116,32 +115,8 @@ void self_consistent_hubbard(int n_site, int n_bath, int n_spin, double U, doubl
   sp.quantum_numbers = qn_atom;
   sp.random_seed     = 12345789 + 928374 * mpi::communicator().rank();
 
-  /*
-  double B         = tau_max * epsilon[0];
-  double t_s       = tau_split * epsilon[0];
-
-  double eB = std::exp(B);
-  double es = std::exp(t_s);
-  double cm = theta[0] * theta[0] / (epsilon[0] * epsilon[0] * (1. + std::exp(-B)));
-  double c_ = theta[0] * theta[0] / (epsilon[0] * epsilon[0] * (1. + std::exp(B)));
-
-  double U1[] = {-c_ * (1. - eB + B), cm * (-1. + 1. / eB + B)};
-
-  double U0t[] = {1. - c_ * (2. - eB / es + B - es), 1. + cm * (-2. + es / eB + B + 1. / es)};
-  double U1t[] = {-c_ * (eB - es) * (1. / es - 1), -cm * (1. / eB - 1. / es) * (es - 1)};
-
-  std::printf("cthyb - order 0:  % 4.8f     % 4.8f \n", 1.0, 1.0);
-  std::printf("        order 1:  % 4.8f     % 4.8f \n", U1[0], U1[1]);
-  std::printf("\n        sum:      % 4.8f     % 4.8f \n", 1. + U1[0], 1. + U1[1]);
-  */
-
-  //std::printf("%d %d %d\n",fops_tot.size(), fops_atom.size(), fops_bath.size());
-
-  //std::printf("salut\n");
   auto h_hyb  = 0.0 * n("up", 0);
   auto h_bath = 0.0 * n("up", n_site);
-
-  //std::vector<many_body_op_t> qn_tot;
 
   for (int i = 0; i < n_site; i++) {
     for (int k = 0; k < n_bath; k++) {
@@ -152,7 +127,6 @@ void self_consistent_hubbard(int n_site, int n_bath, int n_spin, double U, doubl
         h_hyb += theta(i, k) * (c_dag("dn", k + n_site) * c("dn", i));
       }
     }
-    //h_bath += mu * (n("up", i + n_site) + n("dn", i + n_site));
   }
 
   for (int k = 0; k < n_bath; k++) {
@@ -160,147 +134,23 @@ void self_consistent_hubbard(int n_site, int n_bath, int n_spin, double U, doubl
     if (n_spin == 2) h_bath += epsilon(k) * n("dn", k + n_site);
   }
 
-  //std::printf("\n\n");
   auto ad_tot  = triqs::atom_diag::atom_diag<false>(h_atom + h_bath + h_hyb, fops_tot);
   auto ad_atom = triqs::atom_diag::atom_diag<false>(h_atom, fops_atom, qn_atom);
   auto ad_bath = triqs::atom_diag::atom_diag<false>(h_bath, fops_bath);
-  //auto ad_bath_full = triqs::atom_diag::atom_diag<false>(h_bath, fops_tot);
-
-  std::printf("ad_tot\n");
-  print_atom_diag(ad_tot);
-  std::printf("ad_atom\n");
-  print_atom_diag(ad_atom);
-  std::printf("ad_bath\n");
-  print_atom_diag(ad_bath);
 
   u_tau_t u_tau = make_ED_propagator(ad_tot, ad_atom, ad_bath, cp.beta, cp.n_tau);
-  //u_tau_t u_tau = make_ED_propagator(ad_tot, ad_atom, ad_bath, cp.beta, 2);
-  //exit(0);
   std::printf("\n##################\nexact U(beta):\n");
   print(u_tau, tau_max);
 
-  int NN = 10;
-
-  //for (int n = 0; n < NN; n++) {
-  //  std::printf("\n\ninchworm step ED %d\n", n);
-  //  double tau_max1   = cp.beta * (double)(n + 1) / (double)NN;
-  //  print(u_tau, tau_max1);
-  //}
-
   // Solve the impurity model
-  auto result_cthyb = S.solve_single_step(sp, true, 0.0, tau_max);
+  auto result_cthyb = S.solve_cthyb(sp, tau_max);
   auto result_sc    = S.solve_self_consistently(sp, u_tau, tau_split, tau_max);
 
-  //exit(0);
-  //S.solve_inchworm(sp);
-
-  //std::printf("\n\n");
-  //print(u_tau, tau_split);
-  //u_tau[bl][cp.n_tau];
-
-  //((matrix_t) u_tau[0][cp.n_tau-1]).hello();
-  //result_sc.u_frame[0].hello();
-
-  //for (int bl = 0; bl < result_sc.u_frame.size(); bl++) EXPECT_ARRAY_NEAR(((matrix_t)u_tau[bl][cp.n_tau - 1]), result_cthyb.u_frame[bl], 0.3);
-  //for (int bl = 0; bl < result_sc.u_frame.size(); bl++) EXPECT_ARRAY_NEAR(((matrix_t)u_tau[bl][cp.n_tau - 1]), result_sc.u_frame[bl], 0.1);
-
-  /*
-  mat_t theta1= {{3,4},{4,8}};
-  double x           = theta[0] * cp.beta;
-  double tmp         = std::cosh(theta[0] * cp.beta / 2.);
-  double total_serie = std::pow(tmp, 4);
-
-  double order1 = (1. / 2.) * std::pow(x, 2);
-  double order2 = (5. / 48.) * std::pow(x, 4);
-  double order3 = (17. / 1440.) * std::pow(x, 6);
-  double order4 = (13. / 16128.) * std::pow(x, 8);
-  double order5 = (257. / 7257600.) * std::pow(x, 10);
-  double order6 = (41. / 38320128.) * std::pow(x, 12);
-  double order7 = (4097. / 174356582400.) * std::pow(x, 14);
-  double order8 = (3277. / 8369115955200.) * std::pow(x, 16);
-
-  std::printf("order 0: % 4.8f \n", 1.0);
-  std::printf("order 1: % 4.8f \n", order1);
-  std::printf("order 2: % 4.8f \n", order2);
-  std::printf("order 3: % 4.8f \n", order3);
-  std::printf("order 4: % 4.8f \n", order4);
-  std::printf("order 5: % 4.8f \n", order5);
-  std::printf("order 6: % 4.8f \n", order6);
-  std::printf("order 7: % 4.8f \n", order7);
-  std::printf("order 8: % 4.8f \n", order8);
-  std::printf("\n\ntotal : % 4.8f \n", total_serie);
-  */
-  /*
-  fprint(u_tau, cp.n_tau);
-
-  std::printf("\ninchw - order 0:  % 4.8f     % 4.8f \n", U0t[0], U0t[1]);
-  std::printf("        order 1:  % 4.8f     % 4.8f \n", U1t[0], U1t[1]);
-  std::printf("\n        sum:      % 4.8f     % 4.8f \n", U0t[0] + U1t[0], U0t[1] + U1t[1]);
-
-  double order_0[2];
-  double order_1[2];
-  double order_2[2];
-
-  */
-  /*
-
-  //S.solve_inchworm(sp);
-  
-  double B   = tau_max * theta[0] / 2.;
-  double t_s = tau_split * theta[0] / 2.;
-
-  auto y1 = [](double Dt) {
-    double s2 = std::sinh(2 * Dt);
-    double c2 = std::cosh(2 * Dt);
-    return 1. / 8 * Dt * (c2 + 2.) + 5. / 16 * s2;
-  };
-
-  auto y2 = [](double Dt) {
-    double s3 = std::sinh(2 * Dt);
-    double c3 = std::cosh(2 * Dt);
-    return 1. / 64 * Dt * Dt * (c3 + 4.) + 15. / 128 * Dt * s3 + 3. / 32 * (c3 - 1.);
-  };
-
-  auto y3 = [](double Dt) {
-    double s4 = std::sinh(2 * Dt);
-    double c4 = std::cosh(2 * Dt);
-    return 1. / 768 * Dt * Dt * Dt * (c4 + 8.) + 5. / 256 * Dt * Dt * s4 + 1. / 1024 * Dt * (57. * c4 - 64.) + 7. / 2048 * s4;
-  };
-
-  auto y4 = [](double Dt) {
-    double s5 = std::sinh(2 * Dt);
-    double c5 = std::cosh(2 * Dt);
-    return 1. / 12288 * Dt * Dt * Dt * Dt * (c5 + 16.) + 25. / 12288 * Dt * Dt * Dt * s5 + 1. / 16384 * Dt * Dt * (205. * c5 - 320.)
-       + 435. / 32768 * Dt * s5 - 5. / 512. * (c5 - 1.);
-  };
-
-  auto y5 = [](double Dt) {
-    double s6 = std::sinh(2 * Dt);
-    double c6 = std::cosh(2 * Dt);
-    return 1. / 245760 * Dt * Dt * Dt * Dt * Dt * (c6 + 32.) + 5. / 32768 * Dt * Dt * Dt * Dt * s6 + 1. / 65536 * Dt * Dt * Dt * (107. * c6 - 256.)
-       + 316. / 65536 * Dt * Dt * s6 - 1. / 262144 * Dt * (279. * c6 - 2304.) - 2025. / 524288 * s6;
-  };
-
-  double tmp    = std::cosh(B - t_s) * std::cosh(t_s - 0.0);
-  double order0 = tmp * tmp;
-  std::printf("order 0:       % 4.8f \n", order0);
-
-  double order1 = 2 * y1(t_s) * y1(B - t_s);
-  std::printf("order 1:       % 4.8f \n", order1);
-
-  double order2 = 4 * (y2(t_s) * y2(B - t_s));
-  std::printf("order 2:       % 4.8f \n", order2);
-
-  double order3 = -8 * (y1(t_s) * y5(B - t_s) + y2(t_s) * y4(B - t_s) + y4(t_s) * y2(B - t_s) + y5(t_s) * y1(B - t_s));
-  std::printf("order 3:       % 4.8f \n", order3);
-
-  //std::printf("order 0+1+2+3: % 4.8f \n", order0 + order1*2. + order2/4.*6. + order3/36.*24);
-  std::printf("order 0+1+2+3: % 4.8f \n", order0 + order1 + order2 + order3);
-  std::printf("\n\ncosh^2(B): % 4.8f \n", std::cosh(B) * std::cosh(B));
-  */
+  for (int bl = 0; bl < result_sc.u_frame.size(); bl++) EXPECT_ARRAY_NEAR(((matrix_t)u_tau[bl][cp.n_tau - 1]), result_cthyb.u_frame[bl], 0.05*u_tau[0][cp.n_tau - 1](0,0)); // U[0](0,0) is essentially always the biggest value
+  for (int bl = 0; bl < result_sc.u_frame.size(); bl++) EXPECT_ARRAY_NEAR(((matrix_t)u_tau[bl][cp.n_tau - 1]), result_sc.u_frame[bl], 0.05*u_tau[0][cp.n_tau - 1](0,0) );
 }
 
-/*
+//*
 TEST(inchworm, Hubbard_1site_spinless) {
 
   constr_params_t cp;
@@ -318,7 +168,7 @@ TEST(inchworm, Hubbard_1site_spinless) {
 }
 //*/
 
-/*
+//*
 TEST(inchworm, Hubbard_1site) {
 
   constr_params_t cp;
@@ -328,13 +178,13 @@ TEST(inchworm, Hubbard_1site) {
   cp.n_iw      = 250;
 
   mat_t theta   = {{0.9, -1.0, 1.1}};
-  vec_t epsilon = {1.0,-2.0,0.0};
+  vec_t epsilon = {1.0, -2.0, 0.0};
   self_consistent_hubbard(1, 3, 2, 4.0, -2.0, 0.0, cp, theta, epsilon, cp.beta, cp.beta * 0.9);
 }
 //*/
 
-/*
-TEST(inchworm, Hubbard_2sites) { // NOLINT
+//*
+TEST(inchworm, Hubbard_2sites_spinless) { // NOLINT
 
   constr_params_t cp;
   cp.beta      = 2.0;
@@ -349,6 +199,7 @@ TEST(inchworm, Hubbard_2sites) { // NOLINT
 }
 //*/
 
+// long:
 //*
 TEST(inchworm, Hubbard_2sites) { // NOLINT
 
@@ -362,7 +213,7 @@ TEST(inchworm, Hubbard_2sites) { // NOLINT
   triqs::arrays::array<double, 2> theta   = {{0.1, -0.3, -0.4}, {0.1, 0.2, 0.4}};
   triqs::arrays::array<double, 1> epsilon = {1.0, -1.0, 1.2};
   //self_consistent_hubbard(2, 2, 2, 0.0, 0.0, 0.0, cp, theta, epsilon, cp.beta, cp.beta * 0.9);
-  self_consistent_hubbard(2, 3, 2, 4.0, -1.0, 1.0, cp, theta, epsilon, cp.beta, cp.beta * 0.9);
+  self_consistent_hubbard(2, 3, 2, 4.0, -3.0, 1.0, cp, theta, epsilon, cp.beta, cp.beta * 0.9);
 }
 //*/
 

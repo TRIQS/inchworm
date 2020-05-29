@@ -27,13 +27,14 @@ namespace inchworm::diagram {
     return (1.0 / (0.8 * (dtau - 0.5)));
   }
 
+  // For stand alone tests only:
   hyb_matrix_t::hyb_matrix_t(time_diagram_t const &diagram) : mat(diagram.perturbation_order(), diagram.perturbation_order()), diagram{diagram} {
     int N = 0;
-    for (auto [i, c] : enumerate(diagram.c_list)) {
+    for (auto [i, d] : enumerate(diagram.d_list)) {
       N++;
-      for (auto [j, cdag] : enumerate(diagram.cdag_list)) {
+      for (auto [j, d_dag] : enumerate(diagram.d_dag_list)) {
 
-        double dtau = cdag.tau - c.tau;
+        double dtau = d_dag.tau - d.tau;
         mat(i, j)   = (0.5 + j - i) * hyb_function_dummy(dtau);
         if (i < j) mat(i, j) = -mat(i, j);
       }
@@ -41,21 +42,22 @@ namespace inchworm::diagram {
     size = N;
   }
 
+  // Extract hyb from adaptor and build hyb matrix:
   hyb_matrix_t::hyb_matrix_t(time_diagram_t const &diagram, hyb_adaptor_t const &hyb_tau)
      : mat(diagram.perturbation_order(), diagram.perturbation_order()), diagram{diagram} {
 
     int N = 0;
-    for (auto [i, c] : enumerate(diagram.c_list)) {
+    for (auto [i, d] : enumerate(diagram.d_list)) {
       N++;
-      for (auto [j, cdag] : enumerate(diagram.cdag_list)) {
-        //std::printf("\ni %d  j %d    %f",i,j, hyb_tau(c.tau, c.linear_index, cdag.tau, cdag.linear_index));
-        //std::printf(" %f %d   %f %d \n",c.tau, c.linear_index, cdag.tau, cdag.linear_index );
-        mat(i, j) = hyb_tau(c.tau, c.linear_index, cdag.tau, cdag.linear_index);
+      for (auto [j, d_dag] : enumerate(diagram.d_dag_list)) {
+        //std::printf(" %f %d   %f %d \n",d.tau, d.linear_index, d_dag.tau, d_dag.linear_index );
+        mat(i, j) = hyb_tau(d.tau, d.linear_index, d_dag.tau, d_dag.linear_index);
       }
     }
     size = N;
   }
 
+  // optimization, set to zero components of the matrix corresponding to segment of length 2.
   void hyb_matrix_t::optimize_inclusion_exclusion() {
     if (smallest_segment == 4) {
       for (int k = 0; k < diagram.op_list.size() - 1; k++) {
@@ -89,24 +91,25 @@ namespace inchworm::diagram {
     return determinant(mat);
   }
 
+  // Extract the submatrix composed of indices "list_of_indices" and compute the determinant of this submatrix:
   scalar_t hyb_matrix_t::extract_det(std::vector<int> const &list_of_indices) const {
 
     int N = list_of_indices.size() / 2;
     EXPECTS(list_of_indices.size() % 2 == 0);
     matrix_t m(N, N);
 
-    std::vector<int> list_of_c(N), list_of_cdag(N); // to refactor
+    std::vector<int> list_of_d(N), list_of_d_dag(N); // to refactor
 
     int i = 0, j = 0;
     for (auto idx : list_of_indices) {
       if (diagram.op_list[idx].dag)
-        list_of_cdag[i++] = diagram.op_list[idx].order_index;
+        list_of_d_dag[i++] = diagram.op_list[idx].order_index;
       else
-        list_of_c[j++] = diagram.op_list[idx].order_index;
+        list_of_d[j++] = diagram.op_list[idx].order_index;
     }
 
     for (i = 0; i < N; i++) {
-      for (j = 0; j < N; j++) { m(i, j) = mat(list_of_c[i], list_of_cdag[j]); }
+      for (j = 0; j < N; j++) { m(i, j) = mat(list_of_d[i], list_of_d_dag[j]); }
     }
 
     return determinant(m);
@@ -118,7 +121,5 @@ namespace inchworm::diagram {
       for (int j = 0; j < diagram.perturbation_order(); j++) { std::printf("% 2.7e ", mat(i, j)); }
       std::printf("\n");
     }
-    //std::cout << std::setprecision(10) << mat;
-    //std::printf("\ndet: %e\n", det());
   }
 } // namespace inchworm::diagram

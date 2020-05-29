@@ -5,9 +5,6 @@
 #include "../params.hpp"
 #include "../diagram/diagram.hpp"
 
-#include <numeric>
-#include <bitset>
-
 //#include <inchworm/solver_core.hpp>
 #include <triqs/gfs.hpp>
 #include <triqs/hilbert_space/fundamental_operator_set.hpp>
@@ -19,27 +16,22 @@ namespace inchworm {
   using time_diagram_t = diagram::time_diagram_t;
 
   u_tau_t make_propagator(atom_diag const &h_diag, double beta, int n_tau);
-  void fprint(u_tau_t u_tau, int N_tau);
-  void print(u_tau_t u_tau, int frame_number);
-  void print(u_tau_t u_tau, double tau);
-  void assign_u_frame_to_propagator(u_tau_t &u_tau, u_frame_t const &u_frame, int frame_number, scalar_t factor = 1.0);
   u_tau_t make_ED_propagator(atom_diag const &ad_tot, atom_diag const &ad_atom, atom_diag const &ad_bath, double beta, int n_tau);
 
   //
   u_frame_t make_zeroth_order(atom_diag const &ad, double tau, double tau_split = 0.0, u_tau_t const *const u_tau_p = nullptr);
 
-  /// Function that calculate the product: u_frame = U(tau_0) op U(tau_1-tau_0) op U(tau_2-tau_1) op U(tau_3-tau_2) ... op U(tau-tau_n)
+  /// function that calculate the product: u_frame = u(tau_0) op u(tau_1-tau_0) op u(tau_2-tau_1) op u(tau_3-tau_2) ... op u(tau-tau_n)
   /// where op is either c_dag or c operator, depending on the configuration
   /** 
    * @param ad atom_diag of the system considered here.
-   * @param diagram Configuration of the n operators (op) of the present Monte Carlo step.
-   * @param tau Time of the u_frame_t calculated here. tau must be greater than any times
-   * @param u_tau Full propagator calculated up until this point.
-   * @return u_frame_t, at time tau, resulting from this product.
+   * @param diagram configuration of the n operators (op) of the present monte carlo step.
+   * @param tau_max time of the u_frame_t calculated here.
+   * @param tau_split time interval of the previously calculated propagator (u_tau).
+   * @param u_tau_p pointer to the full propagator (u_tau) calculated up until this point (0 < tau < tau_split). 
+   * @return u_frame_t, at time tau_max, resulting from this product.
    */
-
-  //u_frame_t propagator_product(atom_diag const &ad, time_diagram_t const &diagram, double tau, u_tau_t const *const u_tau_p = nullptr);
-  u_frame_t propagator_product(atom_diag const &ad, time_diagram_t const &diagram, double tau, double tau_split = 0.0,
+  u_frame_t propagator_product(atom_diag const &ad, time_diagram_t const &diagram, double tau_max, double tau_split = 0.0,
                                u_tau_t const *const u_tau_p = nullptr);
 
   inline std::ostream &operator<<(std::ostream &out, u_frame_t const &u_frame) {

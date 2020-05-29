@@ -2,33 +2,19 @@
 
 namespace inchworm::measures {
 
-  // calculate n!
-  //
-  inline int factorial(int n) {
-    if (n > 1)
-      return n * factorial(n - 1);
-    else
-      return 1;
-  }
-
-  //u_frame::u_frame(params_t const &, qmc_config_data_t const &qmc_config_data_, container_set &results_)
   u_frame::u_frame(params_t const &, qmc_config_data_t const &qmc_config_data_, single_step_results_t &results_)
      : qmc_config_data(qmc_config_data_), results(results_) {}
 
   void u_frame::accumulate(scalar_t sign) {
-    //int factor = 1;
-    //scalar_t cte = std::pow(qmc_config_data.normalization_cte, qmc_config_data.config.size());
-    int f1 = factorial(qmc_config_data.config.size());
-    //double factor = 1.;//(double) factorial(2*qmc_config_data.config.size())/ ((double) f1*f1);
-    scalar_t s = sign / (qmc_config_data.w.loc);//*factor);
-    if (qmc_config_data.config.size() < MAX_ORDER) {
+    scalar_t s = sign / (qmc_config_data.w.loc);
+    if (qmc_config_data.config.size() < MAX_ORDER) { // MAX_ORDER is just for printing purpose for now.
       results.u_expansion_order[qmc_config_data.config.size()] += s * qmc_config_data.u_frame[0](0, 0);
     }
-    //average_sign += s;
     //if (qmc_config_data.config.size() == 2)
     //std::printf("%d ", qmc_config_data.config.size());
     for (int bl = 0; bl < results.u_frame.size(); bl++) results.u_frame[bl] += s * qmc_config_data.u_frame[bl];
 
+    // For normalizatoin purpose, we sample the zeroth order separatly:
     if (qmc_config_data.config.size() == 0)
       for (int bl = 0; bl < results.u_frame_0th_order.size(); bl++) results.u_frame_0th_order[bl] += s * qmc_config_data.u_frame[bl];
   }
@@ -36,8 +22,7 @@ namespace inchworm::measures {
   void u_frame::collect_results(mpi::communicator const &comm) {
     results.u_frame_0th_order = mpi::all_reduce(results.u_frame_0th_order, comm);
     results.u_frame           = mpi::all_reduce(results.u_frame, comm);
-    //results.u_expansion_order = mpi::all_reduce(results.u_expansion_order, comm);
-    //for (auto &x : results.u_frame) x /= 10000;
+    results.u_expansion_order = mpi::all_reduce(results.u_expansion_order, comm);
   }
 
 } // namespace inchworm::measures

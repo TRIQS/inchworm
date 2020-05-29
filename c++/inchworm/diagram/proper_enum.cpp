@@ -19,7 +19,6 @@
  * inchworm. If not, see <http://www.gnu.org/licenses/>.
  *
  ******************************************************************************/
-#pragma once
 #include "proper_enum.hpp"
 
 namespace inchworm::diagram {
@@ -55,25 +54,25 @@ namespace inchworm::diagram {
       char char1 = '.';
       if (cross_split_point[arch]) char1 = '_';
       if (visited[arch]) char1 = '=';
-      printArch(diagram.pos_c[arch], diagram.pos_cdag[permutation[arch]], diagram.perturbation_order(), char1);
+      printArch(diagram.pos_d[arch], diagram.pos_d_dag[permutation[arch]], diagram.perturbation_order(), char1);
     }
     std::printf("\n");
   }
 
-  // Deep First Search (DFS) algorithm to search for every connected arch.
+  // Depth-first search (DFS) algorithm to search for every connected arch.
   // This recursive function will call itself until there is no more
   // free arch to visit (stored in variable visited).
   //
   void grow_pile(int arch, std::vector<int> const &permutation, std::vector<bool> &visited, time_diagram_t const &diagram) {
 
     //connexion_pile.push_back(arch);
-    int c    = diagram.pos_c[arch];
-    int cdag = diagram.pos_cdag[permutation[arch]];
+    int d     = diagram.pos_d[arch];
+    int d_dag = diagram.pos_d_dag[permutation[arch]];
 
     for (int new_arch = 0; new_arch < diagram.perturbation_order(); new_arch++) {
       if (visited[new_arch]) continue;
 
-      if (segment_cross(c, cdag, diagram.pos_c[new_arch], diagram.pos_cdag[permutation[new_arch]])) {
+      if (segment_cross(d, d_dag, diagram.pos_d[new_arch], diagram.pos_d_dag[permutation[new_arch]])) {
         visited[new_arch] = true;
         grow_pile(new_arch, permutation, visited, diagram);
       }
@@ -97,14 +96,14 @@ namespace inchworm::diagram {
     cross_split_point_pile.reserve(diagram.perturbation_order()); // we know that the pile will not grow bigger than the number of arch = k_order
 
     for (int arch = 0; arch < diagram.perturbation_order(); arch++) {
-      int c    = diagram.pos_c[arch];
-      int cdag = diagram.pos_cdag[permutation[arch]];
+      int d     = diagram.pos_d[arch];
+      int d_dag = diagram.pos_d_dag[permutation[arch]];
 
-      //for(auto p : diagram.split_points) std::printf("c=%d  cdag=%d   p=%d  \n", c, cdag, p);
+      //for(auto p : diagram.split_points) std::printf("d=%d  d_dag=%d   p=%d  \n", d, d_dag, p);
 
       if (std::any_of(diagram.split_points.begin(), diagram.split_points.end(),
-                      [c, cdag](auto &split_point) { return segment_cross_point(c, cdag, split_point - 1); })) {
-        //if (segment_cross_point(c, cdag, diagram.split_points)) {
+                      [d, d_dag](auto &split_point) { return segment_cross_point(d, d_dag, split_point - 1); })) {
+        //if (segment_cross_point(d, ddag, diagram.split_points)) {
         cross_split_point[arch] = true;
         cross_split_point_pile.push_back(arch);
       }
@@ -145,7 +144,7 @@ namespace inchworm::diagram {
       int parity = find_parity(permutation);
       value      = 1.0;
       for (int i = 0; i < permutation.size(); i++) {
-        value *= hyb_mat.mat(i,permutation[i]);
+        value *= hyb_mat.mat(i, permutation[i]);
         //if (verbose > 2) std::printf("permutation[i] = %d, i = %d, hyb_mat.mat = % 4.8f  \n", permutation[i], i, hyb_mat.mat(permutation[i], i));
       }
 

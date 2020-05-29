@@ -19,38 +19,6 @@ namespace inchworm {
     return u_tau;
   }
 
-  //
-  void fprint(u_tau_t u_tau, int N_tau) {
-    FILE *f = fopen("u_tau.dat", "w");
-    for (int i_tau = 0; i_tau < N_tau; i_tau++) {
-      fprintf(f, "%d  ", i_tau);
-      for (int bl = 0; bl < u_tau.size(); bl++) print_matrix((matrix_t)u_tau[bl][i_tau]);
-      fprintf(f, "\n");
-    }
-    fclose(f);
-    return;
-  }
-
-  //
-  void print(u_tau_t u_tau, double tau) {
-    for (int bl = 0; bl < u_tau.size(); bl++) { print_matrix((matrix_t)u_tau[bl](tau)); }
-    std::cout << "\n";
-    return;
-  }
-
-  //
-  void print(u_tau_t u_tau, int frame_number) {
-    for (int bl = 0; bl < u_tau.size(); bl++) { std::cout << std::setprecision(10) << u_tau[bl][frame_number]; }
-    std::cout << "\n";
-    return;
-  }
-
-  //
-  void assign_u_frame_to_propagator(u_tau_t &u_tau, u_frame_t const &u_frame, int frame_number, scalar_t factor) {
-    for (int bl = 0; bl < u_tau.size(); bl++) u_tau[bl][frame_number] = factor * u_frame[bl];
-    return;
-  }
-
   u_tau_t make_ED_propagator(atom_diag const &ad_tot, atom_diag const &ad_atom, atom_diag const &ad_bath, double beta, int n_tau) {
 
     auto E0       = ad_tot.get_gs_energy();
@@ -90,7 +58,7 @@ namespace inchworm {
 
     if (diagram.size() == 0) return make_zeroth_order(ad, tau, tau_split, u_tau_p);
 
-    constexpr bool set_gs_to_0 = false;
+    //constexpr bool set_gs_to_0 = false;
     u_frame_t u_frame          = make_zero_propagator_frame(ad);
     for (int initial_bl = 0; initial_bl < ad.n_subspaces(); initial_bl++) {
       int dim      = ad.get_subspace_dim(initial_bl);

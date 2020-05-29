@@ -47,7 +47,7 @@ namespace inchworm::diagram {
   void print_graph(const std::vector<int> &permutation, const std::vector<bool> &cross_split_point, std::vector<bool> &visited,
                    time_diagram_t const &diagram);
 
-  // Deep First Search (DFS) algorithm to search for every connected arch.
+  // Depth-first search (DFS) algorithm to search for every connected arch.
   // This recursive function will call itself until there is no more
   // free arch to visit (stored in variable visited).
   //

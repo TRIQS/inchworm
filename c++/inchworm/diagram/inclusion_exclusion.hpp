@@ -47,7 +47,7 @@ namespace inchworm::diagram {
 
   // Determine every possible segment based on the time_diagram definition.
   // The simple rule is: "Any segment should: 1. contain the same number of c
-  // and cdag and 2. not cross a split point".
+  // and d_dag and 2. not cross a split point".
   //
   // Additionnal optimisation: a segment of length 4 and of type xoxo or oxox
   // does not need to be considered as it cannot be fully connected

@@ -17,17 +17,17 @@ namespace inchworm {
   };
 
   struct config_t {
-    std::vector<diagram::time_and_index_t> c_list, cdag_list; // list of c/cdag not time ordered, but different
-    int size() const { return c_list.size(); }
+    std::vector<diagram::time_and_index_t> d_list, d_dag_list; // list of d/d_dag not time ordered, but different
+    int size() const { return d_list.size(); }
     bool try_insert(double tau, int linear_index, double tau_dag, int linear_index_dag);
     bool try_erase(int i, int i_dag);
   };
 
-  /// The Monte-Carlo Configuration Class
+  /// The Monte-Carlo Configuration structure
   struct qmc_config_data_t {
 
     // last accepted paraemeters
-    config_t config;   // last accepted configuration of c and cdag
+    config_t config;   // last accepted configuration of d and d_dag
     weights_t w;       // weight values of the last accepted configuration
     u_frame_t u_frame; // frame of the last accepted configuraiton: just one time frame of a propagator
     int sign;          // sign of the last accepted configuration
@@ -35,16 +35,10 @@ namespace inchworm {
 
     qmc_config_data_t(atom_diag const &h_diag, double tau_max, double tau_split = 0.0, u_tau_t const *const u_tau_p = nullptr) : w{1., 1.}, sign{1} {
       u_frame = make_zeroth_order(h_diag, tau_max, tau_split, u_tau_p);
-      //u_frame           = make_bare_propagator_frame(h_diag, tau_max, false);
-      //normalization_cte = u_frame[0](0, 0);
-      //std::printf("test %f\n",normalization_cte);
     }
-
-    //qmc_config_data_t(params_t const &params, atom_diag const &h_diag, u_tau_t const &u_tau, block_gf_const_view<imtime> delta,
-    //                  std::map<int, std::pair<int, int>> linindex);
-    //int size() { return config.size(); }
   };
 
+  // structure to calculate hybridization function for tau, tau_dag, and orbital (linear) indices.
   struct hyb_adaptor_t {
     h_tau_t const hyb_tau;
     std::map<int, std::pair<int, int>> const &linindex;
@@ -69,6 +63,7 @@ namespace inchworm {
     }
   };
 
+  // static parameters of the Monte Carlo simulation
   struct qmc_params_t {
 
     // same for every inch step:
@@ -77,7 +72,6 @@ namespace inchworm {
 
     // updated at every inch step:
     u_tau_t const &u_tau; // THE propagator
-    //u_tau_t const *const u_tau_p;
 
     // different at every inch step:
     double tau_max;           // similar to beta, but configuration here does not always goes up to beta. 0 < tau_max <= beta

@@ -27,41 +27,41 @@ namespace inchworm::diagram {
 
   //auto sort_tau = [](auto const &x, auto const &y) { return x.tau < y.tau; };
 
-  int time_diagram_t::perturbation_order() const { return c_list.size(); }
+  int time_diagram_t::perturbation_order() const { return d_list.size(); }
   int time_diagram_t::size() const { return op_list.size(); }
   double time_diagram_t::max_tau() const { return op_list.back().tau; }
   double time_diagram_t::min_tau() const { return op_list.front().tau; }
 
   // Simple function to find the sign of the diagram.
-  // Note: important to use pos_c and not pos_cdag (this corresponds to normal order chosen c c^dag c c^dag ..., NOTE these are stocked in reverse order, document this PLEASE)
-  int time_diagram_t::sign() const { return (std::accumulate(pos_cdag.begin(), pos_cdag.end(), 0) % 2 == 0 ? 1 : -1); }
+  // Note: important to use pos_d_dag, not pos_d
+  int time_diagram_t::sign() const { return (std::accumulate(pos_d_dag.begin(), pos_d_dag.end(), 0) % 2 == 0 ? 1 : -1); }
 
   //
-  time_diagram_t::time_diagram_t(std::vector<time_and_index_t> const &c, std::vector<time_and_index_t> const &cdag,
+  time_diagram_t::time_diagram_t(std::vector<time_and_index_t> const &d, std::vector<time_and_index_t> const &d_dag,
                                  std::vector<double> const &split_times)
-     : op_list(2 * c.size()), c_list{c}, cdag_list{cdag} {
+     : op_list(2 * d.size()), d_list{d}, d_dag_list{d_dag} {
 
-    std::sort(cdag_list.begin(), cdag_list.end(), [](auto const &x, auto const &y) { return x.tau < y.tau; });
-    std::sort(c_list.begin(), c_list.end(), [](auto const &x, auto const &y) { return x.tau < y.tau; });
+    std::sort(d_dag_list.begin(), d_dag_list.end(), [](auto const &x, auto const &y) { return x.tau < y.tau; });
+    std::sort(d_list.begin(), d_list.end(), [](auto const &x, auto const &y) { return x.tau < y.tau; });
 
-    EXPECTS(c_list.size() == cdag_list.size());
+    EXPECTS(d_list.size() == d_dag_list.size());
     split_points.reserve(split_times.size());
 
-    int order = c_list.size();
+    int order = d_list.size();
 
-    if (c.size() == 0) {
+    if (d.size() == 0) {
       //std::printf("warning: zero lenght! \n");
       //fflush(stdout);
       return;
     }
     for (int i = 0, j = order; i < order; i++, j++) {
-      op_list[i].tau          = c_list[i].tau;
-      op_list[i].linear_index = c_list[i].linear_index;
+      op_list[i].tau          = d_list[i].tau;
+      op_list[i].linear_index = d_list[i].linear_index;
       op_list[i].dag          = false;
       op_list[i].order_index  = i;
 
-      op_list[j].tau          = cdag_list[i].tau;
-      op_list[j].linear_index = cdag_list[i].linear_index;
+      op_list[j].tau          = d_dag_list[i].tau;
+      op_list[j].linear_index = d_dag_list[i].linear_index;
       op_list[j].dag          = true;
       op_list[j].order_index  = i;
     }
@@ -90,9 +90,9 @@ namespace inchworm::diagram {
     // posc[i] is the position of the i^th c in op_list (inverse table of order_index)
     for (int i = 0; i < op_list.size(); i++) {
       if (op_list[i].dag)
-        pos_cdag.push_back(i);
+        pos_d_dag.push_back(i);
       else
-        pos_c.push_back(i);
+        pos_d.push_back(i);
     }
   }
 } // namespace inchworm::diagram

@@ -34,8 +34,8 @@ namespace inchworm::moves {
     /// The random number generator
     triqs::mc_tools::random_generator &rng;
 
-    /// c/cdag lists of proposed insert
-    config_t proposed_config; // proposed configuration of c and cdag
+    /// c/d_dag lists of proposed insert
+    config_t proposed_config; // proposed configuration of c and d_dag
 
     /// weights of the proposed configuration
     weights_t proposed_w;

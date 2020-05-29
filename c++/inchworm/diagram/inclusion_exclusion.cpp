@@ -36,8 +36,8 @@ namespace inchworm::diagram {
   }
 
   // Determine every possible segment based on the time_diagram definition.
-  // The simple rule is: "Any segment should: 1. contain the same number of c
-  // and cdag and 2. not cross a split point".
+  // The simple rule is: "Any segment should: 1. contain the same number of d
+  // and d_dag and 2. not cross a split point".
   //
   // Additionnal optimisation: a segment of length 4 and of type xoxo or oxox
   // does not need to be considered as it cannot be fully connected
@@ -64,7 +64,7 @@ namespace inchworm::diagram {
         // count the number of dag, must be half of the lenght a:
         for (int j = i; j < i + a; j++)
           if (diagram.op_list[j].dag) Ndag++;
-        if (2 * Ndag == a) // check if same number of cdag an c in the segment starting at i and ending before i+a
+        if (2 * Ndag == a) // check if same number of d_dag an d in the segment starting at i and ending before i+a
         {
           auto seg = segment_t{i, i + a, N_segment++};
           seg_list.push_back(seg);
@@ -201,12 +201,14 @@ namespace inchworm::diagram {
     }
 
     segments_list[segment_numero].value += hyb_mat.extract_det(range_of_vertex);
-    if (verbose>2) std::printf("\nsegment[%d]= % 4.8f\n\n", hyb_mat.extract_det(range_of_vertex), segment_numero);
+    if (verbose > 2) std::printf("\nsegment[%d]= % 4.8f\n\n", segment_numero, hyb_mat.extract_det(range_of_vertex));
 
     for (auto subs : set_disjoint_list) {
       if ((not special) and not((segments_list[segment_numero].pos1 <= subs.pos1) and (segments_list[segment_numero].pos2 > subs.pos2))) continue;
-      
-      if (special and (subs.list.size() == 1) // this is the special case where we evaluate the full segment (at the end). We still need to exclude the itself.
+
+      if (special
+          and (subs.list.size()
+               == 1) // this is the special case where we evaluate the full segment (at the end). We still need to exclude the itself.
           and ((segments_list[segment_numero].pos1 == subs.pos1) and (segments_list[segment_numero].pos2 == subs.pos2)))
         continue; // this is tricky, might have to change this at some point
 
@@ -282,9 +284,8 @@ namespace inchworm::diagram {
         return 0.0;
     };
 
-    if (verbose) 
-      std::printf("\n\n##################\nINCLUSION-EXCLUSION:\n");
-    if (verbose >1) {
+    if (verbose) std::printf("\n\n##################\nINCLUSION-EXCLUSION:\n");
+    if (verbose > 1) {
       if (verbose > 2) hyb_mat.print();
       std::printf("list of single segements:\n");
       print_diag(diagram);

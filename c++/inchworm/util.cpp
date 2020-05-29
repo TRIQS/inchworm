@@ -72,43 +72,55 @@ namespace inchworm {
         if (std::abs(m(i, j)) < 1e-100)
           std::printf("   .      ");
         else
-          std::printf("% 10.2e", m(i, j)*factor);
+          std::printf("% 10.2e", m(i, j) * factor);
       }
       std::printf("]");
     }
     std::printf("\n");
   }
 
-  /*
-  void print_fundamental_operator_set(fundamental_operator_set const &fops) {
-
-    for (int s = 0; s < fops.size(); s++) {
-      std::printf("\n%d: \n   ", s);
-      //auto fss = ad.get_fock_states()[s];
-      for (int i = 0; i < fops[s].size(); i++) {
-        printf("  ");
-        print_binary(fops[s][i], fops.data().size());
-      }
-      std::printf("\n");
+  //
+  void fprint(u_tau_t u_tau, int N_tau) {
+    FILE *f = fopen("u_tau.dat", "w");
+    for (int i_tau = 0; i_tau < N_tau; i_tau++) {
+      fprintf(f, "%d  ", i_tau);
+      for (int bl = 0; bl < u_tau.size(); bl++) print_matrix((matrix_t)u_tau[bl][i_tau]);
+      fprintf(f, "\n");
     }
+    fclose(f);
+    return;
   }
-  */
+
+  //
+  void print(u_tau_t u_tau, double tau) {
+    for (int bl = 0; bl < u_tau.size(); bl++) { print_matrix((matrix_t)u_tau[bl](tau)); }
+    std::cout << "\n";
+    return;
+  }
+
+  //
+  void print(u_tau_t u_tau, int frame_number) {
+    for (int bl = 0; bl < u_tau.size(); bl++) { std::cout << std::setprecision(10) << u_tau[bl][frame_number]; }
+    std::cout << "\n";
+    return;
+  }
+
+  //
+  void assign_u_frame_to_propagator(u_tau_t &u_tau, u_frame_t const &u_frame, int frame_number, scalar_t factor) {
+    for (int bl = 0; bl < u_tau.size(); bl++) u_tau[bl][frame_number] = factor * u_frame[bl];
+    return;
+  }
 
   void print_binary(unsigned int n, int total_bits) {
-    if (n >= 0) {
 
-      for (int i = 0; i < total_bits; i++) {
-        int bit = (1 << (total_bits - i - 1));
-        if ((n & bit) != 0)
-          std::printf("1");
-        else
-          std::printf("0");
-      }
-      std::printf(" ");
-
-    } else {
-      std::printf(" negative binary? \n");
+    for (int i = 0; i < total_bits; i++) {
+      int bit = (1 << (total_bits - i - 1));
+      if ((n & bit) != 0)
+        std::printf("1");
+      else
+        std::printf("0");
     }
+    std::printf(" ");
   }
 
   std::pair<int, int> find_index(int number, std::vector<std::vector<fock_state_t>> fs) {
@@ -135,7 +147,7 @@ namespace inchworm {
     return trace_value;
   }
 
-  u_frame_t partial_trace_bath(atom_diag const &ad_full, atom_diag const &ad_loc, atom_diag const &ad_bath, double beta, double dtau) {
+  u_frame_t partial_trace_bath(atom_diag const &ad_full, atom_diag const &ad_loc, atom_diag const &ad_bath, double beta, double tau) {
     //TODO: incorporate in atom_diag and make it a member function: not possible anymore.
 
     for (int i = 0; i < (int)ad_loc.get_fops().data().size(); i++) {
@@ -144,8 +156,6 @@ namespace inchworm {
         std::printf("error: the first indices of ad_full should be the same as the one in ad_loc.\n");
         exit(1);
       }
-
-      //std::cout << ad_loc.get_fops().data()[i] << "\n";
     }
 
     //for (int i = 0; i < (int)ad_full.get_fops().data().size(); i++) {
@@ -162,7 +172,8 @@ namespace inchworm {
     auto es_bath             = ad_bath.get_eigensystems();
     auto fs_bath             = ad_bath.get_fock_states();
 
-    //    auto fs_bath             = ad_bath.get_fock_states();
+    // printing:
+
     /*
     //print_eigensystems(ad_full);
     for (int s = 0; s < ad_full.n_subspaces(); s++) {
@@ -181,23 +192,25 @@ namespace inchworm {
       }
       std::cout << "\n";
     }
-    */
     //return 0.0;
+    */
 
     for (int s = 0; s < ad_full.n_subspaces(); s++) {
       EXPECTS(es_full[s].eigenvalues.size() == fs_full[s].size());
-      int size    = ad_full.get_subspace_dim(s);
-      auto E_Udag = dagger(es_full[s].unitary_matrix);
+      int size      = ad_full.get_subspace_dim(s);
+      auto e_E_Udag = dagger(es_full[s].unitary_matrix);
 
       for (int i = 0; i < size; i++) {
         //std::printf("-----> %lu   % 4.8f\n ", fs_full[s][i],  fct(es_full[s].eigenvalues[i] + ad_full.get_gs_energy()));
-        for (int j = 0; j < size; j++) E_Udag(i, j) *= std::exp(-dtau * (es_full[s].eigenvalues[i] + ad_full.get_gs_energy()));
-        //fct(es_full[s].eigenvalues[i] + ad_full.get_gs_energy());
+        for (int j = 0; j < size; j++) e_E_Udag(i, j) *= std::exp(-tau * (es_full[s].eigenvalues[i] + ad_full.get_gs_energy()));
       }
       //std::printf("\n");
-      auto H = es_full[s].unitary_matrix * E_Udag;
+
+      // e_H = exp[-tau * H] in the basis of the sites:
+      auto e_H = es_full[s].unitary_matrix * e_E_Udag;
 
       /*
+      // printing:
       std::printf("\nH[%d] %d \n   ", s);
       auto fss = ad_full.get_fock_states()[s];
       for (int i = 0; i < ad_full.get_subspace_dim(s); i++) {
@@ -208,11 +221,6 @@ namespace inchworm {
       print_matrix(H);
       */
 
-      //for (int i = 0; i < size; i++) {
-      //  for (int j = 0; j < size; j++) H(i, j) *= std::exp(-dtau * (es_bath_full[s].eigenvalues[i] + ad_bath_full.get_gs_energy()));
-      //}
-
-      //print_matrix(H);
       for (int i = 0; i < size; i++) {
         uint64_t traced_idx1    = get_MSB(fs_full[s][i], linear_index); // the traced indices are the bath indices
         uint64_t preserved_idx1 = get_LSB(fs_full[s][i], linear_index); // the preserved indices are the impurity indices
@@ -228,7 +236,7 @@ namespace inchworm {
             auto [s2, i2] = find_index(preserved_idx2, fs_loc);
 
             auto [s3, i3] = find_index(traced_idx1, fs_bath);
-            auto [s4, i4] = find_index(traced_idx2, fs_bath);
+            //auto [s4, i4] = find_index(traced_idx2, fs_bath);
 
             if (s1 != s2) {
               std::printf("error: both block should be the same here\n");
@@ -236,14 +244,13 @@ namespace inchworm {
             }
 
             // the exponential function factor corresponds to e^[-(beta - tau) * H_bath]
-            u_frame_result[s2](i1, i2) += H(i, j) * std::exp(-(beta - dtau) * (es_bath[s3].eigenvalues[i3] + ad_bath.get_gs_energy()));
-
-          } // partial_sum(preserved_idx1, preserved_idx2) += H(i, j); }
+            u_frame_result[s2](i1, i2) += e_H(i, j) * std::exp(-(beta - tau) * (es_bath[s3].eigenvalues[i3] + ad_bath.get_gs_energy()));
+          }
         }
       }
     }
 
-    // basis transformation to the atom_diag of the impurity
+    // basis transformation to the atom_diag of the impurity:
     for (int s1 = 0; s1 < ad_loc.n_subspaces(); s1++) {
       /*
       std::printf("\nu[%d] \n   ", s1);
