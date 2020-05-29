@@ -44,6 +44,8 @@ namespace inchworm::diagram {
   //
   std::vector<segment_t> determine_segments(time_diagram_t const &diagram) {
 
+    EXPECTS(not diagram.is_trivial);
+
     std::vector<segment_t> seg_list;
     int N = diagram.op_list.size();
 
@@ -66,10 +68,9 @@ namespace inchworm::diagram {
           if (diagram.op_list[j].dag) Ndag++;
         if (2 * Ndag == a) // check if same number of d_dag an d in the segment starting at i and ending before i+a
         {
-          auto seg = segment_t{i, i + a, N_segment++};
-          seg_list.push_back(seg);
+          seg_list.push_back({i, i + a, N_segment++});
           if constexpr (verbose > 0) {
-            print_segment(seg, diagram);
+            print_segment(seg_list.back(), diagram);
             std::printf("\n");
           }
         }
@@ -115,8 +116,10 @@ namespace inchworm::diagram {
     print_line(num_vector);
   }
 
-  // Combine the different segments defined in segment_list. It proceed in
-  // steps. Every step reuse the previous set of segment. For exemple
+  // This function generates the list of distjoint / adjoint sets
+  // given the list of all possible segments
+  //
+  // It proceed in steps. Every step reuse the previous set of segment. For exemple
   // when we try to generate set of 3 segments, we reuse every set
   // of 2 segment and try to append segments the segments in segment_list.
   // For this reason, we keep the information of the indices where the "N segments"
@@ -143,6 +146,7 @@ namespace inchworm::diagram {
         //if we do not search for disjoint set, we search for adjacent set, only. We do not need the ones that are neither.
 
         for (auto additional_segment : segment_list) {
+          // Only consider segments that start to the right of the current rightmost segment
           if (additional_segment.pos1 >= previous_set.pos2) {
             set_of_segments_t new_set = previous_set;
             new_set.append(additional_segment, diagram);
@@ -183,16 +187,18 @@ namespace inchworm::diagram {
   // Calculate the value of one segment
   // by analysing every segments of the set of segment (of both lists)
   //
+  // special only if segment is full segment of diagram
   void calculate_segment(int segment_numero,
                          std::vector<segment_t> &segments_list, // not const: modified
                          std::vector<set_of_segments_t> const &set_disjoint_list, std::vector<set_of_segments_t> const &set_adjacent_list,
                          hyb_matrix_t const &hyb_mat, time_diagram_t const &diagram, bool special, int verbose) {
 
-    segments_list[segment_numero].calculated = true;
-    if (verbose > 1) { print_segment(segments_list[segment_numero], diagram); }
+    auto & seg = segments_list[segment_numero];
+    seg.calculated = true;
+    if (verbose > 1) { print_segment(seg, diagram); }
 
-    std::vector<int> range_of_vertex(segments_list[segment_numero].size);
-    std::iota(range_of_vertex.begin(), range_of_vertex.end(), segments_list[segment_numero].pos1);
+    std::vector<int> range_of_vertex(seg.size);
+    std::iota(range_of_vertex.begin(), range_of_vertex.end(), seg.pos1);
 
     if (verbose > 2) {
       std::printf("range of vertex: ");
@@ -200,16 +206,17 @@ namespace inchworm::diagram {
       hyb_mat.print();
     }
 
-    segments_list[segment_numero].value += hyb_mat.extract_det(range_of_vertex);
+    // Calculate the determinant of the full segment
+    seg.value += hyb_mat.extract_det(range_of_vertex);
     if (verbose > 2) std::printf("\nsegment[%d]= % 4.8f\n\n", segment_numero, hyb_mat.extract_det(range_of_vertex));
 
-    for (auto subs : set_disjoint_list) {
-      if ((not special) and not((segments_list[segment_numero].pos1 <= subs.pos1) and (segments_list[segment_numero].pos2 > subs.pos2))) continue;
+    for (auto subset : set_disjoint_list) {
+      if ((not special) and not((seg.pos1 <= subset.pos1) and (seg.pos2 > subset.pos2))) continue;
 
       if (special
-          and (subs.list.size()
+          and (subset.list.size()
                == 1) // this is the special case where we evaluate the full segment (at the end). We still need to exclude the itself.
-          and ((segments_list[segment_numero].pos1 == subs.pos1) and (segments_list[segment_numero].pos2 == subs.pos2)))
+          and ((seg.pos1 == subset.pos1) and (seg.pos2 == subset.pos2)))
         continue; // this is tricky, might have to change this at some point
 
       scalar_t value = 1.0;
@@ -217,20 +224,20 @@ namespace inchworm::diagram {
       int sign_of_parcollet_charlebois = 1;
       bool is_finite                   = true;
 
-      for (auto sub_segment_numero : subs.list) {
-        segment_t seg = segments_list[sub_segment_numero];
+      for (auto sub_segment_numero : subset.list) {
+        segment_t subseg = segments_list[sub_segment_numero];
         EXPECTS(seg.calculated);
 
-        if (seg.value == 0.0) { // somehow, this seems to happen often even if we consider float (does it still holds for complex numbers?)
+        if (subseg.value == 0.0) { // somehow, this seems to happen often even if we consider float (does it still holds for complex numbers?)
           is_finite = false;
           //std::printf("is not finite: %e \n", seg.value);
         }
-        value *= -seg.value;
+        value *= -subseg.value;
 
-        range_of_subvertex = remove_segment_from_list(range_of_subvertex, seg.pos1, seg.size);
+        range_of_subvertex = remove_segment_from_list(range_of_subvertex, subseg.pos1, subseg.size);
 
-        if (seg.size % 4 != 0)
-          if ((seg.pos2 - segments_list[segment_numero].pos1) % 2 == 1) sign_of_parcollet_charlebois *= -1;
+        if (subseg.size % 4 != 0)
+          if ((subseg.pos2 - seg.pos1) % 2 == 1) sign_of_parcollet_charlebois *= -1;
       }
       //if (verbose > 1)  std::printf("sign_parcollet_charlebois  % d\n", sign_of_parcollet_charlebois);
       //if (verbose > 1)  std::printf("value1 = % 4.8f\n", value);
@@ -244,14 +251,15 @@ namespace inchworm::diagram {
         value *= sign_of_parcollet_charlebois * det1;
       }
       //if (verbose > 1)  std::printf("value2 = % 4.8f\n", value);
-      segments_list[segment_numero].value += value;
+      seg.value += value;
     }
 
-    segments_list[segment_numero].value_without_cuts = segments_list[segment_numero].value;
+    seg.value_without_cuts = seg.value;
 
     for (auto cuts : set_adjacent_list) {
-      if (segments_list[segment_numero].pos1 == cuts.pos1)
-        if (segments_list[segment_numero].pos2 == cuts.pos2) {
+      // Make sure that adjecent subset covers exactly the segment
+      if (seg.pos1 == cuts.pos1)
+        if (seg.pos2 == cuts.pos2) {
 
           scalar_t value = 1.0;
 
@@ -261,10 +269,10 @@ namespace inchworm::diagram {
 
             value *= -seg.value_without_cuts;
           }
-          segments_list[segment_numero].value -= value;
+          seg.value -= value;
         }
     }
-    if (verbose > 1) std::printf("   % 15.8f      % 15.8f\n", segments_list[segment_numero].value, segments_list[segment_numero].value_without_cuts);
+    if (verbose > 1) std::printf("   % 15.8f      % 15.8f\n", seg.value, seg.value_without_cuts);
   }
 
   // inclusion_exclusion algo based on Boag et al. PRB (2018) (with few changes)

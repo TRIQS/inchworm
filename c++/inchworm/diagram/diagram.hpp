@@ -52,7 +52,7 @@ namespace inchworm::diagram {
 
     public:
     std::vector<op_t> op_list;                       // list of all operator time ordered
-    std::vector<int> split_points;                   // position of split points
+    std::vector<int> split_points;                   // position of split points (index of first operator to the right of split time)
     std::vector<time_and_index_t> d_list, d_dag_list; // list of d/d_dag time ordered
     std::vector<int> pos_d;                          // position of d in the op_list
     std::vector<int> pos_d_dag;                       // idem
