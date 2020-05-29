@@ -93,7 +93,7 @@ namespace inchworm::diagram {
   std::vector<int> remove_segment_from_list(std::vector<int> const &list, int segment_min, int segment_size);
 
   // Calculate the value of one segment
-  // by analysing every segiments of the set of segment (of both lists)
+  // by analysing every segments of the set of segment (of both lists)
   //
   void calculate_segment(int segment_numero,
                          std::vector<segment_t> &segments_list, // not const: modified
