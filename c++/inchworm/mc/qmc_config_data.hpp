@@ -5,9 +5,6 @@
 #include "../diagram/diagram.hpp"
 #include "./impurity_product.hpp"
 #include <triqs/atom_diag/atom_diag.hpp>
-//#include <triqs/atom_diag/functions.hpp>
-//#include <triqs/utility/serialization.hpp>
-//#include <triqs/det_manip.hpp>
 
 namespace inchworm {
 
@@ -46,6 +43,7 @@ namespace inchworm {
     hyb_adaptor_t(h_tau_t const &hyb_tau, std::map<int, std::pair<int, int>> const &linindex)
        : hyb_tau(std::move(hyb_tau)), linindex(std::move(linindex)) {}
 
+    // function to link
     scalar_t operator()(double tau, int li, double tau_dag, int li_dag) const {
       auto [bl, in]         = linindex.at(li);
       auto [bl_dag, in_dag] = linindex.at(li_dag);

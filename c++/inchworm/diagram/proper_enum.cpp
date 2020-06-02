@@ -65,14 +65,10 @@ namespace inchworm::diagram {
   //
   void grow_pile(int arch, std::vector<int> const &permutation, std::vector<bool> &visited, time_diagram_t const &diagram) {
 
-    //connexion_pile.push_back(arch);
-    int d     = diagram.pos_d[arch];
-    int d_dag = diagram.pos_d_dag[permutation[arch]];
-
     for (int new_arch = 0; new_arch < diagram.perturbation_order(); new_arch++) {
       if (visited[new_arch]) continue;
 
-      if (segment_cross(d, d_dag, diagram.pos_d[new_arch], diagram.pos_d_dag[permutation[new_arch]])) {
+      if (segment_cross(diagram.pos_d[arch], diagram.pos_d_dag[permutation[arch]], diagram.pos_d[new_arch], diagram.pos_d_dag[permutation[new_arch]])) {
         visited[new_arch] = true;
         grow_pile(new_arch, permutation, visited, diagram);
       }

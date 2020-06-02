@@ -20,8 +20,6 @@ namespace inchworm::measures {
     // The Monte-Carlo configuration
     qmc_config_data_t const &qmc_config_data;
     single_step_results_t &results;
-
-    scalar_t average_sign = 0;
   };
 
 } // namespace inchworm::measures

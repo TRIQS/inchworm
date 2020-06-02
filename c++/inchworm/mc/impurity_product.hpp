@@ -15,9 +15,17 @@
 namespace inchworm {
   using time_diagram_t = diagram::time_diagram_t;
 
-  u_tau_t make_propagator(atom_diag const &h_diag, double beta, int n_tau);
-  u_tau_t make_ED_propagator(atom_diag const &ad_tot, atom_diag const &ad_atom, atom_diag const &ad_bath, double beta, int n_tau);
+  // FIXME: these three functions should be put in a seperated file
 
+  // Make an empty propagator (green function) with the same structure as the one in atom_diag:
+  u_tau_t make_propagator(atom_diag const &h_diag, double beta, int n_tau);
+
+  // Make an exact diagonalization propagator U = Trace_B [exp(-H_bath *(beta-tau)) exp(-H_tot*tau)  ]  /  Trace_B [ exp(-H_bath*beta) ]
+  u_tau_t make_ED_propagator(atom_diag const &ad_tot, atom_diag const &ad_imp, atom_diag const &ad_bath, double beta, int n_tau);
+
+  // zeroth order is :
+  // U_0(tau) = exp(-H_imp*tau) for cthyb
+  // U_0(tau) = U(tau-tau_split) U(tau_split) for inchworm
   //
   u_frame_t make_zeroth_order(atom_diag const &ad, double tau, double tau_split = 0.0, u_tau_t const *const u_tau_p = nullptr);
 
@@ -34,13 +42,10 @@ namespace inchworm {
   u_frame_t propagator_product(atom_diag const &ad, time_diagram_t const &diagram, double tau_max, double tau_split = 0.0,
                                u_tau_t const *const u_tau_p = nullptr);
 
-  inline std::ostream &operator<<(std::ostream &out, u_frame_t const &u_frame) {
-    out << "propagator_frame (size: " << u_frame.size() << ")\n";
-    for (int bl = 0; bl < u_frame.size(); bl++) { out << u_frame[bl] << "\n"; }
-    return out;
-  }
 
   constexpr int MAX_ORDER = 7; // just for printing
+  
+  // structure to gather result of one Monte Carlo run:
   struct single_step_results_t {
     double average_k = 0.0;
     u_frame_t u_frame;
@@ -58,9 +63,7 @@ namespace inchworm {
       for (auto &o : u_expansion_order) o /= normalization_cte;
     };
 
-    void print();
-   
-    
+    void print(); 
   };
 
 } // namespace inchworm
