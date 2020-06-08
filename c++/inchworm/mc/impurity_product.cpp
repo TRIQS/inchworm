@@ -53,7 +53,7 @@ namespace inchworm {
   }
 
   //
-  u_frame_t propagator_product(atom_diag const &ad, time_diagram_t const &diagram, double tau, double tau_split, u_tau_t const *const u_tau_p) {
+  u_frame_t impurity_product(atom_diag const &ad, time_diagram_t const &diagram, double tau, double tau_split, u_tau_t const *const u_tau_p) {
 
     if (diagram.size() == 0) return make_zeroth_order(ad, tau, tau_split, u_tau_p);
 
