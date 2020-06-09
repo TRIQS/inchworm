@@ -69,7 +69,7 @@ namespace inchworm {
     // ----------- System Specific -----------
 
     /// Interaction Hamiltonian
-    many_body_operator h_int;
+    many_body_operator h_imp;
 
     /// Partition method
     /// type: str

@@ -41,7 +41,7 @@ namespace inchworm {
 
   void h5_write(triqs::h5::group h5group, std::string subgroup_name, solve_params_t const &sp) {
     auto grp = h5group.create_group(subgroup_name);
-    h5_write(grp, "h_int", sp.h_int);
+    h5_write(grp, "h_imp", sp.h_imp);
     h5_write(grp, "n_cycles", sp.n_cycles);
     h5_write(grp, "length_cycle", sp.length_cycle);
     h5_write(grp, "n_warmup_cycles", sp.n_warmup_cycles);
@@ -56,7 +56,7 @@ namespace inchworm {
   void h5_read(triqs::h5::group h5group, std::string subgroup_name, solve_params_t &sp) {
     auto grp = h5group.open_group(subgroup_name);
     // Take care! Do not read random_seed and verbosity as they should be different based on mpi rank
-    h5_read(grp, "h_int", sp.h_int);
+    h5_read(grp, "h_imp", sp.h_imp);
     h5_read(grp, "n_cycles", sp.n_cycles);
     h5_read(grp, "length_cycle", sp.length_cycle);
     h5_read(grp, "n_warmup_cycles", sp.n_warmup_cycles);

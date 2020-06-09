@@ -133,76 +133,76 @@ namespace inchworm {
     exit(1);
   }
 
-  scalar_t trace(atom_diag const &ad_full, std::function<double(double)> fct) {
+  scalar_t trace(atom_diag const &ad_tot, std::function<double(double)> fct) {
     scalar_t trace_value = 0.0;
-    auto es_full         = ad_full.get_eigensystems();
-    auto fs_full         = ad_full.get_fock_states();
+    auto es_full         = ad_tot.get_eigensystems();
+    auto fs_full         = ad_tot.get_fock_states();
 
-    for (int s = 0; s < ad_full.n_subspaces(); s++)
-      for (int i = 0; i < ad_full.get_subspace_dim(s); i++) {
-        scalar_t val = fct(es_full[s].eigenvalues[i] + ad_full.get_gs_energy());
+    for (int s = 0; s < ad_tot.n_subspaces(); s++)
+      for (int i = 0; i < ad_tot.get_subspace_dim(s); i++) {
+        scalar_t val = fct(es_full[s].eigenvalues[i] + ad_tot.get_gs_energy());
         trace_value += val;
         //std::printf("s=%d, i=%d, val= %f\n", s, i, val);
       }
     return trace_value;
   }
 
-  u_frame_t partial_trace_bath(atom_diag const &ad_full, atom_diag const &ad_loc, atom_diag const &ad_bath, double beta, double tau) {
+  u_frame_t partial_trace_bath(atom_diag const &ad_tot, atom_diag const &ad_imp, atom_diag const &ad_bath, double beta, double tau) {
     //TODO: incorporate in atom_diag and make it a member function: not possible anymore.
 
-    for (int i = 0; i < (int)ad_loc.get_fops().data().size(); i++) {
-      //std::printf("%d %d \n", i, (int)ad_loc.get_fops().data().size());
-      if (ad_full.get_fops().data()[i] != ad_loc.get_fops().data()[i]) {
-        std::printf("error: the first indices of ad_full should be the same as the one in ad_loc.\n");
+    for (int i = 0; i < (int)ad_imp.get_fops().data().size(); i++) {
+      //std::printf("%d %d \n", i, (int)ad_imp.get_fops().data().size());
+      if (ad_tot.get_fops().data()[i] != ad_imp.get_fops().data()[i]) {
+        std::printf("error: the first indices of ad_tot should be the same as the one in ad_imp.\n");
         exit(1);
       }
     }
 
-    //for (int i = 0; i < (int)ad_full.get_fops().data().size(); i++) {
-    //  std::cout << " " << ad_full.get_fops().data()[i] << "\n";
+    //for (int i = 0; i < (int)ad_tot.get_fops().data().size(); i++) {
+    //  std::cout << " " << ad_tot.get_fops().data()[i] << "\n";
     //}
 
-    int linear_index = ad_loc.get_fops().data().size();
+    int linear_index = ad_imp.get_fops().data().size();
     //std::printf("li=%d\n",linear_index);
 
-    u_frame_t u_frame_result = make_zero_propagator_frame(ad_loc);
-    auto es_full             = ad_full.get_eigensystems();
-    auto fs_full             = ad_full.get_fock_states();
-    auto fs_loc              = ad_loc.get_fock_states();
+    u_frame_t u_frame_result = make_zero_propagator_frame(ad_imp);
+    auto es_full             = ad_tot.get_eigensystems();
+    auto fs_full             = ad_tot.get_fock_states();
+    auto fs_loc              = ad_imp.get_fock_states();
     auto es_bath             = ad_bath.get_eigensystems();
     auto fs_bath             = ad_bath.get_fock_states();
 
     // printing:
 
     /*
-    //print_eigensystems(ad_full);
-    for (int s = 0; s < ad_full.n_subspaces(); s++) {
-      for (int i = 0; i < ad_full.get_subspace_dim(s); i++) {
+    //print_eigensystems(ad_tot);
+    for (int s = 0; s < ad_tot.n_subspaces(); s++) {
+      for (int i = 0; i < ad_tot.get_subspace_dim(s); i++) {
         printf("  %2lu: ", fs_full[s][i]);
-        print_binary(fs_full[s][i], ad_full.get_fops().data().size());
+        print_binary(fs_full[s][i], ad_tot.get_fops().data().size());
       }
       std::cout << "\n";
     }
     std::cout << "\n";
-    //print_eigensystems(ad_loc);
-    for (int s = 0; s < ad_loc.n_subspaces(); s++) {
-      for (int i = 0; i < ad_loc.get_subspace_dim(s); i++) {
+    //print_eigensystems(ad_imp);
+    for (int s = 0; s < ad_imp.n_subspaces(); s++) {
+      for (int i = 0; i < ad_imp.get_subspace_dim(s); i++) {
         printf("  %2lu: ", fs_loc[s][i]);
-        print_binary(fs_loc[s][i], ad_loc.get_fops().data().size());
+        print_binary(fs_loc[s][i], ad_imp.get_fops().data().size());
       }
       std::cout << "\n";
     }
     //return 0.0;
     */
 
-    for (int s = 0; s < ad_full.n_subspaces(); s++) {
+    for (int s = 0; s < ad_tot.n_subspaces(); s++) {
       EXPECTS(es_full[s].eigenvalues.size() == fs_full[s].size());
-      int size      = ad_full.get_subspace_dim(s);
+      int size      = ad_tot.get_subspace_dim(s);
       auto e_E_Udag = dagger(es_full[s].unitary_matrix);
 
       for (int i = 0; i < size; i++) {
-        //std::printf("-----> %lu   % 4.8f\n ", fs_full[s][i],  fct(es_full[s].eigenvalues[i] + ad_full.get_gs_energy()));
-        for (int j = 0; j < size; j++) e_E_Udag(i, j) *= std::exp(-tau * (es_full[s].eigenvalues[i] + ad_full.get_gs_energy()));
+        //std::printf("-----> %lu   % 4.8f\n ", fs_full[s][i],  fct(es_full[s].eigenvalues[i] + ad_tot.get_gs_energy()));
+        for (int j = 0; j < size; j++) e_E_Udag(i, j) *= std::exp(-tau * (es_full[s].eigenvalues[i] + ad_tot.get_gs_energy()));
       }
       //std::printf("\n");
 
@@ -212,10 +212,10 @@ namespace inchworm {
       /*
       // printing:
       std::printf("\nH[%d] %d \n   ", s);
-      auto fss = ad_full.get_fock_states()[s];
-      for (int i = 0; i < ad_full.get_subspace_dim(s); i++) {
+      auto fss = ad_tot.get_fock_states()[s];
+      for (int i = 0; i < ad_tot.get_subspace_dim(s); i++) {
         printf("  ");
-        print_binary(fss[i], ad_full.get_fops().data().size());
+        print_binary(fss[i], ad_tot.get_fops().data().size());
       }
     
       print_matrix(H);
@@ -251,19 +251,19 @@ namespace inchworm {
     }
 
     // basis transformation to the atom_diag of the impurity:
-    for (int s1 = 0; s1 < ad_loc.n_subspaces(); s1++) {
+    for (int s1 = 0; s1 < ad_imp.n_subspaces(); s1++) {
       /*
       std::printf("\nu[%d] \n   ", s1);
-      auto fss1 = ad_loc.get_fock_states()[s1];
-      for (int i = 0; i < ad_loc.get_subspace_dim(s1); i++) {
+      auto fss1 = ad_imp.get_fock_states()[s1];
+      for (int i = 0; i < ad_imp.get_subspace_dim(s1); i++) {
         printf("  ");
-        print_binary(fss1[i], ad_loc.get_fops().data().size());
+        print_binary(fss1[i], ad_imp.get_fops().data().size());
       }
       std::printf("\n");
       print_matrix(u_frame_result[s1]);
       */
       u_frame_result[s1] =
-         dagger((ad_loc.get_eigensystems())[s1].unitary_matrix) * u_frame_result[s1] * ((ad_loc.get_eigensystems())[s1].unitary_matrix);
+         dagger((ad_imp.get_eigensystems())[s1].unitary_matrix) * u_frame_result[s1] * ((ad_imp.get_eigensystems())[s1].unitary_matrix);
     }
 
     return u_frame_result;

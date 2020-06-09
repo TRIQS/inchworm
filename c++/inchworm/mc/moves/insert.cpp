@@ -8,7 +8,7 @@ namespace inchworm::moves {
     proposed_w      = data.w;
 
     int N      = data.config.size(); // size before proposition
-    int n_fops = (params.h_diag.get_fops()).size();
+    int n_fops = (params.ad_imp.get_fops()).size();
     int li     = rng(n_fops);
     int li_dag = rng(n_fops);
 
@@ -33,9 +33,9 @@ namespace inchworm::moves {
     //if (proposed_config.size() >5) return 0.0;
 
     if (params.use_bare_propagator)
-      proposed_u_frame = impurity_product(params.h_diag, diagram, params.tau_max, 0, nullptr);
+      proposed_u_frame = impurity_product(params.ad_imp, diagram, params.tau_max, 0, nullptr);
     else
-      proposed_u_frame = impurity_product(params.h_diag, diagram, params.tau_max, params.tau_split, &params.u_tau);
+      proposed_u_frame = impurity_product(params.ad_imp, diagram, params.tau_max, params.tau_split, &params.u_tau);
 
     proposed_w.loc   = frobenius_norm(proposed_u_frame);
     auto sign_ratio  = proposed_sign / data.sign;

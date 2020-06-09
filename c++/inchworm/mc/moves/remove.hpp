@@ -42,7 +42,7 @@ namespace inchworm::moves {
     weights_t proposed_w;
 
     /// container of the calculated time frame of the propagator
-    u_frame_t proposed_u_frame = make_zero_propagator_frame(params.h_diag);
+    u_frame_t proposed_u_frame = make_zero_propagator_frame(params.ad_imp);
 
     int proposed_sign;
   };

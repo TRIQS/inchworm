@@ -65,10 +65,10 @@ namespace inchworm {
     if (solve_params.partition_method != "quantum_numbers")
       TRIQS_RUNTIME_ERROR << "Please use total number for quantum number and use quantum numbers methods for partition of atom_diag";
     //
-    _h_loc = solve_params.h_int;
-    h_diag = {_h_loc, fops, solve_params.quantum_numbers};
-    u_tau  = make_propagator(h_diag, constr_params.beta, N_STEP + 1);
-    //print_eigensystems(h_diag);
+    h_imp = solve_params.h_imp;
+    ad_imp = {h_imp, fops, solve_params.quantum_numbers};
+    u_tau  = make_propagator(ad_imp, constr_params.beta, N_STEP + 1);
+    //print_eigensystems(ad_imp);
   }
 
   //------------------------------
@@ -86,7 +86,7 @@ namespace inchworm {
     bool use_bare_propagator = true;
 
     // u_frame recipient:
-    u_frame_bare = make_bare_propagator_frame(h_diag, tau_max, false);
+    u_frame_bare = make_bare_propagator_frame(ad_imp, tau_max, false);
     auto res     = single_step(solve_params, tau_split, tau_max, use_bare_propagator);
 
     // Finding the ratio between theoretical zeroth order and Monte Carlo sampled zeroth order.
@@ -114,7 +114,7 @@ namespace inchworm {
     u_tau = u_tau_;
 
     // u_frame recipient:
-    u_frame_bare = make_bare_propagator_frame(h_diag, tau_max, false);
+    u_frame_bare = make_bare_propagator_frame(ad_imp, tau_max, false);
 
     // calculation of the solution:
     auto res = single_step(solve_params, tau_split, tau_max, false);
@@ -160,7 +160,7 @@ namespace inchworm {
       bool use_bare_propagator = (n == 0);
 
       // u_frame recipient:
-      u_frame_bare = make_bare_propagator_frame(h_diag, tau_max, false);
+      u_frame_bare = make_bare_propagator_frame(ad_imp, tau_max, false);
     
       // calculation of the Monte Carlo solution:
       auto res     = single_step(solve_params, tau_split, tau_max, use_bare_propagator);
@@ -200,16 +200,16 @@ namespace inchworm {
     if (use_bare_propagator) u_tau_p = nullptr;
 
     // Create Monte-Carlo configuration
-    qmc_config_data_t qmc_config_data{h_diag, tau_max, tau_split, u_tau_p};
+    qmc_config_data_t qmc_config_data{ad_imp, tau_max, tau_split, u_tau_p};
 
     // Create Monte-Carlo params
-    qmc_params_t qmc_params{Delta_tau, map_lin_idx_to_block_inner, h_diag, u_tau, tau_max, tau_split, use_bare_propagator};
+    qmc_params_t qmc_params{Delta_tau, map_lin_idx_to_block_inner, ad_imp, u_tau, tau_max, tau_split, use_bare_propagator};
 
     mc.add_move(moves::insert{qmc_config_data, qmc_params, rng}, "insert move");
     mc.add_move(moves::remove{qmc_config_data, qmc_params, rng}, "remove move");
 
     // initialize result container:
-    single_step_results_t results(h_diag);
+    single_step_results_t results(ad_imp);
 
     // Register all measurements
     mc.add_measure(measures::u_frame{params, qmc_config_data, results}, "propagator measurement");

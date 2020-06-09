@@ -80,18 +80,18 @@ void self_consistent_hubbard(int n_site, int n_bath, int n_spin, double U, doubl
       for (int j = 0; j < n_site; j++) std::printf("%d %d % 4.8f\n", i, j, S.Delta_tau[block][cp.n_tau - 1](i, j));
   //exit(0);
 
-  auto h_atom = 0 * n("up", 0);
+  auto h_imp = 0 * n("up", 0);
   for (int j = 0; j < n_site; j++) {
-    h_atom -= mu * n("up", j);
+    h_imp -= mu * n("up", j);
 
     if (n_spin == 2) {
-      h_atom -= mu * n("dn", j);
-      h_atom += U * n("up", j) * n("dn", j);
+      h_imp -= mu * n("dn", j);
+      h_imp += U * n("up", j) * n("dn", j);
     }
     for (int i = 0; i < n_site; i++) {
       if (i != j) {
-        h_atom -= t * c_dag("up", i) * c("up", j);
-        if (n_spin == 2) h_atom -= t * c_dag("dn", i) * c("dn", j);
+        h_imp -= t * c_dag("up", i) * c("up", j);
+        if (n_spin == 2) h_imp -= t * c_dag("dn", i) * c("dn", j);
       }
     }
   }
@@ -104,7 +104,7 @@ void self_consistent_hubbard(int n_site, int n_bath, int n_spin, double U, doubl
 
   // Solve Parameters
   solve_params_t sp;
-  sp.h_int           = h_atom;
+  sp.h_imp           = h_imp;
   sp.n_cycles        = 50000;
   sp.length_cycle    = 10;
   sp.n_warmup_cycles = 20;
@@ -134,8 +134,8 @@ void self_consistent_hubbard(int n_site, int n_bath, int n_spin, double U, doubl
     if (n_spin == 2) h_bath += epsilon(k) * n("dn", k + n_site);
   }
 
-  auto ad_tot  = triqs::atom_diag::atom_diag<false>(h_atom + h_bath + h_hyb, fops_tot);
-  auto ad_atom = triqs::atom_diag::atom_diag<false>(h_atom, fops_atom, qn_atom);
+  auto ad_tot  = triqs::atom_diag::atom_diag<false>(h_imp + h_bath + h_hyb, fops_tot);
+  auto ad_atom = triqs::atom_diag::atom_diag<false>(h_imp, fops_atom, qn_atom);
   auto ad_bath = triqs::atom_diag::atom_diag<false>(h_bath, fops_bath);
 
   u_tau_t u_tau = make_ED_propagator(ad_tot, ad_atom, ad_bath, cp.beta, cp.n_tau);

@@ -3,14 +3,14 @@
 
 namespace inchworm {
 
-  u_tau_t make_propagator(atom_diag const &h_diag, double beta, int n_tau) {
+  u_tau_t make_propagator(atom_diag const &ad_imp, double beta, int n_tau) {
 
     // this create the propagator and assign identity to the first frame (or time) of the propagator.
-    int n_sub = h_diag.n_subspaces();
+    int n_sub = ad_imp.n_subspaces();
     triqs::hilbert_space::gf_struct_t propagator_struct;
 
     for (int i = 0; i < n_sub; i++) {
-      std::vector<std::variant<int, std::string>> l(h_diag.get_subspace_dim(i));
+      std::vector<std::variant<int, std::string>> l(ad_imp.get_subspace_dim(i));
       std::iota(l.begin(), l.end(), 0);
       propagator_struct.push_back(std::make_pair(std::to_string(i), l));
     }
@@ -35,7 +35,7 @@ namespace inchworm {
     return u_tau;
   }
 
-  u_frame_t make_zeroth_order(atom_diag const &ad, double tau, double tau_split, u_tau_t const *const u_tau_p) {
+  u_frame_t make_zeroth_order_frame(atom_diag const &ad, double tau, double tau_split, u_tau_t const *const u_tau_p) {
     if (u_tau_p) {
       u_frame_t u_frame = make_zero_propagator_frame(ad);
       //for (auto &B : u_frame) std::cout << B;
@@ -55,7 +55,7 @@ namespace inchworm {
   //
   u_frame_t impurity_product(atom_diag const &ad, time_diagram_t const &diagram, double tau, double tau_split, u_tau_t const *const u_tau_p) {
 
-    if (diagram.size() == 0) return make_zeroth_order(ad, tau, tau_split, u_tau_p);
+    if (diagram.size() == 0) return make_zeroth_order_frame(ad, tau, tau_split, u_tau_p);
 
     u_frame_t u_frame = make_zero_propagator_frame(ad);
 

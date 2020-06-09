@@ -13,9 +13,9 @@ namespace inchworm {
 
     private:
     double beta;           // inverse temperature
-    atom_diag h_diag;      // diagonalization of the local problem
+    atom_diag ad_imp;      // diagonalization of the local problem
     gf_struct_t gf_struct; // Block structure of the Green function FIXME
-    many_body_op_t _h_loc; // The local Hamiltonian = h_int + h0
+    many_body_op_t h_imp; // The local Hamiltonian = h_imp + h0
     std::map<int, std::pair<int, int>> map_lin_idx_to_block_inner;
     fundamental_operator_set fops;
     u_frame_t u_frame_bare;
