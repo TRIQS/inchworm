@@ -68,7 +68,8 @@ namespace inchworm::diagram {
     for (int new_arch = 0; new_arch < diagram.perturbation_order(); new_arch++) {
       if (visited[new_arch]) continue;
 
-      if (segment_cross(diagram.pos_d[arch], diagram.pos_d_dag[permutation[arch]], diagram.pos_d[new_arch], diagram.pos_d_dag[permutation[new_arch]])) {
+      if (arches_cross(diagram.pos_d[arch], diagram.pos_d_dag[permutation[arch]], diagram.pos_d[new_arch],
+                       diagram.pos_d_dag[permutation[new_arch]])) {
         visited[new_arch] = true;
         grow_pile(new_arch, permutation, visited, diagram);
       }
@@ -98,8 +99,7 @@ namespace inchworm::diagram {
       //for(auto p : diagram.split_points) std::printf("d=%d  d_dag=%d   p=%d  \n", d, d_dag, p);
 
       if (std::any_of(diagram.split_points.begin(), diagram.split_points.end(),
-                      [d, d_dag](auto &split_point) { return segment_cross_point(d, d_dag, split_point - 1); })) {
-        //if (segment_cross_point(d, ddag, diagram.split_points)) {
+                      [d, d_dag](auto &split_point) { return arch_crosses_point(d, d_dag, split_point - 1); })) {
         cross_split_point[arch] = true;
         cross_split_point_pile.push_back(arch);
       }
