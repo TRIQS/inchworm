@@ -90,7 +90,7 @@ c.add_method("""void solve (**inchworm::solve_params_t)""",
 +-----------------+--------------------------------------+-----------------------------------------+--------------------------------------------------+
 | Parameter Name  | Type                                 | Default                                 | Documentation                                    |
 +=================+======================================+=========================================+==================================================+
-| h_int           | triqs::operators::many_body_operator | --                                      | Interaction Hamiltonian                          |
+| h_imp           | triqs::operators::many_body_operator | --                                      | Impurity Hamiltonian                          |
 +-----------------+--------------------------------------+-----------------------------------------+--------------------------------------------------+
 | n_cycles        | int                                  | --                                      | Number of MC cycles                              |
 +-----------------+--------------------------------------+-----------------------------------------+--------------------------------------------------+
@@ -128,10 +128,10 @@ c = converter_(
         c_type = "inchworm::solve_params_t",
         doc = r"""The parameters for the solve function""",
 )
-c.add_member(c_name = "h_int",
+c.add_member(c_name = "h_imp",
              c_type = "triqs::operators::many_body_operator",
              initializer = """  """,
-             doc = r"""Interaction Hamiltonian""")
+             doc = r"""Impurity Hamiltonian""")
 
 c.add_member(c_name = "n_cycles",
              c_type = "int",

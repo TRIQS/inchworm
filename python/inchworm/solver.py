@@ -65,7 +65,7 @@ class Solver(SolverCore):
         ----------
         params_kw : dict {'param':value} that is passed to the core solver.
                      The only two required parameters are
-                        * `h_int`: The local interaction Hamiltonian
+                        * `h_imp`: The local interaction Hamiltonian
                         * `n_cycles`: The number of Monte-Carlo cycles
                      For the other optional parameters see documentation.
                      Note that in this Python Wrapper the alpha-tensor is optional.
@@ -73,7 +73,7 @@ class Solver(SolverCore):
                      the SC Hartree Fock solution.
         """
 
-        h_int = params_kw['h_int']
+        h_imp = params_kw['h_imp']
         gf_struct = self.gf_struct
 
         # Call the core solver's solve routine

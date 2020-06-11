@@ -70,7 +70,7 @@ TEST(inchworm, benchmark_full_vs_det_random) {
   int N         = 10;
   int sp_max    = 1;
   int order_min = 1; // order 0 is a special case that fails for now.
-  int order_max = 2; // order 9 and above are quite slow
+  int order_max = 9; // order 9 and above are quite slow
   double beta   = 1.0;
 
   for (int order = order_min; order <= order_max; order++)

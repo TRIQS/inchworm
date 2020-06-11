@@ -83,7 +83,8 @@ namespace inchworm::diagram {
     return seg_list;
   }
 
-  set_of_segments_t::set_of_segments_t(segment_t const &seg0, time_diagram_t const &diagram) : pos1{seg0.pos1}, pos2{seg0.pos2}, size{seg0.size} {
+  set_of_segments_t::set_of_segments_t(segment_t const &seg0, time_diagram_t const &diagram)
+     : pos1{seg0.pos1}, pos2{seg0.pos2}, size{seg0.size} {//, diagram = {diagram0} {
     list.reserve(
        diagram.perturbation_order()
        / (smallest_segment
@@ -93,6 +94,7 @@ namespace inchworm::diagram {
 
   // Function to add a segment to the present set of segments:
   void set_of_segments_t::append(segment_t const &seg1, time_diagram_t const &diagram) {
+  //void set_of_segments_t::append(segment_t const &seg1) {
     if (seg1.pos1 != pos2)
       adjacent = false;
     else if (std::any_of(begin(diagram.split_points), end(diagram.split_points), [j = pos2](int i) { return i == j; }))
@@ -193,7 +195,7 @@ namespace inchworm::diagram {
                          std::vector<set_of_segments_t> const &set_disjoint_list, std::vector<set_of_segments_t> const &set_adjacent_list,
                          hyb_matrix_t const &hyb_mat, time_diagram_t const &diagram, bool special, int verbose) {
 
-    auto & seg = segments_list[segment_numero];
+    auto &seg      = segments_list[segment_numero];
     seg.calculated = true;
     if (verbose > 1) { print_segment(seg, diagram); }
 
@@ -210,13 +212,12 @@ namespace inchworm::diagram {
     seg.value += hyb_mat.extract_det(range_of_vertex);
     if (verbose > 2) std::printf("\nsegment[%d]= % 4.8f\n\n", segment_numero, hyb_mat.extract_det(range_of_vertex));
 
-    for (auto subset : set_disjoint_list) {
-      if ((not special) and not((seg.pos1 <= subset.pos1) and (seg.pos2 > subset.pos2))) continue;
+    for (auto set : set_disjoint_list) {
+      if ((not special) and not((seg.pos1 <= set.pos1) and (seg.pos2 > set.pos2))) continue;
 
       if (special
-          and (subset.list.size()
-               == 1) // this is the special case where we evaluate the full segment (at the end). We still need to exclude the itself.
-          and ((seg.pos1 == subset.pos1) and (seg.pos2 == subset.pos2)))
+          and (set.list.size() == 1) // this is the special case where we evaluate the full segment (at the end). We still need to exclude the itself.
+          and ((seg.pos1 == set.pos1) and (seg.pos2 == set.pos2)))
         continue; // this is tricky, might have to change this at some point
 
       scalar_t value = 1.0;
@@ -224,7 +225,7 @@ namespace inchworm::diagram {
       int sign_of_parcollet_charlebois = 1;
       bool is_finite                   = true;
 
-      for (auto sub_segment_numero : subset.list) {
+      for (auto sub_segment_numero : set.list) {
         segment_t subseg = segments_list[sub_segment_numero];
         EXPECTS(seg.calculated);
 
@@ -264,10 +265,10 @@ namespace inchworm::diagram {
           scalar_t value = 1.0;
 
           for (auto sub_segment_numero : cuts.list) {
-            segment_t seg = segments_list[sub_segment_numero];
-            EXPECTS(seg.calculated);
+            segment_t subseg = segments_list[sub_segment_numero];
+            EXPECTS(subseg.calculated);
 
-            value *= -seg.value_without_cuts;
+            value *= -subseg.value_without_cuts;
           }
           seg.value -= value;
         }

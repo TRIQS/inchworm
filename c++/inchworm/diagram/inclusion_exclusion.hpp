@@ -64,8 +64,10 @@ namespace inchworm::diagram {
     bool disjoint = true; // we define disjoint when 2 segments does not touch (by convention, we choose a segment alone to be disjoint too)
     bool adjacent = true; // we define adjacent when all segments touches. If one does not, it is false.
     std::vector<int> list;
+    //time_diagram_t & diagram;
 
     // Constructor:
+    //set_of_segments_t(time_diagram_t const &diagram);
     set_of_segments_t(segment_t const &seg0, time_diagram_t const &diagram);
 
     // Function to add a segment to the present set of segments:
