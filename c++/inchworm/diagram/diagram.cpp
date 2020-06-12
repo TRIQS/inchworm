@@ -38,7 +38,7 @@ namespace inchworm::diagram {
 
   //
   time_diagram_t::time_diagram_t(std::vector<time_and_index_t> const &d, std::vector<time_and_index_t> const &d_dag,
-                                 std::vector<double> const &split_times)
+                                 std::vector<double> const &split_times, int verbose)
      : op_list(2 * d.size()), d_list{d}, d_dag_list{d_dag} {
 
     std::sort(d_dag_list.begin(), d_dag_list.end(), [](auto const &x, auto const &y) { return x.tau < y.tau; });
@@ -71,7 +71,7 @@ namespace inchworm::diagram {
     // check that no times are equal (might need to change at some point, rare event, but many Monte Carlo sampling...);
     for (int i = 0; i < op_list.size() - 1; i++) EXPECTS(op_list[i].tau != op_list[i + 1].tau);
 
-    if constexpr (verbose > 3) std::printf("split points:\n");
+    if(verbose > 3) std::printf("split points:\n");
 
     is_trivial = true; //start by assuming it is trivial and searching for at least one counter example.
     for (auto s_time : split_times) {
@@ -82,10 +82,10 @@ namespace inchworm::diagram {
       }
       if (i != 0 and i != op_list.size()) {
         is_trivial = false;
-        if constexpr (verbose > 3) std::printf("diagram is not trivial\n");
+        if (verbose > 3) std::printf("diagram is not trivial\n");
       }
       split_points.push_back(i);
-      if constexpr (verbose > 3) std::printf("%d  % 4.3f\n", i, s_time);
+      if (verbose > 3) std::printf("%d  % 4.3f\n", i, s_time);
     }
     // posc[i] is the position of the i^th c in op_list (inverse table of order_index)
     for (int i = 0; i < op_list.size(); i++) {

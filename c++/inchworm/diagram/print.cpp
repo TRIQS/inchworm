@@ -115,7 +115,7 @@ namespace inchworm::diagram {
     for (ii = 0; ii < 2 * k_order; ii++) {
       if ((ii >= a) and (ii < b))
         printf("%c%c", char1, char1);
-      else if ((ii == b))
+      else if (ii == b)
         printf("%c ", char1);
       else
         printf("  ");

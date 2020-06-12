@@ -26,6 +26,8 @@ namespace inchworm {
   using namespace itertools;
 
   // Defined by Maxime, need comments
+  // FIXME Add LOCAL_HAMILTONIAN_IS_COMPLEX ?
+  // Carefully check type propagation
 #ifdef HYBRIDISATION_IS_COMPLEX
   using scalar_t                            = dcomplex;
   static constexpr bool is_h_scalar_complex = true;
@@ -47,7 +49,7 @@ namespace inchworm {
   using h_tau_t = block_gf<imtime, hyb_target_t>;
 
   /// Container type of one-particle Green and Vertex functions in imaginary times
-  using g_tau_t = block_gf<imtime, matrix_valued>;
+  using g_tau_t = block_gf<imtime, hyb_target_t>;
 
   /// A view to a g_tau_t
   using g_tau_vt = g_tau_t::view_type;

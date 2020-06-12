@@ -69,10 +69,10 @@ namespace inchworm {
     for (int i = 0; i < first_dim(m); i++) {
       std::printf("\n [");
       for (int j = 0; j < second_dim(m); j++) {
-        if (std::abs(m(i, j)) < 1e-100)
+        if (std::abs(m(i, j)) == 0.0)
           std::printf("   .      ");
         else
-          std::printf("% 10.2e", m(i, j) * factor);
+          std::printf("% 10.4e", m(i, j) * factor);
       }
       std::printf("]");
     }
@@ -92,6 +92,26 @@ namespace inchworm {
   }
 
   //
+  void print(u_partial_t u_partial) {
+    for (auto &[bl, mat] : u_partial) {
+      std::printf("\n\nblock: %d\n", bl);
+      print_matrix(mat);
+    }
+    std::cout << "\n";
+    return;
+  }
+
+  //
+  void print(frame_t u_frame) {
+    for (int bl = 0; bl < u_frame.size(); bl++) {
+      std::printf("\n\nblock: %d\n", bl);
+      print_matrix(u_frame[bl]);
+    }
+    std::cout << "\n";
+    return;
+  }
+
+  //
   void print(u_tau_t u_tau, double tau) {
     for (int bl = 0; bl < u_tau.size(); bl++) { print_matrix((matrix_t)u_tau[bl](tau)); }
     std::cout << "\n";
@@ -106,11 +126,6 @@ namespace inchworm {
   }
 
   //
-  void assign_u_frame_to_propagator(u_tau_t &u_tau, u_frame_t const &u_frame, int frame_number, scalar_t factor) {
-    for (int bl = 0; bl < u_tau.size(); bl++) u_tau[bl][frame_number] = factor * u_frame[bl];
-    return;
-  }
-
   void print_binary(unsigned int n, int total_bits) {
 
     for (int i = 0; i < total_bits; i++) {
@@ -147,7 +162,7 @@ namespace inchworm {
     return trace_value;
   }
 
-  u_frame_t partial_trace_bath(atom_diag const &ad_tot, atom_diag const &ad_imp, atom_diag const &ad_bath, double beta, double tau) {
+  frame_t partial_trace_bath(atom_diag const &ad_tot, atom_diag const &ad_imp, atom_diag const &ad_bath, double beta, double tau) {
     //TODO: incorporate in atom_diag and make it a member function: not possible anymore.
 
     for (int i = 0; i < (int)ad_imp.get_fops().data().size(); i++) {
@@ -165,7 +180,7 @@ namespace inchworm {
     int linear_index = ad_imp.get_fops().data().size();
     //std::printf("li=%d\n",linear_index);
 
-    u_frame_t u_frame_result = make_zero_propagator_frame(ad_imp);
+    frame_t u_frame_result = make_zero_propagator_frame(ad_imp);
     auto es_full             = ad_tot.get_eigensystems();
     auto fs_full             = ad_tot.get_fock_states();
     auto fs_loc              = ad_imp.get_fock_states();

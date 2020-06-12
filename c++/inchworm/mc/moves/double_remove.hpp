@@ -10,19 +10,19 @@
 namespace inchworm::moves {
 
   /// A simple Monte-Carlo move
-  struct insert {
+  struct double_remove {
 
-    /// Attempt vertex insertion
+    /// Attempt vertex double removal
     scalar_t attempt();
 
-    /// Accept vertex insertion
+    /// Accept vertex double removal
     scalar_t accept();
 
-    /// Reject vertex insertion
+    /// Reject vertex double removal
     void reject() {}
 
-    /// Constructor
-    insert(qmc_config_data_t &data, params_t const &params, qmc_params_t const &qmc_params, triqs::mc_tools::random_generator &rng)
+    /// Constructor:
+    double_remove(qmc_config_data_t &data, params_t const &params, qmc_params_t const &qmc_params, triqs::mc_tools::random_generator &rng)
        : data(data), params(qmc_params), rng(rng), gf_struct(params.gf_struct) {
       proposed_g_frame = make_frame(params.gf_struct);
     }
@@ -37,7 +37,7 @@ namespace inchworm::moves {
     /// The random number generator
     triqs::mc_tools::random_generator &rng;
 
-    /// d/d_dag lists of proposed insert
+    /// d/d_dag lists of proposed double_remove
     config_t proposed_config; // proposed configuration of d and d_dag
 
     /// weights of the proposed configuration

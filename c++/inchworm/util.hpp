@@ -34,7 +34,7 @@ namespace inchworm {
      * @param tau 0 < tau < beta.
      * @return The partial sum matrix of a function H. The result is a block diagonal matrix, with blocks and indices in the same order as in ad_imp.
      */
-  u_frame_t partial_trace_bath(atom_diag const &ad_tot, atom_diag const &ad_target, atom_diag const &ad_bath, double beta, double dtau);
+  frame_t partial_trace_bath(atom_diag const &ad_tot, atom_diag const &ad_target, atom_diag const &ad_bath, double beta, double dtau);
 
   // Trace over all degrees of freedom of atom_diag.
   scalar_t trace(atom_diag const &ad_tot, std::function<double(double)> fct);
@@ -47,8 +47,15 @@ namespace inchworm {
   void fprint(u_tau_t u_tau, int N_tau);
   void print(u_tau_t u_tau, int frame_number);
   void print(u_tau_t u_tau, double tau);
+  void print(frame_t u_frame);
+  void print(u_partial_t u_partial);
 
   // necessary to fill the propagator at each step of the inchworm:
-  void assign_u_frame_to_propagator(u_tau_t &u_tau, u_frame_t const &u_frame, int frame_number, scalar_t factor = 1.0);
+  template<typename T>
+  void assign_frame_to_propagator(block_gf<imtime, T> &u_tau, frame_t const &u_frame, int frame_number, scalar_t factor = 1.0) {
+    for (int bl = 0; bl < u_tau.size(); bl++) u_tau[bl][frame_number] = factor * u_frame[bl];
+    return;
+  }
+
 
 } // namespace inchworm

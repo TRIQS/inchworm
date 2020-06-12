@@ -31,7 +31,7 @@
 #include <triqs/utility/itertools.hpp>
 
 namespace inchworm::diagram {
-  constexpr int verbose = 0;
+  //constexpr int verbose = 0;
 
   // optimization:
   constexpr int smallest_segment   = 4;     // must be 2 or 4, beware.

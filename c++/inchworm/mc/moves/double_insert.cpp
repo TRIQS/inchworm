@@ -1,19 +1,26 @@
-#include "./remove.hpp"
+#include "./double_insert.hpp"
 
 namespace inchworm::moves {
 
-  scalar_t remove::attempt() {
+  scalar_t double_insert::attempt() {
 
-    proposed_config = data.config; // we first copy last accepted config before proposing the new remove.
+    proposed_config = data.config; // we first copy last accepted config before proposing the new double_insert
     proposed_w      = data.w;
 
-    int N = data.config.size(); // size before proposition
-    if (N == 0) return 0;
+    int N      = data.config.size(); // size before proposition
+    int n_fops = (params.ad_imp.get_fops()).size();
 
-    int idx     = rng(N);
-    int idx_dag = rng(N);
+    int li1     = rng(n_fops);
+    int li1_dag = rng(n_fops);
+    int li2     = rng(n_fops);
+    int li2_dag = rng(n_fops);
 
-    if (not proposed_config.try_erase(idx, idx_dag)) return 0; //data is not modified in this case
+    double tau1     = rng(params.tau_max);
+    double tau1_dag = rng(params.tau_max);
+    double tau2     = rng(params.tau_max);
+    double tau2_dag = rng(params.tau_max);
+
+    if (not proposed_config.try_double_insert(tau1, li1, tau1_dag, li1_dag, tau2, li2, tau2_dag, li2_dag)) return 0;
 
     ///////
 
@@ -23,12 +30,9 @@ namespace inchworm::moves {
 
     if (params.use_bare_propagator)
       proposed_w.hyb = hyb_mat.det();
-    else {
-      if (proposed_config.size() == 0)
-        proposed_w.hyb = 1;
-      else
-        proposed_w.hyb = diagram::inclusion_exclusion(diagram, hyb_mat);
-    }
+    else
+      //proposed_w.hyb = diagram::proper_enum(diagram, hyb_mat);
+      proposed_w.hyb = diagram::inclusion_exclusion(diagram, hyb_mat);
 
     double tol = 1e-12;
     if (std::abs(proposed_w.hyb) < tol) return 0.0;
@@ -48,6 +52,8 @@ namespace inchworm::moves {
       }
 
       proposed_w.loc = frobenius_norm(proposed_u_partial);
+      //proposed_w.loc = trace(proposed_u_partial);
+
     } else if (params.mode == 1) {
       EXPECTS(not params.use_bare_propagator);
 
@@ -58,23 +64,23 @@ namespace inchworm::moves {
 
       proposed_g_frame = make_g_frame_from_l_and_r(params.ad_imp, params.map_lin_idx_to_block_inner, gf_struct, l, r);
 
-      auto const &ops = diagram.op_list;
-      int nop_r       = std::count_if(begin(ops), end(ops), [tau_split = params.tau_split](auto const &op) { return tau_split > op.tau; });
-      if (nop_r % 2 == 1) {
-        for (auto &bl : proposed_g_frame) bl *= -1;
+      auto const & ops = diagram.op_list;
+      int nop_r = std::count_if(begin(ops), end(ops), [tau_split = params.tau_split](auto const & op){ return tau_split > op.tau; });
+      if(nop_r % 2 == 1){
+	for(auto & bl: proposed_g_frame)
+	  bl *= -1;
       }
 
       proposed_w.loc = frobenius_norm(proposed_g_frame);
     }
 
-    int n_fops       = (params.ad_imp.get_fops()).size();
     auto sign_ratio  = proposed_sign / data.sign;
     auto w_hyb_ratio = proposed_w.hyb / data.w.hyb;
     auto w_loc_ratio = proposed_w.loc / data.w.loc;
-    auto t_ratio     = std::pow(N / (n_fops * params.tau_max), 2);
+    auto t_ratio     = std::pow(params.tau_max * n_fops / (N + 2), 4);
 
 #ifdef INCHWORM_DEBUG
-    std::printf("\n\n====== Try Remove ======\n");
+    std::printf("\n\n====== Try Insert2 ======\n");
     print_configuration(diagram);
     if (params.mode == 0)
       print(proposed_u_partial);
@@ -85,19 +91,17 @@ namespace inchworm::moves {
     std::printf("\n\nsign= %d  w_hyb=% 4.7f  w_loc=% 4.7f    old_w_hyb=% 4.7f  old_w_loc=% 4.7f \n", proposed_sign, proposed_w.hyb, proposed_w.loc,
                 data.w.hyb, data.w.loc);
     std::printf("\n\nsign_ratio= %d  w_hyb_ratio=% 4.7f  w_loc_ratio=% 4.7f  t_ratio=% 4.7f\n", sign_ratio, w_hyb_ratio, w_loc_ratio, t_ratio);
-    if (proposed_config.size() > 0){
-      std::printf("proper_enum w.hyb         =% 4.7f \n", diagram::proper_enum(diagram, hyb_mat, 10));
-      std::printf("inclusion_exclusion w.hyb =% 4.7f \n", diagram::inclusion_exclusion(diagram, hyb_mat, 10));
-    }
+    std::printf("proper_enum w.hyb         =% 4.7f \n", diagram::proper_enum(diagram, hyb_mat, 10));
+    std::printf("inclusion_exclusion w.hyb =% 4.7f \n", diagram::inclusion_exclusion(diagram, hyb_mat, 10));
 #endif
 
     return sign_ratio * t_ratio * w_loc_ratio * w_hyb_ratio;
   }
 
   //
-  scalar_t remove::accept() {
+  scalar_t double_insert::accept() {
 #ifdef INCHWORM_DEBUG
-    std::printf("\n\n====== Accept Remove ======\n");
+    std::printf("\n\n====== Accept Insert2 ======\n");
 #endif
     data.w         = proposed_w;
     data.u_partial = proposed_u_partial;

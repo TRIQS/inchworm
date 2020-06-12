@@ -1,19 +1,21 @@
-#include "./remove.hpp"
+#include "./double_remove.hpp"
 
 namespace inchworm::moves {
 
-  scalar_t remove::attempt() {
+  scalar_t double_remove::attempt() {
 
-    proposed_config = data.config; // we first copy last accepted config before proposing the new remove.
+    proposed_config = data.config; // we first copy last accepted config before proposing the new double_remove.
     proposed_w      = data.w;
 
     int N = data.config.size(); // size before proposition
     if (N == 0) return 0;
 
-    int idx     = rng(N);
-    int idx_dag = rng(N);
+    int idx1     = rng(N);
+    int idx1_dag = rng(N);
+    int idx2     = rng(N);
+    int idx2_dag = rng(N);
 
-    if (not proposed_config.try_erase(idx, idx_dag)) return 0; //data is not modified in this case
+    if (not proposed_config.try_double_erase(idx1, idx1_dag, idx2, idx2_dag)) return 0; //data is not modified in this case
 
     ///////
 
@@ -58,10 +60,11 @@ namespace inchworm::moves {
 
       proposed_g_frame = make_g_frame_from_l_and_r(params.ad_imp, params.map_lin_idx_to_block_inner, gf_struct, l, r);
 
-      auto const &ops = diagram.op_list;
-      int nop_r       = std::count_if(begin(ops), end(ops), [tau_split = params.tau_split](auto const &op) { return tau_split > op.tau; });
-      if (nop_r % 2 == 1) {
-        for (auto &bl : proposed_g_frame) bl *= -1;
+      auto const & ops = diagram.op_list;
+      int nop_r = std::count_if(begin(ops), end(ops), [tau_split = params.tau_split](auto const & op){ return tau_split > op.tau; });
+      if(nop_r % 2 == 1){
+	for(auto & bl: proposed_g_frame)
+	  bl *= -1;
       }
 
       proposed_w.loc = frobenius_norm(proposed_g_frame);
@@ -71,10 +74,10 @@ namespace inchworm::moves {
     auto sign_ratio  = proposed_sign / data.sign;
     auto w_hyb_ratio = proposed_w.hyb / data.w.hyb;
     auto w_loc_ratio = proposed_w.loc / data.w.loc;
-    auto t_ratio     = std::pow(N / (n_fops * params.tau_max), 2);
+    auto t_ratio     = std::pow(N / (n_fops * params.tau_max), 4);
 
 #ifdef INCHWORM_DEBUG
-    std::printf("\n\n====== Try Remove ======\n");
+    std::printf("\n\n====== Try Remove2 ======\n");
     print_configuration(diagram);
     if (params.mode == 0)
       print(proposed_u_partial);
@@ -95,15 +98,15 @@ namespace inchworm::moves {
   }
 
   //
-  scalar_t remove::accept() {
+  scalar_t double_remove::accept() {
 #ifdef INCHWORM_DEBUG
     std::printf("\n\n====== Accept Remove ======\n");
 #endif
-    data.w         = proposed_w;
+    data.w       = proposed_w;
     data.u_partial = proposed_u_partial;
-    data.g_frame   = proposed_g_frame;
-    data.config    = proposed_config;
-    data.sign      = proposed_sign;
+    data.g_frame = proposed_g_frame;
+    data.config  = proposed_config;
+    data.sign    = proposed_sign;
     return 1;
   }
 

@@ -22,8 +22,10 @@ namespace inchworm::moves {
     void reject() {}
 
     /// Constructor:
-    remove(qmc_config_data_t &data, qmc_params_t const &qmc_params, triqs::mc_tools::random_generator &rng)
-       : data(data), params(qmc_params), rng(rng) {}
+    remove(qmc_config_data_t &data, params_t const &params, qmc_params_t const &qmc_params, triqs::mc_tools::random_generator &rng)
+       : data(data), params(qmc_params), rng(rng), gf_struct(params.gf_struct) {
+      proposed_g_frame = make_frame(params.gf_struct);
+    }
 
     private:
     /// The Monte-Carlo configuration
@@ -35,14 +37,20 @@ namespace inchworm::moves {
     /// The random number generator
     triqs::mc_tools::random_generator &rng;
 
-    /// c/d_dag lists of proposed remove
-    config_t proposed_config; // proposed configuration of c and d_dag
+    /// d/d_dag lists of proposed remove
+    config_t proposed_config; // proposed configuration of d and d_dag
 
     /// weights of the proposed configuration
     weights_t proposed_w;
 
     /// container of the calculated time frame of the propagator
-    u_frame_t proposed_u_frame = make_zero_propagator_frame(params.ad_imp);
+    u_partial_t proposed_u_partial;
+
+    /// the green function structure
+    gf_struct_t const &gf_struct;
+
+    /// green function container to accumulate into
+    g_frame_t proposed_g_frame;
 
     int proposed_sign;
   };
