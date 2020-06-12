@@ -384,6 +384,41 @@ the tild notation is just to show that it is not the bare propagator, it is the 
 %  \label{eq::inchworm_order1}
 %\end{align}
 
+\subsection{Green function}
+
+In the inchworm algorithm, the Green function must be calculated once you have the full propagator $U(\tau)$ for $0 < \tau < \beta$. Of course you only have a discrete mesh, but you can interpolate. The Green function then reads:
+
+\begin{align}
+G_{a b}(\tau_{split})=& \operatorname{Tr} \bigg[
+\sum_k^{\infty} \int \prod_i^{2k} \Big( d \tau_{i} \Big)  \sum_{\{a_i\}} 
+w^{ab}_{\mathrm{at}} w_{\mathrm{hyb}}
+\bigg] /   \operatorname{Tr} \big[  U(\beta) \big]
+\end{align}
+
+where $w^{ab}_{\mathrm{at}}$ is similar to $w_{\mathrm{at}}$ but with an additionnal $d_a$ at imaginary time $0$ and a $d^{\dagger}_b$ at time $t_{split}$:
+
+\begin{align}
+w^{ab}_{\mathrm{at}} =&
+(-1)^p
+U(\tau-\tau_{a_{2k}}) D_{a_{2k}}
+U(\tau_{a_{2k}}-\tau_{a_{2k-1}}) D_{a_{2k-1}}
+\cdots   
+\label{eq::ordered_order}
+\nonumber
+\\
+&
+\cdots 
+U(\tau_{n+1}-\tau_{split})
+d^\dagger_b 
+U(\tau_{split}-\tau_{n})  
+\cdots 
+U(\tau_{a_2}-\tau_{a_1}) D_{a_1}
+U(\tau_{a_{1}})
+d_a
+\end{align}
+%
+
+(FIXME: add details later).
 
 
 
@@ -678,7 +713,7 @@ Unlike cthyb, there is no normalization with the average sign. Instead, the norm
 
 We can then normalize the Monte Carlo result by finding the normalization constant, i.e. the ratio between the exact $\tilde U_0(\tau)$ and the Monte Carlo estimate of the zeroth order. For this reason, we sample the zeroth order seperatly in order to determine this normalization. 
 
-It has two important implications. If the zeroth order is badly sampled (if for example the inching process have too big $\tau$ step), the normalization will generate a big error, or in the most extreme case, a not-a-number exception. Also, the error on order 0 is null, by definition. But the error on any other order $k$ is the sum of the error estimate of orders $k$ and $0$ togheter. 
+It has two important implications. If the zeroth order is badly sampled (if for example the inching process have too big $\tau$ step), the normalization will generate a big error, or in the most extreme case, a not-a-number exception. Also, the error on order 0 is null, by definition. But the error on any other order $k$ is the sum of the error estimate of order $k$ plus the error estimate of order $0$ togheter. 
 
 
 \appendix
