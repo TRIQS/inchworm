@@ -31,10 +31,13 @@ namespace inchworm::moves {
     double tol = 1e-12;
     if (std::abs(proposed_w.hyb) < tol) return 0.0;
 
-    if (params.use_bare_propagator)
-      proposed_u_frame = impurity_product(params.ad_imp, diagram, params.tau_max, 0, nullptr);
-    else
-      proposed_u_frame = impurity_product(params.ad_imp, diagram, params.tau_max, params.tau_split, &params.u_tau);
+    if (params.use_bare_propagator) {
+      proposed_u_frame = make_u_frame(impurity_product(params.ad_imp, diagram, 0, params.tau_max, nullptr));
+    } else {
+      auto l = impurity_product(params.ad_imp, diagram, params.tau_split, params.tau_max, &params.u_tau);
+      auto r = impurity_product(params.ad_imp, diagram, 0, params.tau_split, &params.u_tau);
+      multiply_assign(proposed_u_frame, l, r);
+    }
 
     proposed_w.loc = frobenius_norm(proposed_u_frame);
 

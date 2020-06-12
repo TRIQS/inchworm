@@ -66,7 +66,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Global compiler options
 add_compile_options(
-  $<$<CONFIG:Debug>:-Og>
+  $<$<CONFIG:Debug>:-O0>
   $<$<CONFIG:Debug>:-ggdb3>
 )
 

@@ -32,10 +32,16 @@ namespace inchworm::moves {
     if (std::abs(proposed_w.hyb) < tol) return 0.0;
     //if (proposed_config.size() >5) return 0.0;
 
-    if (params.use_bare_propagator)
-      proposed_u_frame = impurity_product(params.ad_imp, diagram, params.tau_max, 0, nullptr);
-    else
-      proposed_u_frame = impurity_product(params.ad_imp, diagram, params.tau_max, params.tau_split, &params.u_tau);
+    for (auto &Bl : proposed_u_frame) Bl = 0;
+    if (params.use_bare_propagator) {
+      proposed_u_frame = make_u_frame(impurity_product(params.ad_imp, diagram, 0, params.tau_max, nullptr));
+    } else {
+      auto l = impurity_product(params.ad_imp, diagram, params.tau_split, params.tau_max, &params.u_tau);
+      auto r = impurity_product(params.ad_imp, diagram, 0, params.tau_split, &params.u_tau);
+      multiply_assign(proposed_u_frame, l, r);
+      //proposed_u_frame = impurity_product(params.ad_imp, diagram, params.tau_split, params.tau_max, &params.u_tau)
+      //* impurity_product(params.ad_imp, diagram, 0, params.tau_split, &params.u_tau);
+    }
 
     proposed_w.loc   = frobenius_norm(proposed_u_frame);
     auto sign_ratio  = proposed_sign / data.sign;
