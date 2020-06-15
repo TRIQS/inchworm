@@ -86,7 +86,8 @@ namespace inchworm {
     for (int initial_bl = 0; initial_bl < ad.n_subspaces(); initial_bl++) {
       int dim      = ad.get_subspace_dim(initial_bl);
       int new_bl   = initial_bl;
-      auto new_mat = matrix_t{};
+      auto new_mat = matrix_t(dim, dim);
+      new_mat      = 0;
 
       // first calculate the final block withou matrix multiplication:
       for (auto i : op_idx) {
