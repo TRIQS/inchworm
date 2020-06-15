@@ -92,6 +92,26 @@ namespace inchworm {
   }
 
   //
+  void print(u_partial_t u_partial) {
+    for (auto &[bl, mat] : u_partial) {
+      std::printf("\n\nblock: %d\n", bl);
+      print_matrix(mat);
+    }
+    std::cout << "\n";
+    return;
+  }
+
+  //
+  void print(u_frame_t u_frame) {
+    for (int bl = 0; bl < u_frame.size(); bl++) {
+      std::printf("\n\nblock: %d\n", bl);
+      print_matrix(u_frame[bl]);
+    }
+    std::cout << "\n";
+    return;
+  }
+
+  //
   void print(u_tau_t u_tau, double tau) {
     for (int bl = 0; bl < u_tau.size(); bl++) { print_matrix((matrix_t)u_tau[bl](tau)); }
     std::cout << "\n";

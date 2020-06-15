@@ -47,6 +47,8 @@ namespace inchworm {
   void fprint(u_tau_t u_tau, int N_tau);
   void print(u_tau_t u_tau, int frame_number);
   void print(u_tau_t u_tau, double tau);
+  void print(u_frame_t u_frame);
+  void print(u_partial_t u_partial);
 
   // necessary to fill the propagator at each step of the inchworm:
   void assign_u_frame_to_propagator(u_tau_t &u_tau, u_frame_t const &u_frame, int frame_number, scalar_t factor = 1.0);
