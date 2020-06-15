@@ -31,18 +31,14 @@ namespace inchworm::moves {
     double tol = 1e-12;
     if (std::abs(proposed_w.hyb) < tol) return 0.0;
 
-    for (auto &Bl : proposed_u_frame) Bl = 0;
     if (params.use_bare_propagator) {
-      proposed_u_frame = make_u_frame(impurity_product(params.ad_imp, diagram, 0, params.tau_max, nullptr));
+      proposed_u_partial = impurity_product(params.ad_imp, diagram, 0, params.tau_max, nullptr);
     } else {
-      auto l = impurity_product(params.ad_imp, diagram, params.tau_split, params.tau_max, &params.u_tau);
-      auto r = impurity_product(params.ad_imp, diagram, 0, params.tau_split, &params.u_tau);
-      multiply_assign(proposed_u_frame, l, r);
-      //proposed_u_frame = impurity_product(params.ad_imp, diagram, params.tau_split, params.tau_max, &params.u_tau)
-      //* impurity_product(params.ad_imp, diagram, 0, params.tau_split, &params.u_tau);
+      proposed_u_partial = impurity_product(params.ad_imp, diagram, params.tau_split, params.tau_max, &params.u_tau)
+         * impurity_product(params.ad_imp, diagram, 0, params.tau_split, &params.u_tau);
     }
 
-    proposed_w.loc = frobenius_norm(proposed_u_frame);
+    proposed_w.loc = frobenius_norm(proposed_u_partial);
 
     int n_fops       = (params.ad_imp.get_fops()).size();
     auto sign_ratio  = proposed_sign / data.sign;
@@ -58,7 +54,7 @@ namespace inchworm::moves {
   scalar_t remove::accept() {
     //std::printf("yes\n");
     //std::printf("\n\nsize=%d\n", proposed_config.size());
-    //for (auto const &B : proposed_u_frame) std::cout << B;
+    //for (auto const &B : proposed_u_partial) std::cout << B;
     if (proposed_config.size() == 800) {
       auto diagram = diagram::time_diagram_t(proposed_config.d_list, proposed_config.d_dag_list, {params.tau_split});
       //if (diagram.split_points[0] == 1) {
@@ -67,7 +63,7 @@ namespace inchworm::moves {
       auto hyb_mat = diagram::hyb_matrix_t(diagram, params.hyb_adaptor);
       hyb_mat.print();
       //std::printf("\n\nsign= %d  t_ratio=% 4.7f  w_hyb=% 4.7f  w_loc=% 4.7f\n", sign, params.tau_max / (proposed_config.size() + 1), proposed_w.hyb, proposed_w.loc);
-      for (auto const &B : proposed_u_frame) std::cout << B;
+      for (auto const &B : proposed_u_partial) std::cout << B;
       std::printf("\n\nsign= % d   w_hyb=% 4.7f  w_loc=% 4.7f\n\n\n", proposed_sign, proposed_w.hyb, proposed_w.loc);
       std::printf("proper_enum w.hyb         =% 4.7f \n", diagram::proper_enum(diagram, hyb_mat, 0));
       std::printf("inclusion_exclusion w.hyb =% 4.7f \n", diagram::inclusion_exclusion(diagram, hyb_mat, 0));
@@ -77,7 +73,7 @@ namespace inchworm::moves {
       //std::printf("%d ", proposed_config.size());
     }
     data.w       = proposed_w;
-    data.u_frame = proposed_u_frame;
+    data.u_partial = proposed_u_partial;
     data.config  = proposed_config;
     data.sign    = proposed_sign;
     return 1;

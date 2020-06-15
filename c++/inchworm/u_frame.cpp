@@ -35,37 +35,35 @@ namespace inchworm {
     u_frame_t res;
     for (int i = 0; i < up.size(); ++i) {
       auto &[bl, mat] = up[i];
-      EXPECTS(i == bl);
-      EXPECTS(mat.shape()[0] == mat.shape()[1]);
+      EXPECTS(i == bl || bl == -1);
       res.emplace_back(mat);
     }
     return res;
   }
 
-  void multiply_assign(u_frame_t &u_frame, u_partial_t const &l, u_partial_t const &r) {
-    EXPECTS(l.size() == r.size());
-    EXPECTS(u_frame.size() == r.size());
+  u_partial_t operator*(u_partial_t const &l, u_partial_t const &r) {
 
-    for (int i = 0; i < u_frame.size(); ++i) {
+    EXPECTS(l.size() == r.size());
+
+    auto res = u_partial_t{};
+    for (int i = 0; i < l.size(); ++i) {
       // u[bl] = up[bl, blp] * up[blp, bl]
       // l_bl <- r_bl <- i
       auto &[r_bl, r_mat] = r[i];
       auto &[l_bl, l_mat] = l[r_bl];
-      if (r_bl != -1 && l_bl != -1) {
-        EXPECTS(l_bl == i);
-        EXPECTS(l_mat.shape()[1] == r_mat.shape()[0]);
-        EXPECTS(l_mat.shape()[0] == u_frame[i].shape()[0]);
-        EXPECTS(r_mat.shape()[1] == u_frame[i].shape()[1]);
-        u_frame[i] = l_mat * r_mat;
-      }
+      if (l_bl == -1 || r_bl == -1)
+        res.emplace_back(-1, matrix_t{});
+      else
+        res.emplace_back(l_bl, l_mat * r_mat);
     }
+    return res;
   }
 
   // Calculate the Frobenius norm of the u_frame block diagonal matrix:
-  double frobenius_norm(u_frame_t const &u_frame) {
+  double frobenius_norm(u_partial_t const &u_partial) {
     double val = 0;
-    for (auto const &B : u_frame) {
-      double norm = frobenius_norm(B);
+    for (auto const &[bl, mat] : u_partial) {
+      double norm = frobenius_norm(mat);
       val += norm * norm;
       //double norm = trace(B);
       //val += norm ;

@@ -26,13 +26,11 @@ namespace inchworm {
     // last accepted paraemeters
     config_t config;   // last accepted configuration of d and d_dag
     weights_t w;       // weight values of the last accepted configuration
-    u_frame_t u_frame; // frame of the last accepted configuraiton: just one time frame of a propagator
+    u_partial_t u_partial; // frame of the last accepted configuraiton: just one time frame of a propagator
     int sign;          // sign of the last accepted configuration
     //scalar_t normalization_cte; //
 
-    qmc_config_data_t(atom_diag const &ad_imp, double tau_max, double tau_split = 0.0, u_tau_t const *const u_tau_p = nullptr) : w{1., 1.}, sign{1} {
-      u_frame = make_zeroth_order_frame(ad_imp, tau_max, tau_split, u_tau_p);
-    }
+    qmc_config_data_t(double tau_max, double tau_split = 0.0, u_tau_t const *const u_tau_p = nullptr) : w{1., 1.}, sign{1} {}
   };
 
   // structure to calculate hybridization function for tau, tau_dag, and orbital (linear) indices.

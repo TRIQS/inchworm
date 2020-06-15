@@ -3,7 +3,7 @@
  * inchworm: A TRIQS based impurity solver
  *
  * Copyright (c) 2019 The Simons foundation
- *   authors: Nils Wentzell
+ *   authors: Maxime Charlebois
  *
  * inchworm is free software: you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
@@ -19,6 +19,7 @@
  * inchworm. If not, see <http://www.gnu.org/licenses/>.
  *
  ******************************************************************************/
+
 #include <inchworm/solver_core.hpp>
 #include <inchworm/util.hpp>
 
@@ -32,7 +33,7 @@ using mat_t = triqs::arrays::array<double, 2>;
 using vec_t = triqs::arrays::array<double, 1>;
 
 // Prepare funcdamental operator set
-std::pair<fundamental_operator_set, std::vector<many_body_op_t>> make_fops(int n_site, int n_bath, int linear_index, int n_spin) {
+inline std::pair<fundamental_operator_set, std::vector<many_body_op_t>> make_fops(int n_site, int n_bath, int linear_index, int n_spin) {
   fundamental_operator_set fops;
   std::vector<many_body_op_t> qn;
   qn.resize(1);
@@ -51,7 +52,7 @@ std::pair<fundamental_operator_set, std::vector<many_body_op_t>> make_fops(int n
   return std::pair<fundamental_operator_set, std::vector<many_body_op_t>>(fops, qn);
 }
 
-void self_consistent_hubbard(int n_site, int n_bath, int n_spin, double U, double mu, double t, constr_params_t const &cp, mat_t const &theta,
+inline void self_consistent_hubbard(int n_site, int n_bath, int n_spin, double U, double mu, double t, constr_params_t const &cp, mat_t const &theta,
                              vec_t const &epsilon, double tau_max, double tau_split) {
   // Set up the Solver
   solver_core S(cp);
@@ -149,72 +150,3 @@ void self_consistent_hubbard(int n_site, int n_bath, int n_spin, double U, doubl
   for (int bl = 0; bl < result_sc.u_frame.size(); bl++) EXPECT_ARRAY_NEAR(((matrix_t)u_tau[bl][cp.n_tau - 1]), result_cthyb.u_frame[bl], 0.05 * u_tau[0][cp.n_tau - 1](0, 0)); // U[0](0,0) is essentially always the biggest value
   for (int bl = 0; bl < result_sc.u_frame.size(); bl++) EXPECT_ARRAY_NEAR(((matrix_t)u_tau[bl][cp.n_tau - 1]), result_sc.u_frame[bl], 0.05 * u_tau[0][cp.n_tau - 1](0, 0));
 }
-
-//*
-TEST(inchworm, Hubbard_1site_spinless) {
-
-  constr_params_t cp;
-  cp.beta      = 2.0;
-  cp.gf_struct = {{"up", {0}}};
-  cp.n_tau     = 500;
-  cp.n_iw      = 250;
-  //cp.n_step      = 250;
-
-  mat_t theta = {{1.5, -1.0, 1.7}};
-  //vec_t epsilon = {0.0, 0.0, 0.0};
-  vec_t epsilon = {-2.0, 0.4, 1.5};
-  self_consistent_hubbard(1, 3, 1, 0.0, 0.0, 0.0, cp, theta, epsilon, cp.beta, cp.beta * 0.9);
-  //self_consistent_hubbard(1, 3, 1, 0.0, 2.0, 0.0, cp, theta, epsilon, cp.beta, cp.beta * 0.9);
-}
-//*/
-
-//*
-TEST(inchworm, Hubbard_1site) {
-
-  constr_params_t cp;
-  cp.beta      = 2.0;
-  cp.gf_struct = {{"up", {0}}, {"dn", {0}}};
-  cp.n_tau     = 500;
-  cp.n_iw      = 250;
-
-  mat_t theta   = {{0.9, -1.0, 1.1}};
-  vec_t epsilon = {1.0, -2.0, 0.0};
-  self_consistent_hubbard(1, 3, 2, 4.0, -2.0, 0.0, cp, theta, epsilon, cp.beta, cp.beta * 0.9);
-}
-//*/
-
-//*
-TEST(inchworm, Hubbard_2sites_spinless) { // NOLINT
-
-  constr_params_t cp;
-  cp.beta      = 2.0;
-  cp.gf_struct = {{"up", {0, 1}}};
-  //cp.gf_struct = {{"up", {0, 1}}, {"dn", {0, 1}}};
-  cp.n_tau = 500;
-  cp.n_iw  = 250;
-
-  triqs::arrays::array<double, 2> theta   = {{0.9, 0.5}, {0.3, 1.1}};
-  triqs::arrays::array<double, 1> epsilon = {0.9, -0.3};
-  self_consistent_hubbard(2, 2, 1, 4.0, -3.0, 1.0, cp, theta, epsilon, cp.beta, cp.beta * 0.9);
-}
-//*/
-
-// long:
-//*
-TEST(inchworm, Hubbard_2sites) { // NOLINT
-
-  constr_params_t cp;
-  cp.beta = 10.0;
-  //cp.gf_struct = {{"up", {0, 1}}};
-  cp.gf_struct = {{"up", {0, 1}}, {"dn", {0, 1}}};
-  cp.n_tau     = 500;
-  cp.n_iw      = 250;
-
-  triqs::arrays::array<double, 2> theta   = {{0.1, -0.3, -0.4}, {0.1, 0.2, 0.4}};
-  triqs::arrays::array<double, 1> epsilon = {1.0, -1.0, 1.2};
-  //self_consistent_hubbard(2, 2, 2, 0.0, 0.0, 0.0, cp, theta, epsilon, cp.beta, cp.beta * 0.9);
-  self_consistent_hubbard(2, 3, 2, 4.0, -3.0, 1.0, cp, theta, epsilon, cp.beta, cp.beta * 0.9);
-}
-//*/
-
-MAKE_MAIN

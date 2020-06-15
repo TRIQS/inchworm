@@ -23,11 +23,10 @@ namespace inchworm {
 
   u_partial_t make_u_partial(u_frame_t const &u);
 
-  void multiply_assign(u_frame_t &u_frame, u_partial_t const &l, u_partial_t const &r);
-  //u_frame_t operator*(u_partial_t const &l, u_partial_t const &r);
+  u_partial_t operator*(u_partial_t const &l, u_partial_t const &r);
 
   // Calculate the Frobenius norm of the u_frame block diagonal matrix:
-  double frobenius_norm(u_frame_t const &u_frame);
+  double frobenius_norm(u_partial_t const &u_partial);
 
   // calculate the trace of the u_frame block diagonal matrix:
   double trace(u_frame_t const &u_frame);
