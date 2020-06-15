@@ -143,11 +143,11 @@ void self_consistent_hubbard(int n_site, int n_bath, int n_spin, double U, doubl
   print(u_tau, tau_max);
 
   // Solve the impurity model
-  //auto result_cthyb = S.solve_cthyb(sp, tau_max);
+  auto result_cthyb = S.solve_cthyb(sp, tau_max);
   auto result_sc    = S.solve_self_consistently(sp, u_tau, tau_split, tau_max);
 
-  //for (int bl = 0; bl < result_sc.u_frame.size(); bl++) EXPECT_ARRAY_NEAR(((matrix_t)u_tau[bl][cp.n_tau - 1]), result_cthyb.u_frame[bl], 0.05*u_tau[0][cp.n_tau - 1](0,0)); // U[0](0,0) is essentially always the biggest value
-  for (int bl = 0; bl < result_sc.u_frame.size(); bl++) EXPECT_ARRAY_NEAR(((matrix_t)u_tau[bl][cp.n_tau - 1]), result_sc.u_frame[bl], 0.05*u_tau[0][cp.n_tau - 1](0,0) );
+  for (int bl = 0; bl < result_sc.u_frame.size(); bl++) EXPECT_ARRAY_NEAR(((matrix_t)u_tau[bl][cp.n_tau - 1]), result_cthyb.u_frame[bl], 0.05 * u_tau[0][cp.n_tau - 1](0, 0)); // U[0](0,0) is essentially always the biggest value
+  for (int bl = 0; bl < result_sc.u_frame.size(); bl++) EXPECT_ARRAY_NEAR(((matrix_t)u_tau[bl][cp.n_tau - 1]), result_sc.u_frame[bl], 0.05 * u_tau[0][cp.n_tau - 1](0, 0));
 }
 
 //*
@@ -168,7 +168,7 @@ TEST(inchworm, Hubbard_1site_spinless) {
 }
 //*/
 
-/*
+//*
 TEST(inchworm, Hubbard_1site) {
 
   constr_params_t cp;
@@ -183,7 +183,7 @@ TEST(inchworm, Hubbard_1site) {
 }
 //*/
 
-/*
+//*
 TEST(inchworm, Hubbard_2sites_spinless) { // NOLINT
 
   constr_params_t cp;
@@ -200,7 +200,7 @@ TEST(inchworm, Hubbard_2sites_spinless) { // NOLINT
 //*/
 
 // long:
-/*
+//*
 TEST(inchworm, Hubbard_2sites) { // NOLINT
 
   constr_params_t cp;

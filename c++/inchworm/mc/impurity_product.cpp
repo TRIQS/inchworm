@@ -148,7 +148,7 @@ namespace inchworm {
       u_partial[initial_bl] = {new_bl, new_mat};
     }
     return u_partial;
-  } // namespace inchworm
+  }
 
   void single_step_results_t::print() {
 
