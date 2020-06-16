@@ -51,9 +51,9 @@ namespace inchworm {
     u_frame_t u_frame_0th_order;
     std::vector<double> u_expansion_order;
     std::vector<int> samples_expansion_order;
-    single_step_results_t(atom_diag const &ad_imp) : u_expansion_order(MAX_ORDER, 0), samples_expansion_order(MAX_ORDER, 0) {
-      u_frame           = make_zero_propagator_frame(ad_imp);
-      u_frame_0th_order = u_frame;
+    single_step_results_t() : u_expansion_order(MAX_ORDER, 0), samples_expansion_order(MAX_ORDER, 0) {
+      //u_frame           = make_zero_propagator_frame(ad_imp);
+      //u_frame_0th_order = u_frame;
     };
 
     void normalize(double normalization_cte) {

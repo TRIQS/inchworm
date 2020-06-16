@@ -15,7 +15,7 @@ namespace inchworm {
     double beta;           // inverse temperature
     atom_diag ad_imp;      // diagonalization of the local problem
     gf_struct_t gf_struct; // Block structure of the Green function FIXME
-    many_body_op_t h_imp; // The local Hamiltonian = h_imp + h0
+    many_body_op_t h_imp;  // The local Hamiltonian = h_imp + h0
     std::map<int, std::pair<int, int>> map_lin_idx_to_block_inner;
     fundamental_operator_set fops;
     u_frame_t u_frame_bare;
@@ -73,8 +73,11 @@ namespace inchworm {
     // The inching solution:
     void solve_inchworm(solve_params_t const &solve_params); // FIXME: this return nothing, it calculate u_tau, but nothing is done with it for now.
 
+    // The Green sampling:
+    void solve_green(solve_params_t const &solve_params);
+
     // one Monte Carlo step calculation (common to the 3 solve scheme above):
-    single_step_results_t single_step(solve_params_t const &solve_params, double tau_split, double tau_max, bool use_bare_propagator);
+    single_step_results_t single_step(solve_params_t const &solve_params, double tau_split, double tau_max, bool use_bare_propagator, int mode = 0);
 
     // Struct containing the parameters relevant for the solve process
     std::optional<solve_params_t> last_solve_params;

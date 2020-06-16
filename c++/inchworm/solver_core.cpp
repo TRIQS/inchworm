@@ -123,7 +123,7 @@ namespace inchworm {
     auto u_frame_zeroth_order = u_tau[0](tau_max - tau_split) * u_tau[0](tau_split);
 
     // finding the ratio between theoretical zeroth order and Monte Carlo sampled zeroth order:
-    scalar_t normalization_cte = (double)res.u_frame_0th_order[0](0, 0) / ((double)u_frame_zeroth_order(0, 0)); //need to do better at some point
+    scalar_t normalization_cte = (double)res.u_frame_0th_order[0](0, 0) / ((double)u_frame_zeroth_order(0, 0)); //FIXME: need to do better at some point
 
     std::printf("\n##################\ninchworm U(beta):\n");
     res.normalize(normalization_cte);
@@ -184,9 +184,59 @@ namespace inchworm {
     }
   } // namespace inchworm
 
+
+  //------------------------------
+  // The Green sampling:
+  void solver_core::solve_green(solve_params_t const &solve_params) {
+
+    // Initialize:
+    exit(1);
+    // init(solve_params); //FIXME
+    beta = constr_params.beta;
+
+    // loop on different inchworm steps
+    for (
+       int n = 0; n < constr_params.n_tau;
+       n++) { // FIXME: create a parameter. (at first it was the paramter n_tau, but it is important it is a different one). Now it is just a preprocessor variable. To be done.
+      std::printf("\n\ngreen sampling %d\n", n);
+
+      // define the tau_split and tau_max for this specific inchworm step.
+      //
+      // d_dag-================================-d-======================|
+      // 0                                  tau_split                beta
+      //
+      // tau_split < beta
+      //
+      double tau_split = beta * (double)n / (double) constr_params.n_tau;
+
+      // g_frame recipient:
+      // g_frame_bare = make_bare_propagator_frame(ad_imp, tau_max, false);
+    
+      // calculation of the Monte Carlo solution:
+      auto res = single_step(solve_params, tau_split, beta, false);
+
+      // determination of normalization constant:
+      scalar_t normalization_cte;
+
+      // FIXME function:
+      //auto g_frame_zeroth_order = Trace u_tau[0](beta - tau_split) * d_b *  u_tau[0](tau_split) * d_dag_a;
+
+      // FIXME
+      //normalization_cte         = (double)res.g_frame_0th_order[0](0, 0) / ((double)g_frame_zeroth_order(0, 0)); //need to do better at some point
+      //std::printf("\n\n##################\ninchworm G(tau_split):\n");
+
+      //res.normalize(normalization_cte);
+      //res.print();
+
+      assign_u_frame_to_propagator(G_tau, res.g_frame, n + 1, 1.);
+    }
+  } // namespace inchworm
+
   //------------------------------
   // one Monte Carlo step calculation (common to all solve scheme above):
-  single_step_results_t solver_core::single_step(solve_params_t const &solve_params, double tau_split, double tau_max, bool use_bare_propagator) {
+  single_step_results_t solver_core::single_step(solve_params_t const &solve_params, double tau_split, double tau_max, bool use_bare_propagator, int mode) {
+    // mode 0 = propagator (inchworm)
+    // mode 1 = green function
 
     params_t params(constr_params, solve_params);
     // Construct the generic Monte-Carlo solver
@@ -203,13 +253,18 @@ namespace inchworm {
     qmc_config_data_t qmc_config_data{};
 
     // Create Monte-Carlo params
-    qmc_params_t qmc_params{Delta_tau, map_lin_idx_to_block_inner, ad_imp, u_tau, tau_max, tau_split, use_bare_propagator};
+    qmc_params_t qmc_params{Delta_tau, map_lin_idx_to_block_inner, ad_imp, u_tau, tau_max, tau_split, use_bare_propagator, mode};
 
     mc.add_move(moves::insert{qmc_config_data, qmc_params, rng}, "insert move");
     mc.add_move(moves::remove{qmc_config_data, qmc_params, rng}, "remove move");
 
     // initialize result container:
-    single_step_results_t results(ad_imp);
+    single_step_results_t results{};
+    if(mode==0)
+      results.u_frame = make_zero_propagator_frame(ad_imp);
+    else if(mode==1)
+      results.u_frame = make_zero_green_frame(p.gf_struct); 
+    results.u_frame_0th_order = results.u_frame;
 
     // Register all measurements
     mc.add_measure(measures::u_frame{params, qmc_config_data, results}, "propagator measurement");

@@ -31,14 +31,53 @@ namespace inchworm::moves {
     double tol = 1e-12;
     if (std::abs(proposed_w.hyb) < tol) return 0.0;
 
-    if (params.use_bare_propagator) {
-      proposed_u_partial = impurity_product(params.ad_imp, diagram, 0, params.tau_max, nullptr);
-    } else {
-      proposed_u_partial = impurity_product(params.ad_imp, diagram, params.tau_split, params.tau_max, &params.u_tau)
-         * impurity_product(params.ad_imp, diagram, 0, params.tau_split, &params.u_tau);
+    if (params.mode == 0) {
+      if (params.use_bare_propagator) {
+        proposed_u_partial = impurity_product(params.ad_imp, diagram, 0, params.tau_max, nullptr);
+      } else {
+        // -- ip * ip
+        //
+        // --> proposed_green_matrix Trace( ip * d * ip * ddag )
+        //
+        // - <c(tau) cd(0;);>
+        proposed_u_partial = impurity_product(params.ad_imp, diagram, params.tau_split, params.tau_max, &params.u_tau)
+           * impurity_product(params.ad_imp, diagram, 0, params.tau_split, &params.u_tau);
+      }
+
+      proposed_w.loc = frobenius_norm(proposed_u_partial);
+    } else if (params.mode == 1) {
+      EXPECTS(not params.use_bare_propagator);
+
+      auto l = impurity_product(params.ad_imp, diagram, params.tau_split, params.tau_max, &params.u_tau);
+      auto r = impurity_product(params.ad_imp, diagram, 0, params.tau_split, &params.u_tau);
+
+      for (auto &Bl : proposed_g_frame) Bl = 0;
+
+      int n_ops = params.ad_imp.get_fops().size();
+
+      // G[tau][i,j] = -<T c_i(tau) cdag_j(0)>
+      for (int i = 0; i < n_ops; ++i) {
+        auto [g_bl, in]         = params.linindex.at(i);
+        for (int j = 0; j < n_ops; ++j) {
+          auto [g_bl_dag, in_dag] = params.linindex.at(j);
+          if(g_bl != g_bl_dag) continue;
+          // r * ddag_j[bl_idx1](0)
+          auto rddag = apply_op_from_right(r, j, true, params.ad_imp);
+
+          // l * d_i[bl_idx2](tau)
+          auto ld = apply_op_from_right(l, i, false, params.ad_imp);
+
+          auto prod = make_u_frame(ld * rddag);
+
+          for (int bl0 = 0; bl0 < params.ad_imp.n_subspaces(); ++bl0) {
+              proposed_g_frame[g_bl](in, in_dag) += trace(prod[bl0]); //FIXME check the order of in and in_dag to be sure.
+          }
+        }
+      }
+
+      proposed_w.loc = frobenius_norm(proposed_g_frame);
     }
 
-    proposed_w.loc   = frobenius_norm(proposed_u_partial);
     auto sign_ratio  = proposed_sign / data.sign;
     auto w_hyb_ratio = proposed_w.hyb / data.w.hyb;
     auto w_loc_ratio = proposed_w.loc / data.w.loc;
@@ -78,10 +117,10 @@ namespace inchworm::moves {
     } else {
       //std::printf("%d ", proposed_config.size());
     }
-    data.w       = proposed_w;
+    data.w         = proposed_w;
     data.u_partial = proposed_u_partial;
-    data.config  = proposed_config;
-    data.sign    = proposed_sign;
+    data.config    = proposed_config;
+    data.sign      = proposed_sign;
     //std::swap(proposed_w, data.w);
     //std::swap(proposed_u_partial, data.u_frame);
     //std::swap(proposed_config, data.config);

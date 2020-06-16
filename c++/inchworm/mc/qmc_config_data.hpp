@@ -24,10 +24,10 @@ namespace inchworm {
   struct qmc_config_data_t {
 
     // last accepted paraemeters
-    config_t config;   // last accepted configuration of d and d_dag
-    weights_t w;       // weight values of the last accepted configuration
+    config_t config;       // last accepted configuration of d and d_dag
+    weights_t w;           // weight values of the last accepted configuration
     u_partial_t u_partial; // frame of the last accepted configuraiton: just one time frame of a propagator
-    int sign;          // sign of the last accepted configuration
+    int sign;              // sign of the last accepted configuration
     //scalar_t normalization_cte; //
 
     qmc_config_data_t() : w{1., 1.}, sign{1} {}
@@ -64,6 +64,7 @@ namespace inchworm {
 
     // same for every inch step:
     hyb_adaptor_t hyb_adaptor;
+    std::map<int, std::pair<int, int>> linindex;
     atom_diag const &ad_imp; // Diagonalization of the atomic problem
 
     // updated at every inch step:
@@ -74,13 +75,17 @@ namespace inchworm {
     double tau_split;         // in the inchworm, this should be the tau_max of the previous inching. 0 < tau_split <= tau_max
     bool use_bare_propagator; // true only for the first iteration of the inchworm calculation
 
+    int mode;
+
     qmc_params_t(h_tau_t const &hyb_tau, std::map<int, std::pair<int, int>> const &linindex, atom_diag const &ad_imp, u_tau_t const &u_tau,
-                 double tau_max, double tau_split, bool use_bare_propagator)
+                 double tau_max, double tau_split, bool use_bare_propagator, int mode)
        : hyb_adaptor(hyb_tau, linindex),
+         linindex(linindex),
          ad_imp(ad_imp),
          u_tau(u_tau),
          tau_max(tau_max),
          tau_split(tau_split),
-         use_bare_propagator(use_bare_propagator) {}
+         use_bare_propagator(use_bare_propagator),
+         mode(mode) {}
   };
 } // namespace inchworm

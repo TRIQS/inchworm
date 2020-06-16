@@ -43,6 +43,9 @@ namespace inchworm::moves {
     /// container of the calculated time frame of the propagator
     u_partial_t proposed_u_partial;
 
+    /// green function container to accumulate into
+    g_frame_t proposed_g_frame;
+
     int proposed_sign;
   };
 

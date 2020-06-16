@@ -13,6 +13,8 @@ namespace inchworm {
 
   using u_partial_t = std::vector<std::pair<int, matrix_t>>;
 
+  using g_frame_t = std::vector<matrix_t>;
+
   //
   u_frame_t make_zero_propagator_frame(atom_diag const &ad);
 
@@ -23,10 +25,16 @@ namespace inchworm {
 
   u_partial_t make_u_partial(u_frame_t const &u);
 
+  //
+  g_frame_t make_zero_green_frame(gf_struct_t const & gf_struct); 
+
   u_partial_t operator*(u_partial_t const &l, u_partial_t const &r);
+
+  u_partial_t apply_op_from_right(u_partial_t const &l, int lin_index, bool op_dag, atom_diag const & ad);
 
   // Calculate the Frobenius norm of the u_frame block diagonal matrix:
   double frobenius_norm(u_partial_t const &u_partial);
+  double frobenius_norm(g_frame_t const &g_frame);
 
   // calculate the trace of the u_frame block diagonal matrix:
   double trace(u_frame_t const &u_frame);
