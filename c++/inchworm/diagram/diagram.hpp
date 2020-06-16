@@ -68,6 +68,6 @@ namespace inchworm::diagram {
     int sign() const;
 
     // Constructor
-    time_diagram_t(std::vector<time_and_index_t> const &d, std::vector<time_and_index_t> const &d_dag, std::vector<double> const &split_times);
+    time_diagram_t(std::vector<time_and_index_t> const &d, std::vector<time_and_index_t> const &d_dag, std::vector<double> const &split_times, int verbose=0);
   };
 } // namespace inchworm::diagram

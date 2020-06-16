@@ -69,17 +69,17 @@ namespace inchworm::diagram {
         if (2 * Ndag == a) // check if same number of d_dag an d in the segment starting at i and ending before i+a
         {
           seg_list.push_back({i, i + a, N_segment++});
-          if constexpr (verbose > 0) {
-            print_segment(seg_list.back(), diagram);
-            std::printf("\n");
-          }
+          //if constexpr (verbose > 0) {
+          //  print_segment(seg_list.back(), diagram);
+          //  std::printf("\n");
+          //}
         }
       }
 
     //lastly, put the last segment (this one is k-connected and not fully connected. So we bypass the condition that it should not cross the split point:
     segment_t seg(0, N, N_segment++);
     seg_list.push_back(seg);
-    if constexpr (verbose) print_segment(seg, diagram);
+    //if constexpr (verbose) print_segment(seg, diagram);
     return seg_list;
   }
 

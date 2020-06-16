@@ -77,7 +77,7 @@ namespace inchworm::diagram {
         }
       }
     }
-    if constexpr (verbose > 1) print();
+    //if constexpr (verbose > 1) print();
   }
 
   scalar_t hyb_matrix_t::det() {

@@ -138,7 +138,7 @@ namespace inchworm {
 
     // Initialize:
     init(solve_params);
-    double beta = constr_params.beta;
+    beta = constr_params.beta;
 
     // loop on different inchworm steps
     for (
@@ -200,7 +200,7 @@ namespace inchworm {
     if (use_bare_propagator) u_tau_p = nullptr;
 
     // Create Monte-Carlo configuration
-    qmc_config_data_t qmc_config_data{tau_max, tau_split, u_tau_p};
+    qmc_config_data_t qmc_config_data{};
 
     // Create Monte-Carlo params
     qmc_params_t qmc_params{Delta_tau, map_lin_idx_to_block_inner, ad_imp, u_tau, tau_max, tau_split, use_bare_propagator};
