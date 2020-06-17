@@ -126,11 +126,6 @@ namespace inchworm {
   }
 
   //
-  void assign_u_frame_to_propagator(u_tau_t &u_tau, u_frame_t const &u_frame, int frame_number, scalar_t factor) {
-    for (int bl = 0; bl < u_tau.size(); bl++) u_tau[bl][frame_number] = factor * u_frame[bl];
-    return;
-  }
-
   void print_binary(unsigned int n, int total_bits) {
 
     for (int i = 0; i < total_bits; i++) {

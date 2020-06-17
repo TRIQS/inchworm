@@ -228,7 +228,7 @@ namespace inchworm {
       //res.normalize(normalization_cte);
       //res.print();
 
-      assign_u_frame_to_propagator(G_tau, res.g_frame, n + 1, 1.);
+      assign_u_frame_to_propagator(G_tau, res.u_frame, n + 1, 1.);
     }
   } // namespace inchworm
 
@@ -263,7 +263,7 @@ namespace inchworm {
     if(mode==0)
       results.u_frame = make_zero_propagator_frame(ad_imp);
     else if(mode==1)
-      results.u_frame = make_zero_green_frame(p.gf_struct); 
+      results.u_frame = make_zero_green_frame(params.gf_struct);
     results.u_frame_0th_order = results.u_frame;
 
     // Register all measurements
