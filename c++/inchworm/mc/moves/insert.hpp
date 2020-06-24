@@ -22,7 +22,10 @@ namespace inchworm::moves {
     void reject() {}
 
     /// Constructor
-    insert(qmc_config_data_t &data, qmc_params_t const &qmc_params, triqs::mc_tools::random_generator &rng) : data(data), params(qmc_params), rng(rng) {}
+    insert(qmc_config_data_t &data, params_t const &params, qmc_params_t const &qmc_params, triqs::mc_tools::random_generator &rng)
+       : data(data), params(qmc_params), rng(rng) {
+      proposed_g_frame = make_zero_green_frame(params.gf_struct);
+    }
 
     private:
     /// The Monte-Carlo configuration

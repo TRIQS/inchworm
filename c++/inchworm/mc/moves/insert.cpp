@@ -16,6 +16,8 @@ namespace inchworm::moves {
     double tau_dag = rng(params.tau_max);
     if (not proposed_config.try_insert(tau, li, tau_dag, li_dag)) return 0;
 
+    ///////
+
     auto diagram  = diagram::time_diagram_t{proposed_config.d_list, proposed_config.d_dag_list, {params.tau_split}};
     auto hyb_mat  = diagram::hyb_matrix_t(diagram, params.hyb_adaptor);
     proposed_sign = diagram.sign();
@@ -31,6 +33,7 @@ namespace inchworm::moves {
     double tol = 1e-12;
     if (std::abs(proposed_w.hyb) < tol) return 0.0;
 
+    // FIXME: at the next big refactoring: extract into a function and all its root...
     if (params.mode == 0) {
       if (params.use_bare_propagator) {
         proposed_u_partial = impurity_product(params.ad_imp, diagram, 0, params.tau_max, nullptr);
@@ -55,19 +58,22 @@ namespace inchworm::moves {
 
       int n_ops = params.ad_imp.get_fops().size();
 
-      // G[tau][i,j] = -<T c_i(tau) cdag_j(0)>
+      // G[g_bl][tau][in,in_dag] = -<T c[g_bl][in](tau) cdag[g_bl][in_dag](0)>
+      // i ~= g_bl     + in
+      // j ~= g_bl_dag + in_dag
       for (int i = 0; i < n_ops; ++i) {
-        auto [g_bl, in]         = params.linindex.at(i);
+        auto [g_bl, in]         = params.map_lin_idx_to_block_inner.at(i);
         for (int j = 0; j < n_ops; ++j) {
-          auto [g_bl_dag, in_dag] = params.linindex.at(j);
+          auto [g_bl_dag, in_dag] = params.map_lin_idx_to_block_inner.at(j);
           if(g_bl != g_bl_dag) continue;
+
           // r * ddag_j[bl_idx1](0)
-          auto rddag = apply_op_from_right(r, j, true, params.ad_imp);
+          u_partial_t rddag = apply_op_from_right(r, j, true, params.ad_imp);
 
           // l * d_i[bl_idx2](tau)
-          auto ld = apply_op_from_right(l, i, false, params.ad_imp);
+          u_partial_t ld = apply_op_from_right(l, i, false, params.ad_imp);
 
-          auto prod = make_u_frame(ld * rddag);
+          g_frame_t prod = make_u_frame(ld * rddag);
 
           for (int bl0 = 0; bl0 < params.ad_imp.n_subspaces(); ++bl0) {
               proposed_g_frame[g_bl](in, in_dag) += trace(prod[bl0]); //FIXME check the order of in and in_dag to be sure.
@@ -119,6 +125,7 @@ namespace inchworm::moves {
     }
     data.w         = proposed_w;
     data.u_partial = proposed_u_partial;
+    data.g_frame   = proposed_g_frame;
     data.config    = proposed_config;
     data.sign      = proposed_sign;
     //std::swap(proposed_w, data.w);

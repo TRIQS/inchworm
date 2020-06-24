@@ -29,15 +29,15 @@ namespace inchworm {
       double dtau  = beta * i_tau / (n_tau - 1.);
       auto u_frame = partial_trace_bath(ad_tot, ad_atom, ad_bath, beta, dtau);
       auto Z_bath  = trace(ad_bath, [beta](double E) { return std::exp(-beta * E); });
-      assign_u_frame_to_propagator(u_tau, u_frame, i_tau, 1. / Z_bath);
+      assign_frame_to_propagator(u_tau, u_frame, i_tau, 1. / Z_bath);
     }
 
     return u_tau;
   }
 
-  u_frame_t make_zeroth_order_frame(atom_diag const &ad, double tau, double tau_split, u_tau_t const *const u_tau_p) {
+  frame_t make_zeroth_order_frame(atom_diag const &ad, double tau, double tau_split, u_tau_t const *const u_tau_p) {
     if (u_tau_p) {
-      u_frame_t u_frame = make_zero_propagator_frame(ad);
+      frame_t u_frame = make_zero_propagator_frame(ad);
       //for (auto &B : u_frame) std::cout << B;
 
       double dtau2 = tau - tau_split;
@@ -52,9 +52,9 @@ namespace inchworm {
     }
   }
 
-  u_frame_t make_zero_operator_frame(atom_diag const &ad, double dtau, u_tau_t const *const u_tau_p) {
+  frame_t make_zero_operator_frame(atom_diag const &ad, double dtau, u_tau_t const *const u_tau_p) {
     if (u_tau_p) {
-      u_frame_t u_frame = make_zero_propagator_frame(ad);
+      frame_t u_frame = make_zero_propagator_frame(ad);
 
       for (int bl = 0; bl < ad.n_subspaces(); bl++) {
         u_frame[bl] = (*u_tau_p)[bl](dtau); // (interpolation)
@@ -151,7 +151,7 @@ namespace inchworm {
 
   void single_step_results_t::print() {
 
-    for (auto Bl : u_frame) {
+    for (auto Bl : frame) {
       //for (int bl; bl < u_frame.size(); bl++) {
       //print_fundamental_operator_set();
       print_matrix(Bl);
@@ -160,7 +160,7 @@ namespace inchworm {
     std::printf("\n\norder breakdown: \n");
     for (auto &o : samples_expansion_order) std::printf("%16d ", o);
     std::printf("\n");
-    for (auto &o : u_expansion_order) std::printf("% 16.5f ", o);
+    for (auto &o : expansion_order) std::printf("% 16.5f ", o);
     std::printf("\n");
   }
 } // namespace inchworm

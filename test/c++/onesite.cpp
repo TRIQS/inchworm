@@ -32,7 +32,15 @@ TEST(inchworm, Hubbard_1site) {
 
   mat_t theta   = {{0.9, -1.0, 1.1}};
   vec_t epsilon = {1.0, -2.0, 0.0};
-  self_consistent_hubbard(1, 3, 2, 4.0, -2.0, 0.0, cp, theta, epsilon, cp.beta, cp.beta * 0.9);
+
+  auto [S, sp, u_tau] = test_setup(1, 3, 2, 4.0, -2.0, 0.0, cp, theta, epsilon);
+
+  double tau_max   = cp.beta;
+  double tau_split = cp.beta * 0.9;
+
+  solve_cthyb(S, sp, u_tau, tau_max);
+  //solve_selfconsistent(S, sp, u_tau, tau_split, tau_max);
+  //solve_green(S, sp, u_tau);
 }
 
 MAKE_MAIN

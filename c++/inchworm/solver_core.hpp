@@ -18,7 +18,7 @@ namespace inchworm {
     many_body_op_t h_imp;  // The local Hamiltonian = h_imp + h0
     std::map<int, std::pair<int, int>> map_lin_idx_to_block_inner;
     fundamental_operator_set fops;
-    u_frame_t u_frame_bare;
+    frame_t u_frame_bare;
 
     //mpi::communicator _comm;   // define the communicator, here MPI_COMM_WORLD
     int _solve_status; // Status of the solve upon exit: 0 for clean termination, > 0 otherwise.
@@ -74,10 +74,10 @@ namespace inchworm {
     void solve_inchworm(solve_params_t const &solve_params); // FIXME: this return nothing, it calculate u_tau, but nothing is done with it for now.
 
     // The Green sampling:
-    void solve_green(solve_params_t const &solve_params);
+    void solve_green(solve_params_t const &solve_params, u_tau_t const &u_tau);
 
     // one Monte Carlo step calculation (common to the 3 solve scheme above):
-    single_step_results_t single_step(solve_params_t const &solve_params, double tau_split, double tau_max, bool use_bare_propagator, int mode = 0);
+    single_step_results_t single_step(solve_params_t const &solve_params, double tau_split, double tau_max, bool use_bare_propagator, int mode);
 
     // Struct containing the parameters relevant for the solve process
     std::optional<solve_params_t> last_solve_params;

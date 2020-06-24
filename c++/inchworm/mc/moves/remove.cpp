@@ -9,10 +9,10 @@ namespace inchworm::moves {
 
     int N = data.config.size(); // size before proposition
     if (N == 0) return 0;
-    int i     = rng(N);
-    int i_dag = rng(N);
+    int idx     = rng(N);
+    int idx_dag = rng(N);
     //std::printf("i=%d i_dag=%d N=%d  ", i, i_dag, N);
-    if (not proposed_config.try_erase(i, i_dag)) return 0; //data is not modified in this case
+    if (not proposed_config.try_erase(idx, idx_dag)) return 0; //data is not modified in this case
 
     //std::printf("\nremoving:");
     auto diagram  = diagram::time_diagram_t{proposed_config.d_list, proposed_config.d_dag_list, {params.tau_split}};
@@ -31,14 +31,56 @@ namespace inchworm::moves {
     double tol = 1e-12;
     if (std::abs(proposed_w.hyb) < tol) return 0.0;
 
-    if (params.use_bare_propagator) {
-      proposed_u_partial = impurity_product(params.ad_imp, diagram, 0, params.tau_max, nullptr);
-    } else {
-      proposed_u_partial = impurity_product(params.ad_imp, diagram, params.tau_split, params.tau_max, &params.u_tau)
-         * impurity_product(params.ad_imp, diagram, 0, params.tau_split, &params.u_tau);
-    }
+    // FIXME: at the next big refactoring: extract into a function and all its root...
+    if (params.mode == 0) {
+      if (params.use_bare_propagator) {
+        proposed_u_partial = impurity_product(params.ad_imp, diagram, 0, params.tau_max, nullptr);
+      } else {
+        // -- ip * ip
+        //
+        // --> proposed_green_matrix Trace( ip * d * ip * ddag )
+        //
+        // - <c(tau) cd(0;);>
+        proposed_u_partial = impurity_product(params.ad_imp, diagram, params.tau_split, params.tau_max, &params.u_tau)
+           * impurity_product(params.ad_imp, diagram, 0, params.tau_split, &params.u_tau);
+      }
 
-    proposed_w.loc = frobenius_norm(proposed_u_partial);
+      proposed_w.loc = frobenius_norm(proposed_u_partial);
+    } else if (params.mode == 1) {
+      EXPECTS(not params.use_bare_propagator);
+
+      auto l = impurity_product(params.ad_imp, diagram, params.tau_split, params.tau_max, &params.u_tau);
+      auto r = impurity_product(params.ad_imp, diagram, 0, params.tau_split, &params.u_tau);
+
+      for (auto &Bl : proposed_g_frame) Bl = 0;
+
+      int n_ops = params.ad_imp.get_fops().size();
+
+      // G[g_bl][tau][in,in_dag] = -<T c[g_bl][in](tau) cdag[g_bl][in_dag](0)>
+      // i ~= g_bl     + in
+      // j ~= g_bl_dag + in_dag
+      for (int i = 0; i < n_ops; ++i) {
+        auto [g_bl, in]         = params.map_lin_idx_to_block_inner.at(i);
+        for (int j = 0; j < n_ops; ++j) {
+          auto [g_bl_dag, in_dag] = params.map_lin_idx_to_block_inner.at(j);
+          if(g_bl != g_bl_dag) continue;
+
+          // r * ddag_j[bl_idx1](0)
+          u_partial_t rddag = apply_op_from_right(r, j, true, params.ad_imp);
+
+          // l * d_i[bl_idx2](tau)
+          u_partial_t ld = apply_op_from_right(l, i, false, params.ad_imp);
+
+          auto prod = make_u_frame(ld * rddag);
+
+          for (int bl0 = 0; bl0 < params.ad_imp.n_subspaces(); ++bl0) {
+              proposed_g_frame[g_bl](in, in_dag) += trace(prod[bl0]); //FIXME check the order of in and in_dag to be sure.
+          }
+        }
+      }
+
+      proposed_w.loc = frobenius_norm(proposed_g_frame);
+    }
 
     int n_fops       = (params.ad_imp.get_fops()).size();
     auto sign_ratio  = proposed_sign / data.sign;
@@ -74,6 +116,7 @@ namespace inchworm::moves {
     }
     data.w       = proposed_w;
     data.u_partial = proposed_u_partial;
+    data.g_frame = proposed_g_frame;
     data.config  = proposed_config;
     data.sign    = proposed_sign;
     return 1;

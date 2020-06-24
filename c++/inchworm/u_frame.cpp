@@ -2,8 +2,8 @@
 
 namespace inchworm {
   // Create an empty frame (block diagonal matrix: vector of matrix_t)
-  u_frame_t make_zero_propagator_frame(atom_diag const &ad) {
-    u_frame_t u_frame(ad.n_subspaces());
+  frame_t make_zero_propagator_frame(atom_diag const &ad) {
+    frame_t u_frame(ad.n_subspaces());
 
     for (int bl = 0; bl < ad.n_subspaces(); bl++) {
       u_frame[bl] = matrix_t(ad.get_subspace_dim(bl), ad.get_subspace_dim(bl)); //  use zeros<> ?? check
@@ -13,8 +13,8 @@ namespace inchworm {
   }
 
   // initialize bare propagator frame U_0 = exp(-tau H_loc) in the diagonal basis of H_loc
-  u_frame_t make_bare_propagator_frame(atom_diag const &ad, double tau, bool set_gs_to_0) {
-    u_frame_t u_frame(ad.n_subspaces());
+  frame_t make_bare_propagator_frame(atom_diag const &ad, double tau, bool set_gs_to_0) {
+    frame_t u_frame(ad.n_subspaces());
 
     for (int bl = 0; bl < ad.n_subspaces(); bl++) {
       int dim     = ad.get_subspace_dim(bl);
@@ -25,14 +25,14 @@ namespace inchworm {
     return u_frame;
   }
 
-  u_partial_t make_u_partial(u_frame_t const &u) {
+  u_partial_t make_u_partial(frame_t const &u) {
     u_partial_t res;
     for (int i = 0; i < u.size(); ++i) { res.emplace_back(i, u[i]); }
     return res;
   }
 
-  u_frame_t make_u_frame(u_partial_t const &up) {
-    u_frame_t res;
+  frame_t make_u_frame(u_partial_t const &up) {
+    frame_t res;
     for (int i = 0; i < up.size(); ++i) {
       auto &[bl, mat] = up[i];
       EXPECTS(i == bl || bl == -1);
@@ -125,13 +125,13 @@ namespace inchworm {
   }
 
   // calculate the trace of the u_frame block diagonal matrix:
-  double trace(u_frame_t const &u_frame) {
+  double trace(frame_t const &u_frame) {
     double val = 0;
     for (auto const &B : u_frame) val += trace(B);
     return val;
   }
 
-  void print(u_frame_t const &u_frame, double factor) {
+  void print(frame_t const &u_frame, double factor) {
     for (auto block : u_frame) {
       block *= factor;
       std::cout << block;

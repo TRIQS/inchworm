@@ -29,11 +29,11 @@
 
 using namespace inchworm;
 //namespace nda = triqs::arrays;
-using mat_t = triqs::arrays::array<double, 2>;
+using mat_t = triqs::arrays::matrix<double>;
 using vec_t = triqs::arrays::array<double, 1>;
 
 // Prepare funcdamental operator set
-inline std::pair<fundamental_operator_set, std::vector<many_body_op_t>> make_fops(int n_site, int n_bath, int linear_index, int n_spin) {
+inline std::pair<fundamental_operator_set, std::vector<many_body_op_t>> make_fops(int n_site, int n_bath, int bath_offset, int n_spin) {
   fundamental_operator_set fops;
   std::vector<many_body_op_t> qn;
   qn.resize(1);
@@ -44,7 +44,7 @@ inline std::pair<fundamental_operator_set, std::vector<many_body_op_t>> make_fop
       qn[0] += n(sp, i);
     }
   for (int spin = 0; spin < n_spin; spin++)
-    for (int i = linear_index; i < linear_index + n_bath; i++) {
+    for (int i = bath_offset; i < bath_offset + n_bath; i++) {
       auto sp = ((spin == 0) ? "up" : "dn");
       fops.insert(sp, i);
       qn[0] += n(sp, i);
@@ -52,11 +52,12 @@ inline std::pair<fundamental_operator_set, std::vector<many_body_op_t>> make_fop
   return std::pair<fundamental_operator_set, std::vector<many_body_op_t>>(fops, qn);
 }
 
-inline void self_consistent_hubbard(int n_site, int n_bath, int n_spin, double U, double mu, double t, constr_params_t const &cp, mat_t const &theta,
-                             vec_t const &epsilon, double tau_max, double tau_split) {
+inline std::tuple<solver_core, solve_params_t, u_tau_t> test_setup(int n_site, int n_bath, int n_spin, double U, double mu, double t,
+                                                                   constr_params_t const &cp, mat_t const &theta, vec_t const &epsilon) {
   // Set up the Solver
   solver_core S(cp);
 
+  // create hybridization:
   for (auto const &tau : S.Delta_tau[0].mesh()) {
     double val;
 
@@ -66,9 +67,9 @@ inline void self_consistent_hubbard(int n_site, int n_bath, int n_spin, double U
         for (int j = 0; j < n_site; j++) {
           for (int n = 0; n < n_bath; n++) {
             if (epsilon(n) >= 0.0) // to avoid numerical instability, assign hyb differently depending on the sign of epsilon(n).
-              val = -theta(i, n) * theta(j, n) * (std::exp(-((double)tau) * (epsilon(n))) / (1. + std::exp(-cp.beta * epsilon(n))));
+              val = -theta(i, n) * dagger(theta)(n, j) * (std::exp(-((double)tau) * (epsilon(n))) / (1. + std::exp(-cp.beta * epsilon(n))));
             else
-              val = -theta(i, n) * theta(j, n) * (std::exp(-((double)tau - cp.beta) * (epsilon(n))) / (1. + std::exp(cp.beta * epsilon(n))));
+              val = -theta(i, n) * dagger(theta)(n, j) * (std::exp(-((double)tau - cp.beta) * (epsilon(n))) / (1. + std::exp(cp.beta * epsilon(n))));
             S.Delta_tau[block][tau](i, j) += val;
           }
         }
@@ -81,7 +82,9 @@ inline void self_consistent_hubbard(int n_site, int n_bath, int n_spin, double U
       for (int j = 0; j < n_site; j++) std::printf("%d %d % 4.8f\n", i, j, S.Delta_tau[block][cp.n_tau - 1](i, j));
   //exit(0);
 
-  auto h_imp = 0 * n("up", 0);
+  // h_imp initialization: Hamiltonian of the impurity sites (n_site)
+
+  many_body_operator h_imp, h_hyb, h_bath;
   for (int j = 0; j < n_site; j++) {
     h_imp -= mu * n("up", j);
 
@@ -97,10 +100,10 @@ inline void self_consistent_hubbard(int n_site, int n_bath, int n_spin, double U
     }
   }
 
-  // Compare against the reference data
-  // h5diff("hubbard.out.h5", "hubbard.ref.h5")
+  // fundamental operator sets initialization
+  // bath + imp = tot
   auto [fops_tot, qn_tot]   = make_fops(n_site, n_bath, n_site, n_spin);
-  auto [fops_atom, qn_atom] = make_fops(n_site, 0, n_site, n_spin);
+  auto [fops_imp, qn_imp]   = make_fops(n_site, 0, n_site, n_spin);
   auto [fops_bath, qn_bath] = make_fops(0, n_bath, n_site, n_spin);
 
   // Solve Parameters
@@ -113,12 +116,13 @@ inline void self_consistent_hubbard(int n_site, int n_bath, int n_spin, double U
   sp.verbosity       = 3;
   sp.post_process    = true;
   sp.measure_sign    = true;
-  sp.quantum_numbers = qn_atom;
+  sp.quantum_numbers = qn_imp;
   sp.random_seed     = 12345789 + 928374 * mpi::communicator().rank();
 
-  auto h_hyb  = 0.0 * n("up", 0);
-  auto h_bath = 0.0 * n("up", n_site);
+  //auto h_hyb  = 0.0 * n("up", 0);
+  //auto h_bath = 0.0 * n("up", n_site);
 
+  // define h_hyb alone
   for (int i = 0; i < n_site; i++) {
     for (int k = 0; k < n_bath; k++) {
       h_hyb += theta(i, k) * (c_dag("up", i) * c("up", k + n_site));
@@ -130,23 +134,47 @@ inline void self_consistent_hubbard(int n_site, int n_bath, int n_spin, double U
     }
   }
 
+  // define h_bath alone
   for (int k = 0; k < n_bath; k++) {
     h_bath += epsilon(k) * n("up", k + n_site);
     if (n_spin == 2) h_bath += epsilon(k) * n("dn", k + n_site);
   }
 
+  // define the 3 different atom_diag (ED calculation with Triqs):
   auto ad_tot  = triqs::atom_diag::atom_diag<false>(h_imp + h_bath + h_hyb, fops_tot);
-  auto ad_atom = triqs::atom_diag::atom_diag<false>(h_imp, fops_atom, qn_atom);
+  auto ad_imp  = triqs::atom_diag::atom_diag<false>(h_imp, fops_imp, qn_imp);
   auto ad_bath = triqs::atom_diag::atom_diag<false>(h_bath, fops_bath);
 
-  u_tau_t u_tau = make_ED_propagator(ad_tot, ad_atom, ad_bath, cp.beta, cp.n_tau);
+  u_tau_t u_tau = make_ED_propagator(ad_tot, ad_imp, ad_bath, cp.beta, cp.n_tau);
+
+  return {S, sp, u_tau};
+}
+
+inline void solve_cthyb(solver_core S, solve_params_t const &sp, u_tau_t const &u_tau, double tau_max) {
+
+  // Solve the impurity model using cthyb
+  auto result_cthyb = S.solve_cthyb(sp, tau_max);
+  auto const &cp    = S.constr_params;
+
+  for (int bl = 0; bl < result_cthyb.frame.size(); bl++)
+    EXPECT_ARRAY_NEAR(((matrix_t)u_tau[bl][cp.n_tau - 1]), result_cthyb.frame[bl],
+                      0.05 * u_tau[0][cp.n_tau - 1](0, 0)); // U[0](0,0) is essentially always the biggest value
+}
+
+inline void solve_selfconsistent(solver_core S, solve_params_t const &sp, u_tau_t const &u_tau, double tau_split, double tau_max) {
+
   std::printf("\n##################\nexact U(beta):\n");
   print(u_tau, tau_max);
 
-  // Solve the impurity model
-  auto result_cthyb = S.solve_cthyb(sp, tau_max);
-  auto result_sc    = S.solve_self_consistently(sp, u_tau, tau_split, tau_max);
+  // Solve the impurity model using the self-consistency approach
+  auto result_sc = S.solve_self_consistently(sp, u_tau, tau_split, tau_max);
+  auto const &cp = S.constr_params;
 
-  for (int bl = 0; bl < result_sc.u_frame.size(); bl++) EXPECT_ARRAY_NEAR(((matrix_t)u_tau[bl][cp.n_tau - 1]), result_cthyb.u_frame[bl], 0.05 * u_tau[0][cp.n_tau - 1](0, 0)); // U[0](0,0) is essentially always the biggest value
-  for (int bl = 0; bl < result_sc.u_frame.size(); bl++) EXPECT_ARRAY_NEAR(((matrix_t)u_tau[bl][cp.n_tau - 1]), result_sc.u_frame[bl], 0.05 * u_tau[0][cp.n_tau - 1](0, 0));
+  for (int bl = 0; bl < result_sc.frame.size(); bl++)
+    EXPECT_ARRAY_NEAR(((matrix_t)u_tau[bl][cp.n_tau - 1]), result_sc.frame[bl], 0.05 * u_tau[0][cp.n_tau - 1](0, 0));
+}
+
+void solve_green(solver_core S, solve_params_t const &sp, u_tau_t const &u_tau) {
+  S.solve_green(sp, u_tau);
+
 }

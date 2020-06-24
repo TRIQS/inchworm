@@ -27,6 +27,7 @@ namespace inchworm {
     config_t config;       // last accepted configuration of d and d_dag
     weights_t w;           // weight values of the last accepted configuration
     u_partial_t u_partial; // frame of the last accepted configuraiton: just one time frame of a propagator
+    g_frame_t g_frame;     // green function for a specific time tau
     int sign;              // sign of the last accepted configuration
     //scalar_t normalization_cte; //
 
@@ -36,15 +37,15 @@ namespace inchworm {
   // structure to calculate hybridization function for tau, tau_dag, and orbital (linear) indices.
   struct hyb_adaptor_t {
     h_tau_t const hyb_tau;
-    std::map<int, std::pair<int, int>> const &linindex;
+    std::map<int, std::pair<int, int>> const &map_lin_idx_to_block_inner;
 
-    hyb_adaptor_t(h_tau_t const &hyb_tau, std::map<int, std::pair<int, int>> const &linindex)
-       : hyb_tau(std::move(hyb_tau)), linindex(std::move(linindex)) {}
+    hyb_adaptor_t(h_tau_t const &hyb_tau, std::map<int, std::pair<int, int>> const &map_lin_idx_to_block_inner)
+       : hyb_tau(std::move(hyb_tau)), map_lin_idx_to_block_inner(std::move(map_lin_idx_to_block_inner)) {}
 
     // function to link
     scalar_t operator()(double tau, int li, double tau_dag, int li_dag) const {
-      auto [bl, in]         = linindex.at(li);
-      auto [bl_dag, in_dag] = linindex.at(li_dag);
+      auto [bl, in]         = map_lin_idx_to_block_inner.at(li);
+      auto [bl_dag, in_dag] = map_lin_idx_to_block_inner.at(li_dag);
 
       if (bl != bl_dag) return 0.; // important: there should be no finite terms of the hybridization between different [bl]ock.
       double dtau = tau_dag - tau;
@@ -64,7 +65,7 @@ namespace inchworm {
 
     // same for every inch step:
     hyb_adaptor_t hyb_adaptor;
-    std::map<int, std::pair<int, int>> linindex;
+    std::map<int, std::pair<int, int>> map_lin_idx_to_block_inner;
     atom_diag const &ad_imp; // Diagonalization of the atomic problem
 
     // updated at every inch step:
@@ -77,10 +78,10 @@ namespace inchworm {
 
     int mode;
 
-    qmc_params_t(h_tau_t const &hyb_tau, std::map<int, std::pair<int, int>> const &linindex, atom_diag const &ad_imp, u_tau_t const &u_tau,
+    qmc_params_t(h_tau_t const &hyb_tau, std::map<int, std::pair<int, int>> const &map_lin_idx_to_block_inner, atom_diag const &ad_imp, u_tau_t const &u_tau,
                  double tau_max, double tau_split, bool use_bare_propagator, int mode)
-       : hyb_adaptor(hyb_tau, linindex),
-         linindex(linindex),
+       : hyb_adaptor(hyb_tau, map_lin_idx_to_block_inner),
+         map_lin_idx_to_block_inner(map_lin_idx_to_block_inner),
          ad_imp(ad_imp),
          u_tau(u_tau),
          tau_max(tau_max),

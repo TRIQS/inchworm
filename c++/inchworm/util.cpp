@@ -102,7 +102,7 @@ namespace inchworm {
   }
 
   //
-  void print(u_frame_t u_frame) {
+  void print(frame_t u_frame) {
     for (int bl = 0; bl < u_frame.size(); bl++) {
       std::printf("\n\nblock: %d\n", bl);
       print_matrix(u_frame[bl]);
@@ -162,7 +162,7 @@ namespace inchworm {
     return trace_value;
   }
 
-  u_frame_t partial_trace_bath(atom_diag const &ad_tot, atom_diag const &ad_imp, atom_diag const &ad_bath, double beta, double tau) {
+  frame_t partial_trace_bath(atom_diag const &ad_tot, atom_diag const &ad_imp, atom_diag const &ad_bath, double beta, double tau) {
     //TODO: incorporate in atom_diag and make it a member function: not possible anymore.
 
     for (int i = 0; i < (int)ad_imp.get_fops().data().size(); i++) {
@@ -180,7 +180,7 @@ namespace inchworm {
     int linear_index = ad_imp.get_fops().data().size();
     //std::printf("li=%d\n",linear_index);
 
-    u_frame_t u_frame_result = make_zero_propagator_frame(ad_imp);
+    frame_t u_frame_result = make_zero_propagator_frame(ad_imp);
     auto es_full             = ad_tot.get_eigensystems();
     auto fs_full             = ad_tot.get_fock_states();
     auto fs_loc              = ad_imp.get_fock_states();

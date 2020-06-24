@@ -9,21 +9,21 @@
 
 namespace inchworm {
 
-  using u_frame_t = std::vector<matrix_t>;
+  using frame_t = std::vector<matrix_t>;
 
   using u_partial_t = std::vector<std::pair<int, matrix_t>>;
 
   using g_frame_t = std::vector<matrix_t>;
 
   //
-  u_frame_t make_zero_propagator_frame(atom_diag const &ad);
+  frame_t make_zero_propagator_frame(atom_diag const &ad);
 
   //
-  u_frame_t make_bare_propagator_frame(atom_diag const &ad, double tau, bool set_gs_to_0 = false);
+  frame_t make_bare_propagator_frame(atom_diag const &ad, double tau, bool set_gs_to_0 = false);
 
-  u_frame_t make_u_frame(u_partial_t const &up);
+  frame_t make_u_frame(u_partial_t const &up);
 
-  u_partial_t make_u_partial(u_frame_t const &u);
+  u_partial_t make_u_partial(frame_t const &u);
 
   //
   g_frame_t make_zero_green_frame(gf_struct_t const & gf_struct); 
@@ -37,7 +37,7 @@ namespace inchworm {
   double frobenius_norm(g_frame_t const &g_frame);
 
   // calculate the trace of the u_frame block diagonal matrix:
-  double trace(u_frame_t const &u_frame);
+  double trace(frame_t const &u_frame);
 
-  void print(u_frame_t const &u_frame, double factor);
+  void print(frame_t const &u_frame, double factor);
 } // namespace inchworm
