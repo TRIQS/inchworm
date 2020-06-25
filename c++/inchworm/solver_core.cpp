@@ -240,6 +240,7 @@ namespace inchworm {
         }
       }
 
+      TRIQS_PRINT(n); 
       if(n == 0 or n == constr_params.n_tau - 1){
         assign_frame_to_propagator(G_tau, g_frame_zeroth_order, n, 1.);
 	continue;
@@ -258,6 +259,8 @@ namespace inchworm {
       normalization_cte = (double)res.frame_0th_order[0](0, 0) / ((double)g_frame_zeroth_order[0](0, 0)); //need to do better at some point
       std::printf("\n\n##################\ninchworm G(tau_split):\n");
 
+      print(res.frame_0th_order);
+      getchar();
       res.normalize(normalization_cte);
       res.print();
 

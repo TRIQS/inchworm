@@ -22,7 +22,10 @@
 
 #include "./hubbard.hpp"
 
-TEST(inchworm, Hubbard_1site) {
+int main(int argc, char **argv) {
+  ::mpi::environment env(argc, argv);
+
+  //TEST(inchworm, Hubbard_1site) {
 
   constr_params_t cp;
   cp.beta      = 2.0;
@@ -38,9 +41,9 @@ TEST(inchworm, Hubbard_1site) {
   double tau_max   = cp.beta;
   double tau_split = cp.beta * 0.9;
 
-  solve_cthyb(S, sp, u_tau, tau_max);
+  //solve_cthyb(S, sp, u_tau, tau_max);
   //solve_selfconsistent(S, sp, u_tau, tau_split, tau_max);
-  //solve_green(S, sp, u_tau);
+  solve_green(S, sp, u_tau);
 }
 
-MAKE_MAIN
+//MAKE_MAIN

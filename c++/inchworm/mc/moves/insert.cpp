@@ -98,6 +98,11 @@ namespace inchworm::moves {
     auto w_loc_ratio = proposed_w.loc / data.w.loc;
     auto t_ratio     = std::pow(params.tau_max * n_fops / (N + 1), 2);
 
+    //TRIQS_PRINT(sign_ratio);
+    //TRIQS_PRINT(w_hyb_ratio);
+    //TRIQS_PRINT(w_loc_ratio);
+    //TRIQS_PRINT(t_ratio);
+
     if (proposed_config.size() == 200) {
       std::printf("\n\n=======\n");
       //for (auto &B : proposed_u_partial) { std::cout << B; }
@@ -135,6 +140,11 @@ namespace inchworm::moves {
     data.w         = proposed_w;
     data.u_partial = proposed_u_partial;
     data.g_frame   = proposed_g_frame;
+    //std::printf("accepted g_frame:\n");
+    //print(proposed_g_frame);
+    //std::printf("data g_frame:\n");
+    //print(data.g_frame);
+    //getchar();
     data.config    = proposed_config;
     data.sign      = proposed_sign;
     //std::swap(proposed_w, data.w);

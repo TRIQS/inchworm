@@ -69,7 +69,7 @@ namespace inchworm {
     for (int i = 0; i < first_dim(m); i++) {
       std::printf("\n [");
       for (int j = 0; j < second_dim(m); j++) {
-        if (std::abs(m(i, j)) < 1e-100)
+        if (std::abs(m(i, j)) == 0.0)
           std::printf("   .      ");
         else
           std::printf("% 10.2e", m(i, j) * factor);

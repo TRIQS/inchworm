@@ -17,13 +17,28 @@ namespace inchworm::measures {
       auto m = qmc_config_data.g_frame[bl];
       results.frame[bl] += s * m;
     }
+    //TRIQS_PRINT(s);
+    //std::printf("acc data g_frame:\n");
+    //print(qmc_config_data.g_frame);
+    //std::printf("total g_frame:\n");
+    //print(results.frame);
 
     // For normalizatoin purpose, we sample the zeroth order separatly:
     if (qmc_config_data.config.size() == 0)
+    {
       for (int bl = 0; bl < results.frame_0th_order.size(); bl++) {
         auto m = qmc_config_data.g_frame[bl];
         results.frame_0th_order[bl] += s * m;
+        //std::printf("s * m:\n");
+        //print_matrix(m);
       }
+      TRIQS_PRINT(s);
+      std::printf("acc data g_frame:\n");
+      print(qmc_config_data.g_frame);
+      std::printf("total 0order g_frame:\n");
+      print(results.frame_0th_order);
+      //getchar();
+    }
   }
 
   void g_frame::collect_results(mpi::communicator const &comm) {

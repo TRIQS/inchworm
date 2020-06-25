@@ -42,18 +42,22 @@ namespace inchworm {
   }
 
   frame_t make_frame(std::vector<long> const & shape_of_frame) {
-    std::vector<matrix_t> res;
-    for (auto n : shape_of_frame) { res.emplace_back(matrix_t(n, n)); }
+    auto res = frame_t{};
+
+    for (auto n : shape_of_frame) {
+      res.emplace_back(matrix_t(n, n));
+      res.back() = 0.;
+    }
     return res;
   }
 
   // Create an empty frame (block diagonal matrix: vector of matrix_t)
   frame_t make_frame(gf_struct_t const &gf_struct) {
-    auto res = g_frame_t{};
+    auto res = frame_t{};
 
     for (auto const &[bl, idxlst] : gf_struct) {
       res.emplace_back(idxlst.size(), idxlst.size());
-      res.back() = 0;
+      res.back() = 0.;
     }
     return res;
   }
