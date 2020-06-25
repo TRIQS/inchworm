@@ -41,12 +41,6 @@ namespace inchworm {
    */
   u_partial_t impurity_product(atom_diag const &ad, time_diagram_t const &diagram, double tau0, double tau1, u_tau_t const *const u_tau_p = nullptr);
 
-  inline std::vector<matrix_t> make_frame(std::vector<long> shape_of_frame) {
-    std::vector<matrix_t> res;
-    for (auto n : shape_of_frame) { res.push_back(matrix_t(n, n)); }
-    return res;
-  }
-
   constexpr int MAX_ORDER = 7; // just for printing
 
   // structure to gather result of one Monte Carlo run:

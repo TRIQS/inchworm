@@ -41,8 +41,14 @@ namespace inchworm {
     return res;
   }
 
+  frame_t make_frame(std::vector<long> const & shape_of_frame) {
+    std::vector<matrix_t> res;
+    for (auto n : shape_of_frame) { res.emplace_back(matrix_t(n, n)); }
+    return res;
+  }
+
   // Create an empty frame (block diagonal matrix: vector of matrix_t)
-  g_frame_t make_zero_green_frame(gf_struct_t const &gf_struct) {
+  frame_t make_frame(gf_struct_t const &gf_struct) {
     auto res = g_frame_t{};
 
     for (auto const &[bl, idxlst] : gf_struct) {
@@ -61,11 +67,15 @@ namespace inchworm {
       // u[bl] = up[bl, blp] * up[blp, bl]
       // l_bl <- r_bl <- i
       auto &[r_bl, r_mat] = r[i];
-      auto &[l_bl, l_mat] = l[r_bl];
-      if (l_bl == -1 || r_bl == -1)
+      if (r_bl == -1)
         res.emplace_back(-1, matrix_t{});
-      else
-        res.emplace_back(l_bl, l_mat * r_mat);
+      else {
+        auto &[l_bl, l_mat] = l[r_bl];
+        if (l_bl == -1)
+          res.emplace_back(-1, matrix_t{});
+        else
+          res.emplace_back(l_bl, l_mat * r_mat);
+      }
     }
     return res;
   }

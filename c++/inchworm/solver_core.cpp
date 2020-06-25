@@ -207,23 +207,17 @@ namespace inchworm {
       // d_dag-================================-d-======================|
       // 0                                  tau_split                beta
       //
-      // tau_split < beta
+      // 0 < tau_split < beta
       //
-      double tau_split = beta * (double)n / (double)constr_params.n_tau;
+      double tau_split = beta * (double)n / (double)(constr_params.n_tau-1);
 
       // g_frame recipient:
       // g_frame_bare = make_bare_propagator_frame(ad_imp, tau_max, false);
 
-      // calculation of the Monte Carlo solution:
-      auto res = single_step(solve_params, tau_split, beta, false, 1);
-
-      // determination of normalization constant:
-      scalar_t normalization_cte;
-
       auto l = make_u_partial(make_bare_propagator_frame(ad_imp, beta - tau_split, false));
       auto r = make_u_partial(make_bare_propagator_frame(ad_imp, tau_split, false));
 
-      frame_t g_frame_zeroth_order;
+      frame_t g_frame_zeroth_order = make_frame(constr_params.gf_struct);
 
       int n_ops = ad_imp.get_fops().data().size();
       for (int i = 0; i < n_ops; ++i) {
@@ -246,6 +240,17 @@ namespace inchworm {
         }
       }
 
+      if(n == 0 or n == constr_params.n_tau - 1){
+        assign_frame_to_propagator(G_tau, g_frame_zeroth_order, n, 1.);
+	continue;
+      }
+
+      // calculation of the Monte Carlo solution:
+      auto res = single_step(solve_params, tau_split, beta, false, 1);
+
+      // determination of normalization constant:
+      scalar_t normalization_cte;
+
       // FIXME function:
       //--->auto g_frame_zeroth_order = Trace u_tau[0](beta - tau_split) * d_b *  u_tau[0](tau_split) * d_dag_a;
 
@@ -256,7 +261,7 @@ namespace inchworm {
       res.normalize(normalization_cte);
       res.print();
 
-      assign_frame_to_propagator(G_tau, res.frame, n + 1, 1.);
+      assign_frame_to_propagator(G_tau, res.frame, n, 1.);
     }
   } // namespace inchworm
 
@@ -279,7 +284,7 @@ namespace inchworm {
     if (use_bare_propagator) u_tau_p = nullptr;
 
     // Create Monte-Carlo configuration
-    qmc_config_data_t qmc_config_data{};
+    qmc_config_data_t qmc_config_data{params.gf_struct};
 
     // Create Monte-Carlo params
     qmc_params_t qmc_params{Delta_tau, map_lin_idx_to_block_inner, ad_imp, u_tau, tau_max, tau_split, use_bare_propagator, mode};
@@ -299,7 +304,7 @@ namespace inchworm {
     if (mode == 0)
       results.frame = make_zero_propagator_frame(ad_imp);
     else if (mode == 1)
-      results.frame = make_zero_green_frame(params.gf_struct);
+      results.frame = make_frame(params.gf_struct);
     results.frame_0th_order = results.frame;
 
     // Register all measurements

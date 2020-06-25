@@ -25,8 +25,10 @@ namespace inchworm {
 
   u_partial_t make_u_partial(frame_t const &u);
 
+  frame_t make_frame(std::vector<long> const & shape);
+
   //
-  g_frame_t make_zero_green_frame(gf_struct_t const & gf_struct); 
+  frame_t make_frame(gf_struct_t const & gf_struct);
 
   u_partial_t operator*(u_partial_t const &l, u_partial_t const &r);
 

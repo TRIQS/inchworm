@@ -73,11 +73,20 @@ namespace inchworm::moves {
           // l * d_i[bl_idx2](tau)
           u_partial_t ld = apply_op_from_right(l, i, false, params.ad_imp);
 
-          g_frame_t prod = make_u_frame(ld * rddag);
+          frame_t prod = make_u_frame(ld * rddag);
 
+	  //std::printf("prod:\n");
+	  //print(prod);
           for (int bl0 = 0; bl0 < params.ad_imp.n_subspaces(); ++bl0) {
               proposed_g_frame[g_bl](in, in_dag) += trace(prod[bl0]); //FIXME check the order of in and in_dag to be sure.
+	      //if(trace(prod[bl0]) != 0.0) {
+                //TRIQS_PRINT(trace(prod[bl0]));
+		//int kl{};
+	      //}
           }
+	  //std::printf("propossed_g_frame:\n");
+	  //print(proposed_g_frame);
+	  //getchar();
         }
       }
 
