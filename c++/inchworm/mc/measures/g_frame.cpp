@@ -32,11 +32,11 @@ namespace inchworm::measures {
         //std::printf("s * m:\n");
         //print_matrix(m);
       }
-      TRIQS_PRINT(s);
-      std::printf("acc data g_frame:\n");
-      print(qmc_config_data.g_frame);
-      std::printf("total 0order g_frame:\n");
-      print(results.frame_0th_order);
+      //TRIQS_PRINT(s);
+      //std::printf("acc data g_frame:\n");
+      //print(qmc_config_data.g_frame);
+      //std::printf("total 0order g_frame:\n");
+      //print(results.frame_0th_order);
       //getchar();
     }
   }

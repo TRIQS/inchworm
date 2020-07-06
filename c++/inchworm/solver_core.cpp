@@ -189,11 +189,14 @@ namespace inchworm {
 
   //------------------------------
   // The Green sampling:
-  void solver_core::solve_green(solve_params_t const &solve_params, u_tau_t const &u_tau) {
+  void solver_core::solve_green(solve_params_t const &solve_params, u_tau_t const &u_tau_) {
 
     // Initialize:
-    //exit(1);
     init(solve_params); //FIXME
+
+    // precalculated propagator:
+    u_tau = u_tau_;
+
     beta = constr_params.beta;
 
     // loop on different inchworm steps
@@ -259,8 +262,8 @@ namespace inchworm {
       normalization_cte = (double)res.frame_0th_order[0](0, 0) / ((double)g_frame_zeroth_order[0](0, 0)); //need to do better at some point
       std::printf("\n\n##################\ninchworm G(tau_split):\n");
 
-      print(res.frame_0th_order);
-      getchar();
+      //print(res.frame_0th_order);
+      //getchar();
       res.normalize(normalization_cte);
       res.print();
 
