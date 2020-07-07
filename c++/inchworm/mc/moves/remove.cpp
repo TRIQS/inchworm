@@ -54,30 +54,7 @@ namespace inchworm::moves {
 
       for (auto &Bl : proposed_g_frame) Bl = 0;
 
-      int n_ops = params.ad_imp.get_fops().size();
-
-      // G[g_bl][tau][in,in_dag] = -<T c[g_bl][in](tau) cdag[g_bl][in_dag](0)>
-      // i ~= g_bl     + in
-      // j ~= g_bl_dag + in_dag
-      for (int i = 0; i < n_ops; ++i) {
-        auto [g_bl, in]         = params.map_lin_idx_to_block_inner.at(i);
-        for (int j = 0; j < n_ops; ++j) {
-          auto [g_bl_dag, in_dag] = params.map_lin_idx_to_block_inner.at(j);
-          if(g_bl != g_bl_dag) continue;
-
-          // r * ddag_j[bl_idx1](0)
-          u_partial_t rddag = apply_op_from_right(r, j, true, params.ad_imp);
-
-          // l * d_i[bl_idx2](tau)
-          u_partial_t ld = apply_op_from_right(l, i, false, params.ad_imp);
-
-          auto prod = make_u_frame(ld * rddag);
-
-          for (int bl0 = 0; bl0 < params.ad_imp.n_subspaces(); ++bl0) {
-              proposed_g_frame[g_bl](in, in_dag) += trace(prod[bl0]); //FIXME check the order of in and in_dag to be sure.
-          }
-        }
-      }
+      proposed_g_frame = make_g_frame_from_l_and_r(params.ad_imp, params.map_lin_idx_to_block_inner, gf_struct, l, r);
 
       proposed_w.loc = frobenius_norm(proposed_g_frame);
     }

@@ -42,4 +42,8 @@ namespace inchworm {
   double trace(frame_t const &u_frame);
 
   void print(frame_t const &u_frame, double factor);
+
+  frame_t make_g_frame_from_l_and_r(atom_diag const &ad_imp, std::map<int, std::pair<int, int>> const &map_lin_idx_to_block_inner,
+                                    gf_struct_t const &gf_struct, u_partial_t const &l, u_partial_t const &r);
+
 } // namespace inchworm

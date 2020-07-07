@@ -125,8 +125,7 @@ namespace inchworm {
     auto u_frame_zeroth_order = u_tau[0](tau_max - tau_split) * u_tau[0](tau_split);
 
     // finding the ratio between theoretical zeroth order and Monte Carlo sampled zeroth order:
-    scalar_t normalization_cte =
-       (double)res.frame_0th_order[0](0, 0) / ((double)u_frame_zeroth_order(0, 0)); //FIXME: need to do better at some point
+    scalar_t normalization_cte = (double)res.frame_0th_order[0](0, 0) / ((double)u_frame_zeroth_order(0, 0)); //FIXME: need to do better at some point
 
     std::printf("\n##################\ninchworm U(beta):\n");
     res.normalize(normalization_cte);
@@ -202,9 +201,27 @@ namespace inchworm {
 
     beta = constr_params.beta;
 
+    // --- Treat n == 0 and n == n_tau -1 seperately
+    auto u_tau_beta = make_u_partial(make_bare_propagator_frame(ad_imp, beta, false));
+    auto u_tau_zero = make_u_partial(make_bare_propagator_frame(ad_imp, 0., false));
+
+    frame_t g_frame_n0 = make_g_frame_from_l_and_r(ad_imp, map_lin_idx_to_block_inner, constr_params.gf_struct, u_tau_beta, u_tau_zero);
+    frame_t g_frame_nB = make_g_frame_from_l_and_r(ad_imp, map_lin_idx_to_block_inner, constr_params.gf_struct, u_tau_zero, u_tau_beta);
+
+    scalar_t Z = -g_frame_n0[0](0, 0) - g_frame_nB[0](0, 0);
+
+    TRIQS_PRINT(Z);
+
+    assign_frame_to_propagator(G_tau, g_frame_n0, 0, 1. / Z);
+    assign_frame_to_propagator(G_tau, g_frame_nB, constr_params.n_tau - 1, 1. / Z);
+
+    print(G_tau, 0);
+    std::printf("\n\n");
+    print(G_tau, constr_params.n_tau - 1);
+
     // loop on different inchworm steps
     for (
-       int n = 0; n < constr_params.n_tau;
+       int n = 1; n < constr_params.n_tau - 1; // n == 0 and n == n_tau - 1 already treated
        n++) { // FIXME: create a parameter. (at first it was the paramter n_tau, but it is important it is a different one). Now it is just a preprocessor variable. To be done.
       std::printf("\n\ngreen sampling %d\n", n);
 
@@ -215,7 +232,7 @@ namespace inchworm {
       //
       // 0 < tau_split < beta
       //
-      double tau_split = beta * (double)n / (double)(constr_params.n_tau-1);
+      double tau_split = beta * (double)n / (double)(constr_params.n_tau - 1);
 
       // g_frame recipient:
       // g_frame_bare = make_bare_propagator_frame(ad_imp, tau_max, false);
@@ -223,34 +240,7 @@ namespace inchworm {
       auto l = make_u_partial(make_bare_propagator_frame(ad_imp, beta - tau_split, false));
       auto r = make_u_partial(make_bare_propagator_frame(ad_imp, tau_split, false));
 
-      frame_t g_frame_zeroth_order = make_frame(constr_params.gf_struct);
-
-      int n_ops = ad_imp.get_fops().data().size();
-      for (int i = 0; i < n_ops; ++i) {
-        auto [g_bl, in] = map_lin_idx_to_block_inner.at(i);
-        for (int j = 0; j < n_ops; ++j) {
-          auto [g_bl_dag, in_dag] = map_lin_idx_to_block_inner.at(j);
-          if (g_bl != g_bl_dag) continue;
-
-          // r * ddag_j[bl_idx1](0)
-          u_partial_t rddag = apply_op_from_right(r, j, true, ad_imp);
-
-          // l * d_i[bl_idx2](tau)
-          u_partial_t ld = apply_op_from_right(l, i, false, ad_imp);
-
-          auto prod = make_u_frame(ld * rddag);
-
-          for (int bl0 = 0; bl0 < ad_imp.n_subspaces(); ++bl0) {
-            g_frame_zeroth_order[g_bl](in, in_dag) += trace(prod[bl0]); //FIXME check the order of in and in_dag to be sure.
-          }
-        }
-      }
-
-      TRIQS_PRINT(n); 
-      if(n == 0 or n == constr_params.n_tau - 1){
-        assign_frame_to_propagator(G_tau, g_frame_zeroth_order, n, 1.);
-	continue;
-      }
+      frame_t g_frame_zeroth_order = make_g_frame_from_l_and_r(ad_imp, map_lin_idx_to_block_inner, constr_params.gf_struct, l, r);
 
       // calculation of the Monte Carlo solution:
       auto res = single_step(solve_params, tau_split, beta, false, 1);
@@ -272,6 +262,7 @@ namespace inchworm {
 
       assign_frame_to_propagator(G_tau, res.frame, n, 1.);
     }
+
   } // namespace inchworm
 
   //------------------------------

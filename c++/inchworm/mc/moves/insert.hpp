@@ -23,7 +23,7 @@ namespace inchworm::moves {
 
     /// Constructor
     insert(qmc_config_data_t &data, params_t const &params, qmc_params_t const &qmc_params, triqs::mc_tools::random_generator &rng)
-       : data(data), params(qmc_params), rng(rng) {
+       : data(data), params(qmc_params), rng(rng), gf_struct(params.gf_struct) {
       proposed_g_frame = make_frame(params.gf_struct);
     }
 
@@ -45,6 +45,9 @@ namespace inchworm::moves {
 
     /// container of the calculated time frame of the propagator
     u_partial_t proposed_u_partial;
+
+    /// the green function structure
+    gf_struct_t const &gf_struct;
 
     /// green function container to accumulate into
     g_frame_t proposed_g_frame;
