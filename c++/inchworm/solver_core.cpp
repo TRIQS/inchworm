@@ -191,8 +191,11 @@ namespace inchworm {
   // The Green sampling:
   void solver_core::solve_green(solve_params_t const &solve_params, u_tau_t const &u_tau_) {
 
-    // Initialize:
+    // Initialize the solver
     init(solve_params); //FIXME
+
+    // Initialize the Green function container
+    G_tau = g_tau_t{{constr_params.beta, Fermion, constr_params.n_tau}, constr_params.gf_struct};
 
     // precalculated propagator:
     u_tau = u_tau_;
