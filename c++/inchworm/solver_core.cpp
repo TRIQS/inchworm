@@ -202,11 +202,9 @@ namespace inchworm {
     beta = constr_params.beta;
 
     // --- Treat n == 0 and n == n_tau -1 seperately
-    auto u_tau_beta = make_u_partial(make_bare_propagator_frame(ad_imp, beta, false));
-    auto u_tau_zero = make_u_partial(make_bare_propagator_frame(ad_imp, 0., false));
 
-    frame_t g_frame_n0 = make_g_frame_from_l_and_r(ad_imp, map_lin_idx_to_block_inner, constr_params.gf_struct, u_tau_beta, u_tau_zero);
-    frame_t g_frame_nB = make_g_frame_from_l_and_r(ad_imp, map_lin_idx_to_block_inner, constr_params.gf_struct, u_tau_zero, u_tau_beta);
+    frame_t g_frame_n0 = make_bare_g_frame(ad_imp, map_lin_idx_to_block_inner, gf_struct, 0.0, beta);
+    frame_t g_frame_nB = make_bare_g_frame(ad_imp, map_lin_idx_to_block_inner, gf_struct, beta, beta);
 
     scalar_t Z = -g_frame_n0[0](0, 0) - g_frame_nB[0](0, 0);
 
@@ -237,10 +235,8 @@ namespace inchworm {
       // g_frame recipient:
       // g_frame_bare = make_bare_propagator_frame(ad_imp, tau_max, false);
 
-      auto l = make_u_partial(make_bare_propagator_frame(ad_imp, beta - tau_split, false));
-      auto r = make_u_partial(make_bare_propagator_frame(ad_imp, tau_split, false));
-
-      frame_t g_frame_zeroth_order = make_g_frame_from_l_and_r(ad_imp, map_lin_idx_to_block_inner, constr_params.gf_struct, l, r);
+      TRIQS_PRINT(tau_split);
+      frame_t g_frame_zeroth_order = make_bare_g_frame(ad_imp, map_lin_idx_to_block_inner, gf_struct, tau_split, beta);
 
       // calculation of the Monte Carlo solution:
       auto res = single_step(solve_params, tau_split, beta, false, 1);

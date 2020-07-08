@@ -27,7 +27,7 @@ namespace inchworm {
     config_t config;       // last accepted configuration of d and d_dag
     weights_t w;           // weight values of the last accepted configuration
     u_partial_t u_partial; // frame of the last accepted configuraiton: just one time frame of a propagator
-    g_frame_t g_frame;     // green function for a specific time tau
+    frame_t g_frame;       // green function for a specific time tau
     int sign;              // sign of the last accepted configuration
     //scalar_t normalization_cte; //
 

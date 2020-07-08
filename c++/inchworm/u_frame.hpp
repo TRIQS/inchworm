@@ -21,6 +21,8 @@ namespace inchworm {
   //
   frame_t make_bare_propagator_frame(atom_diag const &ad, double tau, bool set_gs_to_0 = false);
 
+  frame_t make_bare_g_frame(atom_diag const &ad_imp, std::map<int, std::pair<int, int>> const & map_lin_idx_to_block_inner, gf_struct_t const &gf_struct, double tau_split, double beta);
+
   frame_t make_u_frame(u_partial_t const &up);
 
   u_partial_t make_u_partial(frame_t const &u);
