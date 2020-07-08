@@ -26,6 +26,7 @@
 #include <triqs/gfs.hpp>
 #include <triqs/h5.hpp>
 #include <triqs/test_tools/gfs.hpp>
+#include <triqs/arrays/linalg/eigenelements.hpp>
 
 using namespace inchworm;
 //namespace nda = triqs::arrays;
@@ -51,6 +52,65 @@ inline std::pair<fundamental_operator_set, std::vector<many_body_op_t>> make_fop
     }
   return std::pair<fundamental_operator_set, std::vector<many_body_op_t>>(fops, qn);
 }
+
+inline g_tau_t green_U0_setup(int n_site, int n_bath, int n_spin, double mu, double t, constr_params_t const &cp, mat_t const &theta, vec_t const &epsilon) {
+
+  auto G_tau = g_tau_t{{cp.beta, Fermion, cp.n_tau}, cp.gf_struct};
+
+  int n = n_site + n_bath;
+  auto H = mat_t(n, n);
+  H = 0.;
+
+  // Impurity Energies
+  for(int i = 0; i < n_site; ++i)
+    H(i, i) += -mu;
+
+  // Bath Energies
+  for(int i = 0; i < n_bath; ++i)
+    H(i + n_site, i + n_site) += epsilon(i);
+
+  // Impurity Hopping
+  for(int i = 0; i < n_site; ++i)
+    for(int j = 0; j < n_site; ++j)
+      if(i != j)
+        H(i, j) += -t;
+
+  // Coupling
+  for(int i = 0; i < n_site; ++i)
+    for(int j = 0; j < n_bath; ++j)
+    {
+        H(i, n_site + j) += theta(i, j);
+        H(n_site + j, i) += theta(i, j);
+    }
+
+  auto [evals, evecs] = triqs::arrays::linalg::eigenelements(H);
+
+  auto one_fermion = [beta = cp.beta](double tau, double eps){
+    if (eps >= 0){
+      return -std::exp(-tau * eps) / (1. + std::exp(-beta * eps));
+    } else {
+      return -std::exp(-(tau - beta) * eps) / (1. + std::exp(beta * eps));
+    }
+  }; 
+
+  auto get_G_tau = [evals = evals, evecs = evecs, n, n_site, one_fermion](double tau){
+    auto G_full_diag = mat_t(n, n);
+    G_full_diag = 0.;
+    for(int i = 0; i < n; ++i)
+      G_full_diag(i, i) = one_fermion(tau, evals(i));
+    auto G_full = mat_t{evecs * G_full_diag * dagger(evecs)};
+    return mat_t{G_full(range(n_site), range(n_site))};
+  };
+
+  for(auto const & tau: G_tau[0].mesh()){
+    for(int sp = 0; sp < n_spin; ++sp){
+      G_tau[sp][tau] = get_G_tau(double(tau));
+    }
+  }
+
+  return G_tau;
+}
+ 
 
 inline std::tuple<solver_core, solve_params_t, u_tau_t> test_setup(int n_site, int n_bath, int n_spin, double U, double mu, double t,
                                                                    constr_params_t const &cp, mat_t const &theta, vec_t const &epsilon) {
@@ -176,5 +236,4 @@ inline void solve_selfconsistent(solver_core S, solve_params_t const &sp, u_tau_
 
 void solve_green(solver_core S, solve_params_t const &sp, u_tau_t const &u_tau) {
   S.solve_green(sp, u_tau);
-
 }
