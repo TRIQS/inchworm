@@ -9,7 +9,10 @@ namespace inchworm::measures {
     scalar_t s = sign / (qmc_config_data.w.loc);
     if (qmc_config_data.config.size() < MAX_ORDER) { // MAX_ORDER is just for printing purpose for now.
       auto const &[tbl0, m0] = qmc_config_data.u_partial[0];
-      if (tbl0 != -1) results.expansion_order[qmc_config_data.config.size()] += s * m0(0, 0);
+      if (tbl0 != -1) {
+	results.expansion_order[qmc_config_data.config.size()] += s * m0(0, 0);
+        results.samples_expansion_order[qmc_config_data.config.size()]++;
+      }
     }
     //if (qmc_config_data.config.size() == 2)
     //std::printf("%d ", qmc_config_data.config.size());

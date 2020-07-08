@@ -10,6 +10,7 @@ namespace inchworm::measures {
     if (qmc_config_data.config.size() < MAX_ORDER) { // MAX_ORDER is just for printing purpose for now.
       auto m0 = qmc_config_data.g_frame[0](0,0);
       results.expansion_order[qmc_config_data.config.size()] += s * m0;
+      results.samples_expansion_order[qmc_config_data.config.size()]++;
     }
     //if (qmc_config_data.config.size() == 2)
     //std::printf("%d ", qmc_config_data.config.size());
