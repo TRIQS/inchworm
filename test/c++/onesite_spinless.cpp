@@ -27,21 +27,23 @@ TEST(inchworm, Hubbard_1site_spinless) {
   constr_params_t cp;
   cp.beta      = 2.0;
   cp.gf_struct = {{"up", {0}}};
-  cp.n_tau     = 500;
-  cp.n_iw      = 250;
-  //cp.n_step      = 250;
+  cp.n_tau     = 4;
+  cp.n_iw      = 4;
 
+  //mat_t theta   = {{1.0}};
+  //vec_t epsilon = {3.0};
   mat_t theta = {{1.5, -1.0, 1.7}};
-  //vec_t epsilon = {0.0, 0.0, 0.0};
   vec_t epsilon = {-2.0, 0.4, 1.5};
 
+  //n_site, n_bath, n_spin, U, mu, t
   auto [S, sp, u_tau] = test_setup(1, 3, 1, 0.0, 0.0, 0.0, cp, theta, epsilon);
 
   double tau_max   = cp.beta;
   double tau_split = cp.beta * 0.9;
 
-  solve_cthyb(S, sp, u_tau, tau_max);
-  solve_selfconsistent(S, sp, u_tau, tau_split, tau_max);
+  //solve_cthyb(S, sp, u_tau, tau_max);
+  //solve_selfconsistent(S, sp, u_tau, tau_split, tau_max);
+  solve_green(S, sp, u_tau);
 }
 
 MAKE_MAIN
