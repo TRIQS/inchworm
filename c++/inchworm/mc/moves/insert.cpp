@@ -54,11 +54,19 @@ namespace inchworm::moves {
       auto l = impurity_product(params.ad_imp, diagram, params.tau_split, params.tau_max, &params.u_tau);
       auto r = impurity_product(params.ad_imp, diagram, 0, params.tau_split, &params.u_tau);
 
+      //print(l);
+      //print(r);
+
       for (auto &Bl : proposed_g_frame) Bl = 0;
 
       proposed_g_frame = make_g_frame_from_l_and_r(params.ad_imp, params.map_lin_idx_to_block_inner, gf_struct, l, r);
 
       proposed_w.loc = frobenius_norm(proposed_g_frame);
+      //print_configuration(diagram);
+      //print(proposed_g_frame);
+      //TRIQS_PRINT(frobenius_norm(proposed_g_frame));
+      //getchar();
+
     }
 
     auto sign_ratio  = proposed_sign / data.sign;
@@ -70,6 +78,7 @@ namespace inchworm::moves {
     //TRIQS_PRINT(w_hyb_ratio);
     //TRIQS_PRINT(w_loc_ratio);
     //TRIQS_PRINT(t_ratio);
+    //TRIQS_PRINT(sign_ratio * t_ratio * w_loc_ratio * w_hyb_ratio);
 
     if (proposed_config.size() == 200) {
       std::printf("\n\n=======\n");
