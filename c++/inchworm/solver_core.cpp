@@ -203,8 +203,8 @@ namespace inchworm {
 
     // --- Treat n == 0 and n == n_tau -1 seperately
 
-    frame_t g_frame_n0 = make_bare_g_frame(ad_imp, map_lin_idx_to_block_inner, gf_struct, 0.0, beta);
-    frame_t g_frame_nB = make_bare_g_frame(ad_imp, map_lin_idx_to_block_inner, gf_struct, beta, beta);
+    frame_t g_frame_n0 = make_bare_g_frame(ad_imp, u_tau, map_lin_idx_to_block_inner, gf_struct, 0.0, beta);
+    frame_t g_frame_nB = make_bare_g_frame(ad_imp, u_tau, map_lin_idx_to_block_inner, gf_struct, beta, beta);
 
     scalar_t Z = -g_frame_n0[0](0, 0) - g_frame_nB[0](0, 0);
 
@@ -241,7 +241,7 @@ namespace inchworm {
       // g_frame_bare = make_bare_propagator_frame(ad_imp, tau_max, false);
 
       TRIQS_PRINT(tau_split);
-      frame_t g_frame_zeroth_order = make_bare_g_frame(ad_imp, map_lin_idx_to_block_inner, gf_struct, tau_split, beta);
+      frame_t g_frame_zeroth_order = make_bare_g_frame(ad_imp, u_tau, map_lin_idx_to_block_inner, gf_struct, tau_split, beta);
 
       // calculation of the Monte Carlo solution:
       auto res = single_step(solve_params, tau_split, beta, false, 1);
@@ -290,7 +290,7 @@ namespace inchworm {
     // Create Monte-Carlo configuration
     qmc_config_data_t qmc_config_data{params.gf_struct};
     qmc_config_data.u_partial = make_u_partial(make_bare_propagator_frame(ad_imp, tau_split, false));
-    qmc_config_data.g_frame = make_bare_g_frame(ad_imp, map_lin_idx_to_block_inner, params.gf_struct, tau_split, params.beta);
+    qmc_config_data.g_frame   = make_bare_g_frame(ad_imp, u_tau, map_lin_idx_to_block_inner, params.gf_struct, tau_split, params.beta);
 
     // Create Monte-Carlo params
     qmc_params_t qmc_params{Delta_tau, map_lin_idx_to_block_inner, ad_imp, u_tau, tau_max, tau_split, use_bare_propagator, mode};

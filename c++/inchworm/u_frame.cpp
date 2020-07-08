@@ -25,9 +25,14 @@ namespace inchworm {
     return u_frame;
   }
 
-  frame_t make_bare_g_frame(atom_diag const &ad_imp, std::map<int, std::pair<int, int>> const & map_lin_idx_to_block_inner, gf_struct_t const &gf_struct, double tau_split, double beta){
-    auto l = make_u_partial(make_bare_propagator_frame(ad_imp, beta - tau_split, false));
-    auto r = make_u_partial(make_bare_propagator_frame(ad_imp, tau_split, false));
+  frame_t make_bare_g_frame(atom_diag const &ad_imp, u_tau_t const &u_tau, std::map<int, std::pair<int, int>> const &map_lin_idx_to_block_inner,
+                            gf_struct_t const &gf_struct, double tau_split, double beta) {
+    u_partial_t l, r;
+
+    for (int i = 0; i < u_tau.size(); ++i) {
+      l.push_back({i, u_tau[i](beta - tau_split)});
+      r.push_back({i, u_tau[i](tau_split)});
+    }
 
     return make_g_frame_from_l_and_r(ad_imp, map_lin_idx_to_block_inner, gf_struct, l, r);
   }
