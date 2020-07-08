@@ -248,7 +248,7 @@ namespace inchworm {
       //--->auto g_frame_zeroth_order = Trace u_tau[0](beta - tau_split) * d_b *  u_tau[0](tau_split) * d_dag_a;
 
       // FIXME
-      normalization_cte = (double)res.frame_0th_order[0](0, 0) / ((double)g_frame_zeroth_order[0](0, 0)); //need to do better at some point
+      normalization_cte = Z * (double)res.frame_0th_order[0](0, 0) / ((double)g_frame_zeroth_order[0](0, 0)); //need to do better at some point
       std::printf("\n\n##################\ninchworm G(tau_split):\n");
 
       //print(res.frame_0th_order);
