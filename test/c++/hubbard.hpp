@@ -89,7 +89,7 @@ inline g_tau_t green_U0_setup(int n_site, int n_bath, int n_spin, double mu, dou
     if (eps >= 0){
       return -std::exp(-tau * eps) / (1. + std::exp(-beta * eps));
     } else {
-      return -std::exp(-(tau - beta) * eps) / (1. + std::exp(beta * eps));
+      return -std::exp((beta - tau) * eps) / (1. + std::exp(beta * eps));
     }
   }; 
 

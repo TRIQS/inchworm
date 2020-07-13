@@ -56,7 +56,7 @@ TEST(inchworm, Hubbard_1site) {
   auto G_tau_exact = green_U0_setup(n_site, n_bath, n_spin, mu, t, cp, theta, epsilon);
 
   for(auto const & tau: G_tau_exact[0].mesh()){
-    std::cout << "\nCalculated: " << S.G_tau[0][tau] << "\nExact: " << G_tau_exact[0][tau];
+    std::cout << "\n\nCalculated: " << S.G_tau[0][tau] << "\nExact: " << G_tau_exact[0][tau];
   }
 
 }
