@@ -7,6 +7,8 @@
 
 #include "./mc/moves/insert.hpp"
 #include "./mc/moves/remove.hpp"
+#include "./mc/moves/double_insert.hpp"
+#include "./mc/moves/double_remove.hpp"
 
 #include <triqs/utility/callbacks.hpp>
 #include <triqs/utility/macros.hpp>
@@ -294,6 +296,9 @@ namespace inchworm {
 
     mc.add_move(moves::insert{qmc_config_data, params, qmc_params, rng}, "insert move");
     mc.add_move(moves::remove{qmc_config_data, params, qmc_params, rng}, "remove move");
+
+    mc.add_move(moves::double_insert{qmc_config_data, params, qmc_params, rng}, "double insert move");
+    mc.add_move(moves::double_remove{qmc_config_data, params, qmc_params, rng}, "double remove move");
 
     std::vector<long> shape_of_frame;
     if (mode == 0) {

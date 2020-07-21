@@ -18,6 +18,9 @@ namespace inchworm {
     int size() const { return d_list.size(); }
     bool try_insert(double tau, int linear_index, double tau_dag, int linear_index_dag);
     bool try_erase(int i, int i_dag);
+    bool try_double_insert(double tau1, int linear_index1, double tau1_dag, int linear_index1_dag, double tau2, int linear_index2, double tau2_dag,
+                           int linear_index2_dag);
+    bool try_double_erase(int i, int i_dag, int j, int j_dag);
   };
 
   /// The Monte-Carlo Configuration structure
@@ -31,7 +34,7 @@ namespace inchworm {
     int sign;              // sign of the last accepted configuration
     //scalar_t normalization_cte; //
 
-    qmc_config_data_t(gf_struct_t const & gf_struct) : w{1., 1.}, g_frame{make_frame(gf_struct)}, sign{1} {}
+    qmc_config_data_t(gf_struct_t const &gf_struct) : w{1., 1.}, g_frame{make_frame(gf_struct)}, sign{1} {}
   };
 
   // structure to calculate hybridization function for tau, tau_dag, and orbital (linear) indices.
@@ -78,8 +81,8 @@ namespace inchworm {
 
     int mode;
 
-    qmc_params_t(h_tau_t const &hyb_tau, std::map<int, std::pair<int, int>> const &map_lin_idx_to_block_inner, atom_diag const &ad_imp, u_tau_t const &u_tau,
-                 double tau_max, double tau_split, bool use_bare_propagator, int mode)
+    qmc_params_t(h_tau_t const &hyb_tau, std::map<int, std::pair<int, int>> const &map_lin_idx_to_block_inner, atom_diag const &ad_imp,
+                 u_tau_t const &u_tau, double tau_max, double tau_split, bool use_bare_propagator, int mode)
        : hyb_adaptor(hyb_tau, map_lin_idx_to_block_inner),
          map_lin_idx_to_block_inner(map_lin_idx_to_block_inner),
          ad_imp(ad_imp),
