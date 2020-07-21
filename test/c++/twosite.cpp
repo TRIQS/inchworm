@@ -40,7 +40,7 @@ TEST(inchworm, Hubbard_2sites) { // NOLINT
   int n_site = 2; 
   int n_bath = epsilon.size();
   int n_spin = cp.gf_struct.size();
-  double U = 1.0;
+  double U = 0.0;
   double mu = 1.0; 
   double t = 1.0;
 
