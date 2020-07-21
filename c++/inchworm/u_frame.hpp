@@ -44,6 +44,8 @@ namespace inchworm {
   // calculate the trace of the u_frame block diagonal matrix:
   double trace(frame_t const &u_frame);
 
+  inline double trace(u_partial_t const &u_partial) { return trace(make_u_frame(u_partial)); }
+
   void print(frame_t const &u_frame, double factor);
 
   frame_t make_g_frame_from_l_and_r(atom_diag const &ad_imp, std::map<int, std::pair<int, int>> const &map_lin_idx_to_block_inner,
