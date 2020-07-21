@@ -79,6 +79,7 @@ namespace inchworm::moves {
     //TRIQS_PRINT(w_loc_ratio);
     //TRIQS_PRINT(t_ratio);
     //TRIQS_PRINT(sign_ratio * t_ratio * w_loc_ratio * w_hyb_ratio);
+    //getchar();
 
     if (proposed_config.size() == 200) {
       std::printf("\n\n=======\n");

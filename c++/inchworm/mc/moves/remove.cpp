@@ -65,6 +65,13 @@ namespace inchworm::moves {
     auto w_loc_ratio = proposed_w.loc / data.w.loc;
     auto t_ratio     = std::pow(N / (n_fops * params.tau_max), 2);
 
+    //TRIQS_PRINT(sign_ratio);
+    //TRIQS_PRINT(w_hyb_ratio);
+    //TRIQS_PRINT(w_loc_ratio);
+    //TRIQS_PRINT(t_ratio);
+    //TRIQS_PRINT(sign_ratio * t_ratio * w_loc_ratio * w_hyb_ratio);
+    //getchar();
+
     //std::printf("\n\nsign_ratio= %d  w_hyb_ratio=% 4.7f  w_loc_ratio=% 4.7f  t_ratio=% 4.7f\n", sign_ratio, w_hyb_ratio, w_loc_ratio, t_ratio);
     return sign_ratio * t_ratio * w_loc_ratio * w_hyb_ratio;
   }
