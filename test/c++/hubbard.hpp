@@ -55,7 +55,7 @@ inline std::pair<fundamental_operator_set, std::vector<many_body_op_t>> make_fop
 
 inline g_tau_t green_U0_setup(int n_site, int n_bath, int n_spin, double mu, double t, constr_params_t const &cp, mat_t const &theta, vec_t const &epsilon) {
 
-  auto G_tau = g_tau_t{{cp.beta, Fermion, cp.n_tau}, cp.gf_struct};
+  auto G_tau = g_tau_t{{cp.beta, Fermion, cp.n_tau_green}, cp.gf_struct};
 
   int n = n_site + n_bath;
   auto H = mat_t(n, n);

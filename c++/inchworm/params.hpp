@@ -37,6 +37,9 @@ namespace inchworm {
     /// Number of tau points for the hybridization function
     int n_tau = 101;
 
+    /// Number of tau points for the Green function
+    int n_tau_green = 101;
+
     /// Number of Matsubara frequencies
     int n_iw = 5;
 

@@ -194,7 +194,7 @@ namespace inchworm {
     init(solve_params); //FIXME
 
     // Initialize the Green function container
-    G_tau = g_tau_t{{constr_params.beta, Fermion, constr_params.n_tau}, constr_params.gf_struct};
+    G_tau = g_tau_t{{constr_params.beta, Fermion, constr_params.n_tau_green}, constr_params.gf_struct};
 
     // precalculated propagator:
     u_tau = u_tau_;
@@ -216,15 +216,15 @@ namespace inchworm {
     TRIQS_PRINT(Z_ref);
 
     assign_frame_to_propagator(G_tau, g_frame_n0, 0, 1. / Z);
-    assign_frame_to_propagator(G_tau, g_frame_nB, constr_params.n_tau - 1, 1. / Z);
+    assign_frame_to_propagator(G_tau, g_frame_nB, constr_params.n_tau_green - 1, 1. / Z);
 
     print(G_tau, 0);
     std::printf("\n\n");
-    print(G_tau, constr_params.n_tau - 1);
+    print(G_tau, constr_params.n_tau_green - 1);
 
     // loop on different inchworm steps
     for (
-       int n = 1; n < constr_params.n_tau - 1; // n == 0 and n == n_tau - 1 already treated
+       int n = 1; n < constr_params.n_tau_green - 1; // n == 0 and n == n_tau - 1 already treated
        n++) { // FIXME: create a parameter. (at first it was the paramter n_tau, but it is important it is a different one). Now it is just a preprocessor variable. To be done.
       std::printf("\n\ngreen sampling %d\n", n);
 
@@ -235,10 +235,7 @@ namespace inchworm {
       //
       // 0 < tau_split < beta
       //
-      double tau_split = beta * (double)n / (double)(constr_params.n_tau - 1);
-
-      // g_frame recipient:
-      // g_frame_bare = make_bare_propagator_frame(ad_imp, tau_max, false);
+      double tau_split = beta * (double)n / (double)(constr_params.n_tau_green - 1);
 
       TRIQS_PRINT(tau_split);
       frame_t g_frame_zeroth_order = make_bare_g_frame(ad_imp, u_tau, map_lin_idx_to_block_inner, gf_struct, tau_split, beta);

@@ -27,8 +27,9 @@ TEST(inchworm, Hubbard_1site) {
   constr_params_t cp;
   cp.beta      = 2.0;
   cp.gf_struct = {{"up", {0}}, {"dn", {0}}};
-  cp.n_tau     = 4;
-  cp.n_iw      = 5;
+  cp.n_tau_green = 5;
+  cp.n_tau       = 10000;
+  cp.n_iw        = 1000;
 
   //mat_t theta   = {{0.9, -1.0, 1.1}};
   //vec_t epsilon = {1.0, -2.0, 0.0};

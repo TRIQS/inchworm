@@ -28,8 +28,9 @@ TEST(inchworm, Hubbard_2sites) { // NOLINT
   cp.beta = 2.0;
   //cp.gf_struct = {{"up", {0, 1}}};
   cp.gf_struct = {{"up", {0, 1}}, {"dn", {0, 1}}};
-  cp.n_tau     = 5;
-  cp.n_iw      = 5;
+  cp.n_tau_green = 3;
+  cp.n_tau       = 1000;
+  cp.n_iw        = 1000;
 
   //mat_t theta   = {{0.1, -0.3, -0.4}, {0.1, 0.2, 0.4}};
   //vec_t epsilon = {1.0, -1.0, 1.2};
@@ -55,7 +56,7 @@ TEST(inchworm, Hubbard_2sites) { // NOLINT
   auto G_tau_exact = green_U0_setup(n_site, n_bath, n_spin, mu, t, cp, theta, epsilon);
 
   for(auto const & tau: G_tau_exact[0].mesh()){
-    std::cout << "\nCalculated: " << S.G_tau[0][tau];// << "\nExact: " << G_tau_exact[0][tau];
+    std::cout << "\nCalculated: " << S.G_tau[0][tau] << "\nExact: " << G_tau_exact[0][tau];
   }
 
 }
