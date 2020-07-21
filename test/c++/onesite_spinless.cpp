@@ -27,23 +27,36 @@ TEST(inchworm, Hubbard_1site_spinless) {
   constr_params_t cp;
   cp.beta      = 2.0;
   cp.gf_struct = {{"up", {0}}};
-  cp.n_tau     = 4;
-  cp.n_iw      = 4;
+  cp.n_tau_green = 5;
+  cp.n_tau       = 10000;
+  cp.n_iw        = 1000;
 
   //mat_t theta   = {{1.0}};
   //vec_t epsilon = {3.0};
-  mat_t theta = {{1.5, -1.0, 1.7}};
-  vec_t epsilon = {-2.0, 0.4, 1.5};
+  mat_t theta = {{1.0, 1.0, 2.0}};
+  vec_t epsilon = {-2.0, 0.0, 4.0};
 
-  //n_site, n_bath, n_spin, U, mu, t
-  auto [S, sp, u_tau] = test_setup(1, 3, 1, 0.0, 0.0, 0.0, cp, theta, epsilon);
+  int n_site = 1; 
+  int n_bath = epsilon.size();
+  int n_spin = cp.gf_struct.size();
+  double U = 0.0;
+  double mu = 1.0; 
+  double t = 1.0;
+
+  auto [S, sp, u_tau] = test_setup(n_site, n_bath, n_spin, U, mu, t, cp, theta, epsilon);
 
   double tau_max   = cp.beta;
   double tau_split = cp.beta * 0.9;
 
   //solve_cthyb(S, sp, u_tau, tau_max);
   //solve_selfconsistent(S, sp, u_tau, tau_split, tau_max);
-  solve_green(S, sp, u_tau);
+  S.solve_green(sp, u_tau);
+
+  auto G_tau_exact = green_U0_setup(n_site, n_bath, n_spin, mu, t, cp, theta, epsilon);
+
+  for(auto const & tau: G_tau_exact[0].mesh()){
+    std::cout << "\n\nCalculated: " << S.G_tau[0][tau] << "\nExact: " << G_tau_exact[0][tau];
+  }
 }
 
 MAKE_MAIN
