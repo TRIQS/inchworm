@@ -98,7 +98,7 @@ inline g_tau_t green_U0_setup(int n_site, int n_bath, int n_spin, double mu, dou
     G_full_diag = 0.;
     for(int i = 0; i < n; ++i)
       G_full_diag(i, i) = one_fermion(tau, evals(i));
-    auto G_full = mat_t{evecs * G_full_diag * dagger(evecs)};
+    auto G_full = mat_t{dagger(evecs) * G_full_diag * evecs};
     return mat_t{G_full(range(n_site), range(n_site))};
   };
 
