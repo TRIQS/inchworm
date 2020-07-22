@@ -14,8 +14,6 @@
 #include <triqs/utility/macros.hpp>
 #include <triqs/mc_tools/mc_generic.hpp>
 
-#define N_STEP 10
-
 namespace inchworm {
 
   //------------------------------
@@ -71,7 +69,7 @@ namespace inchworm {
     //
     h_imp  = solve_params.h_imp;
     ad_imp = {h_imp, fops, solve_params.quantum_numbers};
-    u_tau  = make_propagator(ad_imp, constr_params.beta, N_STEP + 1);
+    u_tau  = make_propagator(ad_imp, constr_params.beta, constr_params.n_tau_inch);
     //print_eigensystems(ad_imp);
   }
 
@@ -144,10 +142,11 @@ namespace inchworm {
     init(solve_params);
     beta = constr_params.beta;
 
+    int n_step = constr_params.n_tau_inch - 1;
     // loop on different inchworm steps
     for (
-       int n = 0; n < N_STEP;
-       n++) { // FIXME: create a parameter. (at first it was the paramter n_tau, but it is important it is a different one). Now it is just a preprocessor variable. To be done.
+       int n = 0; n < n_step;
+       n++) {
       std::printf("\n\ninchworm step %d\n", n);
 
       // define the tau_split and tau_max for this specific inchworm step.
@@ -157,8 +156,8 @@ namespace inchworm {
       //
       // tau_split < tau_max <= beta
       //
-      double tau_split = beta * (double)n / (double)N_STEP;
-      double tau_max   = beta * (double)(n + 1) / (double)N_STEP;
+      double tau_split = beta * (double)n / (double)n_step;
+      double tau_max   = beta * (double)(n + 1) / (double)n_step;
 
       // use bare propagator (cthyb) only on the first inchworm iteration:
       bool use_bare_propagator = (n == 0);
