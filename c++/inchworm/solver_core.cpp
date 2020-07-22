@@ -207,17 +207,15 @@ namespace inchworm {
     frame_t g_frame_n0 = make_bare_g_frame(ad_imp, u_tau, map_lin_idx_to_block_inner, gf_struct, 0.0, beta);
     frame_t g_frame_nB = make_bare_g_frame(ad_imp, u_tau, map_lin_idx_to_block_inner, gf_struct, beta, beta);
 
-    scalar_t Z = -g_frame_n0[0](0, 0) - g_frame_nB[0](0, 0);
-
-    scalar_t Z_ref = 0.0;
+    // Calculate Z / ZB = TrU(beta)
+    scalar_t Z_over_ZB = 0.0;
     for(int bl =0; bl< u_tau.size(); bl++)
-      Z_ref += trace(u_tau[bl](beta));
+      Z_over_ZB += trace(u_tau[bl](beta));
 
-    TRIQS_PRINT(Z);
-    TRIQS_PRINT(Z_ref);
+    TRIQS_PRINT(Z_over_ZB);
 
-    assign_frame_to_propagator(G_tau, g_frame_n0, 0, 1. / Z);
-    assign_frame_to_propagator(G_tau, g_frame_nB, constr_params.n_tau_green - 1, 1. / Z);
+    assign_frame_to_propagator(G_tau, g_frame_n0, 0, 1. / Z_over_ZB);
+    assign_frame_to_propagator(G_tau, g_frame_nB, constr_params.n_tau_green - 1, 1. / Z_over_ZB);
 
     print(G_tau, 0);
     std::printf("\n\n");
@@ -247,14 +245,12 @@ namespace inchworm {
       // determination of normalization constant:
       scalar_t normalization_cte;
 
-      // FIXME function:
-      //--->auto g_frame_zeroth_order = Trace u_tau[0](beta - tau_split) * d_b *  u_tau[0](tau_split) * d_dag_a;
+      //TRIQS_PRINT((double)g_frame_zeroth_order[0](0, 0));
+      //TRIQS_PRINT((double)res.frame_0th_order[0](0, 0));
+      //print(g_frame_zeroth_order);
+      //print(res.frame_0th_order);
 
-      // FIXME
-
-      TRIQS_PRINT((double)g_frame_zeroth_order[0](0, 0));
-      TRIQS_PRINT((double)res.frame_0th_order[0](0, 0));
-      normalization_cte = Z * (double)res.frame_0th_order[0](0, 0) / ((double)g_frame_zeroth_order[0](0, 0)); //need to do better at some point
+      normalization_cte = Z_over_ZB * (double)res.frame_0th_order[0](0, 0) / ((double)g_frame_zeroth_order[0](0, 0)); //need to do better at some point
       std::printf("\n\n##################\ninchworm G(tau_split):\n");
 
       //print(res.frame_0th_order);
