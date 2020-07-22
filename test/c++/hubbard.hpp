@@ -53,6 +53,14 @@ inline std::pair<fundamental_operator_set, std::vector<many_body_op_t>> make_fop
   return std::pair<fundamental_operator_set, std::vector<many_body_op_t>>(fops, qn);
 }
 
+double one_fermion(double tau, double eps, double beta){
+  if (eps >= 0){
+    return -std::exp(-tau * eps) / (1. + std::exp(-beta * eps));
+  } else {
+    return -std::exp((beta - tau) * eps) / (1. + std::exp(beta * eps));
+  }
+}
+
 inline g_tau_t green_U0_setup(int n_site, int n_bath, int n_spin, double mu, double t, constr_params_t const &cp, mat_t const &theta, vec_t const &epsilon) {
 
   auto G_tau = g_tau_t{{cp.beta, Fermion, cp.n_tau_green}, cp.gf_struct};
@@ -85,19 +93,11 @@ inline g_tau_t green_U0_setup(int n_site, int n_bath, int n_spin, double mu, dou
 
   auto [evals, evecs] = triqs::arrays::linalg::eigenelements(H);
 
-  auto one_fermion = [beta = cp.beta](double tau, double eps){
-    if (eps >= 0){
-      return -std::exp(-tau * eps) / (1. + std::exp(-beta * eps));
-    } else {
-      return -std::exp((beta - tau) * eps) / (1. + std::exp(beta * eps));
-    }
-  }; 
-
-  auto get_G_tau = [evals = evals, evecs = evecs, n, n_site, one_fermion](double tau){
+  auto get_G_tau = [evals = evals, evecs = evecs, beta=cp.beta, n, n_site](double tau){
     auto G_full_diag = mat_t(n, n);
     G_full_diag = 0.;
     for(int i = 0; i < n; ++i)
-      G_full_diag(i, i) = one_fermion(tau, evals(i));
+      G_full_diag(i, i) = one_fermion(tau, evals(i), beta);
     auto G_full = mat_t{dagger(evecs) * G_full_diag * evecs};
     return mat_t{G_full(range(n_site), range(n_site))};
   };
@@ -126,11 +126,7 @@ inline std::tuple<solver_core, solve_params_t, u_tau_t> test_setup(int n_site, i
       for (int i = 0; i < n_site; i++) {
         for (int j = 0; j < n_site; j++) {
           for (int n = 0; n < n_bath; n++) {
-            if (epsilon(n) >= 0.0) // to avoid numerical instability, assign hyb differently depending on the sign of epsilon(n).
-              val = -theta(i, n) * dagger(theta)(n, j) * (std::exp(-((double)tau) * (epsilon(n))) / (1. + std::exp(-cp.beta * epsilon(n))));
-            else
-              val = -theta(i, n) * dagger(theta)(n, j) * (std::exp(-((double)tau - cp.beta) * (epsilon(n))) / (1. + std::exp(cp.beta * epsilon(n))));
-            S.Delta_tau[block][tau](i, j) += val;
+            S.Delta_tau[block][tau](i, j) += theta(i, n) * dagger(theta)(n, j) * one_fermion(tau, epsilon(n), cp.beta);
           }
         }
       }
