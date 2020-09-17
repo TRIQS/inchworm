@@ -58,7 +58,7 @@ Custom CMake options
 
 The compilation of ``inchworm`` can be configured using CMake-options::
 
-    cmake ../inchworm.src -DOPTION1=value1 -DOPTION2=value2 ... ../inchworm.src
+    cmake ../inchworm.src -DOPTION1=value1 -DOPTION2=value2 ...
 
 +-----------------------------------------------------------------+-----------------------------------------------+
 | Options                                                         | Syntax                                        |

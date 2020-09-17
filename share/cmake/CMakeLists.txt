@@ -1,10 +1,10 @@
-configure_file(inchworm-config.cmake.in inchworm-config.cmake @ONLY)
-configure_file(inchworm-config-version.cmake.in inchworm-config-version.cmake @ONLY)
+configure_file(${PROJECT_NAME}-config.cmake.in ${PROJECT_NAME}-config.cmake @ONLY)
+configure_file(${PROJECT_NAME}-config-version.cmake.in ${PROJECT_NAME}-config-version.cmake @ONLY)
 install(
   FILES
-    ${CMAKE_CURRENT_BINARY_DIR}/inchworm-config.cmake
-    ${CMAKE_CURRENT_BINARY_DIR}/inchworm-config-version.cmake
-  DESTINATION lib/cmake/inchworm
+    ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config-version.cmake
+  DESTINATION lib/cmake/${PROJECT_NAME}
 )
 
-install(EXPORT inchworm-targets NAMESPACE inchworm:: DESTINATION lib/cmake/inchworm)
+install(EXPORT ${PROJECT_NAME}-targets NAMESPACE ${PROJECT_NAME}:: DESTINATION lib/cmake/${PROJECT_NAME})

@@ -3,22 +3,35 @@
 # and reestablish the exported CMake Targets
 
 # Multiple inclusion guard
-if(NOT INCHWORM_FOUND)
-set(INCHWORM_FOUND True)
+if(NOT @PROJECT_NAME@_FOUND)
+set(@PROJECT_NAME@_FOUND TRUE)
+set_property(GLOBAL PROPERTY @PROJECT_NAME@_FOUND TRUE)
 
 # version
-set(INCHWORM_VERSION @PROJECT_VERSION@)
-set(INCHWORM_GIT_HASH @PROJECT_GIT_HASH@)
+set(@PROJECT_NAME@_VERSION @PROJECT_VERSION@ CACHE STRING "@PROJECT_NAME@ version")
+set(@PROJECT_NAME@_GIT_HASH @PROJECT_GIT_HASH@ CACHE STRING "@PROJECT_NAME@ git hash")
 
 # Root of the installation
-set(INCHWORM_ROOT  @CMAKE_INSTALL_PREFIX@)
+set(@PROJECT_NAME@_ROOT @CMAKE_INSTALL_PREFIX@ CACHE STRING "@PROJECT_NAME@ root directory")
+
+## Find the target dependencies
+#function(find_dep)
+#  get_property(${ARGV0}_FOUND GLOBAL PROPERTY ${ARGV0}_FOUND)
+#  if(NOT ${ARGV0}_FOUND)
+#    find_package(${ARGN} REQUIRED HINTS @CMAKE_INSTALL_PREFIX@)
+#  endif()
+#endfunction()
+#find_dep(depname 1.0)
 
 # Include the exported targets of this project
-include(@CMAKE_INSTALL_PREFIX@/lib/cmake/inchworm/inchworm-targets.cmake)
+include(@CMAKE_INSTALL_PREFIX@/lib/cmake/@PROJECT_NAME@/@PROJECT_NAME@-targets.cmake)
 
-message(STATUS "Found inchworm-config.cmake with version @PROJECT_VERSION@, hash = @PROJECT_GIT_HASH@")
+message(STATUS "Found @PROJECT_NAME@-config.cmake with version @PROJECT_VERSION@, hash = @PROJECT_GIT_HASH@, root = @CMAKE_INSTALL_PREFIX@")
 
 # Was the Project built with Documentation?
-set(INCHWORM_WITH_DOCUMENTATION @Build_Documentation@)
+set(@PROJECT_NAME@_WITH_DOCUMENTATION @Build_Documentation@ CACHE BOOL "Was @PROJECT_NAME@ build with documentation?")
+
+# Was the Project built with PythonSupport?
+set(@PROJECT_NAME@_WITH_PYTHON_SUPPORT @PythonSupport@ CACHE BOOL "Was @PROJECT_NAME@ build with python support?")
 
 endif()
