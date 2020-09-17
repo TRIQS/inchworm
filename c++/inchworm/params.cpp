@@ -23,7 +23,7 @@
 
 namespace inchworm {
 
-  void h5_write(triqs::h5::group h5group, std::string subgroup_name, constr_params_t const &cp) {
+  void h5_write(h5::group h5group, std::string subgroup_name, constr_params_t const &cp) {
     auto grp = h5group.create_group(subgroup_name);
     h5_write(grp, "n_tau", cp.n_tau);
     h5_write(grp, "n_iw", cp.n_iw);
@@ -31,7 +31,7 @@ namespace inchworm {
     h5_write(grp, "gf_struct", cp.gf_struct);
   }
 
-  void h5_read(triqs::h5::group h5group, std::string subgroup_name, constr_params_t &cp) {
+  void h5_read(h5::group h5group, std::string subgroup_name, constr_params_t &cp) {
     auto grp = h5group.open_group(subgroup_name);
     h5_read(grp, "n_tau", cp.n_tau);
     h5_read(grp, "n_iw", cp.n_iw);
@@ -39,7 +39,7 @@ namespace inchworm {
     h5_read(grp, "gf_struct", cp.gf_struct);
   }
 
-  void h5_write(triqs::h5::group h5group, std::string subgroup_name, solve_params_t const &sp) {
+  void h5_write(h5::group h5group, std::string subgroup_name, solve_params_t const &sp) {
     auto grp = h5group.create_group(subgroup_name);
     h5_write(grp, "h_imp", sp.h_imp);
     h5_write(grp, "n_cycles", sp.n_cycles);
@@ -53,7 +53,7 @@ namespace inchworm {
     h5_write(grp, "post_process", sp.post_process);
   }
 
-  void h5_read(triqs::h5::group h5group, std::string subgroup_name, solve_params_t &sp) {
+  void h5_read(h5::group h5group, std::string subgroup_name, solve_params_t &sp) {
     auto grp = h5group.open_group(subgroup_name);
     // Take care! Do not read random_seed and verbosity as they should be different based on mpi rank
     h5_read(grp, "h_imp", sp.h_imp);

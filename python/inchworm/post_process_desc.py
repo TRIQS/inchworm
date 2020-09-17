@@ -1,5 +1,5 @@
 # Generated automatically using the command :
-# c++2py ../../c++/inchworm/post_process.hpp --members_read_only -N inchworm -a inchworm -m post_process -o post_process -C pytriqs --moduledoc="The inchworm postprocess functionality" --cxxflags="-std=c++17" --target_file_only
+# c++2py ../../c++/inchworm/post_process.hpp --members_read_only -N inchworm -a inchworm -m post_process -o post_process -C triqs --moduledoc="The inchworm postprocess functionality" --cxxflags="-std=c++17" --target_file_only
 from cpp2py.wrap_generator import *
 
 # The module

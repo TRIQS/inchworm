@@ -7,7 +7,7 @@
 #include "./u_frame.hpp"
 #include "./types.hpp"
 #include <triqs/gfs.hpp>
-#include <triqs/h5.hpp>
+#include <h5/h5.hpp>
 #include <triqs/hilbert_space/fundamental_operator_set.hpp>
 #include <triqs/atom_diag/atom_diag.hpp>
 #include <triqs/arrays/blas_lapack/dot.hpp>

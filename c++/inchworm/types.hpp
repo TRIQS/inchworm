@@ -22,7 +22,7 @@ namespace inchworm {
   using namespace triqs::operators;
   using namespace triqs::hilbert_space;
   using namespace triqs::utility;
-  using namespace triqs::h5;
+  using namespace h5;
   using namespace itertools;
 
   // Defined by Maxime, need comments

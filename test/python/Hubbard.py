@@ -25,10 +25,10 @@ import unittest
 
 from inchworm import Solver
 
-from pytriqs.gf import *
-from pytriqs.archive import *
-from pytriqs.operators import *
-from pytriqs.utility.h5diff import h5diff
+from triqs.gf import *
+from h5 import *
+from triqs.operators import *
+from triqs.utility.h5diff import h5diff
 
 
 class test_hubbard(unittest.TestCase):

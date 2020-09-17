@@ -1,12 +1,12 @@
 # Generated automatically using the command :
-# c++2py ../../c++/inchworm/solver_core.hpp -p --members_read_only -N inchworm -a inchworm -m solver_core -o solver_core --moduledoc="The inchworm solve_core module" -C pytriqs --cxxflags="-std=c++17" --target_file_only
+# c++2py ../../c++/inchworm/solver_core.hpp -p --members_read_only -N inchworm -a inchworm -m solver_core -o solver_core --moduledoc="The inchworm solve_core module" -C triqs --cxxflags="-std=c++17" --target_file_only
 from cpp2py.wrap_generator import *
 
 # The module
 module = module_(full_name = "solver_core", doc = r"The inchworm solve_core module", app_name = "inchworm")
 
 # Imports
-module.add_imports(*['pytriqs.gf', 'pytriqs.operators'])
+module.add_imports(*['triqs.gf', 'triqs.operators'])
 
 # Add here all includes
 module.add_include("inchworm/solver_core.hpp")
@@ -21,7 +21,6 @@ module.add_preamble("""
 #include <triqs/cpp2py_converters/gf.hpp>
 #include <triqs/cpp2py_converters/operators_real_complex.hpp>
 #include <triqs/cpp2py_converters/real_or_complex.hpp>
-#include <triqs/cpp2py_converters/h5.hpp>
 
 using namespace inchworm;
 """)
@@ -112,7 +111,7 @@ c.add_method("""void solve (**inchworm::solve_params_t)""",
 +-----------------+--------------------------------------+-----------------------------------------+--------------------------------------------------+
 """)
 
-c.add_method("""std::string hdf5_scheme ()""",
+c.add_method("""std::string hdf5_format ()""",
              is_static = True,
              doc = r"""""")
 

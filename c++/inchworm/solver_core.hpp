@@ -93,13 +93,13 @@ namespace inchworm {
       post_process({constr_params, last_solve_params.value()});
     }
 
-    static std::string hdf5_scheme() { return "INCHWORM_SolverCore"; }
+    static std::string hdf5_format() { return "INCHWORM_SolverCore"; }
 
     // Function that writes a solver object to hdf5 file
-    friend void h5_write(triqs::h5::group h5group, std::string subgroup_name, solver_core const &s);
+    friend void h5_write(h5::group h5group, std::string subgroup_name, solver_core const &s);
 
     // Function that constructs a solver object from an hdf5 file
     CPP2PY_IGNORE
-    static solver_core h5_read_construct(triqs::h5::group h5group, std::string subgroup_name);
+    static solver_core h5_read_construct(h5::group h5group, std::string subgroup_name);
   };
 } // namespace inchworm

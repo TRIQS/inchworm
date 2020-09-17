@@ -24,7 +24,7 @@
 #include <inchworm/util.hpp>
 
 #include <triqs/gfs.hpp>
-#include <triqs/h5.hpp>
+#include <h5/h5.hpp>
 #include <triqs/atom_diag/gf.hpp>
 
 #include <triqs/test_tools/gfs.hpp>

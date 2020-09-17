@@ -44,10 +44,10 @@ namespace inchworm {
     std::vector<scalar_t> average_sign;
 
     /// Function that writes all containers to hdf5 file
-    friend void h5_write(triqs::h5::group h5group, std::string subgroup_name, container_set const &c);
+    friend void h5_write(h5::group h5group, std::string subgroup_name, container_set const &c);
 
     /// Function that reads all containers from hdf5 file
-    friend void h5_read(triqs::h5::group h5group, std::string subgroup_name, container_set &c);
+    friend void h5_read(h5::group h5group, std::string subgroup_name, container_set &c);
   };
 
 } // namespace inchworm
