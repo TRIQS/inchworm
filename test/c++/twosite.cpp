@@ -25,40 +25,32 @@
 TEST(inchworm, Hubbard_2sites) { // NOLINT
 
   constr_params_t cp;
-  cp.beta = 2.0;
-  //cp.gf_struct = {{"up", {0, 1}}};
-  cp.gf_struct = {{"up", {0, 1}}, {"dn", {0, 1}}};
-  cp.n_tau_green = 3;
-  cp.n_tau       = 1000;
+  cp.beta        = 2.0;
+  cp.gf_struct   = {{"up", {0, 1}}, {"dn", {0, 1}}};
+  cp.n_tau_green = 5;
+  cp.n_tau       = 1001;
   cp.n_iw        = 1000;
 
-  //mat_t theta   = {{0.1, -0.3, -0.4}, {0.1, 0.2, 0.4}};
-  //vec_t epsilon = {1.0, -1.0, 1.2};
-  mat_t theta   = {{1, 1}, {1, 1}};
-  vec_t epsilon = {1.0, 1.0};
+  mat_t theta   = {{0.1, 0.3, 0.4}, {0.1, 0.2, 0.4}};
+  vec_t epsilon = {1.0, -1.0, 1.2};
 
-  int n_site = 2; 
+  int n_site = 2;
   int n_bath = epsilon.size();
   int n_spin = cp.gf_struct.size();
-  double U = 0.0;
-  double mu = 1.0; 
-  double t = 1.0;
+  double U   = 1.0;
+  double mu  = 1.0;
+  double t   = 1.0;
 
-  auto [S, sp, u_tau] = test_setup(n_site, n_bath, n_spin, U, mu, t, cp, theta, epsilon);
+  auto [S, sp, u_tau, G_tau] = test_setup(n_site, n_bath, n_spin, U, mu, t, cp, theta, epsilon);
 
   double tau_max   = cp.beta;
   double tau_split = cp.beta * 0.9;
 
-  //solve_cthyb(S, sp, u_tau, tau_max);
-  //solve_selfconsistent(S, sp, u_tau, tau_split, tau_max);
+  test_cthyb(S, sp, u_tau, tau_max);
+  test_selfconsistent(S, sp, u_tau, tau_split, tau_max);
+
   S.solve_green(sp, u_tau);
-
-  auto G_tau_exact = green_U0_setup(n_site, n_bath, n_spin, mu, t, cp, theta, epsilon);
-
-  for(auto const & tau: G_tau_exact[0].mesh()){
-    std::cout << "\nCalculated: " << S.G_tau[0][tau] << "\nExact: " << G_tau_exact[0][tau];
-  }
-
+  EXPECT_BLOCK_GF_NEAR(S.G_tau, G_tau, 0.01);
 }
 
 MAKE_MAIN
