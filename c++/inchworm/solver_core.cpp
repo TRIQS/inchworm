@@ -207,19 +207,13 @@ namespace inchworm {
     frame_t g_frame_n0 = make_bare_g_frame(ad_imp, u_tau, map_lin_idx_to_block_inner, gf_struct, 0.0, beta);
     frame_t g_frame_nB = make_bare_g_frame(ad_imp, u_tau, map_lin_idx_to_block_inner, gf_struct, beta, beta);
 
-    // Calculate Z / ZB = TrU(beta)
-    scalar_t Z_over_ZB = 0.0;
+    // Calculate Tr U(beta)
+    scalar_t Tr_Ubeta = 0.0;
     for(int bl =0; bl< u_tau.size(); bl++)
-      Z_over_ZB += trace(u_tau[bl](beta));
+      Tr_Ubeta += trace(u_tau[bl](beta));
 
-    TRIQS_PRINT(Z_over_ZB);
-
-    assign_frame_to_propagator(G_tau, g_frame_n0, 0, 1. / Z_over_ZB);
-    assign_frame_to_propagator(G_tau, g_frame_nB, constr_params.n_tau_green - 1, 1. / Z_over_ZB);
-
-    print(G_tau, 0);
-    std::printf("\n\n");
-    print(G_tau, constr_params.n_tau_green - 1);
+    assign_frame_to_propagator(G_tau, g_frame_n0, 0, 1. / Tr_Ubeta);
+    assign_frame_to_propagator(G_tau, g_frame_nB, constr_params.n_tau_green - 1, 1. / Tr_Ubeta);
 
     // loop on different inchworm steps
     for (
@@ -236,25 +230,15 @@ namespace inchworm {
       //
       double tau_split = beta * (double)n / (double)(constr_params.n_tau_green - 1);
 
-      TRIQS_PRINT(tau_split);
       frame_t g_frame_zeroth_order = make_bare_g_frame(ad_imp, u_tau, map_lin_idx_to_block_inner, gf_struct, tau_split, beta);
 
       // calculation of the Monte Carlo solution:
       auto res = single_step(solve_params, tau_split, beta, false, 1);
 
-      // determination of normalization constant:
-      scalar_t normalization_cte;
-
-      //TRIQS_PRINT((double)g_frame_zeroth_order[0](0, 0));
-      //TRIQS_PRINT((double)res.frame_0th_order[0](0, 0));
-      //print(g_frame_zeroth_order);
-      //print(res.frame_0th_order);
-
-      normalization_cte = Z_over_ZB * (double)res.frame_0th_order[0](0, 0) / ((double)g_frame_zeroth_order[0](0, 0)); //need to do better at some point
+      // determine normalization constant based on zeroth order
+      scalar_t normalization_cte = Tr_Ubeta * (double)res.frame_0th_order[0](0, 0) / ((double)g_frame_zeroth_order[0](0, 0)); //need to do better at some point
       std::printf("\n\n##################\ninchworm G(tau_split):\n");
 
-      //print(res.frame_0th_order);
-      //getchar();
       res.normalize(normalization_cte);
       res.print();
 
