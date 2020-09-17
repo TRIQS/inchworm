@@ -72,7 +72,7 @@ namespace inchworm {
         if (std::abs(m(i, j)) == 0.0)
           std::printf("   .      ");
         else
-          std::printf("% 10.2e", m(i, j) * factor);
+          std::printf("% 10.4e", m(i, j) * factor);
       }
       std::printf("]");
     }
