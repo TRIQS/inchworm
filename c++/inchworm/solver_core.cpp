@@ -267,8 +267,11 @@ namespace inchworm {
 
     // Create Monte-Carlo configuration
     qmc_config_data_t qmc_config_data{params.gf_struct};
-    qmc_config_data.u_partial = make_u_partial(make_bare_propagator_frame(ad_imp, tau_split, false));
-    qmc_config_data.g_frame   = make_bare_g_frame(ad_imp, u_tau, map_lin_idx_to_block_inner, params.gf_struct, tau_split, params.beta);
+    if (mode == 0) {
+      qmc_config_data.u_partial = make_u_partial(make_bare_propagator_frame(ad_imp, tau_split, false));
+    } else {
+      qmc_config_data.g_frame = make_bare_g_frame(ad_imp, u_tau, map_lin_idx_to_block_inner, params.gf_struct, tau_split, params.beta);
+    }
 
     // Create Monte-Carlo params
     qmc_params_t qmc_params{Delta_tau, map_lin_idx_to_block_inner, ad_imp, u_tau, tau_max, tau_split, use_bare_propagator, mode};
