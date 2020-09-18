@@ -1,4 +1,8 @@
 .travis.yml
+CITATIONS.bib
+ChangeLog.md
 Dockerfile
 Jenkinsfile
-.git/objects/pack
+TODO
+.git/objecs/pack
+build*
