@@ -106,7 +106,7 @@ namespace inchworm {
       // l_bl <- r_bl <- i
       //auto &[r_bl, r_mat] = r[i];
 
-      auto r_bl = (op_dag ? ad.cdag_connection(lin_index, i) : ad.c_connection(lin_index, i));
+      auto r_bl  = (op_dag ? ad.cdag_connection(lin_index, i) : ad.c_connection(lin_index, i));
       auto r_mat = (op_dag ? ad.cdag_matrix(lin_index, i) : ad.c_matrix(lin_index, i));
 
       if (r_bl == -1) {

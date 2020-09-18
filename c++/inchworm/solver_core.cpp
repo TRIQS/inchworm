@@ -147,7 +147,7 @@ namespace inchworm {
     for (
        int n = 0; n < n_step;
        n++) {
-      std::printf("\n\ninchworm step %d\n", n);
+      if(world.rank() == 0) std::printf("\ninchworm step %d\n", n);
 
       // define the tau_split and tau_max for this specific inchworm step.
       //
@@ -172,15 +172,15 @@ namespace inchworm {
       scalar_t normalization_cte;
       if (use_bare_propagator) {
         normalization_cte = (double)res.frame_0th_order[0](0, 0) / ((double)u_frame_bare[0](0, 0));
-        std::printf("\n\n##################\ncthyb U(tau_max):\n");
+	if(world.rank() == 0) std::printf("\n\n##################\ncthyb U(tau_max):\n");
       } else {
         auto u_frame_zeroth_order = u_tau[0](tau_max - tau_split) * u_tau[0](tau_split);
         normalization_cte         = (double)res.frame_0th_order[0](0, 0) / ((double)u_frame_zeroth_order(0, 0)); //need to do better at some point
-        std::printf("\n\n##################\ninchworm U(tau_max):\n");
+	if(world.rank() == 0) std::printf("\n\n##################\ninchworm U(tau_max):\n");
       }
 
       res.normalize(normalization_cte);
-      res.print();
+      if(world.rank() == 0) res.print();
 
       // assign u_frame to the propagator u_tau, in order to be able to use it in next iteration
       assign_frame_to_propagator(u_tau, res.frame, n + 1, 1.);
@@ -260,10 +260,6 @@ namespace inchworm {
 
     // Capture random number generator
     auto &rng = mc.get_rng();
-
-    // necessary:
-    u_tau_t *u_tau_p = &u_tau;
-    if (use_bare_propagator) u_tau_p = nullptr;
 
     // Create Monte-Carlo configuration
     qmc_config_data_t qmc_config_data{params.gf_struct};
