@@ -16,7 +16,15 @@ namespace inchworm {
     }
 
     auto u_tau = u_tau_t{{beta, Fermion, n_tau}, propagator_struct};
-    for (auto &block : u_tau) block[0] = 1; // identity at time zero
+
+    // Set the first element of u_tau to the identity
+    // and set all other values to zero
+    for (auto &ubl : u_tau) {
+      ubl() = 0.;
+      for(int i = 0; i < ubl.target_shape()[0]; ++i)
+	ubl[0](i, i) = 1;
+    }
+
     return u_tau;
   }
 
