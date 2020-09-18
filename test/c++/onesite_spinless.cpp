@@ -22,13 +22,14 @@
 
 #include "./hubbard.hpp"
 
-TEST(inchworm, Hubbard_1site_spinless) {
+TEST(inchworm, Hubbard_1site_spinless) { // NOLINT
 
   constr_params_t cp;
-  cp.beta        = 2.0;
+  cp.beta        = 1.0;
   cp.gf_struct   = {{"up", {0}}};
   cp.n_tau_green = 5;
-  cp.n_tau       = 1001;
+  cp.n_tau_inch  = 21;
+  cp.n_tau       = 10001;
   cp.n_iw        = 1000;
 
   mat_t theta   = {{0.8, 1.0, 1.4}};
@@ -48,6 +49,9 @@ TEST(inchworm, Hubbard_1site_spinless) {
 
   test_cthyb(S, sp, u_tau, tau_max);
   test_selfconsistent(S, sp, u_tau, tau_split, tau_max);
+
+  S.solve_inchworm(sp);
+  EXPECT_TRUE(relative_distance(S.u_tau, u_tau) < 0.05);
 
   S.solve_green(sp, u_tau);
   EXPECT_BLOCK_GF_NEAR(S.G_tau, G_tau, 0.01);

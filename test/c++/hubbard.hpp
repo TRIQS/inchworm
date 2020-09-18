@@ -120,7 +120,7 @@ inline std::tuple<solver_core, solve_params_t, u_tau_t, g_tau_t> test_setup(int 
   auto ad_bath = triqs::atom_diag::atom_diag<false>(h_bath, fops_bath);
 
   // Calculate exact propagator
-  u_tau_t u_tau = make_ED_propagator(ad_tot, ad_imp, ad_bath, cp.beta, cp.n_tau);
+  u_tau_t u_tau = make_ED_propagator(ad_tot, ad_imp, ad_bath, cp.beta, cp.n_tau_inch);
 
   // Calculate exact Green function
   g_tau_t g_tau = real(atomic_g_tau(ad_tot, cp.beta, cp.gf_struct, cp.n_tau_green));
@@ -133,9 +133,10 @@ inline std::tuple<solver_core, solve_params_t, u_tau_t, g_tau_t> test_setup(int 
   // Solve Parameters
   solve_params_t sp;
   sp.h_imp           = h_imp;
-  sp.n_cycles        = 50000;
+  sp.n_cycles        = 100000;
   sp.length_cycle    = 10;
   sp.n_warmup_cycles = 20;
+  sp.verbosity       = 0;
   sp.quantum_numbers = qn_imp;
 
   // create hybridization:
@@ -158,8 +159,8 @@ inline void test_cthyb(solver_core S, solve_params_t const &sp, u_tau_t const &u
   auto const &cp    = S.constr_params;
 
   for (int bl = 0; bl < u_tau.size(); bl++)
-    EXPECT_ARRAY_NEAR((matrix_t)u_tau[bl][cp.n_tau - 1], result_cthyb.frame[bl],
-		      0.05 * u_tau[0][cp.n_tau - 1](0, 0)); // U[0](0,0) is essentially always the biggest value
+    EXPECT_ARRAY_NEAR((matrix_t)u_tau[bl][cp.n_tau_inch - 1], result_cthyb.frame[bl],
+		      0.05 * u_tau[0][cp.n_tau_inch - 1](0, 0)); // U[0](0,0) is essentially always the biggest value
 }
 
 inline void test_selfconsistent(solver_core S, solve_params_t const &sp, u_tau_t const &u_tau, double tau_split, double tau_max) {
@@ -169,5 +170,5 @@ inline void test_selfconsistent(solver_core S, solve_params_t const &sp, u_tau_t
   auto const &cp = S.constr_params;
 
   for (int bl = 0; bl < u_tau.size(); bl++)
-    EXPECT_ARRAY_NEAR(((matrix_t)u_tau[bl][cp.n_tau - 1]), result_sc.frame[bl], 0.05 * u_tau[0][cp.n_tau - 1](0, 0));
+    EXPECT_ARRAY_NEAR(((matrix_t)u_tau[bl][cp.n_tau_inch - 1]), result_sc.frame[bl], 0.05 * u_tau[0][cp.n_tau_inch - 1](0, 0));
 }
