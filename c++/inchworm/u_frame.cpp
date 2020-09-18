@@ -157,6 +157,32 @@ namespace inchworm {
     return val;
   }
 
+  double relative_distance(frame_t const &l, frame_t const &r) {
+
+    frame_t diff = l;
+    for (auto bl : range(l.size())) { diff[bl] = l[bl] - r[bl]; }
+
+    auto norm_l         = frobenius_norm(l);
+    auto norm_r         = frobenius_norm(r);
+    auto norm_l_minus_r = frobenius_norm(diff);
+
+    return norm_l_minus_r / std::max(norm_l, norm_r);
+  }
+
+  frame_t get_frame(u_tau_t const & u_tau, int idx){
+    frame_t res;
+    for(auto ubl: u_tau)
+      res.push_back(ubl[idx]);
+    return res;
+  }
+
+  double relative_distance(u_tau_t const &l, u_tau_t const &r) {
+    double dist = 0.0;
+    for(int i = 0; i < l[0].mesh().size(); ++i)
+      dist = std::max(dist, relative_distance(get_frame(l,i), get_frame(r,i))); 
+    return dist;
+  }
+
   void print(frame_t const &u_frame, double factor) {
     for (auto block : u_frame) {
       block *= factor;

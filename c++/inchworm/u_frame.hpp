@@ -44,6 +44,13 @@ namespace inchworm {
   // calculate the trace of the u_frame block diagonal matrix:
   double trace(frame_t const &u_frame);
 
+  // calculate the relative distance of the two frames: ||l - r|| / max(||l||, ||r||)
+  double relative_distance(frame_t const &l, frame_t const &r);
+
+  // calculate the relative distance of two propagators
+  // maximum relative distance of all frames
+  double relative_distance(u_tau_t const &l, u_tau_t const &r);
+
   inline double trace(u_partial_t const &u_partial) { return trace(make_u_frame(u_partial)); }
 
   void print(frame_t const &u_frame, double factor);
