@@ -44,6 +44,9 @@ namespace inchworm {
   // calculate the trace of the u_frame block diagonal matrix:
   double trace(frame_t const &u_frame);
 
+  // Get the frame of a Green function
+  frame_t get_frame(u_tau_t const & u_tau, int idx);
+
   // calculate the relative distance of the two frames: ||l - r|| / max(||l||, ||r||)
   double relative_distance(frame_t const &l, frame_t const &r);
 

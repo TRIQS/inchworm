@@ -14,17 +14,11 @@ namespace inchworm {
     private:
     double beta;           // inverse temperature
     atom_diag ad_imp;      // diagonalization of the local problem
-    gf_struct_t gf_struct; // Block structure of the Green function FIXME
+    gf_struct_t gf_struct; // Block structure of the Green function
     many_body_op_t h_imp;  // The local Hamiltonian = h_imp + h0
-    std::map<int, std::pair<int, int>> map_lin_idx_to_block_inner;
-    fundamental_operator_set fops;
-    frame_t u_frame_bare;
-
-    //mpi::communicator _comm;   // define the communicator, here MPI_COMM_WORLD
     int _solve_status; // Status of the solve upon exit: 0 for clean termination, > 0 otherwise.
-
-    // Single-particle Green's function containers
-    // std::vector<matrix<dcomplex>> Delta_infty_vec; // Quadratic instantaneous part of G0_iw
+    std::map<int, std::pair<int, int>> map_lin_idx_to_block_inner; // Mapping of linear operator index to (block, orbital)
+    fundamental_operator_set fops;
 
     // Mpi Communicator
     mpi::communicator world;
@@ -62,21 +56,27 @@ namespace inchworm {
     // Struct containing the parameters relevant for the solver construction
     constr_params_t constr_params;
 
+    CPP2PY_IGNORE
     void init(solve_params_t const &solve_params);
 
     // solve cthyb (no split point + bare propagator):
+    CPP2PY_IGNORE
     single_step_results_t solve_cthyb(solve_params_t const &solve_params, double tau_max);
 
     // self consistent solution (one step, with precalculated U(beta) from ED)
+    CPP2PY_IGNORE
     single_step_results_t solve_self_consistently(solve_params_t const &solve_params, u_tau_t const &u_tau_, double tau_split, double tau_max);
 
-    // The inching solution:
-    void solve_inchworm(solve_params_t const &solve_params); // FIXME: this return nothing, it calculate u_tau, but nothing is done with it for now.
+    // Run inchworm to calculate S.u_tau
+    CPP2PY_IGNORE
+    void solve_inchworm(solve_params_t const &solve_params);
 
-    // The Green sampling:
+    // Sample the Green function S.G_tau
+    CPP2PY_IGNORE
     void solve_green(solve_params_t const &solve_params, u_tau_t const &u_tau);
 
     // one Monte Carlo step calculation (common to the 3 solve scheme above):
+    CPP2PY_IGNORE
     single_step_results_t single_step(solve_params_t const &solve_params, double tau_split, double tau_max, bool use_bare_propagator, int mode);
 
     // Struct containing the parameters relevant for the solve process

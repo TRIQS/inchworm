@@ -34,12 +34,6 @@ namespace inchworm {
     /// Greens function in imaginary time
     g_tau_t G_tau;
 
-    /// Greens function in Matsubara frequencies
-    g_iw_t G_iw;
-
-    /// Self-energy in Matsubara frequencies
-    g_iw_t Sigma_iw;
-
     /// vector of average sign
     std::vector<scalar_t> average_sign;
 
