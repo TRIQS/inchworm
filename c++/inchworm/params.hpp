@@ -95,7 +95,7 @@ namespace inchworm {
     int n_warmup_cycles = 5000;
 
     /// Random seed of the random generator
-    int random_seed = 134789 + 928374 * mpi::communicator().rank();
+    int random_seed = 34789 + 928374 * mpi::communicator().rank();
 
     /// Name of the random generator
     std::string random_name = "";
