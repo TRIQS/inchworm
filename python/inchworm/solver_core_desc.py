@@ -6,7 +6,7 @@ from cpp2py.wrap_generator import *
 module = module_(full_name = "solver_core", doc = r"The inchworm solve_core module", app_name = "inchworm")
 
 # Imports
-module.add_imports(*['triqs.gf', 'triqs.operators'])
+module.add_imports(*['triqs.gf', 'triqs.operators', 'h5._h5py'])
 
 # Add here all includes
 module.add_include("inchworm/solver_core.hpp")
@@ -34,20 +34,20 @@ c = class_(
         hdf5 = True,
 )
 
+c.add_member(c_name = "u_tau",
+             c_type = "inchworm::u_tau_t",
+             read_only= True,
+             doc = r"""propagator in imaginary time""")
+
 c.add_member(c_name = "G_tau",
              c_type = "inchworm::g_tau_t",
              read_only= True,
              doc = r"""Greens function in imaginary time""")
 
-c.add_member(c_name = "G_iw",
-             c_type = "inchworm::g_iw_t",
+c.add_member(c_name = "average_sign",
+             c_type = "std::vector<scalar_t>",
              read_only= True,
-             doc = r"""Greens function in Matsubara frequencies""")
-
-c.add_member(c_name = "Sigma_iw",
-             c_type = "inchworm::g_iw_t",
-             read_only= True,
-             doc = r"""Self-energy in Matsubara frequencies""")
+             doc = r"""vector of average sign""")
 
 c.add_member(c_name = "constr_params",
              c_type = "inchworm::constr_params_t",
@@ -59,26 +59,35 @@ c.add_member(c_name = "last_solve_params",
              read_only= True,
              doc = r"""""")
 
+c.add_member(c_name = "Delta_tau",
+             c_type = "inchworm::h_tau_t",
+             read_only= True,
+             doc = r"""""")
+
 c.add_member(c_name = "G0_iw",
              c_type = "inchworm::g_iw_t",
              read_only= True,
-             doc = r"""Noninteracting Green Function in Matsubara frequencies""")
+             doc = r"""""")
 
 c.add_constructor("""(**inchworm::constr_params_t)""", doc = r"""Construct a INCHWORM solver
 
 
 
-+----------------+-----------------------------------+---------+----------------------------------+
-| Parameter Name | Type                              | Default | Documentation                    |
-+================+===================================+=========+==================================+
-| n_tau          | int                               | 5001    | Number of tau points             |
-+----------------+-----------------------------------+---------+----------------------------------+
-| n_iw           | int                               | 500     | Number of Matsubara frequencies  |
-+----------------+-----------------------------------+---------+----------------------------------+
-| beta           | double                            | --      | Inverse temperature              |
-+----------------+-----------------------------------+---------+----------------------------------+
-| gf_struct      | triqs::hilbert_space::gf_struct_t | --      | Block structure of the gf        |
-+----------------+-----------------------------------+---------+----------------------------------+
++----------------+-----------------------------------+---------+------------------------------------------------------+
+| Parameter Name | Type                              | Default | Documentation                                        |
++================+===================================+=========+======================================================+
+| n_tau_inch     | int                               | 11      | Number of tau points for the hybridization function  |
++----------------+-----------------------------------+---------+------------------------------------------------------+
+| n_tau          | int                               | 101     | Number of tau points for the hybridization function  |
++----------------+-----------------------------------+---------+------------------------------------------------------+
+| n_tau_green    | int                               | 101     | Number of tau points for the Green function          |
++----------------+-----------------------------------+---------+------------------------------------------------------+
+| n_iw           | int                               | 5       | Number of Matsubara frequencies                      |
++----------------+-----------------------------------+---------+------------------------------------------------------+
+| beta           | double                            | --      | Inverse temperature                                  |
++----------------+-----------------------------------+---------+------------------------------------------------------+
+| gf_struct      | triqs::hilbert_space::gf_struct_t | --      | Block structure of the gf                            |
++----------------+-----------------------------------+---------+------------------------------------------------------+
 """)
 
 c.add_method("""void solve (**inchworm::solve_params_t)""",
@@ -86,29 +95,33 @@ c.add_method("""void solve (**inchworm::solve_params_t)""",
 
 
 
-+-----------------+--------------------------------------+-----------------------------------------+--------------------------------------------------+
-| Parameter Name  | Type                                 | Default                                 | Documentation                                    |
-+=================+======================================+=========================================+==================================================+
-| h_imp           | triqs::operators::many_body_operator | --                                      | Impurity Hamiltonian                          |
-+-----------------+--------------------------------------+-----------------------------------------+--------------------------------------------------+
-| n_cycles        | int                                  | --                                      | Number of MC cycles                              |
-+-----------------+--------------------------------------+-----------------------------------------+--------------------------------------------------+
-| length_cycle    | int                                  | 50                                      | Length of a MC cycles                            |
-+-----------------+--------------------------------------+-----------------------------------------+--------------------------------------------------+
-| n_warmup_cycles | int                                  | 5000                                    | Number of warmup cycles                          |
-+-----------------+--------------------------------------+-----------------------------------------+--------------------------------------------------+
-| random_seed     | int                                  | 34788+928374*mpi::communicator().rank() | Random seed of the random generator              |
-+-----------------+--------------------------------------+-----------------------------------------+--------------------------------------------------+
-| random_name     | std::string                          | ""                                      | Name of the random generator                     |
-+-----------------+--------------------------------------+-----------------------------------------+--------------------------------------------------+
-| max_time        | int                                  | -1                                      | Maximum running time in seconds (-1 : no limit)  |
-+-----------------+--------------------------------------+-----------------------------------------+--------------------------------------------------+
-| verbosity       | int                                  | mpi::communicator().rank()==0?3:0       | Verbosity                                        |
-+-----------------+--------------------------------------+-----------------------------------------+--------------------------------------------------+
-| measure_sign  | bool                                 | true                                    | Measure the MC sign                              |
-+-----------------+--------------------------------------+-----------------------------------------+--------------------------------------------------+
-| post_process    | bool                                 | true                                    | Perform post processing                          |
-+-----------------+--------------------------------------+-----------------------------------------+--------------------------------------------------+
++------------------+--------------------------------------+------------------------------------------+--------------------------------------------------+
+| Parameter Name   | Type                                 | Default                                  | Documentation                                    |
++==================+======================================+==========================================+==================================================+
+| h_imp            | triqs::operators::many_body_operator | --                                       | Impurity Hamiltonian                             |
++------------------+--------------------------------------+------------------------------------------+--------------------------------------------------+
+| partition_method | str                                  | "quantum_numbers"                        | Partition method                                 |
++------------------+--------------------------------------+------------------------------------------+--------------------------------------------------+
+| quantum_numbers  | list(Operator)                       | []                                       | Quantum numbers                                  |
++------------------+--------------------------------------+------------------------------------------+--------------------------------------------------+
+| n_cycles         | int                                  | --                                       | Number of MC cycles                              |
++------------------+--------------------------------------+------------------------------------------+--------------------------------------------------+
+| length_cycle     | int                                  | 50                                       | Length of a MC cycles                            |
++------------------+--------------------------------------+------------------------------------------+--------------------------------------------------+
+| n_warmup_cycles  | int                                  | 5000                                     | Number of warmup cycles                          |
++------------------+--------------------------------------+------------------------------------------+--------------------------------------------------+
+| random_seed      | int                                  | 134789+928374*mpi::communicator().rank() | Random seed of the random generator              |
++------------------+--------------------------------------+------------------------------------------+--------------------------------------------------+
+| random_name      | std::string                          | ""                                       | Name of the random generator                     |
++------------------+--------------------------------------+------------------------------------------+--------------------------------------------------+
+| max_time         | int                                  | -1                                       | Maximum running time in seconds (-1 : no limit)  |
++------------------+--------------------------------------+------------------------------------------+--------------------------------------------------+
+| verbosity        | int                                  | mpi::communicator().rank()==0?3:0        | Verbosity                                        |
++------------------+--------------------------------------+------------------------------------------+--------------------------------------------------+
+| measure_sign     | bool                                 | true                                     | Measure the MC sign                              |
++------------------+--------------------------------------+------------------------------------------+--------------------------------------------------+
+| post_process     | bool                                 | true                                     | Perform post processing                          |
++------------------+--------------------------------------+------------------------------------------+--------------------------------------------------+
 """)
 
 c.add_method("""std::string hdf5_format ()""",
@@ -132,6 +145,19 @@ c.add_member(c_name = "h_imp",
              initializer = """  """,
              doc = r"""Impurity Hamiltonian""")
 
+c.add_member(c_name = "partition_method",
+             c_type = "std::string",
+             initializer = """ "quantum_numbers" """,
+             doc = r"""Partition method
+     type: str""")
+
+c.add_member(c_name = "quantum_numbers",
+             c_type = "std::vector<many_body_op_t>",
+             initializer = """ std::vector<many_body_op_t>{} """,
+             doc = r"""Quantum numbers
+     type: list(Operator)
+     default: []""")
+
 c.add_member(c_name = "n_cycles",
              c_type = "int",
              initializer = """  """,
@@ -149,7 +175,7 @@ c.add_member(c_name = "n_warmup_cycles",
 
 c.add_member(c_name = "random_seed",
              c_type = "int",
-             initializer = """ 34788+928374*mpi::communicator().rank() """,
+             initializer = """ 134789+928374*mpi::communicator().rank() """,
              doc = r"""Random seed of the random generator""")
 
 c.add_member(c_name = "random_name",
@@ -184,14 +210,24 @@ c = converter_(
         c_type = "inchworm::constr_params_t",
         doc = r"""The parameters for the solver construction""",
 )
+c.add_member(c_name = "n_tau_inch",
+             c_type = "int",
+             initializer = """ 11 """,
+             doc = r"""Number of tau points for the hybridization function""")
+
 c.add_member(c_name = "n_tau",
              c_type = "int",
-             initializer = """ 5001 """,
-             doc = r"""Number of tau points""")
+             initializer = """ 101 """,
+             doc = r"""Number of tau points for the hybridization function""")
+
+c.add_member(c_name = "n_tau_green",
+             c_type = "int",
+             initializer = """ 101 """,
+             doc = r"""Number of tau points for the Green function""")
 
 c.add_member(c_name = "n_iw",
              c_type = "int",
-             initializer = """ 500 """,
+             initializer = """ 5 """,
              doc = r"""Number of Matsubara frequencies""")
 
 c.add_member(c_name = "beta",
