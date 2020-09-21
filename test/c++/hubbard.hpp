@@ -151,24 +151,3 @@ inline std::tuple<solver_core, solve_params_t, u_tau_t, g_tau_t> test_setup(int 
 
   return {S, sp, u_tau, g_tau};
 }
-
-inline void test_cthyb(solver_core S, solve_params_t const &sp, u_tau_t const &u_tau, double tau_max) {
-
-  // Solve for U(beta) using cthyb
-  auto result_cthyb = S.solve_cthyb(sp, tau_max);
-  auto const &cp    = S.constr_params;
-
-  for (int bl = 0; bl < u_tau.size(); bl++)
-    EXPECT_ARRAY_NEAR((matrix_t)u_tau[bl][cp.n_tau_inch - 1], result_cthyb.frame[bl],
-		      0.05 * u_tau[0][cp.n_tau_inch - 1](0, 0)); // U[0](0,0) is essentially always the biggest value
-}
-
-inline void test_selfconsistent(solver_core S, solve_params_t const &sp, u_tau_t const &u_tau, double tau_split, double tau_max) {
-
-  // Solve for U(beta) using the self-consistency approach
-  auto result_sc = S.solve_self_consistently(sp, u_tau, tau_split, tau_max);
-  auto const &cp = S.constr_params;
-
-  for (int bl = 0; bl < u_tau.size(); bl++)
-    EXPECT_ARRAY_NEAR(((matrix_t)u_tau[bl][cp.n_tau_inch - 1]), result_sc.frame[bl], 0.05 * u_tau[0][cp.n_tau_inch - 1](0, 0));
-}
