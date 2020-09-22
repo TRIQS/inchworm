@@ -27,6 +27,7 @@ r"""
 DOC
 
 """
-from .inchworm_module import Toto, chain
+from .solver import Solver
+from .solver_core import SolverCore
 
-__all__ = ['Solver','SolverCore']
+__all__ = ['Solver', 'SolverCore']

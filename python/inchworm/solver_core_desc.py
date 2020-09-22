@@ -116,7 +116,7 @@ c.add_method("""void solve (**inchworm::solve_params_t)""",
 +------------------+--------------------------------------+-----------------------------------------+--------------------------------------------------+
 | max_time         | int                                  | -1                                      | Maximum running time in seconds (-1 : no limit)  |
 +------------------+--------------------------------------+-----------------------------------------+--------------------------------------------------+
-| verbosity        | int                                  | mpi::communicator().rank()==0?3:0       | Verbosity                                        |
+| verbosity        | int                                  | mpi::communicator().rank()==0?1:0       | Verbosity                                        |
 +------------------+--------------------------------------+-----------------------------------------+--------------------------------------------------+
 | measure_sign     | bool                                 | true                                    | Measure the MC sign                              |
 +------------------+--------------------------------------+-----------------------------------------+--------------------------------------------------+
@@ -190,7 +190,7 @@ c.add_member(c_name = "max_time",
 
 c.add_member(c_name = "verbosity",
              c_type = "int",
-             initializer = """ mpi::communicator().rank()==0?3:0 """,
+             initializer = """ mpi::communicator().rank()==0?1:0 """,
              doc = r"""Verbosity""")
 
 c.add_member(c_name = "measure_sign",

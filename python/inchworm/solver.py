@@ -19,7 +19,7 @@
 # inchworm. If not, see <http://www.gnu.org/licenses/>.
 #
 ##############################################################################
-from solver_core import SolverCore
+from .solver_core import SolverCore
 
 from triqs.gf import *
 from triqs.utility import mpi
@@ -28,7 +28,7 @@ from triqs.utility import mpi
 # === The SolverCore Wrapper
 
 class Solver(SolverCore):
-    def __init__(self, beta, gf_struct, n_iw=500, n_tau=5001):
+    def __init__(self, beta, gf_struct, **kwargs):
         """
         Initialise the solver.
 
@@ -48,16 +48,9 @@ class Solver(SolverCore):
                Number of imaginary time points used for the Green's functions.
         """
         # Initialise the core solver
-        SolverCore.__init__(self,
-                            beta=beta,
-                            gf_struct=gf_struct,
-                            n_iw=n_iw,
-                            n_tau=n_tau)
-        self.gf_struct = gf_struct
-        self.n_iw = n_iw
-        self.n_tau = n_tau
+        SolverCore.__init__(self, beta=beta, gf_struct=gf_struct, **kwargs)
 
-    def solve(self, **params_kw):
+    def solve(self, **kwargs):
         """
         Solve the impurity problem.
 
@@ -73,8 +66,5 @@ class Solver(SolverCore):
                      the SC Hartree Fock solution.
         """
 
-        h_imp = params_kw['h_imp']
-        gf_struct = self.gf_struct
-
         # Call the core solver's solve routine
-        return SolverCore.solve(self, **params_kw)
+        return SolverCore.solve(self, **kwargs)
