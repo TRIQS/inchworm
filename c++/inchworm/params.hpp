@@ -80,7 +80,7 @@ namespace inchworm {
 
     /// Quantum numbers
     /// type: list(Operator)
-    /// default: []
+    /// default: [Total Particle Number]
     std::vector<many_body_op_t> quantum_numbers = std::vector<many_body_op_t>{};
 
     // ----------- QMC Specific -----------

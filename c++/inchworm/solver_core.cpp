@@ -74,20 +74,31 @@ namespace inchworm {
                    " ║ ╠╦╝║║═╬╗╚═╗  │││││  ├─┤││││ │├┬┘│││\n"
                    " ╩ ╩╚═╩╚═╝╚╚═╝  ┴┘└┘└─┘┴ ┴└┴┘└─┘┴└─┴ ┴\n";
 
-    //
+    // -- Impurity Hamiltonian
+    h_imp = solve_params.h_imp;
+
+    // -- Atom Diag Object
     if (solve_params.partition_method != "quantum_numbers")
       TRIQS_RUNTIME_ERROR << "Please use total number for quantum number and use quantum numbers methods for partition of atom_diag";
-    //
-    h_imp  = solve_params.h_imp;
-    ad_imp = {h_imp, fops, solve_params.quantum_numbers};
-    u_tau  = make_propagator(ad_imp, constr_params.beta, constr_params.n_tau_inch);
+
+    if (solve_params.quantum_numbers.empty()) {
+      // As a default use total particle number as quantum number
+      many_body_operator Ntot{};
+      for (auto [bl, idx_lst] : gf_struct)
+        for (auto i : idx_lst) Ntot += n(bl, i);
+      ad_imp = {h_imp, fops, {Ntot}};
+    } else {
+      ad_imp = {h_imp, fops, solve_params.quantum_numbers};
+    }
+
+    // -- Initialize empty propagator
+    u_tau = make_propagator(ad_imp, constr_params.beta, constr_params.n_tau_inch);
   }
 
   //------------------------------
   // solve cthyb (no split point + bare propagator):
   single_step_results_t solver_core::solve_cthyb(solve_params_t const &solve_params, double tau_max) {
 
-    // Merge constr_params and solve_params
     last_solve_params = solve_params;
 
     // use_bare_propagator == cthyb (no split point).
