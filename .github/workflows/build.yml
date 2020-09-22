@@ -2,9 +2,9 @@ name: build
 
 on:
   push:
-    branches: [ unstable ]
+    branches: [ disable ]
   pull_request:
-    branches: [ unstable ]
+    branches: [ disable ]
 
 jobs:
   build:
