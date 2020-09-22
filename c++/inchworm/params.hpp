@@ -104,7 +104,7 @@ namespace inchworm {
     int max_time = -1;
 
     /// Verbosity
-    int verbosity = mpi::communicator().rank() == 0 ? 3 : 0;
+    int verbosity = mpi::communicator().rank() == 0 ? 1 : 0;
 
     // ----------- Measurements -----------
 

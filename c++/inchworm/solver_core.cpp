@@ -144,12 +144,14 @@ namespace inchworm {
 
   void solver_core::solve_inchworm(solve_params_t const &solve_params) {
 
+    if (solve_params.verbosity > 0) std::cout << "\nStarting inchworm calculation of the propagator.. \n";
+
     beta = constr_params.beta;
 
     int n_step = constr_params.n_tau_inch - 1;
     // loop on different inchworm steps
     for (int n = 0; n < n_step; n++) {
-      if (solve_params.verbosity > 3) std::printf("\ninchworm step %d / %d\n", n + 1, n_step);
+      if (solve_params.verbosity > 0) std::printf(" ..step %d/%d\n", n + 1, n_step);
 
       // define the tau_split and tau_max for this specific inchworm step.
       //
@@ -193,6 +195,8 @@ namespace inchworm {
 
   void solver_core::solve_green(solve_params_t const &solve_params, u_tau_t const &u_tau_) {
 
+    if (solve_params.verbosity > 0) std::cout << "\nStarting Green function calculation.. \n";
+
     beta = constr_params.beta;
 
     // Initialize the Green function container
@@ -216,7 +220,7 @@ namespace inchworm {
     // loop on different inchworm steps
     // n == 0 and n == n_tau - 1 already treated
     for (int n = 1; n < constr_params.n_tau_green - 1; n++) {
-      if (world.rank() == 0) std::printf("\n\ngreen sampling %d\n", n);
+      if (solve_params.verbosity > 0) std::printf(" ..step %d/%d\n", n, constr_params.n_tau_green - 2);
 
       // define the tau_split and tau_max for this specific inchworm step.
       //
