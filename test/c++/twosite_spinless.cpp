@@ -30,7 +30,6 @@ TEST(inchworm, Hubbard_2sites_spinless) { // NOLINT
   cp.n_tau_green = 5;
   cp.n_tau_inch  = 21;
   cp.n_tau       = 10001;
-  cp.n_iw        = 1000;
 
   mat_t theta   = {{0.9, 0.5}, {0.3, 1.1}};
   vec_t epsilon = {0.9, -0.3};

@@ -30,7 +30,6 @@ TEST(inchworm, Hubbard_2sites) { // NOLINT
   cp.n_tau_green = 5;
   cp.n_tau_inch  = 21;
   cp.n_tau       = 10001;
-  cp.n_iw        = 1000;
 
   mat_t theta   = {{0.1, 0.3, 0.4}, {0.1, 0.2, 0.4}};
   vec_t epsilon = {1.0, -1.0, 1.2};

@@ -30,7 +30,6 @@ TEST(inchworm, Hubbard_1site) { // NOLINT
   cp.n_tau_green = 5;
   cp.n_tau_inch  = 21;
   cp.n_tau       = 10001;
-  cp.n_iw        = 1000;
 
   // FIXME This bath currently fails test_cthyb !
   // Passes in spinless case!
