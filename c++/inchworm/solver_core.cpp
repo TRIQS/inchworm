@@ -58,7 +58,7 @@ namespace inchworm {
     solve_inchworm(solve_params);
 
     // Sample the Green function S.G_tau
-    solve_green(solve_params, this->u_tau);
+    solve_green(solve_params);
   }
 
   // Common initilization to any solving scheme:
@@ -204,7 +204,7 @@ namespace inchworm {
 
   //------------------------------
 
-  void solver_core::solve_green(solve_params_t const &solve_params, u_tau_t const &u_tau_) {
+  void solver_core::solve_green(solve_params_t const &solve_params) {
 
     if (solve_params.verbosity > 0) std::cout << "\nStarting Green function calculation.. \n";
 
@@ -212,9 +212,6 @@ namespace inchworm {
 
     // Initialize the Green function container
     G_tau = g_tau_t{{beta, Fermion, constr_params.n_tau_green}, constr_params.gf_struct};
-
-    // precalculated propagator:
-    u_tau = u_tau_;
 
     // --- Treat n == 0 and n == n_tau -1 seperately
 

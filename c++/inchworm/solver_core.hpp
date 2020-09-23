@@ -68,12 +68,10 @@ namespace inchworm {
     single_step_results_t solve_self_consistently(solve_params_t const &solve_params, u_tau_t const &u_tau_, double tau_split, double tau_max);
 
     // Run inchworm to calculate S.u_tau
-    CPP2PY_IGNORE
     void solve_inchworm(solve_params_t const &solve_params);
 
     // Sample the Green function S.G_tau
-    CPP2PY_IGNORE
-    void solve_green(solve_params_t const &solve_params, u_tau_t const &u_tau);
+    void solve_green(solve_params_t const &solve_params);
 
     // one Monte Carlo step calculation (common to the 3 solve scheme above):
     CPP2PY_IGNORE

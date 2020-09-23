@@ -62,7 +62,8 @@ TEST(inchworm, Hubbard_2sites_spinless) { // NOLINT
   EXPECT_TRUE(relative_distance(S.u_tau, u_tau) < 0.05);
 
   // Test green
-  S.solve_green(sp, u_tau);
+  S.u_tau = u_tau;
+  S.solve_green(sp);
   EXPECT_BLOCK_GF_NEAR(S.G_tau, G_tau, 0.01);
 }
 
