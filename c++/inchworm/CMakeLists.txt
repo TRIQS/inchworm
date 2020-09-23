@@ -15,6 +15,8 @@ target_compile_definitions(${PROJECT_NAME}_c PUBLIC
 				$<$<CONFIG:Debug>:INCHWORM_DEBUG>
 				$<$<CONFIG:Debug>:TRIQS_DEBUG>
 				$<$<CONFIG:Debug>:TRIQS_ARRAYS_ENFORCE_BOUNDCHECK>
+				$<$<BOOL:${Hybridisation_is_complex}>:HYBRIDISATION_IS_COMPLEX>
+				$<$<BOOL:${Local_hamiltonian_is_complex}>:LOCAL_HAMILTONIAN_IS_COMPLEX>
 			  )
 
 # Install library and headers

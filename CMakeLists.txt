@@ -88,6 +88,10 @@ if(Build_Tests)
   enable_testing()
 endif()
 
+# Options for the compilation ...
+option(Hybridisation_is_complex "If ON, the hybridization Delta(tau) is complex" OFF)
+option(Local_hamiltonian_is_complex "If ON, the H_loc is complex" OFF)
+
 # Export the list of compile-commands into compile_commands.json
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
