@@ -102,7 +102,7 @@ c.add_method("""void solve (**inchworm::solve_params_t)""",
 +------------------+--------------------------------------+-----------------------------------------+--------------------------------------------------+
 | partition_method | str                                  | "quantum_numbers"                       | Partition method                                 |
 +------------------+--------------------------------------+-----------------------------------------+--------------------------------------------------+
-| quantum_numbers  | list(Operator)                       | []                                      | Quantum numbers                                  |
+| quantum_numbers  | list(Operator)                       | [Total Particle Number]                 | Quantum numbers                                  |
 +------------------+--------------------------------------+-----------------------------------------+--------------------------------------------------+
 | n_cycles         | int                                  | --                                      | Number of MC cycles                              |
 +------------------+--------------------------------------+-----------------------------------------+--------------------------------------------------+
@@ -123,6 +123,12 @@ c.add_method("""void solve (**inchworm::solve_params_t)""",
 | post_process     | bool                                 | true                                    | Perform post processing                          |
 +------------------+--------------------------------------+-----------------------------------------+--------------------------------------------------+
 """)
+
+c.add_method("""void solve_inchworm (inchworm::solve_params_t solve_params)""",
+             doc = r"""""")
+
+c.add_method("""void solve_green (inchworm::solve_params_t solve_params)""",
+             doc = r"""""")
 
 c.add_method("""std::string hdf5_format ()""",
              is_static = True,
@@ -156,7 +162,7 @@ c.add_member(c_name = "quantum_numbers",
              initializer = """ std::vector<many_body_op_t>{} """,
              doc = r"""Quantum numbers
      type: list(Operator)
-     default: []""")
+     default: [Total Particle Number]""")
 
 c.add_member(c_name = "n_cycles",
              c_type = "int",
