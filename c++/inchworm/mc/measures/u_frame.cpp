@@ -6,6 +6,7 @@ namespace inchworm::measures {
      : qmc_config_data(qmc_config_data_), results(results_) {}
 
   void u_frame::accumulate(scalar_t sign) {
+
     scalar_t s = sign / (qmc_config_data.w.loc);
     if (qmc_config_data.config.size() < MAX_ORDER) { // MAX_ORDER is just for printing purpose for now.
       auto const &[tbl0, m0] = qmc_config_data.u_partial[0];
@@ -22,11 +23,12 @@ namespace inchworm::measures {
     }
 
     // For normalizatoin purpose, we sample the zeroth order separatly:
-    if (qmc_config_data.config.size() == 0)
+    if (qmc_config_data.config.size() == 0) {
       for (int bl = 0; bl < results.frame_0th_order.size(); bl++) {
         auto const &[tbl, m] = qmc_config_data.u_partial[bl];
         if (tbl != -1) results.frame_0th_order[bl] += s * m;
       }
+    }
   }
 
   void u_frame::collect_results(mpi::communicator const &comm) {

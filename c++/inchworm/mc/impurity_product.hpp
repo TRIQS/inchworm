@@ -45,9 +45,9 @@ namespace inchworm {
 
   // structure to gather result of one Monte Carlo run:
   struct single_step_results_t {
-    double average_k = 0.0;
     frame_t frame;
     frame_t frame_0th_order;
+    double average_k = 0.0;
     std::vector<double> expansion_order;
     std::vector<int> samples_expansion_order;
     single_step_results_t(std::vector<long> shape_of_frame) : expansion_order(MAX_ORDER, 0), samples_expansion_order(MAX_ORDER, 0) {

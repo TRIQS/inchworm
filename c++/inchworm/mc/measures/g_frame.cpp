@@ -6,6 +6,7 @@ namespace inchworm::measures {
      : qmc_config_data(qmc_config_data_), results(results_) {}
 
   void g_frame::accumulate(scalar_t sign) {
+
     scalar_t s = sign / (qmc_config_data.w.loc);
     if (qmc_config_data.config.size() < MAX_ORDER) { // MAX_ORDER is just for printing purpose for now.
       auto m0 = qmc_config_data.g_frame[0](0,0);
@@ -18,27 +19,13 @@ namespace inchworm::measures {
       auto m = qmc_config_data.g_frame[bl];
       results.frame[bl] += s * m;
     }
-    //TRIQS_PRINT(s);
-    //std::printf("acc data g_frame:\n");
-    //print(qmc_config_data.g_frame);
-    //std::printf("total g_frame:\n");
-    //print(results.frame);
 
     // For normalizatoin purpose, we sample the zeroth order separatly:
-    if (qmc_config_data.config.size() == 0)
-    {
+    if (qmc_config_data.config.size() == 0) {
       for (int bl = 0; bl < results.frame_0th_order.size(); bl++) {
         auto m = qmc_config_data.g_frame[bl];
         results.frame_0th_order[bl] += s * m;
-        //std::printf("s * m:\n");
-        //print_matrix(m);
       }
-      //TRIQS_PRINT(s);
-      //std::printf("acc data g_frame:\n");
-      //print(qmc_config_data.g_frame);
-      //std::printf("total 0order g_frame:\n");
-      //print(results.frame_0th_order);
-      //getchar();
     }
   }
 

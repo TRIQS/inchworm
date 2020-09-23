@@ -21,8 +21,7 @@ namespace inchworm {
     // and set all other values to zero
     for (auto &ubl : u_tau) {
       ubl() = 0.;
-      for(int i = 0; i < ubl.target_shape()[0]; ++i)
-	ubl[0](i, i) = 1;
+      for (int i = 0; i < ubl.target_shape()[0]; ++i) ubl[0](i, i) = 1;
     }
 
     return u_tau;
@@ -159,11 +158,7 @@ namespace inchworm {
 
   void single_step_results_t::print() {
 
-    for (auto Bl : frame) {
-      //for (int bl; bl < u_frame.size(); bl++) {
-      //print_fundamental_operator_set();
-      print_matrix(Bl);
-    }
+    for (auto Bl : frame) print_matrix(Bl);
 
     std::printf("\n\norder breakdown: \n");
     for (auto &o : samples_expansion_order) std::printf("%16d ", o);
