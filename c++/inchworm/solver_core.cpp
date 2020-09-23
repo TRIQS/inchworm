@@ -18,14 +18,14 @@ namespace inchworm {
 
   //------------------------------
   // Constructor:
-  solver_core::solver_core(constr_params_t const &p) : gf_struct(p.gf_struct), constr_params(p) {
+  solver_core::solver_core(constr_params_t const &cp) : constr_params(cp) {
 
     // Initialize the hybridization function
-    Delta_tau = h_tau_t{{p.beta, Fermion, p.n_tau}, p.gf_struct};
+    Delta_tau = h_tau_t{{cp.beta, Fermion, cp.n_tau}, cp.gf_struct};
 
     // Determine basis of operators to use
     int n_fops = 0;
-    for (auto const &bl : gf_struct) {
+    for (auto const &bl : cp.gf_struct) {
       for (auto const &a : bl.second) {
         fops.insert(bl.first, a);
         n_fops++;
@@ -34,7 +34,7 @@ namespace inchworm {
 
     // Setup the linear index map (link Green function structure to fundamental operator set):
     int block_index = 0;
-    for (auto const &bl : gf_struct) {
+    for (auto const &bl : cp.gf_struct) {
       int inner_index = 0;
       for (auto const &a : bl.second) {
         map_lin_idx_to_block_inner[fops[{bl.first, a}]] = std::make_pair(block_index, inner_index);
@@ -51,8 +51,12 @@ namespace inchworm {
   // and then sample the Green function
   void solver_core::solve(solve_params_t const &solve_params) {
 
-    // Initialize solver
-    this->init(solve_params);
+    // http://patorjk.com/software/taag/#p=testall&f=Calvin%20S&t=TRIQS%20inchworm%0A
+    if (solve_params.verbosity > 0)
+      std::cout << "\n"
+                   "╔╦╗╦═╗╦╔═╗ ╔═╗  ┬┌┐┌┌─┐┬ ┬┬ ┬┌─┐┬─┐┌┬┐\n"
+                   " ║ ╠╦╝║║═╬╗╚═╗  │││││  ├─┤││││ │├┬┘│││\n"
+                   " ╩ ╩╚═╩╚═╝╚╚═╝  ┴┘└┘└─┘┴ ┴└┴┘└─┘┴└─┴ ┴\n";
 
     // Run inchworm to calculate S.u_tau
     solve_inchworm(solve_params);
@@ -62,44 +66,36 @@ namespace inchworm {
   }
 
   // Common initilization to any solving scheme:
-  void solver_core::init(solve_params_t const &solve_params) {
+  void solver_core::init(solve_params_t const &sp) {
+
+    // Store solve_params
+    last_solve_params = sp;
 
     // Reset the results
     container_set::operator=(container_set{});
 
-    // http://patorjk.com/software/taag/#p=testall&f=Calvin%20S&t=TRIQS%20inchworm%0A
-    if (solve_params.verbosity > 0)
-      std::cout << "\n"
-                   "╔╦╗╦═╗╦╔═╗ ╔═╗  ┬┌┐┌┌─┐┬ ┬┬ ┬┌─┐┬─┐┌┬┐\n"
-                   " ║ ╠╦╝║║═╬╗╚═╗  │││││  ├─┤││││ │├┬┘│││\n"
-                   " ╩ ╩╚═╩╚═╝╚╚═╝  ┴┘└┘└─┘┴ ┴└┴┘└─┘┴└─┴ ┴\n";
-
-    // -- Impurity Hamiltonian
-    h_imp = solve_params.h_imp;
-
     // -- Atom Diag Object
-    if (solve_params.partition_method != "quantum_numbers")
+    if (sp.partition_method != "quantum_numbers")
       TRIQS_RUNTIME_ERROR << "Please use total number for quantum number and use quantum numbers methods for partition of atom_diag";
 
-    if (solve_params.quantum_numbers.empty()) {
+    if (sp.quantum_numbers.empty()) {
       // As a default use total particle number as quantum number
       many_body_operator Ntot{};
-      for (auto [bl, idx_lst] : gf_struct)
+      for (auto [bl, idx_lst] : constr_params.gf_struct)
         for (auto i : idx_lst) Ntot += n(bl, i);
-      ad_imp = {h_imp, fops, {Ntot}};
+      ad_imp = {sp.h_imp, fops, {Ntot}};
     } else {
-      ad_imp = {h_imp, fops, solve_params.quantum_numbers};
+      ad_imp = {sp.h_imp, fops, sp.quantum_numbers};
     }
 
-    // -- Initialize empty propagator
-    u_tau = make_propagator(ad_imp, constr_params.beta, constr_params.n_tau_inch);
   }
 
   //------------------------------
   // solve cthyb (no split point + bare propagator):
   single_step_results_t solver_core::solve_cthyb(solve_params_t const &solve_params, double tau_max) {
 
-    last_solve_params = solve_params;
+    // Initialize solver
+    this->init(solve_params);
 
     // use_bare_propagator == cthyb (no split point).
     double tau_split         = 0.0;
@@ -128,8 +124,8 @@ namespace inchworm {
   // Self consistent solution (one step, with precalculated U(beta) from ED)
   single_step_results_t solver_core::solve_self_consistently(solve_params_t const &solve_params, u_tau_t const &u_tau_, double tau_split,
                                                              double tau_max) {
-    // Merge constr_params and solve_params
-    last_solve_params = solve_params;
+    // Initialize solver
+    this->init(solve_params);
 
     // precalculated propagator:
     u_tau = u_tau_;
@@ -155,9 +151,15 @@ namespace inchworm {
 
   void solver_core::solve_inchworm(solve_params_t const &solve_params) {
 
+    // Initialize solver
+    this->init(solve_params);
+
+    // Initialize empty propagator
+    u_tau = make_propagator(ad_imp, constr_params.beta, constr_params.n_tau_inch);
+
     if (solve_params.verbosity > 0) std::cout << "\nStarting inchworm calculation of the propagator.. \n";
 
-    beta = constr_params.beta;
+    double beta = constr_params.beta;
 
     int n_step = constr_params.n_tau_inch - 1;
     // loop on different inchworm steps
@@ -206,17 +208,20 @@ namespace inchworm {
 
   void solver_core::solve_green(solve_params_t const &solve_params) {
 
+    // Initialize solver
+    this->init(solve_params);
+
     if (solve_params.verbosity > 0) std::cout << "\nStarting Green function calculation.. \n";
 
-    beta = constr_params.beta;
+    double beta = constr_params.beta;
 
     // Initialize the Green function container
     G_tau = g_tau_t{{beta, Fermion, constr_params.n_tau_green}, constr_params.gf_struct};
 
     // --- Treat n == 0 and n == n_tau -1 seperately
 
-    frame_t g_frame_n0 = make_bare_g_frame(ad_imp, u_tau, map_lin_idx_to_block_inner, gf_struct, 0.0, beta);
-    frame_t g_frame_nB = make_bare_g_frame(ad_imp, u_tau, map_lin_idx_to_block_inner, gf_struct, beta, beta);
+    frame_t g_frame_n0 = make_bare_g_frame(ad_imp, u_tau, map_lin_idx_to_block_inner, constr_params.gf_struct, 0.0, beta);
+    frame_t g_frame_nB = make_bare_g_frame(ad_imp, u_tau, map_lin_idx_to_block_inner, constr_params.gf_struct, beta, beta);
 
     // Calculate Tr U(beta)
     scalar_t Tr_Ubeta = 0.0;
@@ -243,7 +248,7 @@ namespace inchworm {
       auto res = single_step(solve_params, tau_split, beta, false, 1);
 
       // Normalize the result using the ratio between theoretical zeroth order and Monte Carlo sampled zeroth order
-      frame_t g_frame_zeroth_order = make_bare_g_frame(ad_imp, u_tau, map_lin_idx_to_block_inner, gf_struct, tau_split, beta);
+      frame_t g_frame_zeroth_order = make_bare_g_frame(ad_imp, u_tau, map_lin_idx_to_block_inner, constr_params.gf_struct, tau_split, beta);
       scalar_t normalization_cte   = Tr_Ubeta * (double)res.frame_0th_order[0](0, 0) / ((double)g_frame_zeroth_order[0](0, 0));
       res.normalize(normalization_cte);
 
@@ -296,7 +301,7 @@ namespace inchworm {
     if (mode == 0) {
       for (int bl = 0; bl < ad_imp.n_subspaces(); bl++) { shape_of_frame.push_back(ad_imp.get_subspace_dim(bl)); }
     } else {
-      for (auto const &[bl, idxlst] : gf_struct) { shape_of_frame.push_back(idxlst.size()); }
+      for (auto const &[bl, idxlst] : params.gf_struct) { shape_of_frame.push_back(idxlst.size()); }
     }
 
     // Initialize result container
@@ -342,6 +347,7 @@ namespace inchworm {
     h5_write(grp, "", s.result_set());
     h5_write(grp, "constr_params", s.constr_params);
     h5_write(grp, "last_solve_params", s.last_solve_params);
+    h5_write(grp, "u_tau", s.u_tau);
   }
 
   solver_core solver_core::h5_read_construct(h5::group h5group, std::string subgroup_name) {
@@ -350,6 +356,7 @@ namespace inchworm {
     auto s             = solver_core{constr_params};
     h5_read(grp, "", s.result_set());
     h5_read(grp, "last_solve_params", s.last_solve_params);
+    h5_read(grp, "u_tau", s.u_tau);
     return s;
   }
 

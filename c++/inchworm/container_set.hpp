@@ -28,14 +28,8 @@ namespace inchworm {
   /// The collection of all output containers in solver_core
   struct container_set {
 
-    /// propagator in imaginary time
-    u_tau_t u_tau;
-
     /// Greens function in imaginary time
     g_tau_t G_tau;
-
-    /// vector of average sign
-    std::vector<scalar_t> average_sign;
 
     /// Function that writes all containers to hdf5 file
     friend void h5_write(h5::group h5group, std::string subgroup_name, container_set const &c);

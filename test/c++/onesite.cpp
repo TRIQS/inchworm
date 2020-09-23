@@ -51,9 +51,6 @@ TEST(inchworm, Hubbard_1site) { // NOLINT
   double tau_max   = cp.beta;
   double tau_split = cp.beta * 0.9;
 
-  // Init solver
-  S.init(sp);
-
   // Test cthyb
   auto result_cthyb = S.solve_cthyb(sp, tau_max);
   EXPECT_TRUE(relative_distance(get_frame(u_tau, cp.n_tau_inch -1), result_cthyb.frame) < 0.05);
