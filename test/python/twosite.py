@@ -61,7 +61,7 @@ class test_hubbard(unittest.TestCase):
     # Set up the Solver
     S = Solver(**cp)
     for bl in ["up", "dn"]:
-        S.Delta_tau[bl] << 0
+        S.Delta_tau[bl].data[:] = 0
         for mp in S.Delta_tau["up"].mesh:
             for i, j, k in product(range(n_site), range(n_site), range(n_bath)):
                 S.Delta_tau[bl][mp][i, j] = S.Delta_tau[bl][mp][i, j] \
