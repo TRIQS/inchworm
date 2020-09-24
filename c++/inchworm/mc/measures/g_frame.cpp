@@ -10,8 +10,8 @@ namespace inchworm::measures {
     scalar_t s = sign / (qmc_config_data.w.loc);
 
     size_t pert_order = qmc_config_data.config.size();
-    if (pert_order > results.expansion_order.size()) {
-      size_t new_size = std::max(2 * results.expansion_order.size(), pert_order);
+    if (pert_order >= results.expansion_order.size()) {
+      size_t new_size = std::max(2 * results.expansion_order.size(), pert_order + 1);
       results.expansion_order.resize(new_size, 0);
       results.samples_expansion_order.resize(new_size, 0);
     }
