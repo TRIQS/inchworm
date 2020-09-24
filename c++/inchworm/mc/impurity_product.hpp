@@ -60,7 +60,7 @@ namespace inchworm {
       for (auto &o : expansion_order) o /= normalization_cte;
     };
 
-    void print();
+    void print(int verbosity = 4);
   };
 
 } // namespace inchworm

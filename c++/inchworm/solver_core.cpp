@@ -113,7 +113,7 @@ namespace inchworm {
     // Print results
     if (solve_params.verbosity > 3) {
       std::printf("\n\n##################\ncthyb U(tau_max):\n");
-      res.print();
+      res.print(solve_params.verbosity);
     }
 
     return res;
@@ -141,7 +141,7 @@ namespace inchworm {
     // Print results
     if (solve_params.verbosity > 3) {
       std::printf("\n##################\ninchworm U(beta):\n");
-      res.print();
+      res.print(solve_params.verbosity);
     }
 
     return res;
@@ -196,7 +196,7 @@ namespace inchworm {
       // Print results
       if (solve_params.verbosity > 3) {
         std::printf("\n\n##################\ninchworm U(tau_max):\n");
-        res.print();
+        res.print(solve_params.verbosity);
       }
 
       // Assign u_frame to the propagator u_tau, in order to be able to use it in next iteration
@@ -255,7 +255,7 @@ namespace inchworm {
       // Print results
       if (solve_params.verbosity > 3) {
         std::printf("\n\n##################\ninchworm G(tau_split):\n");
-        res.print();
+        res.print(solve_params.verbosity);
       }
 
       assign_frame_to_propagator(G_tau, res.frame, n, 1.);

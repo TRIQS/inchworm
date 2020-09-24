@@ -156,16 +156,19 @@ namespace inchworm {
     return u_partial;
   }
 
-  void single_step_results_t::print() {
+  void single_step_results_t::print(int verbosity) {
 
-    for (auto Bl : frame) print_matrix(Bl);
+    if (verbosity > 4)
+      for (auto Bl : frame) print_matrix(Bl);
 
-    static int max_order = 7;
+    if (verbosity > 3) {
+      int max_order = std::max(samples_expansion_order.size(), 15ul);
 
-    std::printf("\n\norder breakdown: \n");
-    for (auto k : range(max_order)) std::printf("%16d ", samples_expansion_order[k]);
-    std::printf("\n");
-    for (auto k : range(max_order)) std::printf("% 16.5f ", expansion_order[k]);
-    std::printf("\n");
+      std::printf("\n\norder breakdown: \n");
+      for (auto k : range(max_order)) std::printf("%10d ", samples_expansion_order[k]);
+      std::printf("\n");
+      for (auto k : range(max_order)) std::printf("% 10.5f ", expansion_order[k]);
+      std::printf("\n");
+    }
   }
 } // namespace inchworm
