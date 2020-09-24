@@ -58,7 +58,6 @@ namespace inchworm {
       for (auto &Bl : frame) Bl /= normalization_cte;
       for (auto &Bl : frame_0th_order) Bl /= normalization_cte;
       for (auto &o : expansion_order) o /= normalization_cte;
-      for (auto &o : samples_expansion_order) o /= normalization_cte;
     };
 
     void print();
