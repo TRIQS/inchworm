@@ -31,11 +31,6 @@ TEST(inchworm, Hubbard_1site) { // NOLINT
   cp.n_tau_inch  = 21;
   cp.n_tau       = 10001;
 
-  // FIXME This bath currently fails test_cthyb !
-  // Passes in spinless case!
-  //mat_t theta   = {{0.9, 1.0, 1.1}};
-  //vec_t epsilon = {1.0, -2.0, 0.0};
-
   mat_t theta   = {{0.8, 1.0, 1.4}};
   vec_t epsilon = {-2.0, 0.0, 4.0};
 
