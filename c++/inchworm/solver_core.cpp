@@ -316,7 +316,7 @@ namespace inchworm {
     if (mode == 0)
       mc.add_measure(measures::u_frame{params, qmc_config_data, results}, "propagator measurement");
     else if (mode == 1)
-      mc.add_measure(measures::g_frame{params, qmc_config_data, results}, "propagator measurement");
+      mc.add_measure(measures::g_frame{params, qmc_config_data, results}, "green function measurement");
 
     // Perform QMC run and collect results
     mc.warmup_and_accumulate(params.n_warmup_cycles, params.n_cycles, params.length_cycle, triqs::utility::clock_callback(params.max_time));
