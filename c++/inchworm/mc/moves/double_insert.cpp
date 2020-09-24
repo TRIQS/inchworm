@@ -79,7 +79,7 @@ namespace inchworm::moves {
     auto w_loc_ratio = proposed_w.loc / data.w.loc;
     auto t_ratio     = std::pow(params.tau_max * n_fops / (N + 2), 4);
 
-#ifdef INCHWORM_DEBUG
+#ifdef INCHWORM_DEBUG_PRINTS
     std::printf("\n\n====== Try Insert2 ======\n");
     print_configuration(diagram);
     if (params.mode == 0)
@@ -100,7 +100,7 @@ namespace inchworm::moves {
 
   //
   scalar_t double_insert::accept() {
-#ifdef INCHWORM_DEBUG
+#ifdef INCHWORM_DEBUG_PRINTS
     std::printf("\n\n====== Accept Insert2 ======\n");
 #endif
     data.w         = proposed_w;

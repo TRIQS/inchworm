@@ -15,6 +15,7 @@ target_compile_definitions(${PROJECT_NAME}_c PUBLIC
 				$<$<CONFIG:Debug>:INCHWORM_DEBUG>
 				$<$<CONFIG:Debug>:TRIQS_DEBUG>
 				$<$<CONFIG:Debug>:TRIQS_ARRAYS_ENFORCE_BOUNDCHECK>
+				$<$<BOOL:${Debug_Prints}>:INCHWORM_DEBUG_PRINTS>
 				$<$<BOOL:${Hybridisation_is_complex}>:HYBRIDISATION_IS_COMPLEX>
 				$<$<BOOL:${Local_hamiltonian_is_complex}>:LOCAL_HAMILTONIAN_IS_COMPLEX>
 			  )

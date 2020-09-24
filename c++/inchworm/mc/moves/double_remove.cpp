@@ -76,7 +76,7 @@ namespace inchworm::moves {
     auto w_loc_ratio = proposed_w.loc / data.w.loc;
     auto t_ratio     = std::pow(N / (n_fops * params.tau_max), 4);
 
-#ifdef INCHWORM_DEBUG
+#ifdef INCHWORM_DEBUG_PRINTS
     std::printf("\n\n====== Try Remove2 ======\n");
     print_configuration(diagram);
     if (params.mode == 0)
@@ -99,7 +99,7 @@ namespace inchworm::moves {
 
   //
   scalar_t double_remove::accept() {
-#ifdef INCHWORM_DEBUG
+#ifdef INCHWORM_DEBUG_PRINTS
     std::printf("\n\n====== Accept Remove ======\n");
 #endif
     data.w       = proposed_w;

@@ -89,6 +89,7 @@ if(Build_Tests)
 endif()
 
 # Options for the compilation ...
+option(Debug_Prints "Print detailed information about MC configuration and moves for debugging purposes" OFF)
 option(Hybridisation_is_complex "If ON, the hybridization Delta(tau) is complex" OFF)
 option(Local_hamiltonian_is_complex "If ON, the H_loc is complex" OFF)
 
