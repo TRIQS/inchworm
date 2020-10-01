@@ -83,7 +83,9 @@ namespace inchworm {
       many_body_operator Ntot{};
       for (auto [bl, idx_lst] : constr_params.gf_struct)
         for (auto i : idx_lst) Ntot += n(bl, i);
-      ad_imp = {sp.h_imp, fops, {Ntot}};
+      //ad_imp = {sp.h_imp, fops, {Ntot}};
+      ad_imp = {sp.h_imp, sp.hyb_effective, fops};
+      
     } else {
       ad_imp = {sp.h_imp, fops, sp.quantum_numbers};
     }

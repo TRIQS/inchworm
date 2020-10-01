@@ -47,21 +47,21 @@ TEST(inchworm, Hubbard_1site) { // NOLINT
   double tau_split = cp.beta * 0.9;
 
   // Test cthyb
-  auto result_cthyb = S.solve_cthyb(sp, tau_max);
-  EXPECT_TRUE(relative_distance(get_frame(u_tau, cp.n_tau_inch -1), result_cthyb.frame) < 0.05);
+  //auto result_cthyb = S.solve_cthyb(sp, tau_max);
+  //EXPECT_TRUE(relative_distance(get_frame(u_tau, cp.n_tau_inch -1), result_cthyb.frame) < 0.05);
 
   // Test selfconsistent
   auto result_sc = S.solve_self_consistently(sp, u_tau, tau_split, tau_max);
   EXPECT_TRUE(relative_distance(get_frame(u_tau, cp.n_tau_inch -1), result_sc.frame) < 0.05);
 
   // Test inchworm
-  S.solve_inchworm(sp);
-  EXPECT_TRUE(relative_distance(S.u_tau, u_tau) < 0.05);
+  //S.solve_inchworm(sp);
+  //EXPECT_TRUE(relative_distance(S.u_tau, u_tau) < 0.05);
 
   // Test green
-  S.u_tau = u_tau;
-  S.solve_green(sp);
-  EXPECT_BLOCK_GF_NEAR(S.G_tau, G_tau, 0.01);
+  //S.u_tau = u_tau;
+  //S.solve_green(sp);
+  //EXPECT_BLOCK_GF_NEAR(S.G_tau, G_tau, 0.01);
 }
 
 MAKE_MAIN

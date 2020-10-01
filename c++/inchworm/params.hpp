@@ -26,6 +26,7 @@
 
 namespace inchworm {
 
+  // FIXME: choose between many_body_op_t and many_body_operator: same?
   using many_body_op_t = triqs::operators::many_body_operator_generic<scalar_t>; // Operator with real or complex value
 
   /// The parameters for the solver construction
@@ -73,6 +74,9 @@ namespace inchworm {
 
     /// Impurity Hamiltonian
     many_body_operator h_imp;
+
+    /// Effective hybridization 
+    many_body_operator hyb_effective;
 
     /// Partition method
     /// type: str

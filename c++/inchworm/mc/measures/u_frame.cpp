@@ -27,7 +27,7 @@ namespace inchworm::measures {
       if (tbl != -1) results.frame[bl] += s * m;
     }
 
-    // For normalizatoin purpose, we sample the zeroth order separatly:
+    // For normalization purpose, we sample the zeroth order separatly:
     if (pert_order == 0) {
       for (int bl = 0; bl < results.frame_0th_order.size(); bl++) {
         auto const &[tbl, m] = qmc_config_data.u_partial[bl];
