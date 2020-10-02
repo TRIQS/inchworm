@@ -117,7 +117,6 @@ inline std::tuple<solver_core, solve_params_t, u_tau_t, g_tau_t> test_setup(int 
   // === Set up the Solver
 
   solver_core S(cp);
-
   many_body_operator hyb_effective;
   
   // create hybridization:
@@ -129,6 +128,7 @@ inline std::tuple<solver_core, solve_params_t, u_tau_t, g_tau_t> test_setup(int 
         
         if(tau==0){
           hyb_effective += 1. * c_dag("up", i) * c("up", j) ;
+          hyb_effective += 1. * c_dag("dn", i) * c("dn", j) ;
         }
       }
     }
@@ -148,15 +148,14 @@ inline std::tuple<solver_core, solve_params_t, u_tau_t, g_tau_t> test_setup(int 
   // Calculate exact Green function
   g_tau_t g_tau = real(atomic_g_tau(ad_tot, cp.beta, cp.gf_struct, cp.n_tau_green));
 
-
-
   // Solve Parameters
   solve_params_t sp;
   sp.h_imp           = h_imp;
-  sp.n_cycles        = 500000;
+  sp.n_cycles        = 100000;
   sp.length_cycle    = 10;
   sp.n_warmup_cycles = 20;
   sp.hyb_effective   = hyb_effective;
+  //sp.hyb_effective   = create_effective_hyb(cp.gf_struct, fops_imp);
   sp.verbosity       = 10;
 
 

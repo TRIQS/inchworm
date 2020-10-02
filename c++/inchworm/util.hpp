@@ -50,6 +50,10 @@ namespace inchworm {
   void print(frame_t u_frame);
   void print(u_partial_t u_partial);
 
+  //------------------------------
+  // FIXME:
+  // many_body_operator create_effective_hyb(gf_struct_t const &gf_struct, fundamental_operator_set const & fops); 
+  
   // necessary to fill the propagator at each step of the inchworm:
   template<typename T>
   void assign_frame_to_propagator(block_gf<imtime, T> &u_tau, frame_t const &u_frame, int frame_number, scalar_t factor = 1.0) {

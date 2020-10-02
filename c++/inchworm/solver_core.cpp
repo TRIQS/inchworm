@@ -16,6 +16,8 @@
 
 namespace inchworm {
 
+
+
   //------------------------------
   // Constructor:
   solver_core::solver_core(constr_params_t const &cp) : constr_params(cp) {
@@ -78,16 +80,19 @@ namespace inchworm {
     if (sp.partition_method != "quantum_numbers")
       TRIQS_RUNTIME_ERROR << "Please use total number for quantum number and use quantum numbers methods for partition of atom_diag";
 
-    if (sp.quantum_numbers.empty()) {
-      // As a default use total particle number as quantum number
-      many_body_operator Ntot{};
-      for (auto [bl, idx_lst] : constr_params.gf_struct)
-        for (auto i : idx_lst) Ntot += n(bl, i);
-      //ad_imp = {sp.h_imp, fops, {Ntot}};
-      ad_imp = {sp.h_imp, sp.hyb_effective, fops};
-      
-    } else {
-      ad_imp = {sp.h_imp, fops, sp.quantum_numbers};
+    if(sp.hyb_effective.is_zero()) {
+      if (sp.quantum_numbers.empty()) {
+        // As a default use total particle number as quantum number
+        many_body_operator Ntot{};
+        for (auto [bl, idx_lst] : constr_params.gf_struct)
+          for (auto i : idx_lst) Ntot += n(bl, i);
+        ad_imp = {sp.h_imp, fops, {Ntot}};
+      } else {
+        ad_imp = {sp.h_imp, fops, sp.quantum_numbers}; // FIXME: I would remove this option, it is now obsolete in my opinion (Maxime Charlebois)
+      }
+    }
+    else{
+      ad_imp = {sp.h_imp, sp.hyb_effective, fops};  // should always be the prefered method. 
     }
   }
 
