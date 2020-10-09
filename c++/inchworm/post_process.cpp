@@ -22,6 +22,7 @@
 #include "post_process.hpp"
 
 #include <triqs/gfs.hpp>
+#include <triqs/mesh.hpp>
 
 namespace inchworm {
 

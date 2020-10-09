@@ -1,6 +1,7 @@
 #pragma once
 
 #include <triqs/gfs.hpp>
+#include <triqs/mesh.hpp>
 #include <triqs/operators/many_body_operator.hpp>
 #include <triqs/hilbert_space/fundamental_operator_set.hpp>
 #include <triqs/utility/macros.hpp>
@@ -18,6 +19,7 @@ namespace inchworm {
 
   using namespace std::complex_literals; // Complex Unity 1i
   using namespace triqs::gfs;
+  using namespace triqs::mesh;
   using namespace triqs::arrays;
   using namespace triqs::operators;
   using namespace triqs::hilbert_space;
