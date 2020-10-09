@@ -66,9 +66,9 @@ namespace inchworm {
 
   void print_matrix(triqs::arrays::matrix<double> m, double factor) {
 
-    for (int i = 0; i < first_dim(m); i++) {
+    for (int i = 0; i < m.shape()[0]; i++) {
       std::printf("\n [");
-      for (int j = 0; j < second_dim(m); j++) {
+      for (int j = 0; j < m.shape()[1]; j++) {
         if (std::abs(m(i, j)) == 0.0)
           std::printf("  .        ");
         else

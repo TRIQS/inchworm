@@ -7,6 +7,7 @@
 
 //#include <inchworm/solver_core.hpp>
 #include <triqs/gfs.hpp>
+#include <triqs/mesh.hpp>
 #include <triqs/hilbert_space/fundamental_operator_set.hpp>
 #include <triqs/atom_diag/atom_diag.hpp>
 #include <triqs/utility/macros.hpp>
