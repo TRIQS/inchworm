@@ -162,7 +162,7 @@ namespace inchworm {
       for (auto Bl : frame) print_matrix(Bl);
 
     if (verbosity > 3) {
-      int max_order = std::max(samples_expansion_order.size(), 15ul);
+      int max_order = std::min(samples_expansion_order.size(), 15ul);
 
       std::printf("\n\norder breakdown: \n");
       for (auto k : range(max_order)) std::printf("%10d ", samples_expansion_order[k]);
