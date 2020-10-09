@@ -87,7 +87,6 @@ namespace inchworm {
     } else {
       ad_imp = {sp.h_imp, fops, sp.quantum_numbers};
     }
-
   }
 
   //------------------------------
@@ -319,11 +318,14 @@ namespace inchworm {
       mc.add_measure(measures::g_frame{params, qmc_config_data, results}, "green function measurement");
 
     // Perform QMC run and collect results
-    mc.warmup_and_accumulate(params.n_warmup_cycles, params.n_cycles, params.length_cycle, triqs::utility::clock_callback(params.max_time));
+    int status =
+       mc.warmup_and_accumulate(params.n_warmup_cycles, params.n_cycles, params.length_cycle, triqs::utility::clock_callback(params.max_time));
     mc.collect_results(world);
 
     // Post Processing
     //if (params.post_process) { post_process(params); }
+
+    if (status == 2) TRIQS_RUNTIME_ERROR << "Inchworm was stopped by signal";
 
     return results;
   }
