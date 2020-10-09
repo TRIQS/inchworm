@@ -46,7 +46,7 @@ namespace inchworm {
     int N = 0;
     for (int s = 0; s < ad.n_subspaces(); s++) {
       auto sp     = ad.get_eigensystems()[s];
-      auto E_Udag = dagger(sp.unitary_matrix);
+      auto E_Udag = matrix_t{dagger(sp.unitary_matrix)};
       for (int i = 0; i < sp.eigenvalues.size(); i++) {
         for (int j = 0; j < sp.eigenvalues.size(); j++) E_Udag(i, j) *= sp.eigenvalues[i] + ad.get_gs_energy();
       }
@@ -225,7 +225,7 @@ namespace inchworm {
     for (int s = 0; s < ad_tot.n_subspaces(); s++) {
       EXPECTS(es_full[s].eigenvalues.size() == fs_full[s].size());
       int size      = ad_tot.get_subspace_dim(s);
-      auto e_E_Udag = dagger(es_full[s].unitary_matrix);
+      auto e_E_Udag = matrix_t{dagger(es_full[s].unitary_matrix)};
 
       for (int i = 0; i < size; i++) {
         //std::printf("-----> %lu   % 4.8f\n ", fs_full[s][i],  fct(es_full[s].eigenvalues[i] + ad_tot.get_gs_energy()));
