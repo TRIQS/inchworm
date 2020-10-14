@@ -139,17 +139,16 @@ namespace inchworm {
   }
 
   //------------------------------
-  /* FIXME: not sure how to implement this yet.
-  many_body_operator create_effective_hyb(gf_struct_t const &gf_struct, fundamental_operator_set const & fops){
+
+  many_body_operator create_effective_hyb(gf_struct_t const &gf_struct){
     many_body_operator hyb_effective;
-    for (auto const &bl : gf_struct) {
-      std::printf("\n");
-      for (auto const &a : bl.second) {
-        std::printf("fops = %d \n",fops[{bl.first, a}]);
+    for (auto const &[bl, idx_lst] : gf_struct) {
+      for (auto const &[a, b] : product(idx_lst, idx_lst)) {
+	hyb_effective += c_dag(bl, a) * c(bl, b);
       }
     }
     return hyb_effective;
-  }*/
+  }
 
   std::pair<int, int> find_index(int number, std::vector<std::vector<fock_state_t>> fs) {
     for (int s = 0; s < fs.size(); s++) {

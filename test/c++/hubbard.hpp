@@ -113,33 +113,10 @@ inline std::tuple<solver_core, solve_params_t, u_tau_t, g_tau_t> test_setup(int 
     }
   }
 
-
-  // === Set up the Solver
-
-  solver_core S(cp);
-  many_body_operator hyb_effective;
-  
-  // create hybridization:
-  for (auto const &tau : S.Delta_tau[0].mesh()) {
-    for (int block = 0; block < cp.gf_struct.size(); block++) {
-      S.Delta_tau[block][tau] = 0.0;
-      for (auto [i, j, n] : product_range(n_site, n_site, n_bath)) {
-        S.Delta_tau[block][tau](i, j) += theta(i, n) * dagger(theta)(n, j) * one_fermion(tau, eps(n), cp.beta);
-        
-        if(tau==0){
-          hyb_effective += 1. * c_dag("up", i) * c("up", j) ;
-          hyb_effective += 1. * c_dag("dn", i) * c("dn", j) ;
-        }
-      }
-    }
-  }
-
-
   // === Define the 3 different atom_diag objects (ED calculation with Triqs)
 
   auto ad_tot  = triqs::atom_diag::atom_diag<false>(h_imp + h_bath + h_hyb, fops_tot);
-  //auto ad_imp  = triqs::atom_diag::atom_diag<false>(h_imp, fops_imp, qn_imp);
-  auto ad_imp  = triqs::atom_diag::atom_diag<false>(h_imp, hyb_effective, fops_imp);
+  auto ad_imp  = triqs::atom_diag::atom_diag<false>(h_imp, create_effective_hyb(cp.gf_struct), fops_imp);
   auto ad_bath = triqs::atom_diag::atom_diag<false>(h_bath, fops_bath);
 
   // Calculate exact propagator
@@ -148,16 +125,27 @@ inline std::tuple<solver_core, solve_params_t, u_tau_t, g_tau_t> test_setup(int 
   // Calculate exact Green function
   g_tau_t g_tau = real(atomic_g_tau(ad_tot, cp.beta, cp.gf_struct, cp.n_tau_green));
 
+
+  // === Set up the Solver
+
+  solver_core S(cp);
+
   // Solve Parameters
   solve_params_t sp;
   sp.h_imp           = h_imp;
   sp.n_cycles        = 100000;
   sp.length_cycle    = 10;
   sp.n_warmup_cycles = 20;
-  sp.hyb_effective   = hyb_effective;
-  //sp.hyb_effective   = create_effective_hyb(cp.gf_struct, fops_imp);
-  sp.verbosity       = 10;
 
+  // create hybridization:
+  for (auto const &tau : S.Delta_tau[0].mesh()) {
+    for (int block = 0; block < cp.gf_struct.size(); block++) {
+      S.Delta_tau[block][tau] = 0.0;
+      for (auto [i, j, n] : product_range(n_site, n_site, n_bath)) {
+        S.Delta_tau[block][tau](i, j) += theta(i, n) * dagger(theta)(n, j) * one_fermion(tau, eps(n), cp.beta);
+      }
+    }
+  }
 
   return {S, sp, u_tau, g_tau};
 }

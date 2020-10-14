@@ -51,8 +51,10 @@ namespace inchworm {
   void print(u_partial_t u_partial);
 
   //------------------------------
-  // FIXME:
-  // many_body_operator create_effective_hyb(gf_struct_t const &gf_struct, fundamental_operator_set const & fops); 
+
+  // Create operator containing all possible transitions due to hybridization
+  // FIXME: Check actual numerical values of Delta instead??
+  many_body_operator create_effective_hyb(gf_struct_t const &gf_struct);
   
   // necessary to fill the propagator at each step of the inchworm:
   template<typename T>
