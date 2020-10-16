@@ -50,7 +50,7 @@ namespace inchworm::moves {
     gf_struct_t const &gf_struct;
 
     /// green function container to accumulate into
-    g_frame_t proposed_g_frame;
+    frame_t proposed_g_frame;
 
     int proposed_sign;
   };

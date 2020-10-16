@@ -15,6 +15,8 @@
 
 namespace inchworm {
 
+  /// =============== TODO: Move into testing functionality =================
+
   void print_binary(unsigned int n, int total_bits);
 
   /// Return the most significant bit (MSB: the leftmost numbers in a binary representation) via an integer.
@@ -39,6 +41,8 @@ namespace inchworm {
 
   // Trace over all degrees of freedom of atom_diag.
   scalar_t trace(atom_diag const &ad_tot, std::function<double(double)> fct);
+  
+  /// =============== End: Move into testing functionality =================
 
   // printing:
   void print_energies(std::vector<std::vector<double>> const &E);
@@ -58,6 +62,13 @@ namespace inchworm {
   many_body_operator create_effective_hyb(gf_struct_t const &gf_struct);
   
   // necessary to fill the propagator at each step of the inchworm:
+  // TODO Should be as easy as
+  // Assign: map([mp](auto && gf){ return gf[mp]; })(u_tau) = factor * u_frame;
+  //         or with helper 
+  //         map(at_idx(mp), array<gf>) = array<matrix>
+  // Similarly for 
+  // Eval:   map(eval_at(tau), array<gf>) -> array<matrix>
+
   template<typename T>
   void assign_frame_to_propagator(block_gf<imtime, T> &u_tau, frame_t const &u_frame, int frame_number, scalar_t factor = 1.0) {
     for (int bl = 0; bl < u_tau.size(); bl++) u_tau[bl][frame_number] = factor * u_frame[bl];
