@@ -1,7 +1,23 @@
 #include "./u_frame.hpp"
 
 namespace inchworm {
-  // Create an empty frame (block diagonal matrix: vector of matrix_t)
+
+  frame_t make_u_frame(u_partial_t const &up) {
+    frame_t res;
+    for (int i = 0; i < up.size(); ++i) {
+      auto &[bl, mat] = up[i];
+      EXPECTS(i == bl || bl == -1);
+      res.emplace_back(mat);
+    }
+    return res;
+  }
+
+  u_partial_t make_u_partial(frame_t const &u) {
+    u_partial_t res;
+    for (int i = 0; i < u.size(); ++i) { res.emplace_back(i, u[i]); }
+    return res;
+  }
+
   frame_t make_zero_propagator_frame(atom_diag const &ad) {
     frame_t u_frame(ad.n_subspaces());
 
@@ -12,7 +28,6 @@ namespace inchworm {
     return u_frame;
   }
 
-  // initialize bare propagator frame U_0 = exp(-tau H_loc) in the diagonal basis of H_loc
   frame_t make_bare_propagator_frame(atom_diag const &ad, double tau, bool set_gs_to_0) {
     frame_t u_frame(ad.n_subspaces());
 
@@ -35,22 +50,6 @@ namespace inchworm {
     }
 
     return make_g_frame_from_l_and_r(ad_imp, map_lin_idx_to_block_inner, gf_struct, l, r);
-  }
-
-  u_partial_t make_u_partial(frame_t const &u) {
-    u_partial_t res;
-    for (int i = 0; i < u.size(); ++i) { res.emplace_back(i, u[i]); }
-    return res;
-  }
-
-  frame_t make_u_frame(u_partial_t const &up) {
-    frame_t res;
-    for (int i = 0; i < up.size(); ++i) {
-      auto &[bl, mat] = up[i];
-      EXPECTS(i == bl || bl == -1);
-      res.emplace_back(mat);
-    }
-    return res;
   }
 
   frame_t make_frame(std::vector<long> const &shape_of_frame) {
@@ -96,10 +95,8 @@ namespace inchworm {
     return res;
   }
 
-  //std::vector<std::pair<int /*op.linear_index*/, matrix_t /*c_matrix or cdag_matrix*/>> c_lst;
-  //c_lst[bl][lidx]
-
   u_partial_t apply_op_from_right(u_partial_t const &l, int lin_index, bool op_dag, atom_diag const &ad) {
+
     auto res = u_partial_t{};
     for (int i = 0; i < l.size(); ++i) {
       // u[bl] = up[bl, blp] * d_dag
@@ -124,8 +121,7 @@ namespace inchworm {
 
   } // namespace inchworm
 
-  // Calculate the Frobenius norm of the g_frame block diagonal matrix:
-  double frobenius_norm(g_frame_t const &g_frame) {
+  double frobenius_norm(frame_t const &g_frame) {
     double val = 0;
     for (auto const &mat : g_frame) {
       double norm = frobenius_norm(mat);
@@ -137,7 +133,6 @@ namespace inchworm {
     //return val;
   }
 
-  // Calculate the Frobenius norm of the u_partial block diagonal matrix:
   double frobenius_norm(u_partial_t const &u_partial) {
     double val = 0;
     for (auto const &[bl, mat] : u_partial) {

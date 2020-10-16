@@ -45,9 +45,11 @@ namespace inchworm::diagram {
     //
     struct op_t {
       double tau       = 0.;    // time
+      int order_index  = 0;     // index of the order in time in the list of all d, d_dag
+
+      // Replace by the atomdiag::op_t
       bool dag         = false; // true if d_dag, false if d
       int linear_index = 0;     // index as defined in fundamental operators set
-      int order_index  = 0;     // index of the order in time in the list of all d, d_dag
     };
 
     public:

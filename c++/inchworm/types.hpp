@@ -41,6 +41,10 @@ namespace inchworm {
 #endif
   using matrix_t = matrix<scalar_t>;
 
+  /// The frame of a Green function or Propagator
+  using frame_t = std::vector<matrix_t>;
+  using u_partial_t = std::vector<std::pair<int, matrix_t>>;
+
   /// The structure of the gf : block_idx -> pair of block_name and index list (int/string)
   using triqs::hilbert_space::gf_struct_t;
 
