@@ -41,7 +41,13 @@ namespace inchworm::measures {
     results.frame                   = mpi::all_reduce(results.frame, comm);
     results.measure_count           = mpi::all_reduce(results.measure_count, comm);
     results.average_k               = mpi::all_reduce(results.average_k, comm) / results.measure_count;
+
+    auto max_size = mpi::all_reduce(results.expansion_order.size(), comm, MPI_MAX);
+    results.expansion_order.resize(max_size, 0);
     results.expansion_order         = mpi::all_reduce(results.expansion_order, comm);
+
+    max_size = mpi::all_reduce(results.samples_expansion_order.size(), comm, MPI_MAX);
+    results.samples_expansion_order.resize(max_size, 0.0);
     results.samples_expansion_order = mpi::all_reduce(results.samples_expansion_order, comm);
   }
 
