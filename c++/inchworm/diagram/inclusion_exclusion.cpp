@@ -212,7 +212,7 @@ namespace inchworm::diagram {
     seg.value += hyb_mat.extract_det(range_of_vertex);
     if (verbose > 2) std::printf("\nsegment[%d]= % 4.8f\n\n", segment_numero, hyb_mat.extract_det(range_of_vertex));
 
-    for (auto set : set_disjoint_list) {
+    for (auto const & set : set_disjoint_list) {
       if ((not special) and not((seg.pos1 <= set.pos1) and (seg.pos2 > set.pos2))) continue;
 
       if (special
@@ -257,7 +257,7 @@ namespace inchworm::diagram {
 
     seg.value_without_cuts = seg.value;
 
-    for (auto cuts : set_adjacent_list) {
+    for (auto const & cuts : set_adjacent_list) {
       // Make sure that adjecent subset covers exactly the segment
       if (seg.pos1 == cuts.pos1)
         if (seg.pos2 == cuts.pos2) {
