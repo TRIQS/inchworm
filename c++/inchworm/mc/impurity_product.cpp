@@ -13,9 +13,7 @@ namespace inchworm {
     triqs::hilbert_space::gf_struct_t propagator_struct;
 
     for (int i = 0; i < n_sub; i++) {
-      std::vector<std::variant<int, std::string>> l(ad_imp.get_subspace_dim(i));
-      std::iota(l.begin(), l.end(), 0);
-      propagator_struct.push_back(std::make_pair(std::to_string(i), l));
+      propagator_struct.push_back({std::to_string(i), ad_imp.get_subspace_dim(i)});
     }
 
     auto u_tau = u_tau_t{{beta, Fermion, n_tau}, propagator_struct};

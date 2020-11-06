@@ -26,7 +26,7 @@ TEST(inchworm, Hubbard_1site_spinless) { // NOLINT
 
   constr_params_t cp;
   cp.beta        = 1.0;
-  cp.gf_struct   = {{"up", {0}}};
+  cp.gf_struct   = {{"up", 1}};
   cp.n_tau_green = 5;
   cp.n_tau_inch  = 21;
   cp.n_tau       = 10001;

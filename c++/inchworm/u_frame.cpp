@@ -66,9 +66,10 @@ namespace inchworm {
   frame_t make_frame(gf_struct_t const &gf_struct) {
     auto res = frame_t{};
 
-    for (auto const &[bl, idxlst] : gf_struct) {
-      res.emplace_back(idxlst.size(), idxlst.size());
-      res.back() = 0.;
+    for (auto bl : range(gf_struct.size())) {
+      auto &[blname, blsize] = gf_struct[bl];
+      res[bl] = matrix_t{blsize, blsize};
+      res[bl] = 0.;
     }
     return res;
   }

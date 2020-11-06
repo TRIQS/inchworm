@@ -142,9 +142,9 @@ namespace inchworm {
 
   many_body_operator create_effective_hyb(gf_struct_t const &gf_struct){
     many_body_operator hyb_effective;
-    for (auto const &[bl, idx_lst] : gf_struct) {
-      for (auto const &[a, b] : product(idx_lst, idx_lst)) {
-	hyb_effective += c_dag(bl, a) * c(bl, b);
+    for (auto const &[blname, blsize] : gf_struct) {
+      for (auto [a, b] : product_range(blsize, blsize)) {
+	hyb_effective += c_dag(blname, a) * c(blname, b);
       }
     }
     return hyb_effective;

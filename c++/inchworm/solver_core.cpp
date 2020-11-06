@@ -27,20 +27,18 @@ namespace inchworm {
 
     // Determine basis of operators to use
     int n_fops = 0;
-    for (auto const &bl : cp.gf_struct) {
-      for (auto const &a : bl.second) {
-        fops.insert(bl.first, a);
+    for (auto const &[blname, blsize] : cp.gf_struct) {
+      for (auto const &a : range(blsize)) {
+        fops.insert(blname, a);
         n_fops++;
       }
     }
 
     // Setup the linear index map (link Green function structure to fundamental operator set):
     int block_index = 0;
-    for (auto const &bl : cp.gf_struct) {
-      int inner_index = 0;
-      for (auto const &a : bl.second) {
-        map_lin_idx_to_block_inner[fops[{bl.first, a}]] = std::make_pair(block_index, inner_index);
-        inner_index++;
+    for (auto const &[blname, blsize] : cp.gf_struct) {
+      for (int idx : range(blsize)) {
+        map_lin_idx_to_block_inner[fops[{blname, idx}]] = std::make_pair(block_index, idx);
       }
       block_index++;
     }
@@ -299,7 +297,7 @@ namespace inchworm {
     if (mode == 0) {
       for (int bl = 0; bl < ad_imp.n_subspaces(); bl++) { shape_of_frame.push_back(ad_imp.get_subspace_dim(bl)); }
     } else {
-      for (auto const &[bl, idxlst] : params.gf_struct) { shape_of_frame.push_back(idxlst.size()); }
+      for (auto const &[blname, blsize] : params.gf_struct) { shape_of_frame.push_back(blsize); }
     }
 
     // Initialize result container

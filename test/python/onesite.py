@@ -47,7 +47,7 @@ class test_hubbard(unittest.TestCase):
     # # Construct Parameters
     cp = {}
     cp["beta"]        = 1.0
-    cp["gf_struct"]   = [("up", [0]), ("dn", [0])]
+    cp["gf_struct"]   = [("up", 1), ("dn", 1)]
     cp["n_tau_green"] = 5
     cp["n_tau_inch"]  = 21
     cp["n_tau"]       = 10001
