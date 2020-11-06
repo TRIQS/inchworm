@@ -9,6 +9,8 @@
 #include <triqs/atom_diag/atom_diag.hpp>
 #include <triqs/utility/time_pt.hpp>
 
+#include <nda/nda.hpp>
+
 #include <mpi/mpi.hpp>
 
 #include <iostream>
@@ -42,7 +44,7 @@ namespace inchworm {
   using matrix_t = matrix<scalar_t>;
 
   /// The frame of a Green function or Propagator
-  using frame_t = std::vector<matrix_t>;
+  using frame_t = nda::array<matrix_t, 1>;
   using u_partial_t = std::vector<std::pair<int, matrix_t>>;
 
   /// The structure of the gf : block_idx -> pair of block_name and index list (int/string)

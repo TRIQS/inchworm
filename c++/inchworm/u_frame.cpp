@@ -3,11 +3,11 @@
 namespace inchworm {
 
   frame_t make_u_frame(u_partial_t const &up) {
-    frame_t res;
-    for (int i = 0; i < up.size(); ++i) {
-      auto &[bl, mat] = up[i];
-      EXPECTS(i == bl || bl == -1);
-      res.emplace_back(mat);
+    frame_t res{up.size()};
+    for (auto bl : range(up.size())) {
+      auto &[tbl, mat] = up[bl];
+      EXPECTS(bl == tbl || tbl == -1);
+      res[bl] = mat;
     }
     return res;
   }
@@ -53,18 +53,18 @@ namespace inchworm {
   }
 
   frame_t make_frame(std::vector<long> const &shape_of_frame) {
-    auto res = frame_t{};
+    auto res = frame_t{shape_of_frame.size()};
 
-    for (auto n : shape_of_frame) {
-      res.emplace_back(matrix_t(n, n));
-      res.back() = 0.;
+    for (auto [bl, n] : enumerate(shape_of_frame)) {
+      res[bl] = matrix_t{n, n};
+      res[bl] = 0.;
     }
     return res;
   }
 
   // Create an empty frame (block diagonal matrix: vector of matrix_t)
   frame_t make_frame(gf_struct_t const &gf_struct) {
-    auto res = frame_t{};
+    auto res = frame_t{gf_struct.size()};
 
     for (auto bl : range(gf_struct.size())) {
       auto &[blname, blsize] = gf_struct[bl];
@@ -165,10 +165,10 @@ namespace inchworm {
     return norm_l_minus_r / std::max(norm_l, norm_r);
   }
 
-  frame_t get_frame(u_tau_t const & u_tau, int idx){
-    frame_t res;
-    for(auto ubl: u_tau)
-      res.push_back(ubl[idx]);
+  frame_t get_frame(u_tau_t const &u_tau, int idx) {
+    frame_t res{u_tau.size()};
+    for (auto bl: range(u_tau.size()))
+      res[bl] = u_tau[bl][idx];
     return res;
   }
 
