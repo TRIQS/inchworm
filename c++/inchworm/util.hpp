@@ -24,7 +24,7 @@ namespace inchworm {
 
   /// Return the least significant bit (LSB: the rigthmost numbers in a binary representation) via an integer.
   uint64_t get_LSB(uint64_t a, int shift);
- 
+
   // function that calls partial_trace_bath. FIXME Could be merge at some point, probably no need to have two seperates functions.
   //u_tau_t make_ED_propagator(atom_diag const &ad_tot, atom_diag const &ad_atom, atom_diag const &ad_bath, double beta, int n_tau);
 
@@ -41,7 +41,7 @@ namespace inchworm {
 
   // Trace over all degrees of freedom of atom_diag.
   scalar_t trace(atom_diag const &ad_tot, std::function<double(double)> fct);
-  
+
   /// =============== End: Move into testing functionality =================
 
   // printing:
@@ -60,20 +60,18 @@ namespace inchworm {
   // Create operator containing all possible transitions due to hybridization
   // FIXME: Check actual numerical values of Delta instead??
   many_body_operator create_effective_hyb(gf_struct_t const &gf_struct);
-  
+
   // necessary to fill the propagator at each step of the inchworm:
   // TODO Should be as easy as
   // Assign: map([mp](auto && gf){ return gf[mp]; })(u_tau) = factor * u_frame;
-  //         or with helper 
+  //         or with helper
   //         map(at_idx(mp), array<gf>) = array<matrix>
-  // Similarly for 
+  // Similarly for
   // Eval:   map(eval_at(tau), array<gf>) -> array<matrix>
 
-  template<typename T>
-  void assign_frame_to_propagator(block_gf<imtime, T> &u_tau, frame_t const &u_frame, int frame_number, scalar_t factor = 1.0) {
+  template <typename T> void assign_frame_to_propagator(block_gf<imtime, T> &u_tau, frame_t const &u_frame, int frame_number, scalar_t factor = 1.0) {
     for (int bl = 0; bl < u_tau.size(); bl++) u_tau[bl][frame_number] = factor * u_frame[bl];
     return;
   }
-
 
 } // namespace inchworm

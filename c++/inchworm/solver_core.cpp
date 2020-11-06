@@ -16,8 +16,6 @@
 
 namespace inchworm {
 
-
-
   //------------------------------
   // Constructor:
   solver_core::solver_core(constr_params_t const &cp) : constr_params(cp) {
@@ -37,9 +35,7 @@ namespace inchworm {
     // Setup the linear index map (link Green function structure to fundamental operator set):
     int block_index = 0;
     for (auto const &[blname, blsize] : cp.gf_struct) {
-      for (int idx : range(blsize)) {
-        map_lin_idx_to_block_inner[fops[{blname, idx}]] = std::make_pair(block_index, idx);
-      }
+      for (int idx : range(blsize)) { map_lin_idx_to_block_inner[fops[{blname, idx}]] = std::make_pair(block_index, idx); }
       block_index++;
     }
   }
@@ -80,8 +76,7 @@ namespace inchworm {
 
     if (sp.quantum_numbers.empty()) {
       ad_imp = {sp.h_imp, create_effective_hyb(constr_params.gf_struct), fops}; // Change order of arguments?
-    }
-    else{
+    } else {
       ad_imp = {sp.h_imp, fops, sp.quantum_numbers};
     }
   }

@@ -68,14 +68,13 @@ inline std::tuple<solver_core, solve_params_t, u_tau_t, g_tau_t> test_setup(int 
   // === Define fundamental operator sets
 
   // Full system
-  auto [fops_tot, qn_tot]   = make_fops(n_site, n_bath, n_site, n_spin);
+  auto [fops_tot, qn_tot] = make_fops(n_site, n_bath, n_site, n_spin);
 
   // Impurity
-  auto [fops_imp, qn_imp]   = make_fops(n_site, 0, n_site, n_spin);
+  auto [fops_imp, qn_imp] = make_fops(n_site, 0, n_site, n_spin);
 
   // Bath
   auto [fops_bath, qn_bath] = make_fops(0, n_bath, n_site, n_spin);
-
 
   // === Initialize Hamiltonians
 
@@ -125,7 +124,6 @@ inline std::tuple<solver_core, solve_params_t, u_tau_t, g_tau_t> test_setup(int 
 
   // Calculate exact Green function
   g_tau_t g_tau = real(atomic_g_tau(ad_tot, cp.beta, cp.gf_struct, cp.n_tau_green));
-
 
   // === Set up the Solver
 

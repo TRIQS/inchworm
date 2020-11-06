@@ -84,7 +84,7 @@ namespace inchworm::diagram {
   }
 
   set_of_segments_t::set_of_segments_t(segment_t const &seg0, time_diagram_t const &diagram)
-     : pos1{seg0.pos1}, pos2{seg0.pos2}, size{seg0.size} {//, diagram = {diagram0} {
+     : pos1{seg0.pos1}, pos2{seg0.pos2}, size{seg0.size} { //, diagram = {diagram0} {
     list.reserve(
        diagram.perturbation_order()
        / (smallest_segment
@@ -94,7 +94,7 @@ namespace inchworm::diagram {
 
   // Function to add a segment to the present set of segments:
   void set_of_segments_t::append(segment_t const &seg1, time_diagram_t const &diagram) {
-  //void set_of_segments_t::append(segment_t const &seg1) {
+    //void set_of_segments_t::append(segment_t const &seg1) {
     if (seg1.pos1 != pos2)
       adjacent = false;
     else if (std::any_of(begin(diagram.split_points), end(diagram.split_points), [j = pos2](int i) { return i == j; }))
@@ -212,7 +212,7 @@ namespace inchworm::diagram {
     seg.value += hyb_mat.extract_det(range_of_vertex);
     if (verbose > 2) std::printf("\nsegment[%d]= % 4.8f\n\n", segment_numero, hyb_mat.extract_det(range_of_vertex));
 
-    for (auto const & set : set_disjoint_list) {
+    for (auto const &set : set_disjoint_list) {
       if ((not special) and not((seg.pos1 <= set.pos1) and (seg.pos2 > set.pos2))) continue;
 
       if (special
@@ -257,7 +257,7 @@ namespace inchworm::diagram {
 
     seg.value_without_cuts = seg.value;
 
-    for (auto const & cuts : set_adjacent_list) {
+    for (auto const &cuts : set_adjacent_list) {
       // Make sure that adjecent subset covers exactly the segment
       if (seg.pos1 == cuts.pos1)
         if (seg.pos2 == cuts.pos2) {

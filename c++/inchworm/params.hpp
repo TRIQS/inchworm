@@ -75,7 +75,7 @@ namespace inchworm {
     /// Impurity Hamiltonian
     many_body_operator h_imp;
 
-    /// Effective hybridization 
+    /// Effective hybridization
     many_body_operator hyb_effective;
 
     /// Partition method

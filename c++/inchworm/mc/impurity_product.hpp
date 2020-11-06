@@ -40,14 +40,15 @@ namespace inchworm {
    * @param u_tau_p pointer to the full propagator (u_tau) calculated up until this point (0 < tau < tau_split). 
    * @return frame_t, at time tau_max, resulting from this product.
    */
-  u_partial_t impurity_product(atom_diag const &ad, time_diagram_t const &diagram, double tau_min, double tau_max, u_tau_t const *const u_tau_p = nullptr);
+  u_partial_t impurity_product(atom_diag const &ad, time_diagram_t const &diagram, double tau_min, double tau_max,
+                               u_tau_t const *const u_tau_p = nullptr);
 
   // structure to gather result of one Monte Carlo run:
   struct single_step_results_t {
     frame_t frame;
     frame_t frame_0th_order;
     long measure_count = 0;
-    double average_k = 0.0;
+    double average_k   = 0.0;
     std::vector<double> expansion_order;
     std::vector<int> samples_expansion_order;
     single_step_results_t(std::vector<long> shape_of_frame) : expansion_order(10, 0), samples_expansion_order(10, 0) {

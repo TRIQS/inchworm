@@ -14,7 +14,7 @@ namespace inchworm {
 
   u_partial_t make_u_partial(frame_t const &u) {
     u_partial_t res;
-    for (int i = 0; i < u.size(); ++i) { res.emplace_back(i, u[i]); }
+    for (int bl = 0; bl < u.size(); ++bl) { res.emplace_back(bl, u[bl]); }
     return res;
   }
 
@@ -68,8 +68,8 @@ namespace inchworm {
 
     for (auto bl : range(gf_struct.size())) {
       auto &[blname, blsize] = gf_struct[bl];
-      res[bl] = matrix_t{blsize, blsize};
-      res[bl] = 0.;
+      res[bl]                = matrix_t{blsize, blsize};
+      res[bl]                = 0.;
     }
     return res;
   }
@@ -167,15 +167,13 @@ namespace inchworm {
 
   frame_t get_frame(u_tau_t const &u_tau, int idx) {
     frame_t res{u_tau.size()};
-    for (auto bl: range(u_tau.size()))
-      res[bl] = u_tau[bl][idx];
+    for (auto bl : range(u_tau.size())) res[bl] = u_tau[bl][idx];
     return res;
   }
 
   double relative_distance(u_tau_t const &l, u_tau_t const &r) {
     double dist = 0.0;
-    for(int i = 0; i < l[0].mesh().size(); ++i)
-      dist = std::max(dist, relative_distance(get_frame(l,i), get_frame(r,i))); 
+    for (int i = 0; i < l[0].mesh().size(); ++i) dist = std::max(dist, relative_distance(get_frame(l, i), get_frame(r, i)));
     return dist;
   }
 

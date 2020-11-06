@@ -35,11 +35,11 @@ namespace inchworm::diagram {
   //constexpr int verbose = 0;
 
   // optimization:
-  constexpr int smallest_segment   = 4;     // must be 2 or 4, beware.
-  constexpr bool remove_xoxo       = true;  // new optimisation 1: IMPORTANT, only works with the option smallest_segment = 4;
+  constexpr int smallest_segment   = 4;    // must be 2 or 4, beware.
+  constexpr bool remove_xoxo       = true; // new optimisation 1: IMPORTANT, only works with the option smallest_segment = 4;
   constexpr bool remove_not_finite = true; // new optimisation 2: do not calculate determinant of
-                                            // the remainder when one segment is equal to zero (double == 0.0).
-                                            // But it might be not as straightforward when doing this comparison for complex values.
+                                           // the remainder when one segment is equal to zero (double == 0.0).
+                                           // But it might be not as straightforward when doing this comparison for complex values.
 
   // check if an arch cross a point,
   //

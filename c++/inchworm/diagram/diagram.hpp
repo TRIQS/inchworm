@@ -44,8 +44,8 @@ namespace inchworm::diagram {
     //basic information for an operator
     //
     struct op_t {
-      double tau       = 0.;    // time
-      int order_index  = 0;     // index of the order in time in the list of all d, d_dag
+      double tau      = 0.; // time
+      int order_index = 0;  // index of the order in time in the list of all d, d_dag
 
       // Replace by the atomdiag::op_t
       bool dag         = false; // true if d_dag, false if d
@@ -53,23 +53,24 @@ namespace inchworm::diagram {
     };
 
     public:
-    std::vector<op_t> op_list;                       // list of all operator time ordered
-    std::vector<int> split_points;                   // position of split points (index of first operator to the right of split time)
+    std::vector<op_t> op_list;                        // list of all operator time ordered
+    std::vector<int> split_points;                    // position of split points (index of first operator to the right of split time)
     std::vector<time_and_index_t> d_list, d_dag_list; // list of d/d_dag time ordered
-    std::vector<int> pos_d;                          // position of d in the op_list
+    std::vector<int> pos_d;                           // position of d in the op_list
     std::vector<int> pos_d_dag;                       // idem
     bool is_trivial = true; // a diagram is considered trivial if no split_times are found between the minimum and maximum tau.
 
-    int perturbation_order() const; 
+    int perturbation_order() const;
     int size() const;
     double max_tau() const;
     double min_tau() const;
 
-    // Simple function to find the sign of the diagram. 
+    // Simple function to find the sign of the diagram.
     // Note: this result is the opposite same if we use pos_d_dag
     int sign() const;
 
     // Constructor
-    time_diagram_t(std::vector<time_and_index_t> const &d, std::vector<time_and_index_t> const &d_dag, std::vector<double> const &split_times, int verbose=0);
+    time_diagram_t(std::vector<time_and_index_t> const &d, std::vector<time_and_index_t> const &d_dag, std::vector<double> const &split_times,
+                   int verbose = 0);
   };
 } // namespace inchworm::diagram

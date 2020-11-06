@@ -140,12 +140,10 @@ namespace inchworm {
 
   //------------------------------
 
-  many_body_operator create_effective_hyb(gf_struct_t const &gf_struct){
+  many_body_operator create_effective_hyb(gf_struct_t const &gf_struct) {
     many_body_operator hyb_effective;
     for (auto const &[blname, blsize] : gf_struct) {
-      for (auto [a, b] : product_range(blsize, blsize)) {
-	hyb_effective += c_dag(blname, a) * c(blname, b);
-      }
+      for (auto [a, b] : product_range(blsize, blsize)) { hyb_effective += c_dag(blname, a) * c(blname, b); }
     }
     return hyb_effective;
   }
@@ -193,11 +191,11 @@ namespace inchworm {
     //std::printf("li=%d\n",linear_index);
 
     frame_t u_frame_result = make_zero_propagator_frame(ad_imp);
-    auto es_full             = ad_tot.get_eigensystems();
-    auto fs_full             = ad_tot.get_fock_states();
-    auto fs_loc              = ad_imp.get_fock_states();
-    auto es_bath             = ad_bath.get_eigensystems();
-    auto fs_bath             = ad_bath.get_fock_states();
+    auto es_full           = ad_tot.get_eigensystems();
+    auto fs_full           = ad_tot.get_fock_states();
+    auto fs_loc            = ad_imp.get_fock_states();
+    auto es_bath           = ad_bath.get_eigensystems();
+    auto fs_bath           = ad_bath.get_fock_states();
 
     // printing:
 

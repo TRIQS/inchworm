@@ -71,7 +71,7 @@ namespace inchworm::diagram {
     // check that no times are equal (might need to change at some point, rare event, but many Monte Carlo sampling...);
     for (int i = 0; i < op_list.size() - 1; i++) EXPECTS(op_list[i].tau != op_list[i + 1].tau);
 
-    if(verbose > 3) std::printf("split points:\n");
+    if (verbose > 3) std::printf("split points:\n");
 
     is_trivial = true; //start by assuming it is trivial and searching for at least one counter example.
     for (auto s_time : split_times) {

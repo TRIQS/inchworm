@@ -44,14 +44,14 @@ namespace inchworm {
   using matrix_t = matrix<scalar_t>;
 
   /// The frame of a Green function or Propagator
-  using frame_t = nda::array<matrix_t, 1>;
+  using frame_t     = nda::array<matrix_t, 1>;
   using u_partial_t = std::vector<std::pair<int, matrix_t>>;
 
   /// The structure of the gf : block_idx -> pair of block_name and index list (int/string)
   using triqs::hilbert_space::gf_struct_t;
 
   /// Container type of the propagator
-  using u_tau_t   = block_gf<imtime, hyb_target_t>;
+  using u_tau_t = block_gf<imtime, hyb_target_t>;
 
   /// Container type of one-particle Green and Vertex functions in imaginary times
   using h_tau_t = block_gf<imtime, hyb_target_t>;
@@ -79,7 +79,6 @@ namespace inchworm {
 
   using atom_diag = triqs::atom_diag::atom_diag<is_h_scalar_complex>;
 
-  using triqs::hilbert_space::gf_struct_t;
   //using triqs::utility::time_pt;
   //using op_t         = std::pair<time_pt, int>;
   using indices_type = triqs::operators::indices_t;

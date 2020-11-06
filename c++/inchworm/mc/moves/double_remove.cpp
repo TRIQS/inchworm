@@ -60,11 +60,10 @@ namespace inchworm::moves {
 
       proposed_g_frame = make_g_frame_from_l_and_r(params.ad_imp, params.map_lin_idx_to_block_inner, gf_struct, l, r);
 
-      auto const & ops = diagram.op_list;
-      int nop_r = std::count_if(begin(ops), end(ops), [tau_split = params.tau_split](auto const & op){ return tau_split > op.tau; });
-      if(nop_r % 2 == 1){
-	for(auto & bl: proposed_g_frame)
-	  bl *= -1;
+      auto const &ops = diagram.op_list;
+      int nop_r       = std::count_if(begin(ops), end(ops), [tau_split = params.tau_split](auto const &op) { return tau_split > op.tau; });
+      if (nop_r % 2 == 1) {
+        for (auto &bl : proposed_g_frame) bl *= -1;
       }
 
       proposed_w.loc = frobenius_norm(proposed_g_frame);
@@ -88,7 +87,7 @@ namespace inchworm::moves {
     std::printf("\n\nsign= %d  w_hyb=% 4.7f  w_loc=% 4.7f    old_w_hyb=% 4.7f  old_w_loc=% 4.7f \n", proposed_sign, proposed_w.hyb, proposed_w.loc,
                 data.w.hyb, data.w.loc);
     std::printf("\n\nsign_ratio= %d  w_hyb_ratio=% 4.7f  w_loc_ratio=% 4.7f  t_ratio=% 4.7f\n", sign_ratio, w_hyb_ratio, w_loc_ratio, t_ratio);
-    if (proposed_config.size() > 0){
+    if (proposed_config.size() > 0) {
       std::printf("proper_enum w.hyb         =% 4.7f \n", diagram::proper_enum(diagram, hyb_mat, 10));
       std::printf("inclusion_exclusion w.hyb =% 4.7f \n", diagram::inclusion_exclusion(diagram, hyb_mat, 10));
     }
@@ -102,11 +101,11 @@ namespace inchworm::moves {
 #ifdef INCHWORM_DEBUG_PRINTS
     std::printf("\n\n====== Accept Remove ======\n");
 #endif
-    data.w       = proposed_w;
+    data.w         = proposed_w;
     data.u_partial = proposed_u_partial;
-    data.g_frame = proposed_g_frame;
-    data.config  = proposed_config;
-    data.sign    = proposed_sign;
+    data.g_frame   = proposed_g_frame;
+    data.config    = proposed_config;
+    data.sign      = proposed_sign;
     return 1;
   }
 
