@@ -179,6 +179,7 @@ namespace inchworm {
         std::printf("\n\n##################\ninchworm U(tau_max):\n");
         res.print(solve_params.verbosity);
       }
+      if (solve_params.verbosity > 0) { std::printf("     average_k: %5f\n", res.average_k); }
 
       // Assign u_frame to the propagator u_tau, in order to be able to use it in next iteration
       assign_frame_to_propagator(u_tau, res.frame, n + 1, 1.);
@@ -241,6 +242,7 @@ namespace inchworm {
         std::printf("\n\n##################\ninchworm G(tau_split):\n");
         res.print(solve_params.verbosity);
       }
+      if (solve_params.verbosity > 0) { std::printf("     average_k: %5f\n", res.average_k); }
 
       assign_frame_to_propagator(G_tau, res.frame, n, 1.);
     }
