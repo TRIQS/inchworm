@@ -207,10 +207,7 @@ namespace inchworm {
         u_partial_t ld = apply_op_from_right(l, i, false, ad_imp);
 
         auto prod = make_u_frame(ld * rddag);
-
-        for (int bl0 = 0; bl0 < ad_imp.n_subspaces(); ++bl0) {
-          g_frame[g_bl](in, in_dag) -= trace(prod[bl0]); //FIXME check the order of in and in_dag to be sure.
-        }
+        g_frame[g_bl](in, in_dag) -= trace(prod);
       }
     }
 

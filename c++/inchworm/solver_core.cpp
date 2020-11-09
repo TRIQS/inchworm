@@ -24,13 +24,7 @@ namespace inchworm {
     Delta_tau = h_tau_t{{cp.beta, Fermion, cp.n_tau}, cp.gf_struct};
 
     // Determine basis of operators to use
-    int n_fops = 0;
-    for (auto const &[blname, blsize] : cp.gf_struct) {
-      for (auto const &a : range(blsize)) {
-        fops.insert(blname, a);
-        n_fops++;
-      }
-    }
+    fops = fundamental_operator_set{cp.gf_struct};
 
     // Setup the linear index map (link Green function structure to fundamental operator set):
     int block_index = 0;

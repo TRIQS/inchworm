@@ -75,17 +75,14 @@ namespace inchworm {
     /// Impurity Hamiltonian
     many_body_operator h_imp;
 
-    /// Effective hybridization
-    many_body_operator hyb_effective;
-
     /// Partition method
     /// type: str
-    std::string partition_method = "quantum_numbers";
+    std::string partition_method = "automatic";
 
     /// Quantum numbers
     /// type: list(Operator)
     /// default: [Total Particle Number]
-    std::vector<many_body_op_t> quantum_numbers = std::vector<many_body_op_t>{};
+    std::vector<many_body_op_t> quantum_numbers = {};
 
     // ----------- QMC Specific -----------
 
