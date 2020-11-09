@@ -61,17 +61,13 @@ namespace inchworm {
     // Store solve_params
     last_solve_params = sp;
 
-    // Reset the results
-    container_set::operator=(container_set{});
-
-    // -- Atom Diag Object
-    if (sp.partition_method != "quantum_numbers")
-      TRIQS_RUNTIME_ERROR << "Please use total number for quantum number and use quantum numbers methods for partition of atom_diag";
-
-    if (sp.quantum_numbers.empty()) {
-      ad_imp = {sp.h_imp, create_effective_hyb(constr_params.gf_struct), fops}; // Change order of arguments?
-    } else {
+    if (sp.partition_method == "automatic") {
+      ASSERT(sp.quantum_numbers.empty());
+      ad_imp = {sp.h_imp, create_effective_hyb(constr_params.gf_struct), fops}; // FIXME Change order of arguments?
+    } else if (sp.partition_method == "quantum_numbers") {
       ad_imp = {sp.h_imp, fops, sp.quantum_numbers};
+    } else {
+      TRIQS_RUNTIME_ERROR << "Unknown partition method! Please choose 'automatic' or 'quantum_number' and set solve_params.quantum_numbers accordingly";
     }
   }
 
@@ -195,6 +191,9 @@ namespace inchworm {
 
     // Initialize solver
     this->init(solve_params);
+
+    // Reset the results
+    container_set::operator=(container_set{});
 
     if (solve_params.verbosity > 0) std::cout << "\nStarting Green function calculation.. \n";
 

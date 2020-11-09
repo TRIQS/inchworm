@@ -16,7 +16,6 @@ module.add_preamble("""
 #include <cpp2py/converters/optional.hpp>
 #include <cpp2py/converters/pair.hpp>
 #include <cpp2py/converters/string.hpp>
-#include <cpp2py/converters/variant.hpp>
 #include <cpp2py/converters/vector.hpp>
 #include <triqs/cpp2py_converters/gf.hpp>
 #include <triqs/cpp2py_converters/operators_real_complex.hpp>
@@ -100,7 +99,7 @@ c.add_method("""void solve (**inchworm::solve_params_t)""",
 +==================+======================================+=========================================+==================================================+
 | h_imp            | triqs::operators::many_body_operator | --                                      | Impurity Hamiltonian                             |
 +------------------+--------------------------------------+-----------------------------------------+--------------------------------------------------+
-| partition_method | str                                  | "quantum_numbers"                       | Partition method                                 |
+| partition_method | str                                  | "automatic"                             | Partition method                                 |
 +------------------+--------------------------------------+-----------------------------------------+--------------------------------------------------+
 | quantum_numbers  | list(Operator)                       | [Total Particle Number]                 | Quantum numbers                                  |
 +------------------+--------------------------------------+-----------------------------------------+--------------------------------------------------+
@@ -134,7 +133,7 @@ c.add_method("""void solve_inchworm (**inchworm::solve_params_t)""",
 +==================+======================================+=========================================+==================================================+
 | h_imp            | triqs::operators::many_body_operator | --                                      | Impurity Hamiltonian                             |
 +------------------+--------------------------------------+-----------------------------------------+--------------------------------------------------+
-| partition_method | str                                  | "quantum_numbers"                       | Partition method                                 |
+| partition_method | str                                  | "automatic"                             | Partition method                                 |
 +------------------+--------------------------------------+-----------------------------------------+--------------------------------------------------+
 | quantum_numbers  | list(Operator)                       | [Total Particle Number]                 | Quantum numbers                                  |
 +------------------+--------------------------------------+-----------------------------------------+--------------------------------------------------+
@@ -168,7 +167,7 @@ c.add_method("""void solve_green (**inchworm::solve_params_t)""",
 +==================+======================================+=========================================+==================================================+
 | h_imp            | triqs::operators::many_body_operator | --                                      | Impurity Hamiltonian                             |
 +------------------+--------------------------------------+-----------------------------------------+--------------------------------------------------+
-| partition_method | str                                  | "quantum_numbers"                       | Partition method                                 |
+| partition_method | str                                  | "automatic"                             | Partition method                                 |
 +------------------+--------------------------------------+-----------------------------------------+--------------------------------------------------+
 | quantum_numbers  | list(Operator)                       | [Total Particle Number]                 | Quantum numbers                                  |
 +------------------+--------------------------------------+-----------------------------------------+--------------------------------------------------+
@@ -215,7 +214,7 @@ c.add_member(c_name = "h_imp",
 
 c.add_member(c_name = "partition_method",
              c_type = "std::string",
-             initializer = """ "quantum_numbers" """,
+             initializer = """ "automatic" """,
              doc = r"""Partition method
      type: str""")
 

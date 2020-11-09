@@ -74,7 +74,6 @@ class test_hubbard(unittest.TestCase):
     sp["n_cycles"] = 100000
     sp["length_cycle"] = 10
     sp["n_warmup_cycles"] = 20
-    sp["quantum_numbers"] = [n("up",0) + n("dn",0) + n("up",1) + n("dn",1)]
    
     # Solve the model
     S.solve(**sp)
