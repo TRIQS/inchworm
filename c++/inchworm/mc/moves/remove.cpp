@@ -56,7 +56,7 @@ namespace inchworm::moves {
 
       for (auto &Bl : proposed_g_frame) Bl = 0;
 
-      proposed_g_frame = make_g_frame_from_l_and_r(params.ad_imp, params.map_lin_idx_to_block_inner, gf_struct, l, r);
+      proposed_g_frame = make_g_frame_from_l_and_r(params.ad_imp, gf_struct, l, r);
 
       auto const &ops = diagram.op_list;
       int nop_r       = std::count_if(begin(ops), end(ops), [tau_split = params.tau_split](auto const &op) { return tau_split > op.tau; });

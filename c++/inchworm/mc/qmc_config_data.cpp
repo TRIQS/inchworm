@@ -3,17 +3,15 @@
 
 namespace inchworm {
 
-  bool config_t::try_insert(double tau, int linear_index, double tau_dag, int linear_index_dag) {
-    //std::printf("try_erase? %d   %2.4f %d  %2.4f %d \n", size(),  tau, linear_index, tau_dag, linear_index_dag);
+  bool config_t::try_insert(fop_t const &d_dag, fop_t const &d) {
     for (int i = 0; i < size() - 1; i++)
-      if ((d_list[i].tau == tau) or (d_dag_list[i].tau == tau_dag)) return false;
-    d_list.push_back({tau, linear_index}); // FIXME upper_bound ordering
-    d_dag_list.push_back({tau_dag, linear_index_dag});
+      if ((d_list[i].tau == d.tau) or (d_dag_list[i].tau == d_dag.tau)) return false;
+    d_list.push_back(d);
+    d_dag_list.push_back(d_dag);
     return true;
   }
 
   bool config_t::try_erase(int i, int i_dag) {
-    //std::printf("try_erase? %d   %d %d \n", size(), i, i_dag);
     if ((size() <= i) or (size() <= i_dag)) {
       std::printf("heille.\n");
       return false;
@@ -23,16 +21,15 @@ namespace inchworm {
     return true;
   }
 
-  bool config_t::try_double_insert(double tau1, int linear_index1, double tau1_dag, int linear_index1_dag, double tau2, int linear_index2,
-                                   double tau2_dag, int linear_index2_dag) {
+  bool config_t::try_double_insert(fop_t const &d_dag1, fop_t const &d1, fop_t const &d_dag2, fop_t const &d2) {
     for (int i = 0; i < size() - 1; i++)
-      if ((d_list[i].tau == tau1) or (d_dag_list[i].tau == tau1_dag) or (d_list[i].tau == tau2) or (d_dag_list[i].tau == tau2_dag) or (tau1 == tau2)
-          or (tau1_dag == tau2_dag))
+      if ((d_list[i].tau == d1.tau) or (d_dag_list[i].tau == d_dag1.tau) or (d_list[i].tau == d2.tau) or (d_dag_list[i].tau == d_dag2.tau)
+          or (d1.tau == d2.tau) or (d_dag1.tau == d_dag2.tau))
         return false;
-    d_list.push_back({tau1, linear_index1});
-    d_list.push_back({tau2, linear_index2});
-    d_dag_list.push_back({tau1_dag, linear_index1_dag});
-    d_dag_list.push_back({tau2_dag, linear_index2_dag});
+    d_list.push_back(d1);
+    d_list.push_back(d2);
+    d_dag_list.push_back(d_dag1);
+    d_dag_list.push_back(d_dag2);
     return true;
   }
 

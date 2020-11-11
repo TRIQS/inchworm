@@ -46,15 +46,10 @@ namespace inchworm::diagram {
   hyb_matrix_t::hyb_matrix_t(time_diagram_t const &diagram, hyb_adaptor_t const &hyb_tau)
      : mat(diagram.perturbation_order(), diagram.perturbation_order()), diagram{diagram} {
 
-    int N = 0;
     for (auto [i, d] : enumerate(diagram.d_list)) {
-      N++;
-      for (auto [j, d_dag] : enumerate(diagram.d_dag_list)) {
-        //std::printf(" %f %d   %f %d \n",d.tau, d.linear_index, d_dag.tau, d_dag.linear_index );
-        mat(i, j) = hyb_tau(d.tau, d.linear_index, d_dag.tau, d_dag.linear_index);
-      }
+      for (auto [j, d_dag] : enumerate(diagram.d_dag_list)) { mat(i, j) = hyb_tau(d_dag, d); }
     }
-    size = N;
+    size = diagram.d_list.size();
   }
 
   // optimization, set to zero components of the matrix corresponding to segment of length 2.
@@ -68,12 +63,10 @@ namespace inchworm::diagram {
           int it          = diagram.op_list[k + 1].order_index;
           int it_dag      = diagram.op_list[k].order_index;
           mat(it_dag, it) = 0.;
-          //if constexpr (verbose) std::printf("order_indices  %d %d\n", diagram.op_list[k + 1].order_index, diagram.op_list[k].order_index);
         } else if (diagram.op_list[k].dag and not diagram.op_list[k + 1].dag) { // segment on length 2
           int it          = diagram.op_list[k].order_index;
           int it_dag      = diagram.op_list[k + 1].order_index;
           mat(it_dag, it) = 0.;
-          //if constexpr (verbose) std::printf("order_indices   %d %d\n", diagram.op_list[k].order_index, diagram.op_list[k+1].order_index);
         }
       }
     }

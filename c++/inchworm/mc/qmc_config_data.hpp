@@ -14,12 +14,11 @@ namespace inchworm {
   };
 
   struct config_t {
-    std::vector<diagram::time_and_index_t> d_list, d_dag_list; // list of d/d_dag not time ordered, but different
+    std::vector<fop_t> d_list, d_dag_list; // list of d/d_dag not time ordered, but different
     int size() const { return d_list.size(); }
-    bool try_insert(double tau, int linear_index, double tau_dag, int linear_index_dag);
+    bool try_insert(fop_t const &ddag, fop_t const &d);
     bool try_erase(int i, int i_dag);
-    bool try_double_insert(double tau1, int linear_index1, double tau1_dag, int linear_index1_dag, double tau2, int linear_index2, double tau2_dag,
-                           int linear_index2_dag);
+    bool try_double_insert(fop_t const &d_dag1, fop_t const &d1, fop_t const &d_dag2, fop_t const &d2);
     bool try_double_erase(int i, int i_dag, int j, int j_dag);
   };
 
@@ -39,26 +38,20 @@ namespace inchworm {
 
   // structure to calculate hybridization function for tau, tau_dag, and orbital (linear) indices.
   struct hyb_adaptor_t {
-    h_tau_t const hyb_tau;
-    std::map<int, std::pair<int, int>> const &map_lin_idx_to_block_inner;
+    h_tau_cvt hyb_tau;
 
-    hyb_adaptor_t(h_tau_t const &hyb_tau, std::map<int, std::pair<int, int>> const &map_lin_idx_to_block_inner)
-       : hyb_tau(std::move(hyb_tau)), map_lin_idx_to_block_inner(std::move(map_lin_idx_to_block_inner)) {}
+    hyb_adaptor_t(h_tau_cvt hyb_tau) : hyb_tau(hyb_tau) {}
 
     // function to link
-    scalar_t operator()(double tau, int li, double tau_dag, int li_dag) const {
-      auto [bl, in]         = map_lin_idx_to_block_inner.at(li);
-      auto [bl_dag, in_dag] = map_lin_idx_to_block_inner.at(li_dag);
+    scalar_t operator()(fop_t const &cdag, fop_t const &c) const {
 
-      if (bl != bl_dag) return 0.; // important: there should be no finite terms of the hybridization between different [bl]ock.
-      double dtau = tau_dag - tau;
-      //std::printf("salut % 4.8f  % 4.8f  % 4.8f \n",dtau, tau_dag, tau);
+      if (cdag.bl != c.bl) return 0.;
+      double dtau = cdag.tau - c.tau;
+
       if (dtau >= 0.) {
-        //std::printf("test1: %d %d   % 4.8e\n", (hyb_tau[bl])(dtau)(in_dag, in), in_dag, in);
-        return (hyb_tau[bl])(dtau)(in_dag, in);
+        return hyb_tau[c.bl](dtau)(cdag.idx, c.idx);
       } else {
-        //std::printf("test2: %d %d   % 4.8e\n", -(hyb_tau[bl])(hyb_tau[bl].domain().beta + dtau)(in_dag, in), in_dag, in);
-        return -(hyb_tau[bl])(hyb_tau[bl].domain().beta + dtau)(in_dag, in);
+        return -hyb_tau[c.bl](hyb_tau[c.bl].domain().beta + dtau)(cdag.idx, c.idx);
       }
     }
   };
@@ -68,7 +61,6 @@ namespace inchworm {
 
     // same for every inch step:
     hyb_adaptor_t hyb_adaptor;
-    std::map<int, std::pair<int, int>> map_lin_idx_to_block_inner;
     atom_diag const &ad_imp; // Diagonalization of the atomic problem
 
     // updated at every inch step:
@@ -81,10 +73,9 @@ namespace inchworm {
 
     int mode;
 
-    qmc_params_t(h_tau_t const &hyb_tau, std::map<int, std::pair<int, int>> const &map_lin_idx_to_block_inner, atom_diag const &ad_imp,
-                 u_tau_t const &u_tau, double tau_max, double tau_split, bool use_bare_propagator, int mode)
-       : hyb_adaptor(hyb_tau, map_lin_idx_to_block_inner),
-         map_lin_idx_to_block_inner(map_lin_idx_to_block_inner),
+    qmc_params_t(h_tau_t const &hyb_tau, atom_diag const &ad_imp, u_tau_t const &u_tau, double tau_max, double tau_split, bool use_bare_propagator,
+                 int mode)
+       : hyb_adaptor(hyb_tau),
          ad_imp(ad_imp),
          u_tau(u_tau),
          tau_max(tau_max),

@@ -42,8 +42,7 @@ namespace inchworm {
   // initialize bare propagator frame U_0 = exp(-tau H_loc) in the diagonal basis of H_loc
   frame_t make_bare_propagator_frame(atom_diag const &ad, double tau, bool set_gs_to_0 = false);
 
-  frame_t make_bare_g_frame(atom_diag const &ad_imp, u_tau_t const &u_tau, std::map<int, std::pair<int, int>> const &map_lin_idx_to_block_inner,
-                            gf_struct_t const &gf_struct, double tau_split, double beta);
+  frame_t make_bare_g_frame(atom_diag const &ad_imp, u_tau_t const &u_tau, gf_struct_t const &gf_struct, double tau_split, double beta);
 
   // Create a diag_block_matrix given a gf_struct
   frame_t make_frame(gf_struct_t const &gf_struct);
@@ -86,7 +85,6 @@ namespace inchworm {
   // Given the left and right propagator segment insert all operator
   // flavors and take the trace to get the Green function at a given
   // time bl == -1 is translated into zero-initialized matrices
-  frame_t make_g_frame_from_l_and_r(atom_diag const &ad_imp, std::map<int, std::pair<int, int>> const &map_lin_idx_to_block_inner,
-                                    gf_struct_t const &gf_struct, u_partial_t const &l, u_partial_t const &r);
+  frame_t make_g_frame_from_l_and_r(atom_diag const &ad_imp, gf_struct_t const &gf_struct, u_partial_t const &l, u_partial_t const &r);
 
 } // namespace inchworm

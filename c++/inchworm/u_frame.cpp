@@ -40,8 +40,7 @@ namespace inchworm {
     return u_frame;
   }
 
-  frame_t make_bare_g_frame(atom_diag const &ad_imp, u_tau_t const &u_tau, std::map<int, std::pair<int, int>> const &map_lin_idx_to_block_inner,
-                            gf_struct_t const &gf_struct, double tau_split, double beta) {
+  frame_t make_bare_g_frame(atom_diag const &ad_imp, u_tau_t const &u_tau, gf_struct_t const &gf_struct, double tau_split, double beta) {
     u_partial_t l, r;
 
     for (int i = 0; i < u_tau.size(); ++i) {
@@ -49,7 +48,7 @@ namespace inchworm {
       r.push_back({i, u_tau[i](tau_split)});
     }
 
-    return make_g_frame_from_l_and_r(ad_imp, map_lin_idx_to_block_inner, gf_struct, l, r);
+    return make_g_frame_from_l_and_r(ad_imp, gf_struct, l, r);
   }
 
   frame_t make_frame(std::vector<long> const &shape_of_frame) {
@@ -185,29 +184,26 @@ namespace inchworm {
     std::cout << "\n";
   }
 
-  frame_t make_g_frame_from_l_and_r(atom_diag const &ad_imp, std::map<int, std::pair<int, int>> const &map_lin_idx_to_block_inner,
-                                    gf_struct_t const &gf_struct, u_partial_t const &l, u_partial_t const &r) {
+  frame_t make_g_frame_from_l_and_r(atom_diag const &ad_imp, gf_struct_t const &gf_struct, u_partial_t const &l, u_partial_t const &r) {
 
     frame_t g_frame = make_frame(gf_struct);
 
-    // G[g_bl][tau][in,in_dag] = -<T c[g_bl][in](tau) cdag[g_bl][in_dag](0)>
-    // i ~= g_bl     + in
-    // j ~= g_bl_dag + in_dag
-    int n_ops = ad_imp.get_fops().data().size();
-    for (int i = 0; i < n_ops; ++i) {
-      auto [g_bl, in] = map_lin_idx_to_block_inner.at(i);
-      for (int j = 0; j < n_ops; ++j) {
-        auto [g_bl_dag, in_dag] = map_lin_idx_to_block_inner.at(j);
-        if (g_bl != g_bl_dag) continue;
+    // G[bl][tau][i,j] = -<T c[bl][i](tau) cdag[bl][j](0)>
+    for (int bl : range(gf_struct.size())) {
+      auto const &[bl_name, bl_size] = gf_struct[bl];
 
-        // r * ddag_j[bl_idx1](0)
-        u_partial_t rddag = apply_op_from_right(r, j, true, ad_imp);
+      for (auto [i, j] : product_range(bl_size, bl_size)) {
 
-        // l * d_i[bl_idx2](tau)
-        u_partial_t ld = apply_op_from_right(l, i, false, ad_imp);
+        // l * d_i[lidx](tau)
+        auto lidx      = ad_imp.get_fops()[{bl_name, i}];
+        u_partial_t ld = apply_op_from_right(l, lidx, false, ad_imp);
+
+        // r * ddag_j[lidx_dag](0)
+        auto lidx_dag     = ad_imp.get_fops()[{bl_name, j}];
+        u_partial_t rddag = apply_op_from_right(r, lidx_dag, true, ad_imp);
 
         auto prod = make_u_frame(ld * rddag);
-        g_frame[g_bl](in, in_dag) -= trace(prod);
+        g_frame[bl](i, j) -= trace(prod);
       }
     }
 

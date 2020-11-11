@@ -23,7 +23,7 @@
 
 namespace inchworm::diagram {
 
-  inline bool operator<(time_and_index_t const &t1, time_and_index_t const &t2) { return (t1.tau < t2.tau); }
+  inline bool operator<(fop_t const &t1, fop_t const &t2) { return (t1.tau < t2.tau); }
 
   //auto sort_tau = [](auto const &x, auto const &y) { return x.tau < y.tau; };
 
@@ -37,8 +37,7 @@ namespace inchworm::diagram {
   int time_diagram_t::sign() const { return (std::accumulate(pos_d_dag.begin(), pos_d_dag.end(), 0) % 2 == 0 ? 1 : -1); }
 
   //
-  time_diagram_t::time_diagram_t(std::vector<time_and_index_t> const &d, std::vector<time_and_index_t> const &d_dag,
-                                 std::vector<double> const &split_times, int verbose)
+  time_diagram_t::time_diagram_t(std::vector<fop_t> const &d, std::vector<fop_t> const &d_dag, std::vector<double> const &split_times, int verbose)
      : op_list(2 * d.size()), d_list{d}, d_dag_list{d_dag} {
 
     std::sort(d_dag_list.begin(), d_dag_list.end(), [](auto const &x, auto const &y) { return x.tau < y.tau; });

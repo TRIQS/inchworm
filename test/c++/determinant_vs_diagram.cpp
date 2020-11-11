@@ -34,9 +34,9 @@ void compare_proper_with_det(std::vector<double> &tau1, std::vector<double> &tau
   std::sort(tau1.begin(), tau1.end());
   std::sort(tau2.begin(), tau2.end());
 
-  std::vector<time_and_index_t> c, cdag;
-  for (auto t : tau1) c.push_back({t, 0});
-  for (auto t : tau2) cdag.push_back({t, 0});
+  std::vector<fop_t> c, cdag;
+  for (auto t : tau1) c.push_back({t, false, 0, 0, 0});
+  for (auto t : tau2) cdag.push_back({t, false, 0, 0, 0});
   time_diagram_t diagram(c, cdag, {});
   auto hyb_mat = hyb_matrix_t(diagram);
 

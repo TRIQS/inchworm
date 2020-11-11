@@ -10,17 +10,34 @@ namespace inchworm::moves {
     int N      = data.config.size(); // size before proposition
     int n_fops = (params.ad_imp.get_fops()).size();
 
+    auto get_bl_idx = [&](int i) {
+      auto bl_name = std::get<std::string>(params.ad_imp.get_fops().data()[i][0]);
+      auto it      = std::find_if(gf_struct.cbegin(), gf_struct.cend(), [&](auto &&x) { return x.first == bl_name; });
+      auto idx     = std::get<long>(params.ad_imp.get_fops().data()[i][1]);
+      return std::make_pair(std::distance(gf_struct.cbegin(), it), idx);
+    };
+
     int li1     = rng(n_fops);
     int li1_dag = rng(n_fops);
     int li2     = rng(n_fops);
     int li2_dag = rng(n_fops);
+
+    auto [bl1, idx1]         = get_bl_idx(li1);
+    auto [bl1_dag, idx1_dag] = get_bl_idx(li1_dag);
+    auto [bl2, idx2]         = get_bl_idx(li2);
+    auto [bl2_dag, idx2_dag] = get_bl_idx(li2_dag);
 
     double tau1     = rng(params.tau_max);
     double tau1_dag = rng(params.tau_max);
     double tau2     = rng(params.tau_max);
     double tau2_dag = rng(params.tau_max);
 
-    if (not proposed_config.try_double_insert(tau1, li1, tau1_dag, li1_dag, tau2, li2, tau2_dag, li2_dag)) return 0;
+    auto d1     = fop_t{tau1, false, li1, bl1, idx1};
+    auto d1_dag = fop_t{tau1_dag, true, li1_dag, bl1_dag, idx1_dag};
+    auto d2     = fop_t{tau2, false, li2, bl2, idx2};
+    auto d2_dag = fop_t{tau2_dag, true, li2_dag, bl2_dag, idx2_dag};
+
+    if (not proposed_config.try_double_insert(d1_dag, d1, d2_dag, d2)) return 0;
 
     ///////
 
@@ -62,7 +79,7 @@ namespace inchworm::moves {
 
       for (auto &Bl : proposed_g_frame) Bl = 0;
 
-      proposed_g_frame = make_g_frame_from_l_and_r(params.ad_imp, params.map_lin_idx_to_block_inner, gf_struct, l, r);
+      proposed_g_frame = make_g_frame_from_l_and_r(params.ad_imp, gf_struct, l, r);
 
       auto const &ops = diagram.op_list;
       int nop_r       = std::count_if(begin(ops), end(ops), [tau_split = params.tau_split](auto const &op) { return tau_split > op.tau; });

@@ -53,8 +53,20 @@ namespace inchworm {
   /// Container type of the propagator
   using u_tau_t = block_gf<imtime, hyb_target_t>;
 
+  /// A view to a u_tau_t
+  using u_tau_vt = u_tau_t::view_type;
+
+  /// A const view to a u_tau_t
+  using u_tau_cvt = u_tau_t::const_view_type;
+
   /// Container type of one-particle Green and Vertex functions in imaginary times
   using h_tau_t = block_gf<imtime, hyb_target_t>;
+
+  /// A view to a h_tau_t
+  using h_tau_vt = h_tau_t::view_type;
+
+  /// A const view to a h_tau_t
+  using h_tau_cvt = h_tau_t::const_view_type;
 
   /// Container type of one-particle Green and Vertex functions in imaginary times
   using g_tau_t = block_gf<imtime, hyb_target_t>;
@@ -62,7 +74,7 @@ namespace inchworm {
   /// A view to a g_tau_t
   using g_tau_vt = g_tau_t::view_type;
 
-  /// A const_view to a g_tau_t
+  /// A const view to a g_tau_t
   using g_tau_cvt = g_tau_t::const_view_type;
 
   /// Container type of one-particle Green and Vertex functions in Matsubara frequencies
@@ -74,18 +86,32 @@ namespace inchworm {
   /// A const_view to a g_iw_t
   using g_iw_cvt = g_iw_t::const_view_type;
 
-  /// Type of the Monte-Carlo weight. Either double or dcomplex
-  //using scalar_t = scalar_t
-
+  /// The atom diag type to use
   using atom_diag = triqs::atom_diag::atom_diag<is_h_scalar_complex>;
 
-  //using triqs::utility::time_pt;
-  //using op_t         = std::pair<time_pt, int>;
   using indices_type = triqs::operators::indices_t;
 
-  // Declare some placeholders for the rest of the code. Use anonymous namespace for proper linkage
-  // in this code, all variables with trailing _ are placeholders by convention.
-  //constexpr triqs::clef::placeholder<0> iw_;
-  //constexpr triqs::clef::placeholder<1> tau_;
+  /**
+   * Type representing a creation or annihilation operator at a fixed time
+   */
+  struct fop_t {
+
+    /// The imaginary time // FIXME Or time_pt ?
+    double tau;
+
+    /// C (false) or Cdag (true) // FIXME Can we make this compile-time?
+    bool dag;
+
+    /// The linear index in the fundamental_operator_set
+    long linear_index; // FIXME Can we get rid of this?
+
+    /// The block index
+    long bl;
+
+    /// The orbital (or non-block) index
+    long idx;
+
+    friend inline bool operator<(fop_t const &o1, fop_t const &o2) { return o1.tau < o2.tau; }
+  };
 
 } // namespace inchworm

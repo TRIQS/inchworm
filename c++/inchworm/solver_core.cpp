@@ -25,13 +25,6 @@ namespace inchworm {
 
     // Determine basis of operators to use
     fops = fundamental_operator_set{cp.gf_struct};
-
-    // Setup the linear index map (link Green function structure to fundamental operator set):
-    int block_index = 0;
-    for (auto const &[blname, blsize] : cp.gf_struct) {
-      for (int idx : range(blsize)) { map_lin_idx_to_block_inner[fops[{blname, idx}]] = std::make_pair(block_index, idx); }
-      block_index++;
-    }
   }
 
   // -------------------------------------------------------------------------------
@@ -205,8 +198,8 @@ namespace inchworm {
 
     // --- Treat n == 0 and n == n_tau -1 seperately
 
-    frame_t g_frame_n0 = make_bare_g_frame(ad_imp, u_tau, map_lin_idx_to_block_inner, constr_params.gf_struct, 0.0, beta);
-    frame_t g_frame_nB = make_bare_g_frame(ad_imp, u_tau, map_lin_idx_to_block_inner, constr_params.gf_struct, beta, beta);
+    frame_t g_frame_n0 = make_bare_g_frame(ad_imp, u_tau, constr_params.gf_struct, 0.0, beta);
+    frame_t g_frame_nB = make_bare_g_frame(ad_imp, u_tau, constr_params.gf_struct, beta, beta);
 
     // Calculate Tr U(beta)
     scalar_t Tr_Ubeta = 0.0;
@@ -233,7 +226,7 @@ namespace inchworm {
       auto res = single_step(solve_params, tau_split, beta, false, 1);
 
       // Normalize the result using the ratio between theoretical zeroth order and Monte Carlo sampled zeroth order
-      frame_t g_frame_zeroth_order = make_bare_g_frame(ad_imp, u_tau, map_lin_idx_to_block_inner, constr_params.gf_struct, tau_split, beta);
+      frame_t g_frame_zeroth_order = make_bare_g_frame(ad_imp, u_tau, constr_params.gf_struct, tau_split, beta);
       scalar_t normalization_cte   = Tr_Ubeta * (double)res.frame_0th_order[0](0, 0) / ((double)g_frame_zeroth_order[0](0, 0));
       res.normalize(normalization_cte);
 
@@ -269,11 +262,11 @@ namespace inchworm {
     if (mode == 0) {
       qmc_config_data.u_partial = make_u_partial(make_bare_propagator_frame(ad_imp, tau_split, false));
     } else {
-      qmc_config_data.g_frame = make_bare_g_frame(ad_imp, u_tau, map_lin_idx_to_block_inner, params.gf_struct, tau_split, params.beta);
+      qmc_config_data.g_frame = make_bare_g_frame(ad_imp, u_tau, params.gf_struct, tau_split, params.beta);
     }
 
     // Create Monte-Carlo params
-    qmc_params_t qmc_params{Delta_tau, map_lin_idx_to_block_inner, ad_imp, u_tau, tau_max, tau_split, use_bare_propagator, mode};
+    qmc_params_t qmc_params{Delta_tau, ad_imp, u_tau, tau_max, tau_split, use_bare_propagator, mode};
 
     // Add moves
     mc.add_move(moves::insert{qmc_config_data, params, qmc_params, rng}, "insert move");
