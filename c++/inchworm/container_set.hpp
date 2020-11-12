@@ -21,9 +21,25 @@
  ******************************************************************************/
 #pragma once
 #include "./types.hpp"
+#include "./u_frame.hpp"
 #include <optional>
 
 namespace inchworm {
+
+  // structure to gather result of one Monte Carlo run:
+  struct single_step_results_t {
+    frame_t frame;
+    frame_t frame_0th_order;
+    long measure_count = 0;
+    double average_k   = 0.0;
+    std::vector<double> expansion_order;
+    std::vector<int> samples_expansion_order;
+
+    single_step_results_t(std::vector<long> shape_of_frame);
+
+    void normalize(double normalization_cte);
+    void print(int verbosity = 4);
+  };
 
   /// The collection of all output containers in solver_core
   struct container_set {

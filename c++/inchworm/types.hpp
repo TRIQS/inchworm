@@ -29,16 +29,12 @@ namespace inchworm {
   using namespace h5;
   using namespace itertools;
 
-  // Defined by Maxime, need comments
-  // FIXME Add LOCAL_HAMILTONIAN_IS_COMPLEX ?
-  // Carefully check type propagation
+  /// The value type of the hybridisaiton function
 #ifdef HYBRIDISATION_IS_COMPLEX
   using scalar_t                            = dcomplex;
-  static constexpr bool is_h_scalar_complex = true;
   using hyb_target_t                        = matrix_valued;
 #else
   using scalar_t                            = double;
-  static constexpr bool is_h_scalar_complex = false;
   using hyb_target_t                        = matrix_real_valued;
 #endif
   using matrix_t = matrix<scalar_t>;
@@ -87,7 +83,7 @@ namespace inchworm {
   using g_iw_cvt = g_iw_t::const_view_type;
 
   /// The atom diag type to use
-  using atom_diag = triqs::atom_diag::atom_diag<is_h_scalar_complex>;
+  using atom_diag = triqs::atom_diag::atom_diag<std::is_same_v<scalar_t, dcomplex>>;
 
   using indices_type = triqs::operators::indices_t;
 

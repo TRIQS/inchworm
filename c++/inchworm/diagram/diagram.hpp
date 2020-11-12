@@ -26,6 +26,7 @@
 #include <numeric>
 
 #include "./../types.hpp"
+#include "./../mc/qmc_config_data.hpp"
 #include "./utilities.hpp"
 
 namespace inchworm::diagram {
@@ -34,19 +35,19 @@ namespace inchworm::diagram {
   //
   class time_diagram_t {
 
-    //basic information for an operator
-    //
+    // Type containing the operator information and the
+    // position in the time ordered list of all d, d_dag
     struct op_t : public fop_t {
-      int order_index = 0;  // index of the order in time in the list of all d, d_dag
+      int order_index = 0;
     };
 
     public:
-    std::vector<op_t> op_list;                        // list of all operator time ordered
-    std::vector<int> split_points;                    // position of split points (index of first operator to the right of split time)
-    std::vector<fop_t> d_list, d_dag_list;            // list of d/d_dag time ordered
-    std::vector<int> pos_d;                           // position of d in the op_list
-    std::vector<int> pos_d_dag;                       // idem
-    bool is_trivial = true; // a diagram is considered trivial if no split_times are found between the minimum and maximum tau.
+    std::vector<op_t> op_list;             // list of all operator time ordered
+    std::vector<int> split_points;         // position of split points (index of first operator to the right of split time)
+    std::vector<fop_t> d_list, d_dag_list; // list of d/d_dag time ordered
+    std::vector<int> pos_d;                // position of d in the op_list
+    std::vector<int> pos_d_dag;            // idem
+    bool is_trivial = true;                // a diagram is considered trivial if no split_times are found between the minimum and maximum tau.
 
     int perturbation_order() const;
     int size() const;
@@ -59,5 +60,8 @@ namespace inchworm::diagram {
 
     // Constructor
     time_diagram_t(std::vector<fop_t> const &d_list_, std::vector<fop_t> const &d_dag_list_, std::vector<double> const &split_times, int verbose = 0);
+
+    inline time_diagram_t(config_t const &config, std::vector<double> const &split_times, int verbose = 0)
+       : time_diagram_t(config.d_list, config.d_dag_list, split_times, verbose) {}
   };
 } // namespace inchworm::diagram

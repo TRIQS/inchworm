@@ -2,35 +2,34 @@
 
 namespace inchworm::measures {
 
-  g_frame::g_frame(params_t const &, qmc_config_data_t const &qmc_config_data_, single_step_results_t &results_)
-     : qmc_config_data(qmc_config_data_), results(results_) {}
+  g_frame::g_frame(params_t const &, qmc_config_data_t const &data_, single_step_results_t &results_) : data(data_), results(results_) {}
 
   void g_frame::accumulate(scalar_t sign) {
 
-    scalar_t s = sign / (qmc_config_data.w.loc);
+    scalar_t s = sign / (data.weights.loc);
 
-    size_t pert_order = qmc_config_data.config.size();
+    size_t pert_order = data.config.size();
     if (pert_order >= results.expansion_order.size()) {
       size_t new_size = std::max(2 * results.expansion_order.size(), pert_order + 1);
       results.expansion_order.resize(new_size, 0);
       results.samples_expansion_order.resize(new_size, 0);
     }
 
-    auto m0 = qmc_config_data.g_frame[0](0, 0);
+    auto m0 = data.g_frame[0](0, 0);
     results.expansion_order[pert_order] += s * m0;
     results.samples_expansion_order[pert_order]++;
     results.measure_count++;
     results.average_k = results.average_k + pert_order;
 
     for (int bl = 0; bl < results.frame.size(); bl++) {
-      auto m = qmc_config_data.g_frame[bl];
+      auto m = data.g_frame[bl];
       results.frame[bl] += s * m;
     }
 
     // For normalizatoin purpose, we sample the zeroth order separatly:
     if (pert_order == 0) {
       for (int bl = 0; bl < results.frame_0th_order.size(); bl++) {
-        auto m = qmc_config_data.g_frame[bl];
+        auto m = data.g_frame[bl];
         results.frame_0th_order[bl] += s * m;
       }
     }

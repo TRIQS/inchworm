@@ -2,16 +2,9 @@
 #include "../u_frame.hpp"
 #include "../types.hpp"
 #include "../params.hpp"
-#include "../diagram/diagram.hpp"
-#include "./impurity_product.hpp"
 #include <triqs/atom_diag/atom_diag.hpp>
 
 namespace inchworm {
-
-  struct weights_t {
-    scalar_t loc; // atomic weight (Frobenius norm of the current propagator frame)
-    scalar_t hyb; // value of the determinant in cthyb or its equivalent for the inchworm
-  };
 
   struct config_t {
     std::vector<fop_t> d_list, d_dag_list; // list of d/d_dag not time ordered, but different
@@ -22,18 +15,22 @@ namespace inchworm {
     bool try_double_erase(int i, int i_dag, int j, int j_dag);
   };
 
+  struct weights_t {
+    scalar_t loc; // atomic weight (Frobenius norm of the current propagator frame)
+    scalar_t hyb; // value of the determinant in cthyb or its equivalent for the inchworm
+  };
+
   /// The Monte-Carlo Configuration structure
   struct qmc_config_data_t {
 
     // last accepted paraemeters
-    config_t config;       // last accepted configuration of d and d_dag
-    weights_t w;           // weight values of the last accepted configuration
-    u_partial_t u_partial; // frame of the last accepted configuraiton: just one time frame of a propagator
-    frame_t g_frame;       // green function for a specific time tau
-    int sign;              // sign of the last accepted configuration
-    //scalar_t normalization_cte; //
+    config_t config       = {};       // last accepted configuration of d and d_dag
+    weights_t weights     = {1., 1.}; // weight values of the last accepted configuration
+    int sign              = 1;        // sign of the last accepted configuration
+    u_partial_t u_partial = {};       // frame of the last accepted configuraiton: just one time frame of a propagator
+    frame_t g_frame;                  // green function for a specific time tau
 
-    qmc_config_data_t(gf_struct_t const &gf_struct) : w{1., 1.}, g_frame{make_frame(gf_struct)}, sign{1} {}
+    qmc_config_data_t(gf_struct_t const &gf_struct) : g_frame{make_frame(gf_struct)} {}
   };
 
   // structure to calculate hybridization function for tau, tau_dag, and orbital (linear) indices.

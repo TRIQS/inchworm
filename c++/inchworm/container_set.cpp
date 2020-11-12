@@ -20,8 +20,36 @@
  *
  ******************************************************************************/
 #include "./container_set.hpp"
+#include "./util.hpp"
 
 namespace inchworm {
+
+  single_step_results_t::single_step_results_t(std::vector<long> shape_of_frame) : expansion_order(10, 0), samples_expansion_order(10, 0) {
+    frame           = make_frame(shape_of_frame);
+    frame_0th_order = frame;
+  };
+
+  void single_step_results_t::normalize(double normalization_cte) {
+    for (auto &Bl : frame) Bl /= normalization_cte;
+    for (auto &Bl : frame_0th_order) Bl /= normalization_cte;
+    for (auto &o : expansion_order) o /= normalization_cte;
+  };
+
+  void single_step_results_t::print(int verbosity) {
+
+    if (verbosity > 4)
+      for (auto Bl : frame) print_matrix(Bl);
+
+    if (verbosity > 3) {
+      int max_order = std::min(samples_expansion_order.size(), 15ul);
+
+      std::printf("\n\norder breakdown: \n");
+      for (auto k : range(max_order)) std::printf("%10d ", samples_expansion_order[k]);
+      std::printf("\n");
+      for (auto k : range(max_order)) std::printf("% 10.5f ", expansion_order[k]);
+      std::printf("\n");
+    }
+  }
 
   void h5_write(h5::group h5group, std::string subgroup_name, container_set const &c) {
     auto grp = h5group.create_group(subgroup_name);

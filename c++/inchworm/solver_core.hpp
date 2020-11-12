@@ -108,4 +108,5 @@ namespace inchworm {
     CPP2PY_IGNORE
     static solver_core h5_read_construct(h5::group h5group, std::string subgroup_name);
   };
+
 } // namespace inchworm

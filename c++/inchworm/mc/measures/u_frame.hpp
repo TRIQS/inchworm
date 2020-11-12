@@ -18,7 +18,7 @@ namespace inchworm::measures {
 
     private:
     // The Monte-Carlo configuration
-    qmc_config_data_t const &qmc_config_data;
+    qmc_config_data_t const &data;
     single_step_results_t &results;
   };
 

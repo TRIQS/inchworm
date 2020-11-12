@@ -1,5 +1,4 @@
 #include "./qmc_config_data.hpp"
-#include "impurity_product.hpp"
 
 namespace inchworm {
 

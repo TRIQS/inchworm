@@ -24,7 +24,7 @@ namespace inchworm::moves {
     /// Constructor
     insert(qmc_config_data_t &data, params_t const &params, qmc_params_t const &qmc_params, triqs::mc_tools::random_generator &rng)
        : data(data), params(qmc_params), rng(rng), gf_struct(params.gf_struct) {
-      proposed_g_frame = make_frame(params.gf_struct);
+      prop_g_frame = make_frame(params.gf_struct);
 
       for (auto const &op : qmc_params.ad_imp.get_fops()) {
         auto bl_name = std::get<std::string>(op.index[0]);
@@ -56,21 +56,21 @@ namespace inchworm::moves {
     triqs::mc_tools::random_generator &rng;
 
     /// d/d_dag lists of proposed insert
-    config_t proposed_config; // proposed configuration of d and d_dag
+    config_t prop_config; // proposed configuration of d and d_dag
 
     /// weights of the proposed configuration
-    weights_t proposed_w;
+    weights_t prop_weights;
 
     /// container of the calculated time frame of the propagator
-    u_partial_t proposed_u_partial;
+    u_partial_t prop_u_partial;
 
     /// the green function structure
     gf_struct_t const &gf_struct;
 
     /// green function container to accumulate into
-    frame_t proposed_g_frame;
+    frame_t prop_g_frame;
 
-    int proposed_sign;
+    int prop_sign;
   };
 
 } // namespace inchworm::moves

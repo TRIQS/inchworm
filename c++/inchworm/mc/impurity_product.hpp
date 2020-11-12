@@ -43,26 +43,4 @@ namespace inchworm {
   u_partial_t impurity_product(atom_diag const &ad, time_diagram_t const &diagram, double tau_min, double tau_max,
                                u_tau_t const *const u_tau_p = nullptr);
 
-  // structure to gather result of one Monte Carlo run:
-  struct single_step_results_t {
-    frame_t frame;
-    frame_t frame_0th_order;
-    long measure_count = 0;
-    double average_k   = 0.0;
-    std::vector<double> expansion_order;
-    std::vector<int> samples_expansion_order;
-    single_step_results_t(std::vector<long> shape_of_frame) : expansion_order(10, 0), samples_expansion_order(10, 0) {
-      frame           = make_frame(shape_of_frame);
-      frame_0th_order = frame;
-    };
-
-    void normalize(double normalization_cte) {
-      for (auto &Bl : frame) Bl /= normalization_cte;
-      for (auto &Bl : frame_0th_order) Bl /= normalization_cte;
-      for (auto &o : expansion_order) o /= normalization_cte;
-    };
-
-    void print(int verbosity = 4);
-  };
-
 } // namespace inchworm
