@@ -7,27 +7,13 @@ namespace inchworm::moves {
     proposed_config = data.config; // we first copy last accepted config before proposing the new insert
     proposed_w      = data.w;
 
-    int N      = data.config.size(); // size before proposition
-    int n_fops = (params.ad_imp.get_fops()).size();
+    int n_ops = all_d_ops.size();
 
-    auto get_bl_idx = [&](int i) {
-      auto bl_name = std::get<std::string>(params.ad_imp.get_fops().data()[i][0]);
-      auto it      = std::find_if(gf_struct.cbegin(), gf_struct.cend(), [&](auto &&x) { return x.first == bl_name; });
-      auto idx     = std::get<long>(params.ad_imp.get_fops().data()[i][1]);
-      return std::make_pair(std::distance(gf_struct.cbegin(), it), idx);
-    };
+    auto d     = all_d_ops[rng(n_ops)];
+    auto d_dag = all_d_dag_ops[rng(n_ops)];
 
-    int li     = rng(n_fops); // FIXME!!!!!
-    int li_dag = rng(n_fops);
-
-    auto [bl, idx]         = get_bl_idx(li);
-    auto [bl_dag, idx_dag] = get_bl_idx(li_dag);
-
-    double tau     = rng(params.tau_max);
-    double tau_dag = rng(params.tau_max);
-
-    auto d     = fop_t{tau, false, li, bl, idx};
-    auto d_dag = fop_t{tau_dag, true, li_dag, bl_dag, idx_dag};
+    d.tau     = rng(params.tau_max);
+    d_dag.tau = rng(params.tau_max);
 
     if (not proposed_config.try_insert(d_dag, d)) return 0;
 
@@ -83,7 +69,9 @@ namespace inchworm::moves {
     auto sign_ratio  = proposed_sign / data.sign;
     auto w_hyb_ratio = proposed_w.hyb / data.w.hyb;
     auto w_loc_ratio = proposed_w.loc / data.w.loc;
-    auto t_ratio     = std::pow(params.tau_max * n_fops / (N + 1), 2);
+
+    int N        = data.config.size(); // size before proposition
+    auto t_ratio = std::pow(params.tau_max * n_fops / (N + 1), 2);
 
 #ifdef INCHWORM_DEBUG_PRINTS
     std::printf("\n\n====== Try Insert ======\n");

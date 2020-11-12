@@ -7,35 +7,17 @@ namespace inchworm::moves {
     proposed_config = data.config; // we first copy last accepted config before proposing the new double_insert
     proposed_w      = data.w;
 
-    int N      = data.config.size(); // size before proposition
-    int n_fops = (params.ad_imp.get_fops()).size();
+    int n_ops  = all_d_ops.size();
 
-    auto get_bl_idx = [&](int i) {
-      auto bl_name = std::get<std::string>(params.ad_imp.get_fops().data()[i][0]);
-      auto it      = std::find_if(gf_struct.cbegin(), gf_struct.cend(), [&](auto &&x) { return x.first == bl_name; });
-      auto idx     = std::get<long>(params.ad_imp.get_fops().data()[i][1]);
-      return std::make_pair(std::distance(gf_struct.cbegin(), it), idx);
-    };
+    auto d1     = all_d_ops[rng(n_ops)];
+    auto d1_dag = all_d_dag_ops[rng(n_ops)];
+    auto d2     = all_d_ops[rng(n_ops)];
+    auto d2_dag = all_d_dag_ops[rng(n_ops)];
 
-    int li1     = rng(n_fops);
-    int li1_dag = rng(n_fops);
-    int li2     = rng(n_fops);
-    int li2_dag = rng(n_fops);
-
-    auto [bl1, idx1]         = get_bl_idx(li1);
-    auto [bl1_dag, idx1_dag] = get_bl_idx(li1_dag);
-    auto [bl2, idx2]         = get_bl_idx(li2);
-    auto [bl2_dag, idx2_dag] = get_bl_idx(li2_dag);
-
-    double tau1     = rng(params.tau_max);
-    double tau1_dag = rng(params.tau_max);
-    double tau2     = rng(params.tau_max);
-    double tau2_dag = rng(params.tau_max);
-
-    auto d1     = fop_t{tau1, false, li1, bl1, idx1};
-    auto d1_dag = fop_t{tau1_dag, true, li1_dag, bl1_dag, idx1_dag};
-    auto d2     = fop_t{tau2, false, li2, bl2, idx2};
-    auto d2_dag = fop_t{tau2_dag, true, li2_dag, bl2_dag, idx2_dag};
+    d1.tau     = rng(params.tau_max);
+    d1_dag.tau = rng(params.tau_max);
+    d2.tau     = rng(params.tau_max);
+    d2_dag.tau = rng(params.tau_max);
 
     if (not proposed_config.try_double_insert(d1_dag, d1, d2_dag, d2)) return 0;
 
@@ -93,7 +75,9 @@ namespace inchworm::moves {
     auto sign_ratio  = proposed_sign / data.sign;
     auto w_hyb_ratio = proposed_w.hyb / data.w.hyb;
     auto w_loc_ratio = proposed_w.loc / data.w.loc;
-    auto t_ratio     = std::pow(params.tau_max * n_fops / (N + 2), 4);
+
+    int N        = data.config.size(); // size before proposition
+    auto t_ratio = std::pow(params.tau_max * n_fops / (N + 2), 4);
 
 #ifdef INCHWORM_DEBUG_PRINTS
     std::printf("\n\n====== Try Insert2 ======\n");
