@@ -283,6 +283,8 @@ namespace inchworm::diagram {
   //
   scalar_t inclusion_exclusion(time_diagram_t const &diagram, hyb_matrix_t hyb_mat, int verbose) {
 
+    if (diagram.size() == 0) return 1.0;
+
     //hyb_matrix_t hyb_mat(diagram, hyb_tau);
     hyb_mat.optimize_inclusion_exclusion(); // put some values to zero in hyb matrix (segment of length 2)
     if (diagram.is_trivial) { return 0; }   // not a question anymore: return 0 or det??

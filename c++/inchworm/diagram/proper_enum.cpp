@@ -128,6 +128,9 @@ namespace inchworm::diagram {
   scalar_t proper_enum(time_diagram_t const &diagram, hyb_matrix_t const &hyb_mat, int verbose) {
 
     if (verbose) std::printf("\n\n##################\nPROPER-ENUMERATION:\n");
+
+    if (diagram.size() == 0) return 1.0;
+
     //auto hyb_mat     = hyb_matrix_t{diagram, hyb_function};
     auto permutation = std::vector<int>(diagram.perturbation_order());
 
