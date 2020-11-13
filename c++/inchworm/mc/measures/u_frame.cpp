@@ -15,22 +15,20 @@ namespace inchworm::measures {
       results.samples_expansion_order.resize(new_size, 0);
     }
 
-    auto const &[tbl0, m0] = data.u_partial[0];
-    if (tbl0 != -1) results.expansion_order[pert_order] += s * m0(0, 0);
+    if (not data.frame[0].empty())
+      results.expansion_order[pert_order] += s * data.frame[0](0, 0);
     results.samples_expansion_order[pert_order]++;
     results.measure_count++;
     results.average_k += pert_order;
 
     for (int bl = 0; bl < results.frame.size(); bl++) {
-      auto const &[tbl, m] = data.u_partial[bl];
-      if (tbl != -1) results.frame[bl] += s * m;
+      if (not data.frame[bl].empty()) results.frame[bl] += s * data.frame[bl];
     }
 
     // For normalization purpose, we sample the zeroth order separatly:
     if (pert_order == 0) {
       for (int bl = 0; bl < results.frame_0th_order.size(); bl++) {
-        auto const &[tbl, m] = data.u_partial[bl];
-        if (tbl != -1) results.frame_0th_order[bl] += s * m;
+        results.frame_0th_order[bl] += s * data.frame[bl];
       }
     }
   }

@@ -255,11 +255,11 @@ namespace inchworm {
     auto &rng = mc.get_rng();
 
     // Create Monte-Carlo configuration
-    qmc_config_data_t qmc_config_data{params.gf_struct};
+    qmc_config_data_t qmc_config_data{};
     if (mode == 0) {
-      qmc_config_data.u_partial = make_u_partial(make_bare_propagator_frame(ad_imp, tau_split, false));
+      qmc_config_data.frame = make_bare_propagator_frame(ad_imp, tau_split, false);
     } else {
-      qmc_config_data.g_frame = make_bare_g_frame(ad_imp, u_tau, params.gf_struct, tau_split, params.beta);
+      qmc_config_data.frame = make_bare_g_frame(ad_imp, u_tau, params.gf_struct, tau_split, params.beta);
     }
 
     // Create Monte-Carlo params

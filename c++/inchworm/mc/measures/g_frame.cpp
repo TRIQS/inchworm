@@ -15,21 +15,21 @@ namespace inchworm::measures {
       results.samples_expansion_order.resize(new_size, 0);
     }
 
-    auto m0 = data.g_frame[0](0, 0);
+    auto m0 = data.frame[0](0, 0);
     results.expansion_order[pert_order] += s * m0;
     results.samples_expansion_order[pert_order]++;
     results.measure_count++;
     results.average_k = results.average_k + pert_order;
 
     for (int bl = 0; bl < results.frame.size(); bl++) {
-      auto m = data.g_frame[bl];
+      auto m = data.frame[bl];
       results.frame[bl] += s * m;
     }
 
     // For normalizatoin purpose, we sample the zeroth order separatly:
     if (pert_order == 0) {
       for (int bl = 0; bl < results.frame_0th_order.size(); bl++) {
-        auto m = data.g_frame[bl];
+        auto m = data.frame[bl];
         results.frame_0th_order[bl] += s * m;
       }
     }

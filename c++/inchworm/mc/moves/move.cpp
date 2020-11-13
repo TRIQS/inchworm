@@ -46,38 +46,36 @@ namespace inchworm::moves {
 
     if (params.mode == 0) { // --- Propagator Mode
       if (params.use_bare_propagator) {
-        prop_data.u_partial = impurity_product(params.ad_imp, diagram, 0, params.tau_max, nullptr);
+        prop_data.frame = make_u_frame(impurity_product(params.ad_imp, diagram, 0, params.tau_max, nullptr));
       } else {
         // -- ip * ip
         //
         // --> prop_data.green_matrix Trace( ip * d * ip * ddag )
         //
         // - <c(tau) cd(0;);>
-        prop_data.u_partial = impurity_product(params.ad_imp, diagram, params.tau_split, params.tau_max, &params.u_tau)
-           * impurity_product(params.ad_imp, diagram, 0, params.tau_split, &params.u_tau);
+        prop_data.frame = make_u_frame(impurity_product(params.ad_imp, diagram, params.tau_split, params.tau_max, &params.u_tau)
+                                       * impurity_product(params.ad_imp, diagram, 0, params.tau_split, &params.u_tau));
       }
-
-      prop_data.weights.loc = frobenius_norm(prop_data.u_partial);
 
     } else if (params.mode == 1) { // --- Green Function Mode
       EXPECTS(not params.use_bare_propagator);
 
-      prop_data.g_frame = make_frame(gf_struct);
+      prop_data.frame = make_frame(gf_struct);
 
       auto l = impurity_product(params.ad_imp, diagram, params.tau_split, params.tau_max, &params.u_tau);
       auto r = impurity_product(params.ad_imp, diagram, 0, params.tau_split, &params.u_tau);
 
-      prop_data.g_frame = make_g_frame_from_l_and_r(params.ad_imp, gf_struct, l, r);
+      prop_data.frame = make_g_frame_from_l_and_r(params.ad_imp, gf_struct, l, r);
 
       // Account for the sign due to additional operator insertions
       auto const &ops = diagram.op_list;
       int nop_r       = std::count_if(begin(ops), end(ops), [tau_split = params.tau_split](auto const &op) { return tau_split > op.tau; });
       if (nop_r % 2 == 1) {
-        for (auto &bl : prop_data.g_frame) bl *= -1;
+        for (auto &bl : prop_data.frame) bl *= -1;
       }
-
-      prop_data.weights.loc = frobenius_norm(prop_data.g_frame);
     }
+
+    prop_data.weights.loc = frobenius_norm(prop_data.frame);
 
     // ------ Calculate overall weight ratio -------
 
@@ -174,7 +172,7 @@ namespace inchworm::moves {
 
     if (not config.try_double_erase(idx1, idx1_dag, idx2, idx2_dag)) return 0; //data is not modified in this case
 
-    int n_fops   = all_d_ops.size();
+    int n_fops = all_d_ops.size();
     return std::pow(N / (n_fops * params.tau_max), 4);
   }
 

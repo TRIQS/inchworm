@@ -26,10 +26,7 @@ namespace inchworm {
     config_t config       = {};       // last accepted configuration of d and d_dag
     weights_t weights     = {1., 1.}; // weight values of the last accepted configuration
     int sign              = 1;        // sign of the last accepted configuration
-    u_partial_t u_partial = {};       // frame of the last accepted configuraiton: just one time frame of a propagator
-    frame_t g_frame;                  // green function for a specific time tau
-
-    qmc_config_data_t(gf_struct_t const &gf_struct) : g_frame{make_frame(gf_struct)} {}
+    frame_t frame;                    // green function for a specific time tau
   };
 
   // structure to calculate hybridization function for tau, tau_dag, and orbital (linear) indices.
