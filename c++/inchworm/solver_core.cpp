@@ -5,10 +5,7 @@
 #include "./mc/measures/u_frame.hpp"
 #include "./mc/measures/g_frame.hpp"
 
-#include "./mc/moves/insert.hpp"
-#include "./mc/moves/remove.hpp"
-#include "./mc/moves/double_insert.hpp"
-#include "./mc/moves/double_remove.hpp"
+#include "./mc/moves/move.hpp"
 
 #include <triqs/utility/callbacks.hpp>
 #include <triqs/utility/macros.hpp>
@@ -269,11 +266,11 @@ namespace inchworm {
     qmc_params_t qmc_params{Delta_tau, ad_imp, u_tau, tau_max, tau_split, use_bare_propagator, mode};
 
     // Add moves
-    mc.add_move(moves::insert{qmc_config_data, params, qmc_params, rng}, "insert move");
-    mc.add_move(moves::remove{qmc_config_data, params, qmc_params, rng}, "remove move");
+    mc.add_move(moves::insert{qmc_config_data, params.gf_struct, qmc_params, rng}, "insert move");
+    mc.add_move(moves::remove{qmc_config_data, params.gf_struct, qmc_params, rng}, "remove move");
 
-    mc.add_move(moves::double_insert{qmc_config_data, params, qmc_params, rng}, "double insert move");
-    mc.add_move(moves::double_remove{qmc_config_data, params, qmc_params, rng}, "double remove move");
+    mc.add_move(moves::double_insert{qmc_config_data, params.gf_struct, qmc_params, rng}, "double insert move");
+    mc.add_move(moves::double_remove{qmc_config_data, params.gf_struct, qmc_params, rng}, "double remove move");
 
     // Determine the shape of the result
     std::vector<long> shape_of_frame;

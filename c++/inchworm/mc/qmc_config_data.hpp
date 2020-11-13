@@ -22,7 +22,6 @@ namespace inchworm {
 
   /// The Monte-Carlo Configuration structure
   struct qmc_config_data_t {
-
     // last accepted paraemeters
     config_t config       = {};       // last accepted configuration of d and d_dag
     weights_t weights     = {1., 1.}; // weight values of the last accepted configuration
