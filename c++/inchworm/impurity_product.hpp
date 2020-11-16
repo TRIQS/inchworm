@@ -40,7 +40,7 @@ namespace inchworm {
    * @param u_tau_p pointer to the full propagator (u_tau) calculated up until this point (0 < tau < tau_split). 
    * @return frame_t, at time tau_max, resulting from this product.
    */
-  u_partial_t impurity_product(atom_diag const &ad, time_diagram_t const &diagram, double tau_min, double tau_max,
+  u_partial_t impurity_product(atom_diag const &ad, time_diagram_t const &diagram, double tau_max, double tau_min,
                                u_tau_t const *const u_tau_p = nullptr);
 
 } // namespace inchworm

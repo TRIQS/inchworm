@@ -74,7 +74,7 @@ namespace inchworm {
     }
   }
 
-  u_partial_t impurity_product(atom_diag const &ad, time_diagram_t const &diagram, double tau_min, double tau_max, u_tau_t const *const u_tau_p) {
+  u_partial_t impurity_product(atom_diag const &ad, time_diagram_t const &diagram, double tau_max, double tau_min, u_tau_t const *const u_tau_p) {
 
     EXPECTS(tau_min < tau_max);
 
