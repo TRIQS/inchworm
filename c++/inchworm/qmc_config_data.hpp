@@ -10,14 +10,14 @@ namespace inchworm {
     std::vector<fop_t> d_list, d_dag_list; // list of d/d_dag not time ordered, but different
     int size() const { return d_list.size(); }
     bool try_insert(fop_t const &ddag, fop_t const &d);
-    bool try_erase(int i, int i_dag);
+    bool try_erase(int i_dag, int i);
     bool try_double_insert(fop_t const &d_dag1, fop_t const &d1, fop_t const &d_dag2, fop_t const &d2);
-    bool try_double_erase(int i, int i_dag, int j, int j_dag);
+    bool try_double_erase(int i_dag, int i, int j_dag, int j);
   };
 
   struct weights_t {
-    scalar_t loc; // atomic weight (Frobenius norm of the current propagator frame)
-    scalar_t hyb; // value of the determinant in cthyb or its equivalent for the inchworm
+    scalar_t imp; // Impurity weight - Frobenius norm of the current (propagator or green function) frame
+    scalar_t hyb; // Hybridization weight - Value of the determinant in cthyb or its equivalent for the inchworm
   };
 
   /// The Monte-Carlo Configuration structure

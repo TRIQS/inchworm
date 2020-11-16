@@ -4,7 +4,8 @@
 
 #include "./measures/frame.hpp"
 
-#include "./moves/move.hpp"
+#include "./moves/insert.hpp"
+#include "./moves/remove.hpp"
 
 #include <triqs/utility/callbacks.hpp>
 #include <triqs/utility/macros.hpp>

@@ -56,28 +56,4 @@ namespace inchworm::moves {
     gf_struct_t const &gf_struct;
   };
 
-  struct insert : public base_move {
-    using base_move::base_move;
-    inline std::string name() const override { return "Insert"; };
-    scalar_t try_move(config_t &) override;
-  };
-
-  struct double_insert : public base_move {
-    using base_move::base_move;
-    inline std::string name() const override { return "Double Insert"; };
-    scalar_t try_move(config_t &) override;
-  };
-
-  struct remove : public base_move {
-    using base_move::base_move;
-    inline std::string name() const override { return "Remove"; };
-    scalar_t try_move(config_t &) override;
-  };
-
-  struct double_remove : public base_move {
-    using base_move::base_move;
-    inline std::string name() const override { return "Double Remove"; };
-    scalar_t try_move(config_t &) override;
-  };
-
 } // namespace inchworm::moves

@@ -12,7 +12,7 @@ namespace inchworm {
     return true;
   }
 
-  bool config_t::try_erase(int i, int i_dag) {
+  bool config_t::try_erase(int i_dag, int i) {
     EXPECTS(i < size() && i_dag < size());
 
     if (d_list[i].bl != d_dag_list[i_dag].bl) return false;
@@ -42,7 +42,7 @@ namespace inchworm {
     return true;
   }
 
-  bool config_t::try_double_erase(int i, int i_dag, int j, int j_dag) {
+  bool config_t::try_double_erase(int i_dag, int i, int j_dag, int j) {
     EXPECTS(i < size() and i_dag < size());
     EXPECTS(j < size() and j_dag < size());
 

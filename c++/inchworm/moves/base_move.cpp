@@ -1,4 +1,4 @@
-#include "./move.hpp"
+#include "./base_move.hpp"
 #include "./../impurity_product.hpp"
 
 namespace inchworm::moves {
@@ -75,15 +75,15 @@ namespace inchworm::moves {
       }
     }
 
-    prop_data.weights.loc = frobenius_norm(prop_data.frame);
+    prop_data.weights.imp = frobenius_norm(prop_data.frame);
 
     // ------ Calculate overall weight ratio -------
 
     auto sign_ratio  = prop_data.sign / data.sign;
     auto w_hyb_ratio = prop_data.weights.hyb / data.weights.hyb;
-    auto w_loc_ratio = prop_data.weights.loc / data.weights.loc;
+    auto w_imp_ratio = prop_data.weights.imp / data.weights.imp;
 
-    auto ratio = sign_ratio * t_ratio * w_loc_ratio * w_hyb_ratio;
+    auto ratio = sign_ratio * t_ratio * w_imp_ratio * w_hyb_ratio;
 
     // ------ Debugging Information -------
 
@@ -96,9 +96,9 @@ namespace inchworm::moves {
       print(prop_data.g_frame);
     hyb_mat.print();
     std::printf("\n\nhyb.det()=% 4.7f \n", hyb_mat.det());
-    std::printf("\n\nsign= %d  w_hyb=% 4.7f  w_loc=% 4.7f    old_w_hyb=% 4.7f  old_w_loc=% 4.7f \n", prop_data.sign, prop_data.weights.hyb,
-                prop_data.weights.loc, data.w.hyb, data.w.loc);
-    std::printf("\n\nsign_ratio= %d  w_hyb_ratio=% 4.7f  w_loc_ratio=% 4.7f  t_ratio=% 4.7f\n", sign_ratio, w_hyb_ratio, w_loc_ratio, t_ratio);
+    std::printf("\n\nsign= %d  w_hyb=% 4.7f  w_imp=% 4.7f    old_w_hyb=% 4.7f  old_w_imp=% 4.7f \n", prop_data.sign, prop_data.weights.hyb,
+                prop_data.weights.imp, data.w.hyb, data.w.imp);
+    std::printf("\n\nsign_ratio= %d  w_hyb_ratio=% 4.7f  w_imp_ratio=% 4.7f  t_ratio=% 4.7f\n", sign_ratio, w_hyb_ratio, w_imp_ratio, t_ratio);
     std::printf("proper_enum w.hyb         =% 4.7f \n", diagram::proper_enum(diagram, hyb_mat, 10));
     std::printf("inclusion_exclusion w.hyb =% 4.7f \n", diagram::inclusion_exclusion(diagram, hyb_mat, 10));
 #endif
@@ -112,68 +112,6 @@ namespace inchworm::moves {
 #endif
     data = prop_data;
     return 1.0;
-  }
-
-  // --------
-
-  scalar_t insert::try_move(config_t &config) {
-    int n_fops = all_d_ops.size();
-    auto d     = all_d_ops[rng(n_fops)];
-    auto d_dag = all_d_dag_ops[rng(n_fops)];
-
-    d.tau     = rng(params.tau_max);
-    d_dag.tau = rng(params.tau_max);
-
-    if (not config.try_insert(d_dag, d)) return 0.0;
-
-    int N = config.size();
-    return std::pow(params.tau_max * n_fops / N, 2);
-  }
-
-  scalar_t double_insert::try_move(config_t &config) {
-    int n_fops  = all_d_ops.size();
-    auto d1     = all_d_ops[rng(n_fops)];
-    auto d1_dag = all_d_dag_ops[rng(n_fops)];
-    auto d2     = all_d_ops[rng(n_fops)];
-    auto d2_dag = all_d_dag_ops[rng(n_fops)];
-
-    d1.tau     = rng(params.tau_max);
-    d1_dag.tau = rng(params.tau_max);
-    d2.tau     = rng(params.tau_max);
-    d2_dag.tau = rng(params.tau_max);
-
-    if (not config.try_double_insert(d1_dag, d1, d2_dag, d2)) return 0;
-
-    int N = config.size();
-    return std::pow(params.tau_max * n_fops / N, 4);
-  }
-
-  scalar_t remove::try_move(config_t &config) {
-    int N = config.size();
-    if (N == 0) return 0;
-
-    int idx     = rng(N);
-    int idx_dag = rng(N);
-
-    if (not config.try_erase(idx, idx_dag)) return 0; //data is not modified in this case
-
-    int n_fops = all_d_ops.size();
-    return std::pow(N / (n_fops * params.tau_max), 2);
-  }
-
-  scalar_t double_remove::try_move(config_t &config) {
-    int N = config.size();
-    if (N == 0) return 0;
-
-    int idx1     = rng(N);
-    int idx1_dag = rng(N);
-    int idx2     = rng(N);
-    int idx2_dag = rng(N);
-
-    if (not config.try_double_erase(idx1, idx1_dag, idx2, idx2_dag)) return 0; //data is not modified in this case
-
-    int n_fops = all_d_ops.size();
-    return std::pow(N / (n_fops * params.tau_max), 4);
   }
 
 } // namespace inchworm::moves

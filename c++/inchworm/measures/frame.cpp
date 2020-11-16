@@ -6,7 +6,7 @@ namespace inchworm::measures {
 
   void frame::accumulate(scalar_t sign) {
 
-    scalar_t s = sign / (data.weights.loc);
+    scalar_t s = sign / (data.weights.imp);
 
     size_t pert_order = data.config.size();
     if (pert_order >= results.expansion_order.size()) {
