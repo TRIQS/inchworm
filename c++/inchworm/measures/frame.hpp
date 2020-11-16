@@ -1,14 +1,14 @@
 #pragma once
 #include "../qmc_config_data.hpp"
-#include "../../container_set.hpp"
+#include "../container_set.hpp"
 
 namespace inchworm::measures {
 
-  /// u_frame measurement
-  struct u_frame {
+  /// frame measurement
+  struct frame {
 
     // Constructor
-    u_frame(params_t const &params, qmc_config_data_t const &qmc_config_data_, single_step_results_t &results_);
+    frame(params_t const &params, qmc_config_data_t const &qmc_config_data_, single_step_results_t &results_);
 
     // Invoke a single measurement
     void accumulate(scalar_t sign);

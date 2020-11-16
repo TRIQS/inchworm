@@ -2,10 +2,9 @@
 
 #include "./post_process.hpp"
 
-#include "./mc/measures/u_frame.hpp"
-#include "./mc/measures/g_frame.hpp"
+#include "./measures/frame.hpp"
 
-#include "./mc/moves/move.hpp"
+#include "./moves/move.hpp"
 
 #include <triqs/utility/callbacks.hpp>
 #include <triqs/utility/macros.hpp>
@@ -57,7 +56,8 @@ namespace inchworm {
     } else if (sp.partition_method == "quantum_numbers") {
       ad_imp = {sp.h_imp, fops, sp.quantum_numbers};
     } else {
-      TRIQS_RUNTIME_ERROR << "Unknown partition method! Please choose 'automatic' or 'quantum_number' and set solve_params.quantum_numbers accordingly";
+      TRIQS_RUNTIME_ERROR
+         << "Unknown partition method! Please choose 'automatic' or 'quantum_number' and set solve_params.quantum_numbers accordingly";
     }
   }
 
@@ -289,10 +289,7 @@ namespace inchworm {
     results.frame_0th_order = results.frame;
 
     // Register all measurements
-    if (mode == 0)
-      mc.add_measure(measures::u_frame{params, qmc_config_data, results}, "propagator measurement");
-    else if (mode == 1)
-      mc.add_measure(measures::g_frame{params, qmc_config_data, results}, "green function measurement");
+    mc.add_measure(measures::frame{params, qmc_config_data, results}, "measure a single propagator / green function frame");
 
     // Perform QMC run and collect results
     int status =

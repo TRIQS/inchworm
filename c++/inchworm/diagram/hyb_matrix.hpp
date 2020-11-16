@@ -29,7 +29,7 @@
 
 #include "diagram.hpp"
 #include "../types.hpp"
-#include "../mc/qmc_config_data.hpp"
+#include "../qmc_config_data.hpp"
 
 namespace inchworm::diagram {
   //using hybridization_function_t = triqs::gfs::gf<triqs::gfs::imtime,triqs::gfs::matrix_real_valued>;

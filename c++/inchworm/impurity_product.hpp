@@ -1,9 +1,9 @@
 #pragma once
-#include "../u_frame.hpp"
-#include "../util.hpp"
-#include "../types.hpp"
-#include "../params.hpp"
-#include "../diagram/diagram.hpp"
+#include "./u_frame.hpp"
+#include "./util.hpp"
+#include "./types.hpp"
+#include "./params.hpp"
+#include "./diagram/diagram.hpp"
 
 //#include <inchworm/solver_core.hpp>
 #include <triqs/gfs.hpp>

@@ -26,7 +26,7 @@
 #include <numeric>
 
 #include "./../types.hpp"
-#include "./../mc/qmc_config_data.hpp"
+#include "./../qmc_config_data.hpp"
 #include "./utilities.hpp"
 
 namespace inchworm::diagram {
@@ -61,7 +61,7 @@ namespace inchworm::diagram {
     // Constructor
     time_diagram_t(std::vector<fop_t> const &d_list_, std::vector<fop_t> const &d_dag_list_, std::vector<double> const &split_times, int verbose = 0);
 
-    inline time_diagram_t(config_t const &config, std::vector<double> const &split_times, int verbose = 0)
+    time_diagram_t(config_t const &config, std::vector<double> const &split_times, int verbose = 0)
        : time_diagram_t(config.d_list, config.d_dag_list, split_times, verbose) {}
   };
 } // namespace inchworm::diagram
