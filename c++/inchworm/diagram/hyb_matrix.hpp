@@ -32,30 +32,34 @@
 #include "../qmc_config_data.hpp"
 
 namespace inchworm::diagram {
-  using triqs::utility::enumerate;
 
   struct hyb_matrix_t {
 
-    using matrix_t = triqs::arrays::matrix<scalar_t>;
-
-    int size;
-    matrix_t mat;
-    time_diagram_t const &diagram;
-
-    /// Constructors
-    //hyb_matrix_t(time_diagram_t const &diagram, std::function<scalar_t(double)>);
+    /// Construct hybridization matrix using dummy function (for test purposes only)
     hyb_matrix_t(time_diagram_t const &diagram);
+
+    /// Construct hybridization matrix using a hyb_adaptor_t
     hyb_matrix_t(time_diagram_t const &diagram, hyb_adaptor_t const &hyb_tau);
 
-    /// Set the value of adjacent vertex to zero in the matrix. (segment of length 2 optimization)
+    /// Optimization for segments of length 2:
+    ///   Set the value of adjacent vertices to zero in the matrix.
     void optimize_inclusion_exclusion();
 
     /// Return determinant of full matrix
-    scalar_t det();
+    scalar_t det() const;
 
-    /// Extract a determinant of sub indices of the matrix
+    /// Calculate the determinant of the submatrix defined by list_of_indices
     scalar_t extract_det(std::vector<int> const &list_of_indices) const;
 
     void print() const;
+
+    /// The associated diagram
+    time_diagram_t const &diagram;
+
+    /// The linear size of the matrix
+    int size;
+
+    /// The matrix
+    matrix_t mat;
   };
 } // namespace inchworm::diagram

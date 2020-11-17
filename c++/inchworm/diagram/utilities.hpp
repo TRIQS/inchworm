@@ -32,9 +32,8 @@
 #include <triqs/utility/itertools.hpp>
 
 namespace inchworm::diagram {
-  //constexpr int verbose = 0;
 
-  // optimization:
+  // Global variables to set optimization levels
   constexpr int smallest_segment   = 4;    // must be 2 or 4, beware.
   constexpr bool remove_xoxo       = true; // new optimisation 1: IMPORTANT, only works with the option smallest_segment = 4;
   constexpr bool remove_not_finite = true; // new optimisation 2: do not calculate determinant of
