@@ -30,7 +30,7 @@ namespace inchworm::diagram {
   // print one segment
   //
   void print_segment(segment_t const &segment, time_diagram_t const &diagram) {
-    std::vector<int> num_vector(diagram.op_list.size(), 0);
+    std::vector<int> num_vector(diagram.size(), 0);
     for (int k = segment.pos1; k < segment.pos2; k++) num_vector[k] = 1;
     print_line(num_vector);
   }
@@ -47,7 +47,7 @@ namespace inchworm::diagram {
     EXPECTS(not diagram.is_trivial);
 
     std::vector<segment_t> seg_list;
-    int N = diagram.op_list.size();
+    int N = diagram.size();
 
     //std::printf("split point: %d \n",diagram.split_points[0]);
     int N_segment = 0;
@@ -110,7 +110,7 @@ namespace inchworm::diagram {
   // print one set of segments
   //
   void print_set(std::vector<segment_t> const &segment_list, set_of_segments_t const &set_of_segments, time_diagram_t const &diagram) {
-    std::vector<int> num_vector(diagram.op_list.size(), 0);
+    std::vector<int> num_vector(diagram.size(), 0);
 
     for (int j = 0; j < set_of_segments.list.size(); j++) {
       for (int k = segment_list[set_of_segments.list[j]].pos1; k < segment_list[set_of_segments.list[j]].pos2; k++) num_vector[k] = j + 1;

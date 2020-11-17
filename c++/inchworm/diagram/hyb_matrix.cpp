@@ -55,7 +55,7 @@ namespace inchworm::diagram {
   // optimization, set to zero components of the matrix corresponding to segment of length 2.
   void hyb_matrix_t::optimize_inclusion_exclusion() {
     if (smallest_segment == 4) {
-      for (int k = 0; k < diagram.op_list.size() - 1; k++) {
+      for (int k = 0; k < diagram.size() - 1; k++) {
 
         if (std::any_of(begin(diagram.split_points), end(diagram.split_points), [k](int l) { return l == k + 1; })) continue;
 
@@ -70,17 +70,9 @@ namespace inchworm::diagram {
         }
       }
     }
-    //if constexpr (verbose > 1) print();
   }
 
   scalar_t hyb_matrix_t::det() {
-    /*    if (size == 0)
-      return 1.0;
-    else if (size == 1)
-      return mat(0, 0);
-    else if (size == 2)
-      return (mat(0,0)*mat(1,1)-mat(1,0)*mat(0,1));
-    else */
     return determinant(mat);
   }
 

@@ -26,7 +26,7 @@ namespace inchworm::moves {
     // ------ Generate the new configuration -------
 
     auto t_ratio = try_move(prop_data.config);
-    if (t_ratio == 0.0) return 0.0;
+    if (t_ratio == 0.0) return 0.0; // Check if move has failed
 
     // ------ Calculate the hybridization weight -------
 

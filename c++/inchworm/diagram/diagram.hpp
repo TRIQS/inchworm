@@ -42,20 +42,26 @@ namespace inchworm::diagram {
     };
 
     public:
-    std::vector<op_t> op_list;             // list of all operator time ordered
-    std::vector<int> split_points;         // position of split points (index of first operator to the right of split time)
-    std::vector<fop_t> d_list, d_dag_list; // list of d/d_dag time ordered
-    std::vector<int> pos_d;                // position of d in the op_list
-    std::vector<int> pos_d_dag;            // idem
-    bool is_trivial = true;                // a diagram is considered trivial if no split_times are found between the minimum and maximum tau.
+    std::vector<op_t> op_list;             // Time ordered list of all operators
+    std::vector<int> split_points;         // Position of split points (index of first operator to the right of split time)
+    std::vector<fop_t> d_list, d_dag_list; // Time ordered list of d/d_dag
+    bool is_trivial = true;                // Diagram is trivial if no split_times are found between the smallest and largest operator time
+    std::vector<int> pos_d;                // Position of d in the op_list
+    std::vector<int> pos_d_dag;            // Position of d_dag in the op_list
 
+    /// The perturbation order
     int perturbation_order() const;
+
+    /// The total number of operators in the diagram
     int size() const;
-    double max_tau() const;
+
+    /// The smallest operator time
     double min_tau() const;
 
-    // Simple function to find the sign of the diagram.
-    // Note: this result is the opposite same if we use pos_d_dag
+    /// The largest operator time
+    double max_tau() const;
+
+    // The sign of the diagram arising from the order of operators
     int sign() const;
 
     // Constructor

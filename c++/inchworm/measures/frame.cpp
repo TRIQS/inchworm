@@ -6,6 +6,8 @@ namespace inchworm::measures {
 
   void frame::accumulate(scalar_t sign) {
 
+    // We weight the Monte-Carlo by the frobenius norm of the current frame
+    // This importance sampling factor has to be corrected in the measurement
     scalar_t s = sign / (data.weights.imp);
 
     size_t pert_order = data.config.size();

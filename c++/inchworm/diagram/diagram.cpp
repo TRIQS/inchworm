@@ -23,70 +23,64 @@
 
 namespace inchworm::diagram {
 
-  inline bool operator<(fop_t const &t1, fop_t const &t2) { return (t1.tau < t2.tau); }
-
-  //auto sort_tau = [](auto const &x, auto const &y) { return x.tau < y.tau; };
-
   int time_diagram_t::perturbation_order() const { return d_list.size(); }
+
   int time_diagram_t::size() const { return op_list.size(); }
-  double time_diagram_t::max_tau() const { return op_list.back().tau; }
+
   double time_diagram_t::min_tau() const { return op_list.front().tau; }
 
-  // Simple function to find the sign of the diagram.
-  // Note: important to use pos_d_dag, not pos_d
-  int time_diagram_t::sign() const { return (std::accumulate(pos_d_dag.begin(), pos_d_dag.end(), 0) % 2 == 0 ? 1 : -1); }
+  double time_diagram_t::max_tau() const { return op_list.back().tau; }
 
-  //
-  time_diagram_t::time_diagram_t(std::vector<fop_t> const &d, std::vector<fop_t> const &d_dag, std::vector<double> const &split_times, int verbose)
-     : op_list(2 * d.size()), d_list{d}, d_dag_list{d_dag} {
+  int time_diagram_t::sign() const {
+    // Note: important to use pos_d_dag, not pos_d
+    return (std::accumulate(pos_d_dag.begin(), pos_d_dag.end(), 0) % 2 == 0 ? 1 : -1);
+  }
 
-    std::sort(d_dag_list.begin(), d_dag_list.end(), [](auto const &x, auto const &y) { return x.tau < y.tau; });
-    std::sort(d_list.begin(), d_list.end(), [](auto const &x, auto const &y) { return x.tau < y.tau; });
-
+  time_diagram_t::time_diagram_t(std::vector<fop_t> const &d_list_, std::vector<fop_t> const &d_dag_list_, std::vector<double> const &split_times,
+                                 int verbose)
+     : op_list(2 * d_list_.size()), d_list{d_list_}, d_dag_list{d_dag_list_} {
     EXPECTS(d_list.size() == d_dag_list.size());
-    split_points.reserve(split_times.size());
 
     int order = d_list.size();
+    if (order == 0) return;
 
-    if (d.size() == 0) {
-      //std::printf("warning: zero lenght! \n");
-      //fflush(stdout);
-      return;
-    }
+    // Keep the lists of d and d_dag operators sorted w.r.t. tau
+    std::sort(d_dag_list.begin(), d_dag_list.end(), std::less<>{});
+    std::sort(d_list.begin(), d_list.end(), std::less<>{});
+
+    // Initialize the time-ordered list of all operators
     for (int i = 0, j = order; i < order; i++, j++) {
       op_list[i].tau          = d_list[i].tau;
-      op_list[i].linear_index = d_list[i].linear_index;
       op_list[i].dag          = false;
+      op_list[i].linear_index = d_list[i].linear_index;
       op_list[i].order_index  = i;
 
       op_list[j].tau          = d_dag_list[i].tau;
-      op_list[j].linear_index = d_dag_list[i].linear_index;
       op_list[j].dag          = true;
+      op_list[j].linear_index = d_dag_list[i].linear_index;
       op_list[j].order_index  = i;
     }
-
-    std::sort(op_list.begin(), op_list.end(), [](auto const &x, auto const &y) { return x.tau < y.tau; });
-
-    // check that no times are equal (might need to change at some point, rare event, but many Monte Carlo sampling...);
+    std::sort(op_list.begin(), op_list.end(), std::less<>{});
     for (int i = 0; i < op_list.size() - 1; i++) EXPECTS(op_list[i].tau != op_list[i + 1].tau);
 
+    // For each split_time determine the op_list index of the operator to the right (i.e. the split point)
     if (verbose > 3) std::printf("split points:\n");
-
-    is_trivial = true; //start by assuming it is trivial and searching for at least one counter example.
+    split_points.reserve(split_times.size());
     for (auto s_time : split_times) {
       int i = 0;
       for (; i < op_list.size(); i++) {
         EXPECTS(s_time != op_list[i].tau);
         if (s_time < op_list[i].tau) break;
       }
-      if (i != 0 and i != op_list.size()) {
-        is_trivial = false;
-        if (verbose > 3) std::printf("diagram is not trivial\n");
-      }
       split_points.push_back(i);
       if (verbose > 3) std::printf("%d  % 4.3f\n", i, s_time);
     }
-    // posc[i] is the position of the i^th c in op_list (inverse table of order_index)
+
+    // Diagram is trivial if no split_times are found between the smallest and largest operator time
+    is_trivial = std::all_of(cbegin(split_points), cend(split_points), [&](int i) { return i == 0 or i == op_list.size(); });
+    if (is_trivial and verbose > 3) std::printf("diagram is trivial\n");
+
+    // For each d and d_dag, find its position in op_list (inverse table of order_index)
     for (int i = 0; i < op_list.size(); i++) {
       if (op_list[i].dag)
         pos_d_dag.push_back(i);

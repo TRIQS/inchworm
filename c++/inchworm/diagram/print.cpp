@@ -34,19 +34,19 @@ namespace inchworm::diagram {
   // print diagram and its split point above.
   //
   void print_diag(time_diagram_t const &diagram) {
-    for (int j = 0; j < diagram.op_list.size(); j++) {
+    for (int j = 0; j < diagram.size(); j++) {
       if (std::any_of(begin(diagram.split_points), end(diagram.split_points), [j](int i) { return i == j + 1; }))
         std::printf(" |");
       else
         std::printf("  ");
     }
     std::printf("\n");
-    for (int j = 0; j < diagram.op_list.size(); j++) {
+    for (int j = 0; j < diagram.size(); j++) {
       if (diagram.op_list[j].dag)
         std::printf("x");
       else
         std::printf("o");
-      if (j < diagram.op_list.size() - 1) std::printf("-");
+      if (j < diagram.size() - 1) std::printf("-");
     }
     std::printf("\n");
   }

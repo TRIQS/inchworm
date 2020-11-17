@@ -32,10 +32,7 @@
 #include "../qmc_config_data.hpp"
 
 namespace inchworm::diagram {
-  //using hybridization_function_t = triqs::gfs::gf<triqs::gfs::imtime,triqs::gfs::matrix_real_valued>;
   using triqs::utility::enumerate;
-
-  //scalar_t hyb_function(scalar_t dtau);
 
   struct hyb_matrix_t {
 
