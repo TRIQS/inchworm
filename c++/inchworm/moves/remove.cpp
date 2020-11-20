@@ -2,7 +2,7 @@
 
 namespace inchworm::moves {
 
-  scalar_t remove::try_move(config_t &config) {
+  scalar_t remove::try_config_update(config_t &config) {
     int N = config.size();
     if (N == 0) return 0;
 
@@ -15,7 +15,7 @@ namespace inchworm::moves {
     return std::pow(N / (n_fops * params.tau_max), 2);
   }
 
-  scalar_t double_remove::try_move(config_t &config) {
+  scalar_t double_remove::try_config_update(config_t &config) {
     int N = config.size();
     if (N == 0) return 0;
 

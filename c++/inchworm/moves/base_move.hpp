@@ -29,7 +29,7 @@ namespace inchworm::moves {
 
     protected:
     /// The function to update the configuration
-    virtual scalar_t try_move(config_t &) = 0;
+    virtual scalar_t try_config_update(config_t &) = 0;
 
     /// The function to update the configuration
     virtual std::string name() const = 0;

@@ -15,7 +15,7 @@ namespace inchworm::moves {
      *         and the move probability.
      *         On failure, return 0.0
      */
-    scalar_t try_move(config_t & config) override;
+    scalar_t try_config_update(config_t & config) override;
   };
 
   struct double_remove : public base_move {
@@ -30,7 +30,7 @@ namespace inchworm::moves {
      *         and the move probability.
      *         On failure, return 0.0
      */
-    scalar_t try_move(config_t & config) override;
+    scalar_t try_config_update(config_t & config) override;
   };
 
 } // namespace inchworm::moves

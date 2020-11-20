@@ -2,7 +2,7 @@
 
 namespace inchworm::moves {
 
-  scalar_t insert::try_move(config_t &config) {
+  scalar_t insert::try_config_update(config_t &config) {
     int n_fops = all_d_ops.size();
     auto d     = all_d_ops[rng(n_fops)];
     auto d_dag = all_d_dag_ops[rng(n_fops)];
@@ -16,7 +16,7 @@ namespace inchworm::moves {
     return std::pow(params.tau_max * n_fops / N, 2);
   }
 
-  scalar_t double_insert::try_move(config_t &config) {
+  scalar_t double_insert::try_config_update(config_t &config) {
     int n_fops  = all_d_ops.size();
     auto d1     = all_d_ops[rng(n_fops)];
     auto d1_dag = all_d_dag_ops[rng(n_fops)];
