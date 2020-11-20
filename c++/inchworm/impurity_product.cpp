@@ -1,78 +1,6 @@
-#include <iomanip>
 #include "./impurity_product.hpp"
 
 namespace inchworm {
-
-  u_tau_t make_propagator(atom_diag const &ad_imp, double beta, int n_tau) {
-
-    // TODO: This function should be replaced by block_gf{tau_mesh, ad_imp.get_block_struct()}
-    // or the corresponding array<gf> constructor (mesh, gf_struct) -> array<gf>
-
-    // this create the propagator and assign identity to the first frame (or time) of the propagator.
-    int n_sub = ad_imp.n_subspaces();
-    triqs::hilbert_space::gf_struct_t propagator_struct;
-
-    for (int i = 0; i < n_sub; i++) { propagator_struct.push_back({std::to_string(i), ad_imp.get_subspace_dim(i)}); }
-
-    auto u_tau = u_tau_t{{beta, Fermion, n_tau}, propagator_struct};
-
-    // Set the first element of u_tau to the identity
-    // and set all other values to zero
-    // TODO This should be done in solve_inchworm instead
-    for (auto &ubl : u_tau) {
-      ubl() = 0.;
-      for (int i = 0; i < ubl.target_shape()[0]; ++i) ubl[0](i, i) = 1;
-    }
-
-    return u_tau;
-  }
-
-  u_tau_t make_ED_propagator(atom_diag const &ad_tot, atom_diag const &ad_atom, atom_diag const &ad_bath, double beta, int n_tau) {
-
-    //auto E0       = ad_tot.get_gs_energy();
-    u_tau_t u_tau = make_propagator(ad_atom, beta, n_tau);
-
-    for (int i_tau = 0; i_tau < n_tau; i_tau++) {
-      double dtau  = beta * i_tau / (n_tau - 1.);
-      auto u_frame = partial_trace_bath(ad_tot, ad_atom, ad_bath, beta, dtau);
-      auto Z_bath  = trace(ad_bath, [beta](double E) { return std::exp(-beta * E); });
-      assign_frame_to_propagator(u_tau, u_frame, i_tau, 1. / Z_bath);
-    }
-
-    return u_tau;
-  }
-
-  frame_t make_zeroth_order_frame(atom_diag const &ad, double tau, double tau_split, u_tau_t const *const u_tau_p) {
-    if (u_tau_p) {
-      frame_t u_frame = make_zero_propagator_frame(ad);
-      //for (auto &B : u_frame) std::cout << B;
-
-      double dtau2 = tau - tau_split;
-      double dtau  = tau_split - 0.;
-      for (int bl = 0; bl < ad.n_subspaces(); bl++) {
-        u_frame[bl] = (*u_tau_p)[bl](dtau); // (interpolation)
-        u_frame[bl] = (*u_tau_p)[bl](dtau2) * u_frame[bl];
-      }
-      return u_frame;
-    } else {
-      return make_bare_propagator_frame(ad, tau, false);
-    }
-  }
-
-  // Implementation detail!
-  // TODO: Move into impurity_product
-  frame_t make_zero_operator_frame(atom_diag const &ad, double dtau, u_tau_t const *const u_tau_p) {
-    if (u_tau_p) {
-      frame_t u_frame = make_zero_propagator_frame(ad);
-
-      for (int bl = 0; bl < ad.n_subspaces(); bl++) {
-        u_frame[bl] = (*u_tau_p)[bl](dtau); // (interpolation)
-      }
-      return u_frame;
-    } else {
-      return make_bare_propagator_frame(ad, dtau, false);
-    }
-  }
 
   u_partial_t impurity_product(atom_diag const &ad, time_diagram_t const &diagram, double tau_max, double tau_min, u_tau_t const *const u_tau_p) {
 
@@ -84,7 +12,18 @@ namespace inchworm {
       if ((op.tau >= tau_min) and (op.tau <= tau_max)) op_idx.push_back(i);
     }
 
-    if (op_idx.size() == 0) return make_u_partial(make_zero_operator_frame(ad, tau_max - tau_min, u_tau_p));
+    // Treat the trivial case of zero operators separately
+    if (op_idx.size() == 0) {
+      if (u_tau_p) {
+        frame_t u_frame = make_frame(ad.get_subspace_dims());
+        for (int bl = 0; bl < ad.n_subspaces(); bl++) {
+          u_frame[bl] = (*u_tau_p)[bl](tau_max - tau_min); // (interpolation)
+        }
+        return make_u_partial(u_frame);
+      } else {
+        return make_u_partial(make_bare_u_frame(ad, tau_max - tau_min));
+      }
+    }
 
     u_partial_t u_partial(ad.n_subspaces());
 

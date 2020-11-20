@@ -78,7 +78,7 @@ namespace inchworm {
 
     // Finding the ratio between theoretical zeroth order and Monte Carlo sampled zeroth order.
     // Usually first value of u_frame is the most significant, due to order of eigenvalues.
-    auto u_frame_bare          = make_bare_propagator_frame(ad_imp, tau_max, false);
+    auto u_frame_bare          = make_bare_u_frame(ad_imp, tau_max);
     scalar_t normalization_cte = (double)res.frame_0th_order[0](0, 0) / ((double)u_frame_bare[0](0, 0));
     res.normalize(normalization_cte);
 
@@ -94,8 +94,7 @@ namespace inchworm {
   //------------------------------
 
   // Self consistent solution (one step, with precalculated U(beta) from ED)
-  single_step_results_t solver_core::solve_self_consistently(solve_params_t const &solve_params, u_tau_t const &u_tau_, double tau_split,
-                                                             double tau_max) {
+  single_step_results_t solver_core::solve_self_consistently(solve_params_t const &solve_params, u_tau_t const &u_tau_, double tau_split, double tau_max) {
     // Initialize solver
     this->init(solve_params);
 
@@ -127,7 +126,12 @@ namespace inchworm {
     this->init(solve_params);
 
     // Initialize empty propagator
-    u_tau = make_propagator(ad_imp, constr_params.beta, constr_params.n_tau_inch);
+    u_tau = u_tau_t{{constr_params.beta, Fermion, constr_params.n_tau_inch}, ad_imp.get_subspace_dims()};
+
+    for (auto &ubl : u_tau) {
+      ubl() = 0.;
+      for (int i = 0; i < ubl.target_shape()[0]; ++i) ubl[0](i, i) = 1;
+    }
 
     if (solve_params.verbosity > 0) std::cout << "\nStarting inchworm calculation of the propagator.. \n";
 
@@ -157,7 +161,7 @@ namespace inchworm {
       // Normalize the result using the ratio between theoretical zeroth order and Monte Carlo sampled zeroth order
       scalar_t normalization_cte;
       if (use_bare_propagator) {
-        auto u_frame_bare = make_bare_propagator_frame(ad_imp, tau_max, false);
+        auto u_frame_bare = make_bare_u_frame(ad_imp, tau_max);
         normalization_cte = (double)res.frame_0th_order[0](0, 0) / ((double)u_frame_bare[0](0, 0));
       } else {
         auto u_frame_zeroth_order = u_tau[0](tau_max - tau_split) * u_tau[0](tau_split);
@@ -173,7 +177,7 @@ namespace inchworm {
       if (solve_params.verbosity > 0) { std::printf("     average_k: %5f\n", res.average_k); }
 
       // Assign u_frame to the propagator u_tau, in order to be able to use it in next iteration
-      assign_frame_to_propagator(u_tau, res.frame, n + 1, 1.);
+      set_frame(res.frame, u_tau, n + 1);
     }
   }
 
@@ -194,17 +198,15 @@ namespace inchworm {
     // Initialize the Green function container
     G_tau = g_tau_t{{beta, Fermion, constr_params.n_tau_green}, constr_params.gf_struct};
 
-    // --- Treat n == 0 and n == n_tau -1 seperately
-
-    frame_t g_frame_n0 = make_bare_g_frame(ad_imp, u_tau, constr_params.gf_struct, 0.0, beta);
-    frame_t g_frame_nB = make_bare_g_frame(ad_imp, u_tau, constr_params.gf_struct, beta, beta);
-
     // Calculate Tr U(beta)
     scalar_t Tr_Ubeta = 0.0;
     for (int bl = 0; bl < u_tau.size(); bl++) Tr_Ubeta += trace(u_tau[bl](beta));
 
-    assign_frame_to_propagator(G_tau, g_frame_n0, 0, 1. / Tr_Ubeta);
-    assign_frame_to_propagator(G_tau, g_frame_nB, constr_params.n_tau_green - 1, 1. / Tr_Ubeta);
+    // Treat n == 0 and n == n_tau -1 seperately
+    frame_t g_frame_n0 = make_bare_g_frame(ad_imp, u_tau, constr_params.gf_struct, 0.0, beta) / Tr_Ubeta;
+    frame_t g_frame_nB = make_bare_g_frame(ad_imp, u_tau, constr_params.gf_struct, beta, beta) / Tr_Ubeta;
+    set_frame(g_frame_n0, G_tau, 0);
+    set_frame(g_frame_nB, G_tau, constr_params.n_tau_green - 1);
 
     // loop on different inchworm steps
     // n == 0 and n == n_tau - 1 already treated
@@ -235,7 +237,7 @@ namespace inchworm {
       }
       if (solve_params.verbosity > 0) { std::printf("     average_k: %5f\n", res.average_k); }
 
-      assign_frame_to_propagator(G_tau, res.frame, n, 1.);
+      set_frame(res.frame, G_tau, n);
     }
   }
 
@@ -258,7 +260,7 @@ namespace inchworm {
     // Create Monte-Carlo configuration
     qmc_config_data_t qmc_config_data{};
     if (mode == 0) {
-      qmc_config_data.frame = make_bare_propagator_frame(ad_imp, tau_split, false);
+      qmc_config_data.frame = make_bare_u_frame(ad_imp, tau_split);
     } else {
       qmc_config_data.frame = make_bare_g_frame(ad_imp, u_tau, params.gf_struct, tau_split, params.beta);
     }
@@ -274,7 +276,7 @@ namespace inchworm {
     mc.add_move(moves::double_remove{qmc_config_data, params.gf_struct, qmc_params, rng}, "double remove move");
 
     // Determine the shape of the result
-    std::vector<long> shape_of_frame;
+    std::vector<int> shape_of_frame;
     if (mode == 0) {
       for (int bl = 0; bl < ad_imp.n_subspaces(); bl++) { shape_of_frame.push_back(ad_imp.get_subspace_dim(bl)); }
     } else {
@@ -284,7 +286,7 @@ namespace inchworm {
     // Initialize result container
     single_step_results_t results{shape_of_frame};
     if (mode == 0)
-      results.frame = make_zero_propagator_frame(ad_imp);
+      results.frame = make_frame(ad_imp.get_subspace_dims());
     else if (mode == 1)
       results.frame = make_frame(params.gf_struct);
     results.frame_0th_order = results.frame;

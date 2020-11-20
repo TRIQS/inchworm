@@ -1,57 +1,11 @@
 #include "./u_frame.hpp"
+#include "./util.hpp"
 
 namespace inchworm {
 
-  frame_t make_u_frame(u_partial_t const &up) {
-    frame_t res{up.size()};
-    for (auto bl : range(up.size())) {
-      auto &[tbl, mat] = up[bl];
-      EXPECTS(bl == tbl || tbl == -1);
-      res[bl] = mat;
-    }
-    return res;
-  }
+  // --------------- General frame / u_partial functionality ---------------
 
-  u_partial_t make_u_partial(frame_t const &u) {
-    u_partial_t res;
-    for (int bl = 0; bl < u.size(); ++bl) { res.emplace_back(bl, u[bl]); }
-    return res;
-  }
-
-  frame_t make_zero_propagator_frame(atom_diag const &ad) {
-    frame_t u_frame(ad.n_subspaces());
-
-    for (int bl = 0; bl < ad.n_subspaces(); bl++) {
-      u_frame[bl] = matrix_t(ad.get_subspace_dim(bl), ad.get_subspace_dim(bl)); //  use zeros<> ?? check
-      u_frame[bl] = 0;
-    }
-    return u_frame;
-  }
-
-  frame_t make_bare_propagator_frame(atom_diag const &ad, double tau, bool set_gs_to_0) {
-    frame_t u_frame(ad.n_subspaces());
-
-    for (int bl = 0; bl < ad.n_subspaces(); bl++) {
-      int dim     = ad.get_subspace_dim(bl);
-      u_frame[bl] = matrix_t(dim, dim); //  use zeros<> ?? check
-      u_frame[bl] = 0;
-      for (int j = 0; j < dim; j++) u_frame[bl](j, j) = std::exp(-tau * (ad.get_eigenvalue(bl, j) + (set_gs_to_0 ? 0. : ad.get_gs_energy())));
-    }
-    return u_frame;
-  }
-
-  frame_t make_bare_g_frame(atom_diag const &ad_imp, u_tau_t const &u_tau, gf_struct_t const &gf_struct, double tau_split, double beta) {
-    u_partial_t l, r;
-
-    for (int i = 0; i < u_tau.size(); ++i) {
-      l.push_back({i, u_tau[i](beta - tau_split)});
-      r.push_back({i, u_tau[i](tau_split)});
-    }
-
-    return make_g_frame_from_l_and_r(ad_imp, gf_struct, l, r);
-  }
-
-  frame_t make_frame(std::vector<long> const &shape_of_frame) {
+  frame_t make_frame(std::vector<int> const &shape_of_frame) {
     auto res = frame_t{shape_of_frame.size()};
 
     for (auto [bl, n] : enumerate(shape_of_frame)) {
@@ -61,7 +15,6 @@ namespace inchworm {
     return res;
   }
 
-  // Create an empty frame (block diagonal matrix: vector of matrix_t)
   frame_t make_frame(gf_struct_t const &gf_struct) {
     auto res = frame_t{gf_struct.size()};
 
@@ -73,82 +26,57 @@ namespace inchworm {
     return res;
   }
 
+  frame_t make_frame(u_partial_t const &up) {
+    frame_t res{up.size()};
+    for (auto bl : range(up.size())) {
+      auto &[tbl, mat] = up[bl];
+      EXPECTS(bl == tbl || tbl == -1);
+      res[bl] = mat;
+    }
+    return res;
+  }
+
+  u_partial_t make_u_partial(frame_t const &u) {
+    u_partial_t res(u.size());
+    for (int bl = 0; bl < u.size(); ++bl) { res[bl] = {bl, u[bl]}; }
+    return res;
+  }
+
   u_partial_t operator*(u_partial_t const &l, u_partial_t const &r) {
 
     EXPECTS(l.size() == r.size());
 
-    auto res = u_partial_t{};
+    auto res = u_partial_t(l.size());
     for (int i = 0; i < l.size(); ++i) {
       // u[bl] = up[bl, blp] * up[blp, bl]
       // l_bl <- r_bl <- i
       auto &[r_bl, r_mat] = r[i];
       if (r_bl == -1)
-        res.emplace_back(-1, matrix_t{});
+        res[i] = {-1, matrix_t{}};
       else {
         auto &[l_bl, l_mat] = l[r_bl];
         if (l_bl == -1)
-          res.emplace_back(-1, matrix_t{});
+          res[i] = {-1, matrix_t{}};
         else
-          res.emplace_back(l_bl, l_mat * r_mat);
+          res[i] = {l_bl, l_mat * r_mat};
       }
     }
     return res;
   }
 
-  u_partial_t apply_op_from_right(u_partial_t const &l, int lin_index, bool op_dag, atom_diag const &ad) {
-
-    auto res = u_partial_t{};
-    for (int i = 0; i < l.size(); ++i) {
-      // u[bl] = up[bl, blp] * d_dag
-      // l_bl <- r_bl <- i
-      //auto &[r_bl, r_mat] = r[i];
-
-      auto r_bl  = (op_dag ? ad.cdag_connection(lin_index, i) : ad.c_connection(lin_index, i));
-      auto r_mat = (op_dag ? ad.cdag_matrix(lin_index, i) : ad.c_matrix(lin_index, i));
-
-      if (r_bl == -1) {
-        res.emplace_back(-1, matrix_t{});
-      } else {
-        auto &[l_bl, l_mat] = l[r_bl];
-        if (l_bl == -1) {
-          res.emplace_back(-1, matrix_t{});
-        } else {
-          res.emplace_back(l_bl, l_mat * r_mat);
-        }
-      }
-    }
-    return res;
-
-  } // namespace inchworm
-
-  double frobenius_norm(frame_t const &g_frame) {
+  double frobenius_norm(frame_t const &frame) {
     double val = 0;
-    for (auto const &mat : g_frame) {
+    for (auto const &mat : frame) {
       double norm = frobenius_norm(mat);
       val += norm * norm;
-      //double norm = trace(B);
-      //val += norm ;
     }
     return std::sqrt(val);
-    //return val;
-  }
-
-  double frobenius_norm(u_partial_t const &u_partial) {
-    double val = 0;
-    for (auto const &[bl, mat] : u_partial) {
-      double norm = frobenius_norm(mat);
-      val += norm * norm;
-      //double norm = trace(B);
-      //val += norm ;
-    }
-    return std::sqrt(val);
-    //return val;
   }
 
   // calculate the trace of the u_frame block diagonal matrix:
-  double trace(frame_t const &u_frame) {
+  double trace(frame_t const &frame) {
     double val = 0;
-    for (auto const &B : u_frame) val += trace(B);
+    for (auto const &B : frame) val += trace(B);
     return val;
   }
 
@@ -164,26 +92,6 @@ namespace inchworm {
     return norm_l_minus_r / std::max(norm_l, norm_r);
   }
 
-  frame_t get_frame(u_tau_t const &u_tau, int idx) {
-    frame_t res{u_tau.size()};
-    for (auto bl : range(u_tau.size())) res[bl] = u_tau[bl][idx];
-    return res;
-  }
-
-  double relative_distance(u_tau_t const &l, u_tau_t const &r) {
-    double dist = 0.0;
-    for (int i = 0; i < l[0].mesh().size(); ++i) dist = std::max(dist, relative_distance(get_frame(l, i), get_frame(r, i)));
-    return dist;
-  }
-
-  void print(frame_t const &u_frame, double factor) {
-    for (auto block : u_frame) {
-      block *= factor;
-      std::cout << block;
-    }
-    std::cout << "\n";
-  }
-
   frame_t make_g_frame_from_l_and_r(atom_diag const &ad_imp, gf_struct_t const &gf_struct, u_partial_t const &l, u_partial_t const &r) {
 
     frame_t g_frame = make_frame(gf_struct);
@@ -194,20 +102,77 @@ namespace inchworm {
 
       for (auto [i, j] : product_range(bl_size, bl_size)) {
 
-        // l * d_i[lidx](tau)
-        auto lidx      = ad_imp.get_fops()[{bl_name, i}];
-        u_partial_t ld = apply_op_from_right(l, lidx, false, ad_imp);
+        auto l_x_di    = l * get_op_block_matrix(ad_imp, bl_name, i, false);
+        auto r_x_djdag = r * get_op_block_matrix(ad_imp, bl_name, j, true);
+        auto prod      = make_frame(l_x_di * r_x_djdag);
 
-        // r * ddag_j[lidx_dag](0)
-        auto lidx_dag     = ad_imp.get_fops()[{bl_name, j}];
-        u_partial_t rddag = apply_op_from_right(r, lidx_dag, true, ad_imp);
-
-        auto prod = make_u_frame(ld * rddag);
         g_frame[bl](i, j) -= trace(prod);
       }
     }
 
     return g_frame;
+  }
+
+  // --------------- Atom Diag specific functions -----------------------
+
+  frame_t make_bare_u_frame(atom_diag const &ad, double tau, bool set_gs_to_0) {
+    auto u_frame = make_frame(ad.get_subspace_dims());
+    u_frame[bl_] << 0.;
+    for (auto [bl, bl_size] : enumerate(ad.get_subspace_dims()))
+      for (int i : range(bl_size)) u_frame[bl](i, i) = std::exp(-tau * (ad.get_eigenvalue(bl, i) + (set_gs_to_0 ? 0. : ad.get_gs_energy())));
+    return u_frame;
+  }
+
+  u_tau_t make_ED_propagator(atom_diag const &ad_tot, atom_diag const &ad_atom, atom_diag const &ad_bath, double beta, int n_tau) {
+
+    auto u_tau = u_tau_t{{beta, Fermion, n_tau}, ad_atom.get_subspace_dims()};
+
+    for (int i_tau = 0; i_tau < n_tau; i_tau++) {
+      double dtau  = beta * i_tau / (n_tau - 1.);
+      auto Z_bath  = trace(ad_bath, [beta](double E) { return std::exp(-beta * E); });
+      auto u_frame = partial_trace_bath(ad_tot, ad_atom, ad_bath, beta, dtau) / Z_bath;
+      set_frame(u_frame, u_tau, i_tau);
+    }
+
+    return u_tau;
+  }
+
+  frame_t make_bare_g_frame(atom_diag const &ad_imp, u_tau_t const &u_tau, gf_struct_t const &gf_struct, double tau_split, double beta) {
+    u_partial_t l(u_tau.size()), r(u_tau.size());
+
+    for (int i = 0; i < u_tau.size(); ++i) {
+      l[i] = {i, u_tau[i](beta - tau_split)};
+      r[i] = {i, u_tau[i](tau_split)};
+    }
+
+    return make_g_frame_from_l_and_r(ad_imp, gf_struct, l, r);
+  }
+
+  u_partial_t get_op_block_matrix(atom_diag const &ad, std::string const &bl_name, int idx, bool op_dag) {
+    auto res = u_partial_t(ad.n_subspaces());
+
+    auto lidx = ad.get_fops()[{bl_name, idx}];
+    for (auto bl_in : range(ad.n_subspaces())) {
+      auto bl_out = (op_dag ? ad.cdag_connection(lidx, bl_in) : ad.c_connection(lidx, bl_in));
+      auto matrix = (op_dag ? ad.cdag_matrix(lidx, bl_in) : ad.c_matrix(lidx, bl_in));
+      res[bl_in]  = {bl_out, matrix};
+    }
+
+    return res;
+  }
+
+  // --------------- Block Gf specific functions -----------------------
+
+  frame_t get_frame(u_tau_t const &u_tau, int idx) {
+    frame_t res{u_tau.size()};
+    for (auto bl : range(u_tau.size())) res[bl] = u_tau[bl][idx];
+    return res;
+  }
+
+  double relative_distance(u_tau_t const &l, u_tau_t const &r) {
+    double dist = 0.0;
+    for (int i = 0; i < l[0].mesh().size(); ++i) dist = std::max(dist, relative_distance(get_frame(l, i), get_frame(r, i)));
+    return dist;
   }
 
 } // namespace inchworm

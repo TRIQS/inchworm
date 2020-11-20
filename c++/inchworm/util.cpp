@@ -190,7 +190,7 @@ namespace inchworm {
     int linear_index = ad_imp.get_fops().data().size();
     //std::printf("li=%d\n",linear_index);
 
-    frame_t u_frame_result = make_zero_propagator_frame(ad_imp);
+    frame_t u_frame_result = make_frame(ad_imp.get_subspace_dims());
     auto es_full           = ad_tot.get_eigensystems();
     auto fs_full           = ad_tot.get_fock_states();
     auto fs_loc            = ad_imp.get_fock_states();

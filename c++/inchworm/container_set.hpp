@@ -35,7 +35,7 @@ namespace inchworm {
     std::vector<double> expansion_order;
     std::vector<int> samples_expansion_order;
 
-    single_step_results_t(std::vector<long> shape_of_frame);
+    single_step_results_t(std::vector<int> const &shape_of_frame);
 
     void normalize(double normalization_cte);
     void print(int verbosity = 4);

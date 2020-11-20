@@ -31,9 +31,9 @@ namespace inchworm {
 
   // structure to calculate hybridization function for tau, tau_dag, and orbital (linear) indices.
   struct hyb_adaptor_t {
-    h_tau_cvt hyb_tau;
+    h_tau_t const &hyb_tau;
 
-    hyb_adaptor_t(h_tau_cvt hyb_tau) : hyb_tau(hyb_tau) {}
+    hyb_adaptor_t(h_tau_t const &hyb_tau) : hyb_tau(hyb_tau) {}
 
     // function to link
     scalar_t operator()(fop_t const &cdag, fop_t const &c) const {

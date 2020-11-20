@@ -57,21 +57,8 @@ namespace inchworm {
 
   //------------------------------
 
-  // Create operator containing all possible transitions due to hybridization
+  // Create an operator containing all possible transitions due to hybridization
   // FIXME: Check actual numerical values of Delta instead??
   many_body_operator create_effective_hyb(gf_struct_t const &gf_struct);
-
-  // necessary to fill the propagator at each step of the inchworm:
-  // TODO Should be as easy as
-  // Assign: map([mp](auto && gf){ return gf[mp]; })(u_tau) = factor * u_frame;
-  //         or with helper
-  //         map(at_idx(mp), array<gf>) = array<matrix>
-  // Similarly for
-  // Eval:   map(eval_at(tau), array<gf>) -> array<matrix>
-
-  template <typename T> void assign_frame_to_propagator(block_gf<imtime, T> &u_tau, frame_t const &u_frame, int frame_number, scalar_t factor = 1.0) {
-    for (int bl = 0; bl < u_tau.size(); bl++) u_tau[bl][frame_number] = factor * u_frame[bl];
-    return;
-  }
 
 } // namespace inchworm

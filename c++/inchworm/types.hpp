@@ -10,6 +10,7 @@
 #include <triqs/utility/time_pt.hpp>
 
 #include <nda/nda.hpp>
+#include <nda/clef/literals.hpp>
 
 #include <mpi/mpi.hpp>
 
@@ -28,19 +29,22 @@ namespace inchworm {
   using namespace triqs::utility;
   using namespace h5;
   using namespace itertools;
+  using namespace nda::clef::literals;
 
   /// The value type of the hybridisaiton function
 #ifdef HYBRIDISATION_IS_COMPLEX
-  using scalar_t                            = dcomplex;
-  using hyb_target_t                        = matrix_valued;
+  using scalar_t     = dcomplex;
+  using hyb_target_t = matrix_valued;
 #else
-  using scalar_t                            = double;
-  using hyb_target_t                        = matrix_real_valued;
+  using scalar_t     = double;
+  using hyb_target_t = matrix_real_valued;
 #endif
   using matrix_t = matrix<scalar_t>;
 
   /// The frame of a Green function or Propagator
-  using frame_t     = nda::array<matrix_t, 1>;
+  using frame_t = nda::array<matrix_t, 1>;
+
+  // FIXME??? using u_partial_t = nda::array<std::pair<int, matrix_t>, 1>;
   using u_partial_t = std::vector<std::pair<int, matrix_t>>;
 
   /// The structure of the gf : block_idx -> pair of block_name and index list (int/string)
@@ -49,42 +53,18 @@ namespace inchworm {
   /// Container type of the propagator
   using u_tau_t = block_gf<imtime, hyb_target_t>;
 
-  /// A view to a u_tau_t
-  using u_tau_vt = u_tau_t::view_type;
-
-  /// A const view to a u_tau_t
-  using u_tau_cvt = u_tau_t::const_view_type;
-
   /// Container type of one-particle Green and Vertex functions in imaginary times
   using h_tau_t = block_gf<imtime, hyb_target_t>;
-
-  /// A view to a h_tau_t
-  using h_tau_vt = h_tau_t::view_type;
-
-  /// A const view to a h_tau_t
-  using h_tau_cvt = h_tau_t::const_view_type;
 
   /// Container type of one-particle Green and Vertex functions in imaginary times
   using g_tau_t = block_gf<imtime, hyb_target_t>;
 
-  /// A view to a g_tau_t
-  using g_tau_vt = g_tau_t::view_type;
-
-  /// A const view to a g_tau_t
-  using g_tau_cvt = g_tau_t::const_view_type;
-
   /// Container type of one-particle Green and Vertex functions in Matsubara frequencies
   using g_iw_t = block_gf<imfreq, matrix_valued>;
 
-  /// A view to a g_iw_t
-  using g_iw_vt = g_iw_t::view_type;
-
-  /// A const_view to a g_iw_t
-  using g_iw_cvt = g_iw_t::const_view_type;
-
   /// The atom diag type to use
   using atom_diag = triqs::atom_diag::atom_diag<std::is_same_v<scalar_t, dcomplex>>;
-
+  using triqs::hilbert_space::gf_struct_t;
   using indices_type = triqs::operators::indices_t;
 
   /**
