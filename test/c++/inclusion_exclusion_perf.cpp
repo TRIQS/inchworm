@@ -51,10 +51,10 @@ std::vector<double> generate_random_vector(double beta, int n_tau) {
 }
 
 int main(void) {
-  int N         = 10;//200;
+  int N         = 200;//200;
   int sp_max    = 1;
-  int order_min = 24; // order 0 is a special case that fails for now.
-  int order_max = 24; // order 9 and above are quite slow
+  int order_min = 22; // order 0 is a special case that fails for now.
+  int order_max = 22; // order 9 and above are quite slow
   double beta   = 1.0;
 
   for (int order = order_min; order <= order_max; order++)
@@ -62,7 +62,6 @@ int main(void) {
     std::printf("order = % d\n", order);
     for (int sp_number = 1; sp_number <= sp_max; sp_number++)
       for (int n = 0; n < N; n++) {
-        if (n%1 ==0) std::printf("n = % d\n", n);
 
         std::vector<double> tau1        = generate_random_vector(beta, order);
         std::vector<double> tau2        = generate_random_vector(beta, order);
