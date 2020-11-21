@@ -221,9 +221,18 @@ namespace inchworm::diagram {
         continue; // this is tricky, might have to change this at some point
 
       scalar_t value = 1.0;
-      std::vector<int> range_of_subvertex(range_of_vertex);
+      //std::vector<int> range_of_subvertex_old(range_of_vertex);
       int sign_of_parcollet_charlebois = 1;
       bool is_finite                   = true;
+
+      int number_of_vertex_to_remove = 0;
+      for (auto sub_segment_numero : set.list) 
+        number_of_vertex_to_remove += segments_list[sub_segment_numero].size;
+      
+      std::vector<int> range_of_subvertex(range_of_vertex.size() - number_of_vertex_to_remove);
+      
+      int index = 0;
+      int pos = range_of_vertex[0];
 
       for (auto sub_segment_numero : set.list) {
         segment_t subseg = segments_list[sub_segment_numero];
@@ -235,11 +244,30 @@ namespace inchworm::diagram {
         }
         value *= -subseg.value;
 
-        range_of_subvertex = remove_segment_from_list(range_of_subvertex, subseg.pos1, subseg.size);
-
+        //////////////////
+        //range_of_subvertex_old = remove_segment_from_list(range_of_subvertex_old, subseg.pos1, subseg.size);
+        
+        
+        ////////////////// new section
+        if(pos != subseg.pos1){
+          int number_of_new_vertex = (subseg.pos1 - pos);
+          std::iota(range_of_subvertex.begin() + index, range_of_subvertex.begin() + index + number_of_new_vertex, pos);
+          index += number_of_new_vertex;
+        }
+        pos = subseg.pos1 + subseg.size;
+        //////////////////
+        
         if (subseg.size % 4 != 0)
           if ((subseg.pos2 - seg.pos1) % 2 == 1) sign_of_parcollet_charlebois *= -1;
       }
+      std::iota(range_of_subvertex.begin() + index, range_of_subvertex.end(), pos);
+      //print_vector(range_of_subvertex);
+      //print_vector(range_of_subvertex2);
+      //if(not(range_of_subvertex == range_of_subvertex_old)) exit(-1);
+      
+      //std::printf("\n");
+            
+
       //if (verbose > 1)  std::printf("sign_parcollet_charlebois  % d\n", sign_of_parcollet_charlebois);
       //if (verbose > 1)  std::printf("value1 = % 4.8f\n", value);
 
