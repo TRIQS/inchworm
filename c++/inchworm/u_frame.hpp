@@ -32,6 +32,15 @@ namespace inchworm {
 
   // --------------- General frame / u_partial functionality ---------------
 
+  // Calculate the Frobenius norm of the u_partial block diagonal matrix:
+  double frobenius_norm(frame_t const &frame);
+
+  // calculate the trace of the u_frame block diagonal matrix:
+  double trace(frame_t const &u_frame);
+
+  // calculate the relative distance of the two frames: ||l - r|| / max(||l||, ||r||)
+  double relative_distance(frame_t const &l, frame_t const &r);
+
   // Create a block_matrix given a gf_struct
   frame_t make_frame(gf_struct_t const &gf_struct);
 
@@ -48,20 +57,11 @@ namespace inchworm {
   // Multiply two block_matrix
   u_partial_t operator*(u_partial_t const &l, u_partial_t const &r);
 
-  // Calculate the Frobenius norm of the u_partial block diagonal matrix:
-  double frobenius_norm(frame_t const &frame);
-
-  // calculate the trace of the u_frame block diagonal matrix:
-  double trace(frame_t const &u_frame);
-
-  // calculate the relative distance of the two frames: ||l - r|| / max(||l||, ||r||)
-  double relative_distance(frame_t const &l, frame_t const &r);
+  // --------------- Atom Diag specific functions -----------------------
 
   // Given the left and right propagator segment insert all operator
   // flavors and take the trace to get the Green function at a given time
   frame_t make_g_frame_from_l_and_r(atom_diag const &ad_imp, gf_struct_t const &gf_struct, u_partial_t const &l, u_partial_t const &r);
-
-  // --------------- Atom Diag specific functions -----------------------
 
   // Initialize bare propagator frame U_0 = exp(-tau H_loc) in the diagonal basis of H_loc
   frame_t make_bare_u_frame(atom_diag const &ad, double tau, bool set_gs_to_0 = false);

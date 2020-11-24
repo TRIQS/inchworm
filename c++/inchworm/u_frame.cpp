@@ -5,6 +5,34 @@ namespace inchworm {
 
   // --------------- General frame / u_partial functionality ---------------
 
+  double frobenius_norm(frame_t const &frame) {
+    double val = 0;
+    for (auto const &mat : frame) {
+      double norm = frobenius_norm(mat);
+      val += norm * norm;
+    }
+    return std::sqrt(val);
+  }
+
+  // calculate the trace of the u_frame block diagonal matrix:
+  double trace(frame_t const &frame) {
+    double val = 0;
+    for (auto const &B : frame) val += trace(B);
+    return val;
+  }
+
+  double relative_distance(frame_t const &l, frame_t const &r) {
+
+    frame_t diff = l;
+    for (auto bl : range(l.size())) { diff[bl] = l[bl] - r[bl]; }
+
+    auto norm_l         = frobenius_norm(l);
+    auto norm_r         = frobenius_norm(r);
+    auto norm_l_minus_r = frobenius_norm(diff);
+
+    return norm_l_minus_r / std::max(norm_l, norm_r);
+  }
+
   frame_t make_frame(std::vector<int> const &shape_of_frame) {
     auto res = frame_t{shape_of_frame.size()};
 
@@ -64,33 +92,7 @@ namespace inchworm {
     return res;
   }
 
-  double frobenius_norm(frame_t const &frame) {
-    double val = 0;
-    for (auto const &mat : frame) {
-      double norm = frobenius_norm(mat);
-      val += norm * norm;
-    }
-    return std::sqrt(val);
-  }
-
-  // calculate the trace of the u_frame block diagonal matrix:
-  double trace(frame_t const &frame) {
-    double val = 0;
-    for (auto const &B : frame) val += trace(B);
-    return val;
-  }
-
-  double relative_distance(frame_t const &l, frame_t const &r) {
-
-    frame_t diff = l;
-    for (auto bl : range(l.size())) { diff[bl] = l[bl] - r[bl]; }
-
-    auto norm_l         = frobenius_norm(l);
-    auto norm_r         = frobenius_norm(r);
-    auto norm_l_minus_r = frobenius_norm(diff);
-
-    return norm_l_minus_r / std::max(norm_l, norm_r);
-  }
+  // --------------- Atom Diag specific functions -----------------------
 
   frame_t make_g_frame_from_l_and_r(atom_diag const &ad_imp, gf_struct_t const &gf_struct, u_partial_t const &l, u_partial_t const &r) {
 
@@ -112,8 +114,6 @@ namespace inchworm {
 
     return g_frame;
   }
-
-  // --------------- Atom Diag specific functions -----------------------
 
   frame_t make_bare_u_frame(atom_diag const &ad, double tau, bool set_gs_to_0) {
     auto u_frame = make_frame(ad.get_subspace_dims());
