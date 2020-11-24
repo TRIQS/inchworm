@@ -127,10 +127,9 @@ namespace inchworm {
 
     auto u_tau = u_tau_t{{beta, Fermion, n_tau}, ad_atom.get_subspace_dims()};
 
+    double dtau = beta / (n_tau - 1.);
     for (int i_tau = 0; i_tau < n_tau; i_tau++) {
-      double dtau  = beta * i_tau / (n_tau - 1.);
-      auto Z_bath  = trace(ad_bath, [beta](double E) { return std::exp(-beta * E); });
-      auto u_frame = partial_trace_bath(ad_tot, ad_atom, ad_bath, beta, dtau) / Z_bath;
+      auto u_frame = partial_trace_bath(ad_tot, ad_atom, ad_bath, beta, dtau * i_tau);
       set_frame(u_frame, u_tau, i_tau);
     }
 

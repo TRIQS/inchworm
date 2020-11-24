@@ -1,22 +1,6 @@
 #include "./util.hpp"
 
-#define NUM_BITS 10
-
 namespace inchworm {
-
-  uint64_t get_MSB(uint64_t a, int shift) {
-    //std::printf("\nMSB %d ", shift);
-    //print_binary(a, NUM_BITS);
-    //print_binary(a >> shift, NUM_BITS - shift);
-    return (a >> shift);
-  }
-
-  uint64_t get_LSB(uint64_t a, int shift) {
-    //std::printf("\nLSB %d ", shift);
-    //print_binary(a, NUM_BITS);
-    //print_binary((a % (1 << shift)), shift);
-    return (a % (1 << shift));
-  }
 
   void print_energies(std::vector<std::vector<double>> const &E) {
     for (auto sp : E) {
@@ -39,6 +23,18 @@ namespace inchworm {
       std::printf("\n\n");
     }
     std::printf("\n");
+  }
+
+  void print_binary(unsigned int n, int total_bits) {
+
+    for (int i = 0; i < total_bits; i++) {
+      int bit = (1 << (total_bits - i - 1));
+      if ((n & bit) != 0)
+        std::printf("1");
+      else
+        std::printf("0");
+    }
+    std::printf(" ");
   }
 
   void print_atom_diag(atom_diag const &ad) {
@@ -125,19 +121,6 @@ namespace inchworm {
     return;
   }
 
-  //
-  void print_binary(unsigned int n, int total_bits) {
-
-    for (int i = 0; i < total_bits; i++) {
-      int bit = (1 << (total_bits - i - 1));
-      if ((n & bit) != 0)
-        std::printf("1");
-      else
-        std::printf("0");
-    }
-    std::printf(" ");
-  }
-
   //------------------------------
 
   many_body_operator create_effective_hyb(gf_struct_t const &gf_struct) {
@@ -148,149 +131,95 @@ namespace inchworm {
     return hyb_effective;
   }
 
-  std::pair<int, int> find_index(int number, std::vector<std::vector<fock_state_t>> fs) {
-    for (int s = 0; s < fs.size(); s++) {
-      for (int i = 0; i < fs[s].size(); i++) {
-        if (number == fs[s][i]) return std::pair<int, int>(s, i);
+  //------------------------------
+
+  /**
+   * Split the Fockstate (bitset) at a given bit index
+   *
+   * Example:
+   * (1 1 1 0 1 0 0..) -> [(1 1 1 0 0..), (0 1 0 0...)]
+   *       ^ bit_index = 3
+   */
+  std::pair<uint64_t, uint64_t> split_fs(uint64_t fs, int bit_index) {
+    //std::cout << std::bitset<10>(fs) << "\n";
+    uint64_t fs_left  = fs % (1 << bit_index); // All bits left of bit_index
+    uint64_t fs_right = fs >> bit_index;       // All bits right of bit_index
+    return {fs_left, fs_right};
+  }
+
+  /**
+   * Given a Fockstate, return the block and index
+   * for the associated atom_diag object
+   */
+  std::pair<int, int> fs_to_bl_and_idx(uint64_t fs, atom_diag const &ad) {
+    auto const &all_fs = ad.get_fock_states();
+    for (int bl = 0; bl < all_fs.size(); bl++) {
+      for (int idx = 0; idx < all_fs[bl].size(); idx++) {
+        if (fs == all_fs[bl][idx]) return {bl, idx};
       }
     }
     std::printf("error: number not found in the fock states\n");
-    exit(1);
-  }
-
-  scalar_t trace(atom_diag const &ad_tot, std::function<double(double)> fct) {
-    scalar_t trace_value = 0.0;
-    auto es_full         = ad_tot.get_eigensystems();
-    auto fs_full         = ad_tot.get_fock_states();
-
-    for (int s = 0; s < ad_tot.n_subspaces(); s++)
-      for (int i = 0; i < ad_tot.get_subspace_dim(s); i++) {
-        scalar_t val = fct(es_full[s].eigenvalues[i] + ad_tot.get_gs_energy());
-        trace_value += val;
-        //std::printf("s=%d, i=%d, val= %f\n", s, i, val);
-      }
-    return trace_value;
+    std::abort();
   }
 
   frame_t partial_trace_bath(atom_diag const &ad_tot, atom_diag const &ad_imp, atom_diag const &ad_bath, double beta, double tau) {
-    //TODO: incorporate in atom_diag and make it a member function: not possible anymore.
 
-    for (int i = 0; i < (int)ad_imp.get_fops().data().size(); i++) {
-      //std::printf("%d %d \n", i, (int)ad_imp.get_fops().data().size());
+    for (auto i : range(ad_imp.get_fops().size())) {
       if (ad_tot.get_fops().data()[i] != ad_imp.get_fops().data()[i]) {
         std::printf("error: the first indices of ad_tot should be the same as the one in ad_imp.\n");
-        exit(1);
+        std::abort();
       }
     }
 
-    //for (int i = 0; i < (int)ad_tot.get_fops().data().size(); i++) {
-    //  std::cout << " " << ad_tot.get_fops().data()[i] << "\n";
-    //}
+    // Given atom_diag object, calculate e^[-tau * H] in Fockstate Basis
+    auto calc_e_H_fs = [](atom_diag const &ad, double tau) {
+      // e^[-tau * H] in eigenbasis
+      auto e_H_tau = make_bare_u_frame(ad, tau);
 
-    int linear_index = ad_imp.get_fops().data().size();
-    //std::printf("li=%d\n",linear_index);
-
-    frame_t u_frame_result = make_frame(ad_imp.get_subspace_dims());
-    auto es_full           = ad_tot.get_eigensystems();
-    auto fs_full           = ad_tot.get_fock_states();
-    auto fs_loc            = ad_imp.get_fock_states();
-    auto es_bath           = ad_bath.get_eigensystems();
-    auto fs_bath           = ad_bath.get_fock_states();
-
-    // printing:
-
-    /*
-    //print_eigensystems(ad_tot);
-    for (int s = 0; s < ad_tot.n_subspaces(); s++) {
-      for (int i = 0; i < ad_tot.get_subspace_dim(s); i++) {
-        printf("  %2lu: ", fs_full[s][i]);
-        print_binary(fs_full[s][i], ad_tot.get_fops().data().size());
+      // Rotate to Fockstate Basis
+      auto e_H_tau_fs = e_H_tau;
+      for (auto bl : range(ad.n_subspaces())) {
+        auto rot       = ad.get_eigensystems()[bl].unitary_matrix;
+        e_H_tau_fs[bl] = rot * e_H_tau[bl] * dagger(rot);
       }
-      std::cout << "\n";
-    }
-    std::cout << "\n";
-    //print_eigensystems(ad_imp);
-    for (int s = 0; s < ad_imp.n_subspaces(); s++) {
-      for (int i = 0; i < ad_imp.get_subspace_dim(s); i++) {
-        printf("  %2lu: ", fs_loc[s][i]);
-        print_binary(fs_loc[s][i], ad_imp.get_fops().data().size());
-      }
-      std::cout << "\n";
-    }
-    //return 0.0;
-    */
+      return e_H_tau_fs;
+    };
+    auto e_H_tot_tau_fs             = calc_e_H_fs(ad_tot, tau);
+    auto e_H_bath_beta_minus_tau_fs = calc_e_H_fs(ad_bath, beta - tau);
 
-    for (int s = 0; s < ad_tot.n_subspaces(); s++) {
-      EXPECTS(es_full[s].eigenvalues.size() == fs_full[s].size());
-      int size      = ad_tot.get_subspace_dim(s);
-      auto e_E_Udag = matrix_t{dagger(es_full[s].unitary_matrix)};
+    // The result container
+    frame_t utau_imp = make_frame(ad_imp.get_subspace_dims());
 
-      for (int i = 0; i < size; i++) {
-        //std::printf("-----> %lu   % 4.8f\n ", fs_full[s][i],  fct(es_full[s].eigenvalues[i] + ad_tot.get_gs_energy()));
-        for (int j = 0; j < size; j++) e_E_Udag(i, j) *= std::exp(-tau * (es_full[s].eigenvalues[i] + ad_tot.get_gs_energy()));
-      }
-      //std::printf("\n");
+    auto const &all_fs_tot = ad_tot.get_fock_states();
 
-      // e_H = exp[-tau * H] in the basis of the sites:
-      auto e_H = es_full[s].unitary_matrix * e_E_Udag;
+    for (auto [bl, bl_size] : enumerate(ad_tot.get_subspace_dims())) {
 
-      /*
-      // printing:
-      std::printf("\nH[%d] %d \n   ", s);
-      auto fss = ad_tot.get_fock_states()[s];
-      for (int i = 0; i < ad_tot.get_subspace_dim(s); i++) {
-        printf("  ");
-        print_binary(fss[i], ad_tot.get_fops().data().size());
-      }
-    
-      print_matrix(H);
-      */
+      for (auto [i, j] : product_range(bl_size, bl_size)) {
 
-      for (int i = 0; i < size; i++) {
-        uint64_t traced_idx1    = get_MSB(fs_full[s][i], linear_index); // the traced indices are the bath indices
-        uint64_t preserved_idx1 = get_LSB(fs_full[s][i], linear_index); // the preserved indices are the impurity indices
-        //std::printf("%u %u\n", traced_idx1, preserved_idx1);
+        int nfops_imp              = ad_imp.get_fops().size();
+        auto [fs_imp_i, fs_bath_i] = split_fs(all_fs_tot[bl][i], nfops_imp);
+        auto [fs_imp_j, fs_bath_j] = split_fs(all_fs_tot[bl][j], nfops_imp);
 
-        for (int j = 0; j < size; j++) {
-          uint64_t traced_idx2    = get_MSB(fs_full[s][j], linear_index);
-          uint64_t preserved_idx2 = get_LSB(fs_full[s][j], linear_index);
-          //std::printf(" %u %u\n", traced_idx2, preserved_idx2);
-          if (traced_idx1 == traced_idx2) {
+        if (fs_bath_i == fs_bath_j) {
 
-            auto [s1, i1] = find_index(preserved_idx1, fs_loc);
-            auto [s2, i2] = find_index(preserved_idx2, fs_loc);
+          auto [bl_imp, i_imp]   = fs_to_bl_and_idx(fs_imp_i, ad_imp);
+          auto [bl_imp_j, j_imp] = fs_to_bl_and_idx(fs_imp_j, ad_imp);
+          ASSERT(bl_imp == bl_imp_j);
 
-            auto [s3, i3] = find_index(traced_idx1, fs_bath);
-            //auto [s4, i4] = find_index(traced_idx2, fs_bath);
+          auto [bl_bath, i_bath] = fs_to_bl_and_idx(fs_bath_i, ad_bath);
 
-            if (s1 != s2) {
-              std::printf("error: both block should be the same here\n");
-              exit(1);
-            }
-
-            // the exponential function factor corresponds to e^[-(beta - tau) * H_bath]
-            u_frame_result[s2](i1, i2) += e_H(i, j) * std::exp(-(beta - tau) * (es_bath[s3].eigenvalues[i3] + ad_bath.get_gs_energy()));
-          }
+          utau_imp[bl_imp](i_imp, j_imp) += e_H_tot_tau_fs[bl](i, j) * e_H_bath_beta_minus_tau_fs[bl_bath](i_bath, i_bath);
         }
       }
     }
 
-    // basis transformation to the atom_diag of the impurity:
-    for (int s1 = 0; s1 < ad_imp.n_subspaces(); s1++) {
-      /*
-      std::printf("\nu[%d] \n   ", s1);
-      auto fss1 = ad_imp.get_fock_states()[s1];
-      for (int i = 0; i < ad_imp.get_subspace_dim(s1); i++) {
-        printf("  ");
-        print_binary(fss1[i], ad_imp.get_fops().data().size());
-      }
-      std::printf("\n");
-      print_matrix(u_frame_result[s1]);
-      */
-      u_frame_result[s1] =
-         dagger((ad_imp.get_eigensystems())[s1].unitary_matrix) * u_frame_result[s1] * ((ad_imp.get_eigensystems())[s1].unitary_matrix);
+    // Rotate to impurity eigenbasis and normalize by Z_bath
+    auto Z_bath = trace(make_bare_u_frame(ad_bath, beta));
+    for (auto bl_imp : range(ad_imp.n_subspaces())) {
+      auto rot = ad_imp.get_eigensystems()[bl_imp].unitary_matrix;
+      utau_imp[bl_imp] = 1.0 / Z_bath * dagger(rot) * utau_imp[bl_imp] * rot;
     }
 
-    return u_frame_result;
+    return utau_imp;
   }
 } // namespace inchworm

@@ -67,6 +67,7 @@ namespace inchworm {
   frame_t make_bare_u_frame(atom_diag const &ad, double tau, bool set_gs_to_0 = false);
 
   // Make an exact diagonalization propagator U = Trace_B [exp(-H_bath *(beta-tau)) exp(-H_tot*tau)  ]  /  Trace_B [ exp(-H_bath*beta) ]
+  // FIXME Merge with partial_trace_bath
   u_tau_t make_ED_propagator(atom_diag const &ad_tot, atom_diag const &ad_imp, atom_diag const &ad_bath, double beta, int n_tau);
 
   // Initialize bare Green function frame
