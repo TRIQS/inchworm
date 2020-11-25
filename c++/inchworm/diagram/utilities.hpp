@@ -20,16 +20,6 @@
  *
  ******************************************************************************/
 #pragma once
-#include <stdlib.h>
-#include <stdio.h>
-#include <algorithm>
-#include <vector>
-#include <numeric>
-
-#include <triqs/gfs.hpp>
-#include <triqs/mesh.hpp>
-#include <triqs/utility/macros.hpp>
-#include <triqs/utility/itertools.hpp>
 
 namespace inchworm::diagram {
 

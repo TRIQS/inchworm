@@ -1,4 +1,8 @@
 #include "./base_move.hpp"
+#include "./../diagram/hyb_matrix.hpp"
+#include "./../diagram/inclusion_exclusion.hpp"
+#include "./../u_frame.hpp"
+#include "./../atom_diag.hpp"
 #include "./../impurity_product.hpp"
 
 namespace inchworm::moves {

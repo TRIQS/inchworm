@@ -20,6 +20,8 @@
  *
  ******************************************************************************/
 #include "./inclusion_exclusion.hpp"
+#include "./utilities.hpp"
+#include "./print.hpp"
 
 namespace inchworm::diagram {
   segment_t::segment_t(int p1, int p2, int n) : pos1{p1}, pos2{p2}, numero{n} {

@@ -21,34 +21,23 @@
  ******************************************************************************/
 #pragma once
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <algorithm>
-#include <vector>
-#include <numeric>
-
-#include "./diagram.hpp"
-
-///////////////////////////////////
-////////// PRINT //////////////////
-///////////////////////////////////
+#include "diagram.hpp"
 
 namespace inchworm::diagram {
+
   void print_vector(std::vector<int> const &v);
 
   // print diagram and its split point above.
-  //
   void print_diag(time_diagram_t const &diagram);
 
   void print_configuration(time_diagram_t const &diagram);
 
   // print one line of segments:
-  //
   void print_line(std::vector<int> const &segments_vector);
 
   std::string diagram_string(time_diagram_t const &diagram);
 
   // print the arch from a to b with different character.
-  //
   void printArch(int a, int b, int k_order, char char1 = '.');
+
 } // namespace inchworm::diagram

@@ -3,20 +3,11 @@
 #include <triqs/gfs.hpp>
 #include <triqs/mesh.hpp>
 #include <triqs/operators/many_body_operator.hpp>
-#include <triqs/hilbert_space/fundamental_operator_set.hpp>
-#include <triqs/utility/macros.hpp>
-
 #include <triqs/atom_diag/atom_diag.hpp>
-#include <triqs/utility/time_pt.hpp>
 
 #include <nda/nda.hpp>
+#include <nda/macros.hpp>
 #include <nda/clef/literals.hpp>
-
-#include <mpi/mpi.hpp>
-
-#include <iostream>
-#include <string>
-#include <utility>
 
 namespace inchworm {
 
@@ -49,6 +40,9 @@ namespace inchworm {
 
   /// The structure of the gf : block_idx -> pair of block_name and index list (int/string)
   using triqs::hilbert_space::gf_struct_t;
+
+  // The many body operator type
+  using many_body_op_t = triqs::operators::many_body_operator_generic<scalar_t>;
 
   /// Container type of the propagator
   using u_tau_t = block_gf<imtime, hyb_target_t>;

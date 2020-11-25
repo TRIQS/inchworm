@@ -21,6 +21,8 @@
  ******************************************************************************/
 
 #include <inchworm/solver_core.hpp>
+#include <inchworm/atom_diag.hpp>
+#include <inchworm/u_frame.hpp>
 #include <inchworm/util.hpp>
 
 #include <triqs/gfs.hpp>

@@ -19,7 +19,9 @@
  * inchworm. If not, see <http://www.gnu.org/licenses/>.
  *
  ******************************************************************************/
-#include "proper_enum.hpp"
+#include "./proper_enum.hpp"
+#include "./print.hpp"
+#include "./utilities.hpp"
 
 namespace inchworm::diagram {
   // find parity of a permutation by evaluating

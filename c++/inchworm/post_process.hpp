@@ -20,8 +20,6 @@
  *
  ******************************************************************************/
 #pragma once
-#include "./qmc_config_data.hpp"
-#include "./params.hpp"
 
 namespace inchworm {
 

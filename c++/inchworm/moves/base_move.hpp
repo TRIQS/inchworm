@@ -1,11 +1,9 @@
 #pragma once
+
+#include "../types.hpp"
 #include "../qmc_config_data.hpp"
-#include "../diagram/print.hpp"
-#include "../u_frame.hpp"
 
 #include <triqs/mc_tools/random_generator.hpp>
-#include <inchworm/diagram/inclusion_exclusion.hpp>
-#include <inchworm/diagram/proper_enum.hpp>
 
 namespace inchworm::moves {
 

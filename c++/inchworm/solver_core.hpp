@@ -1,10 +1,8 @@
 #pragma once
-#include "./container_set.hpp"
-#include "./params.hpp"
-#include "./types.hpp"
-#include "./impurity_product.hpp"
-#include "./u_frame.hpp"
-#include "./util.hpp"
+
+#include "container_set.hpp"
+#include "params.hpp"
+#include "types.hpp"
 
 namespace inchworm {
 

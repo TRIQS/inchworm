@@ -1,16 +1,7 @@
 #pragma once
-#include "./u_frame.hpp"
-#include "./util.hpp"
-#include "./types.hpp"
-#include "./params.hpp"
-#include "./diagram/diagram.hpp"
 
-#include <triqs/gfs.hpp>
-#include <triqs/mesh.hpp>
-#include <triqs/hilbert_space/fundamental_operator_set.hpp>
-#include <triqs/atom_diag/atom_diag.hpp>
-#include <triqs/utility/macros.hpp>
-#include <triqs/arrays.hpp>
+#include "types.hpp"
+#include "diagram/diagram.hpp"
 
 namespace inchworm {
   using time_diagram_t = diagram::time_diagram_t;

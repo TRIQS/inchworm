@@ -20,19 +20,8 @@
  *
  ******************************************************************************/
 #pragma once
-#include <iostream>
-#include <string>
-#include <utility>
-
-#include <stdlib.h>
-#include <stdio.h>
-#include <algorithm>
-#include <assert.h> // will be removed later
-#include <vector>
 
 #include "diagram.hpp"
-#include "utilities.hpp"
-#include "print.hpp"
 #include "hyb_matrix.hpp"
 
 namespace inchworm::diagram {

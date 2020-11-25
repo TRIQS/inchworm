@@ -20,14 +20,11 @@
  *
  ******************************************************************************/
 #pragma once
-//#include <stdio.h>
-#include <algorithm>
-#include <vector>
-#include <numeric>
 
-#include "./../types.hpp"
-#include "./../qmc_config_data.hpp"
-#include "./utilities.hpp"
+#include "../types.hpp"
+#include "../qmc_config_data.hpp"
+
+#include <vector>
 
 namespace inchworm::diagram {
 

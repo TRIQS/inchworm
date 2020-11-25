@@ -1,5 +1,6 @@
 #pragma once
-#include "./base_move.hpp"
+
+#include "base_move.hpp"
 
 namespace inchworm::moves {
 

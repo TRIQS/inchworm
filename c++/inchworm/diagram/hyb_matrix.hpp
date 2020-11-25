@@ -21,13 +21,8 @@
  ******************************************************************************/
 #pragma once
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <algorithm>
-#include <vector>
-#include <numeric>
-
 #include "diagram.hpp"
+
 #include "../types.hpp"
 #include "../qmc_config_data.hpp"
 

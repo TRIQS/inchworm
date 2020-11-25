@@ -1,11 +1,6 @@
 #pragma once
-#include "./types.hpp"
 
-#include <triqs/atom_diag/atom_diag.hpp>
-#include <triqs/utility/macros.hpp>
-#include <itertools/itertools.hpp>
-
-#include <algorithm>
+#include "types.hpp"
 
 namespace inchworm {
 
@@ -56,25 +51,6 @@ namespace inchworm {
 
   // Multiply two block_matrix
   u_partial_t operator*(u_partial_t const &l, u_partial_t const &r);
-
-  // --------------- Atom Diag specific functions -----------------------
-
-  // Given the left and right propagator segment insert all operator
-  // flavors and take the trace to get the Green function at a given time
-  frame_t make_g_frame_from_l_and_r(atom_diag const &ad_imp, gf_struct_t const &gf_struct, u_partial_t const &l, u_partial_t const &r);
-
-  // Initialize bare propagator frame U_0 = exp(-tau H_loc) in the diagonal basis of H_loc
-  frame_t make_bare_u_frame(atom_diag const &ad, double tau, bool set_gs_to_0 = false);
-
-  // Make an exact diagonalization propagator U = Trace_B [exp(-H_bath *(beta-tau)) exp(-H_tot*tau)  ]  /  Trace_B [ exp(-H_bath*beta) ]
-  // FIXME Merge with partial_trace_bath
-  u_tau_t make_ED_propagator(atom_diag const &ad_tot, atom_diag const &ad_imp, atom_diag const &ad_bath, double beta, int n_tau);
-
-  // Initialize bare Green function frame
-  frame_t make_bare_g_frame(atom_diag const &ad_imp, u_tau_t const &u_tau, gf_struct_t const &gf_struct, double tau_split, double beta);
-
-  // Given an atom_diag object and the fundamental operator information, retrieve its block matrix representation
-  u_partial_t get_op_block_matrix(atom_diag const &ad, std::string const &bl_name, int idx, bool op_dag);
 
   // --------------- Block Gf specific functions -----------------------
 

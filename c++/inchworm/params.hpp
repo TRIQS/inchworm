@@ -21,13 +21,9 @@
  ******************************************************************************/
 #pragma once
 
-#include "./types.hpp"
-#include <triqs/operators/many_body_operator.hpp>
+#include "types.hpp"
 
 namespace inchworm {
-
-  // FIXME: choose between many_body_op_t and many_body_operator: same?
-  using many_body_op_t = triqs::operators::many_body_operator_generic<scalar_t>; // Operator with real or complex value
 
   /// The parameters for the solver construction
   struct constr_params_t {

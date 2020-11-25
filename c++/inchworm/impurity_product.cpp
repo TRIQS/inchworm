@@ -1,4 +1,6 @@
 #include "./impurity_product.hpp"
+#include "./atom_diag.hpp"
+#include "./u_frame.hpp"
 
 namespace inchworm {
 

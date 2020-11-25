@@ -1,6 +1,8 @@
 #pragma once
+
+#include "../params.hpp"
 #include "../qmc_config_data.hpp"
-#include "../container_set.hpp"
+#include "../container_set.hpp" // single_step_results_t
 
 namespace inchworm::measures {
 

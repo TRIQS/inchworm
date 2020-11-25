@@ -21,18 +21,13 @@
  ******************************************************************************/
 #include "./print.hpp"
 
-///////////////////////////////////
-////////// PRINT //////////////////
-///////////////////////////////////
-
 namespace inchworm::diagram {
+
   void print_vector(std::vector<int> const &v) {
     for (auto l : v) { std::printf("%d ", l); }
     std::printf("\n");
   }
 
-  // print diagram and its split point above.
-  //
   void print_diag(time_diagram_t const &diagram) {
     for (int j = 0; j < diagram.size(); j++) {
       if (std::any_of(begin(diagram.split_points), end(diagram.split_points), [j](int i) { return i == j + 1; }))
@@ -62,8 +57,6 @@ namespace inchworm::diagram {
     std::printf("\n");
   }
 
-  // print one line of segments:
-  //
   void print_line(std::vector<int> const &segments_vector) {
     int current_segment = 0;
     std::string string1 = "";
@@ -99,8 +92,6 @@ namespace inchworm::diagram {
     return diagram_order;
   }
 
-  // print the arch from a to b with different character.
-  //
   void printArch(int a, int b, int k_order, char char1) {
     int ii;
     if (a > b) {
@@ -122,4 +113,5 @@ namespace inchworm::diagram {
     }
     printf("\n");
   }
+
 } // namespace inchworm::diagram

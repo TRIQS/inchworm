@@ -1,8 +1,6 @@
 #pragma once
-#include "./u_frame.hpp"
-#include "./types.hpp"
-#include "./params.hpp"
-#include <triqs/atom_diag/atom_diag.hpp>
+
+#include "types.hpp"
 
 namespace inchworm {
 

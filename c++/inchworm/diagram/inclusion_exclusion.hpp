@@ -20,8 +20,8 @@
  *
  ******************************************************************************/
 #pragma once
-#include "./hyb_matrix.hpp"
-#include "./print.hpp"
+
+#include "hyb_matrix.hpp"
 
 namespace inchworm::diagram {
   // Definition of a segment:

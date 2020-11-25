@@ -19,7 +19,9 @@
  * inchworm. If not, see <http://www.gnu.org/licenses/>.
  *
  ******************************************************************************/
-#include "hyb_matrix.hpp"
+#include "./hyb_matrix.hpp"
+#include "./utilities.hpp"
+
 #include <iomanip>
 
 namespace inchworm::diagram {

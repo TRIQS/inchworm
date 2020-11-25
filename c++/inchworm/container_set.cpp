@@ -20,6 +20,7 @@
  *
  ******************************************************************************/
 #include "./container_set.hpp"
+#include "./u_frame.hpp"
 #include "./util.hpp"
 
 namespace inchworm {
