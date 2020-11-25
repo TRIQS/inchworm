@@ -15,7 +15,7 @@ namespace inchworm {
     // Treat the trivial case of zero operators separately
     if (op_idx.size() == 0) {
       if (u_tau_p) {
-        frame_t u_frame = make_frame(ad.get_subspace_dims());
+        frame_t u_frame = make_zero_frame(ad.get_subspace_dims());
         for (int bl = 0; bl < ad.n_subspaces(); bl++) {
           u_frame[bl] = (*u_tau_p)[bl](tau_max - tau_min); // (interpolation)
         }

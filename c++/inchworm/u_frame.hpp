@@ -42,11 +42,11 @@ namespace inchworm {
   double relative_distance(frame_t const &l, frame_t const &r);
 
   // Create a block_matrix given a gf_struct
-  frame_t make_frame(gf_struct_t const &gf_struct);
+  frame_t make_zero_frame(gf_struct_t const &gf_struct);
 
   // Create a block_matrix given a shape
   // Will be replaced by map(N->matrix{N,N}, shape)
-  frame_t make_frame(std::vector<int> const &shape);
+  frame_t make_zero_frame(std::vector<int> const &shape);
 
   // as_diagonal_block_matrix?
   frame_t make_frame(u_partial_t const &up);

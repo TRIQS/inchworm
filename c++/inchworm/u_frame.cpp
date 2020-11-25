@@ -33,7 +33,7 @@ namespace inchworm {
     return norm_l_minus_r / std::max(norm_l, norm_r);
   }
 
-  frame_t make_frame(std::vector<int> const &shape_of_frame) {
+  frame_t make_zero_frame(std::vector<int> const &shape_of_frame) {
     auto res = frame_t{shape_of_frame.size()};
 
     for (auto [bl, n] : enumerate(shape_of_frame)) {
@@ -43,7 +43,7 @@ namespace inchworm {
     return res;
   }
 
-  frame_t make_frame(gf_struct_t const &gf_struct) {
+  frame_t make_zero_frame(gf_struct_t const &gf_struct) {
     auto res = frame_t{gf_struct.size()};
 
     for (auto bl : range(gf_struct.size())) {
@@ -96,7 +96,7 @@ namespace inchworm {
 
   frame_t make_g_frame_from_l_and_r(atom_diag const &ad_imp, gf_struct_t const &gf_struct, u_partial_t const &l, u_partial_t const &r) {
 
-    frame_t g_frame = make_frame(gf_struct);
+    frame_t g_frame = make_zero_frame(gf_struct);
 
     // G[bl][tau][i,j] = -<T c[bl][i](tau) cdag[bl][j](0)>
     for (int bl : range(gf_struct.size())) {
@@ -116,8 +116,7 @@ namespace inchworm {
   }
 
   frame_t make_bare_u_frame(atom_diag const &ad, double tau, bool set_gs_to_0) {
-    auto u_frame = make_frame(ad.get_subspace_dims());
-    u_frame[bl_] << 0.;
+    auto u_frame = make_zero_frame(ad.get_subspace_dims());
     for (auto [bl, bl_size] : enumerate(ad.get_subspace_dims()))
       for (int i : range(bl_size)) u_frame[bl](i, i) = std::exp(-tau * (ad.get_eigenvalue(bl, i) + (set_gs_to_0 ? 0. : ad.get_gs_energy())));
     return u_frame;

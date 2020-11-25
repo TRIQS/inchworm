@@ -188,7 +188,7 @@ namespace inchworm {
     auto e_H_bath_beta_minus_tau_fs = calc_e_H_fs(ad_bath, beta - tau);
 
     // The result container
-    frame_t utau_imp = make_frame(ad_imp.get_subspace_dims());
+    frame_t utau_imp = make_zero_frame(ad_imp.get_subspace_dims());
 
     auto const &all_fs_tot = ad_tot.get_fock_states();
 

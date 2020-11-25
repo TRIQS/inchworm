@@ -286,9 +286,9 @@ namespace inchworm {
     // Initialize result container
     single_step_results_t results{shape_of_frame};
     if (mode == 0)
-      results.frame = make_frame(ad_imp.get_subspace_dims());
+      results.frame = make_zero_frame(ad_imp.get_subspace_dims());
     else if (mode == 1)
-      results.frame = make_frame(params.gf_struct);
+      results.frame = make_zero_frame(params.gf_struct);
     results.frame_0th_order = results.frame;
 
     // Register all measurements

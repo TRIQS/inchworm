@@ -25,7 +25,7 @@
 namespace inchworm {
 
   single_step_results_t::single_step_results_t(std::vector<int> const &shape_of_frame) : expansion_order(10, 0), samples_expansion_order(10, 0) {
-    frame           = make_frame(shape_of_frame);
+    frame           = make_zero_frame(shape_of_frame);
     frame_0th_order = frame;
   };
 

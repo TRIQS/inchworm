@@ -55,7 +55,7 @@ namespace inchworm::moves {
     } else if (params.mode == 1) { // --- Green Function Mode
       EXPECTS(not params.use_bare_propagator);
 
-      prop_data.frame = make_frame(gf_struct);
+      prop_data.frame = make_zero_frame(gf_struct);
 
       // Calculate -Tr[imp_prod(beta, tau) * c(tau) * imp_prod(tau, 0) * cdag(0)]
       // for all combinations of fundamental operator flavors
