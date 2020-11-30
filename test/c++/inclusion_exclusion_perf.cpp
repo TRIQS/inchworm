@@ -51,7 +51,7 @@ std::vector<double> generate_random_vector(double beta, int n_tau) {
 }
 
 int main(void) {
-  int N         = 500000;//200;
+  int N         = 500000;//500000;
   int sp_max    = 1;
   int order_min = 5; // order 0 is a special case that fails for now.
   int order_max = 10; // order 9 and above are quite slow
