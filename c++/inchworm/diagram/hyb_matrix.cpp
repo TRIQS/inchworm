@@ -88,7 +88,10 @@ namespace inchworm::diagram {
       //std::printf("%d %d\n", i, j);
     }
 
-    matrix_t m(N, N);
+    //nda::matrix<scalar_t, 2, nda::C_layout, 'M', nda::sso<1000>> m(N, N);
+    nda::matrix<scalar_t, nda::C_layout, nda::sso<1000>> m(N, N); // we might need to play with this number. For the test I did (order 5 to 10), it had minor speedup (~1%).
+    //matrix_t m(N, N);
+
     for (i = 0; i < N; i++) {
       for (j = 0; j < N; j++) { m(i, j) = mat(list_of_d[i], list_of_d_dag[j]); }
     }
