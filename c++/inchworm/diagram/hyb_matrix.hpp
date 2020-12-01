@@ -26,6 +26,8 @@
 #include "../types.hpp"
 #include "../qmc_config_data.hpp"
 
+#define ORDER_MAX 400
+
 namespace inchworm::diagram {
 
   struct hyb_matrix_t {

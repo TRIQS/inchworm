@@ -23,6 +23,9 @@
 
 #include "hyb_matrix.hpp"
 
+using nda_fast_vector  = nda::basic_array<int, 1, nda::C_layout, 'V', nda::sso<200>>; // preallocated up to order 25
+using nda_fast_vector2 = nda::basic_array<int, 1, nda::C_layout, 'V', nda::sso<400>>; // preallocated up to order 25
+
 namespace inchworm::diagram {
   // Definition of a segment:
   //
@@ -35,7 +38,7 @@ namespace inchworm::diagram {
     scalar_t value_without_cuts = 0.;
 
     bool calculated = false;
-    int numero      = 0;
+    int id      = 0;
 
     // Constructor:
     segment_t(int p1, int p2, int n);
@@ -60,10 +63,16 @@ namespace inchworm::diagram {
 
     int pos1;
     int pos2; // note: by definition here, the set of segments goes from index pos1 to pos2-1
-    int size;
+    int size; // total length of ths segment
     bool disjoint = true; // we define disjoint when 2 segments does not touch (by convention, we choose a segment alone to be disjoint too)
     bool adjacent = true; // we define adjacent when all segments touches. If one does not, it is false.
-    std::vector<int> list;
+    
+    
+    //std::vector<int> list;
+    //nda_fast_vector list; 
+    std::array<int, 20> list;  // preallocated for speedup FIXME: 20 might be too constraining.
+    int N_seg; // number of segments in the set, length of the list.
+    
     //time_diagram_t & diagram;
 
     // Constructor:
@@ -92,12 +101,12 @@ namespace inchworm::diagram {
   // Of course is requires the "segment_min" to be in the vector and more than "segment_size"
   // away from the end of the vector. This is ensured by the EXPECTS() check.
   //
-  std::vector<int> remove_segment_from_list(std::vector<int> const &list, int segment_min, int segment_size);
+  //std::vector<int> remove_segment_from_list(std::vector<int> const &list, int segment_min, int segment_size);
 
   // Calculate the value of one segment
   // by analysing every segments of the set of segment (of both lists)
   //
-  void calculate_segment(int segment_numero,
+  void calculate_segment(int segment_id,
                          std::vector<segment_t> &segments_list, // not const: modified
                          std::vector<set_of_segments_t> const &set_disjoint_list, std::vector<set_of_segments_t> const &set_adjacent_list,
                          hyb_matrix_t const &hyb_mat, time_diagram_t const &diagram, bool special = false, int verbose = 0);

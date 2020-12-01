@@ -69,13 +69,13 @@ namespace inchworm::diagram {
   scalar_t hyb_matrix_t::det() const { return determinant(mat); }
 
   scalar_t hyb_matrix_t::extract_det(std::vector<int> const &list_of_indices) const {
-    EXPECTS(list_of_indices.size() < 400); // I think that order 200 is safe enough.
+    EXPECTS(list_of_indices.size() < 2*ORDER_MAX); // I think that order ORDER_MAX >= 50 is safe enough.
     EXPECTS(list_of_indices.size() % 2 == 0 ); 
     
     int N = list_of_indices.size() / 2;
     //std::vector<int> list_of_d(100), list_of_d_dag(100);
-    std::array<int, 400> list_of_d;
-    std::array<int, 400> list_of_d_dag;
+    std::array<int, ORDER_MAX> list_of_d;
+    std::array<int, ORDER_MAX> list_of_d_dag;
     
     int i = 0, j = 0;
     //std::printf("%d %d\n", i, j);

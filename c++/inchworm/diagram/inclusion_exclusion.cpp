@@ -24,7 +24,7 @@
 #include "./print.hpp"
 
 namespace inchworm::diagram {
-  segment_t::segment_t(int p1, int p2, int n) : pos1{p1}, pos2{p2}, numero{n} {
+  segment_t::segment_t(int p1, int p2, int n) : pos1{p1}, pos2{p2}, id{n} {
     EXPECTS(pos2 > pos1);
     size = pos2 - pos1;
   }
@@ -87,11 +87,13 @@ namespace inchworm::diagram {
 
   set_of_segments_t::set_of_segments_t(segment_t const &seg0, time_diagram_t const &diagram)
      : pos1{seg0.pos1}, pos2{seg0.pos2}, size{seg0.size} { //, diagram = {diagram0} {
-    list.reserve(
-       diagram.perturbation_order()
-       / (smallest_segment
-          / 2)); //If smallest segment is length 2, we know that this is the maximum number of segments in a set. If the smallest is 4, then it becomes k_order/2.
-    list.push_back(seg0.numero);
+    //list.reserve(
+    //   diagram.perturbation_order()
+    //   / (smallest_segment
+    //      / 2)); //If smallest segment is length 2, we know that this is the maximum number of segments in a set. If the smallest is 4, then it becomes k_order/2.
+    //list.push_back(seg0.id);
+    N_seg=0;
+    list[N_seg++] = seg0.id;
   }
 
   // Function to add a segment to the present set of segments:
@@ -106,7 +108,8 @@ namespace inchworm::diagram {
 
     size = seg1.pos2 - pos1;
     pos2 = seg1.pos2;
-    list.push_back(seg1.numero);
+    //list.push_back(seg1.id);
+    list[N_seg++] = seg1.id;
   }
 
   // print one set of segments
@@ -114,7 +117,7 @@ namespace inchworm::diagram {
   void print_set(std::vector<segment_t> const &segment_list, set_of_segments_t const &set_of_segments, time_diagram_t const &diagram) {
     std::vector<int> num_vector(diagram.size(), 0);
 
-    for (int j = 0; j < set_of_segments.list.size(); j++) {
+    for (int j = 0; j < set_of_segments.N_seg; j++) {
       for (int k = segment_list[set_of_segments.list[j]].pos1; k < segment_list[set_of_segments.list[j]].pos2; k++) num_vector[k] = j + 1;
     }
     print_line(num_vector);
@@ -175,7 +178,7 @@ namespace inchworm::diagram {
   // Remove "segment_size" elements of a vector of int, starting at the value "segment_min".
   // Of course is requires the "segment_min" to be in the vector and more than "segment_size"
   // away from the end of the vector. This is ensured by the EXPECTS() check.
-  //
+  /*
   std::vector<int> remove_segment_from_list(std::vector<int> const &list, int segment_min, int segment_size) {
     std::vector<int> output;
     output.reserve(list.size() - segment_size);
@@ -186,18 +189,18 @@ namespace inchworm::diagram {
 
     EXPECTS(output.size() == list.size() - segment_size)
     return output;
-  }
+  }*/
 
   // Calculate the value of one segment
   // by analysing every segments of the set of segment (of both lists)
   //
   // special only if segment is full segment of diagram
-  void calculate_segment(int segment_numero,
+  void calculate_segment(int segment_id,
                          std::vector<segment_t> &segments_list, // not const: modified
                          std::vector<set_of_segments_t> const &set_disjoint_list, std::vector<set_of_segments_t> const &set_adjacent_list,
                          hyb_matrix_t const &hyb_mat, time_diagram_t const &diagram, bool special, int verbose) {
 
-    auto &seg      = segments_list[segment_numero];
+    auto &seg      = segments_list[segment_id];
     seg.calculated = true;
     if (verbose > 1) { print_segment(seg, diagram); }
 
@@ -212,13 +215,13 @@ namespace inchworm::diagram {
 
     // Calculate the determinant of the full segment
     seg.value += hyb_mat.extract_det(range_of_vertex);
-    if (verbose > 2) std::printf("\nsegment[%d]= % 4.8f\n\n", segment_numero, hyb_mat.extract_det(range_of_vertex));
+    if (verbose > 2) std::printf("\nsegment[%d]= % 4.8f\n\n", segment_id, hyb_mat.extract_det(range_of_vertex));
 
     for (auto const &set : set_disjoint_list) {
       if ((not special) and not((seg.pos1 <= set.pos1) and (seg.pos2 > set.pos2))) continue;
 
       if (special
-          and (set.list.size() == 1) // this is the special case where we evaluate the full segment (at the end). We still need to exclude the itself.
+          and (set.N_seg == 1) // this is the special case where we evaluate the full segment (at the end). We still need to exclude the itself.
           and ((seg.pos1 == set.pos1) and (seg.pos2 == set.pos2)))
         continue; // this is tricky, might have to change this at some point
 
@@ -228,16 +231,18 @@ namespace inchworm::diagram {
       bool is_finite                   = true;
 
       int number_of_vertex_to_remove = 0;
-      for (auto sub_segment_numero : set.list) 
-        number_of_vertex_to_remove += segments_list[sub_segment_numero].size;
+      //for (auto sub_segment_id : set.list) 
+      for (int j=0; j < set.N_seg; j++)
+        number_of_vertex_to_remove += segments_list[set.list[j]].size;
       
       std::vector<int> range_of_subvertex(range_of_vertex.size() - number_of_vertex_to_remove);
       
       int index = 0;
       int pos = range_of_vertex[0];
 
-      for (auto sub_segment_numero : set.list) {
-        segment_t subseg = segments_list[sub_segment_numero];
+      //for (auto sub_segment_id : set.list) {
+      for (int j=0; j < set.N_seg; j++) {
+        segment_t subseg = segments_list[set.list[j]];
         EXPECTS(seg.calculated);
 
         if (subseg.value == 0.0) { // somehow, this seems to happen often even if we consider float (does it still holds for complex numbers?)
@@ -294,8 +299,9 @@ namespace inchworm::diagram {
 
           scalar_t value = 1.0;
 
-          for (auto sub_segment_numero : cuts.list) {
-            segment_t subseg = segments_list[sub_segment_numero];
+          for (int j=0; j < cuts.N_seg; j++) {
+          //for (auto sub_segment_id : cuts.list) {
+            segment_t subseg = segments_list[cuts.list[j]];
             EXPECTS(subseg.calculated);
 
             value *= -subseg.value_without_cuts;
@@ -352,7 +358,7 @@ namespace inchworm::diagram {
         if (seg.size == length) {
           bool special = false;
           if (length == 2 * diagram.perturbation_order()) special = true;
-          calculate_segment(seg.numero, segment_list, set_disjoint_list, set_adjacent_list, hyb_mat, diagram, special, verbose);
+          calculate_segment(seg.id, segment_list, set_disjoint_list, set_adjacent_list, hyb_mat, diagram, special, verbose);
         }
       }
     }
