@@ -68,7 +68,7 @@ namespace inchworm::diagram {
 
   scalar_t hyb_matrix_t::det() const { return determinant(mat); }
 
-  scalar_t hyb_matrix_t::extract_det(std::vector<int> const &list_of_indices) const {
+  scalar_t hyb_matrix_t::extract_det(nda_fast_vector2 const &list_of_indices) const {
     EXPECTS(list_of_indices.size() < 2*ORDER_MAX); // I think that order ORDER_MAX >= 50 is safe enough.
     EXPECTS(list_of_indices.size() % 2 == 0 ); 
     
