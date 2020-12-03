@@ -48,7 +48,7 @@ namespace inchworm::diagram {
     scalar_t det() const;
 
     /// Calculate the determinant of the submatrix defined by list_of_indices
-    scalar_t extract_det(nda_fast_vector2 const &list_of_indices) const;
+    scalar_t extract_det(nda_fast_vector2  const &list_of_indices) const;
 
     void print() const;
 

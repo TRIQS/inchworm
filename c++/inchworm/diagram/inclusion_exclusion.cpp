@@ -87,7 +87,7 @@ namespace inchworm::diagram {
 
   set_of_segments_t::set_of_segments_t(segment_t const &seg0, time_diagram_t const &diagram)
      : pos1{seg0.pos1}, pos2{seg0.pos2}, size{seg0.size} { //, diagram = {diagram0} {
-    //list.resize(diagram.perturbation_order() / (smallest_segment/ 2));
+    list.resize(diagram.perturbation_order() / (smallest_segment/ 2));
     //list.reserve(
     //   diagram.perturbation_order()
     //   / (smallest_segment
@@ -201,8 +201,12 @@ namespace inchworm::diagram {
 
     nda_fast_vector2 range_of_vertex;
     range_of_vertex.resize(seg.size);
+    
+    //std::array<int, 20> range_of_vertex;
     //std::vector<int> range_of_vertex(seg.size);
-    std::iota(range_of_vertex.begin(), range_of_vertex.end(), seg.pos1);
+    
+    std::iota(range_of_vertex.begin(), range_of_vertex.begin()+seg.size, seg.pos1);
+    //std::iota(range_of_vertex.begin(), range_of_vertex.end(), seg.pos1);
 
     if (verbose > 2) {
       std::printf("range of vertex: ");
@@ -231,8 +235,11 @@ namespace inchworm::diagram {
       for (int j=0; j < set.N_seg; j++)
         number_of_vertex_to_remove += segment_list[set.list[j]].size;
       
+      //std::array<int, 20> range_of_subvertex;
       nda_fast_vector2 range_of_subvertex;
-      range_of_subvertex.resize(range_of_vertex.size() - number_of_vertex_to_remove);
+      range_of_subvertex.resize(seg.size - number_of_vertex_to_remove);
+      
+      int subseg_size = seg.size - number_of_vertex_to_remove;
       
       int index = 0;
       int pos = range_of_vertex[0];
@@ -258,7 +265,7 @@ namespace inchworm::diagram {
         if (subseg.size % 4 != 0)
           if ((subseg.pos2 - seg.pos1) % 2 == 1) sign_of_parcollet_charlebois *= -1;
       }
-      std::iota(range_of_subvertex.begin() + index, range_of_subvertex.end(), pos);
+      std::iota(range_of_subvertex.begin() + index, range_of_subvertex.begin() + subseg_size, pos);
       //print_vector(range_of_subvertex);
       //print_vector(range_of_subvertex2);
       //if(not(range_of_subvertex == range_of_subvertex_old)) exit(-1);

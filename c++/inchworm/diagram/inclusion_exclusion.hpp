@@ -66,8 +66,8 @@ namespace inchworm::diagram {
     
     
     //std::vector<int> list;
-    //nda_fast_vector list; // I tried this solution, but it is slower
-    std::array<int, 30> list;  // preallocated for speedup FIXME: 20 might be too constraining.
+    nda_fast_vector list; // I tried this solution, but it is slower
+    //std::array<int, 30> list;  // preallocated for speedup FIXME: 20 might be too constraining.
     int N_seg; // number of segments in the set, length of the list.
     
     //time_diagram_t & diagram;
