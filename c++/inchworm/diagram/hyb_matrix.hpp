@@ -27,7 +27,7 @@
 #include "../qmc_config_data.hpp"
 
 #define ORDER_MAX 400
-using nda_fast_vector  = nda::basic_array<int, 1, nda::C_layout, 'V', nda::sso<200>>; // preallocated up to order 25
+using nda_fast_vector  = nda::basic_array<int, 1, nda::C_layout, 'V', nda::sso<160>>; // preallocated up to order 25
 using nda_fast_vector2 = nda::basic_array<int, 1, nda::C_layout, 'V', nda::sso<400>>; // preallocated up to order 25
 
 namespace inchworm::diagram {

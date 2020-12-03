@@ -23,9 +23,6 @@
 
 #include "hyb_matrix.hpp"
 
-using nda_fast_vector  = nda::basic_array<int, 1, nda::C_layout, 'V', nda::sso<200>>; // preallocated up to order 25
-using nda_fast_vector2 = nda::basic_array<int, 1, nda::C_layout, 'V', nda::sso<400>>; // preallocated up to order 25
-
 namespace inchworm::diagram {
   // Definition of a segment:
   //
@@ -69,8 +66,8 @@ namespace inchworm::diagram {
     
     
     //std::vector<int> list;
-    //nda_fast_vector list; 
-    std::array<int, 20> list;  // preallocated for speedup FIXME: 20 might be too constraining.
+    //nda_fast_vector list; // I tried this solution, but it is slower
+    std::array<int, 30> list;  // preallocated for speedup FIXME: 20 might be too constraining.
     int N_seg; // number of segments in the set, length of the list.
     
     //time_diagram_t & diagram;

@@ -87,6 +87,7 @@ namespace inchworm::diagram {
 
   set_of_segments_t::set_of_segments_t(segment_t const &seg0, time_diagram_t const &diagram)
      : pos1{seg0.pos1}, pos2{seg0.pos2}, size{seg0.size} { //, diagram = {diagram0} {
+    //list.resize(diagram.perturbation_order() / (smallest_segment/ 2));
     //list.reserve(
     //   diagram.perturbation_order()
     //   / (smallest_segment
