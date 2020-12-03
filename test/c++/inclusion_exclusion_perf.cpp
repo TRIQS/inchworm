@@ -25,6 +25,7 @@
 #include <inchworm/diagram/proper_enum.hpp>
 #include <inchworm/diagram/hyb_matrix.hpp>
 #include <inchworm/types.hpp>
+#include <inchworm/diagram/print.hpp>
 
 using namespace inchworm::diagram;
 using namespace inchworm;
@@ -50,6 +51,18 @@ std::vector<double> generate_random_vector(double beta, int n_tau) {
   return tau;
 }
 
+void print_vector(std::vector<double> const &v) {
+  for (auto l : v) { std::printf("% 4.6f ", l); }
+  std::printf("\n");
+}
+
+std::vector<double> generate_worst_case_scenario_vector(int n_tau, double first_value, double increment) {
+  std::vector<double> tau(n_tau);
+  std::generate(tau.begin(), tau.end(), [n=0, first_value, increment]() mutable { return (first_value + (n++)*increment); });
+  print_vector(tau);
+  return tau;
+}
+
 int main(void) {
   int N         = 500000;//500000;
   int sp_max    = 1;
@@ -72,4 +85,29 @@ int main(void) {
   }
   return 0;
 }
+
+/*
+int main(void) {
+  int N         = 1;//500000;
+  int sp_max    = 1;
+  int order_min = 5; 
+  int order_max = 5; 
+  double beta   = 1.0;
+
+  for (int order = order_min; order <= order_max; order++)
+  {
+    std::printf("order = % d\n", order);
+    for (int sp_number = 1; sp_number <= sp_max; sp_number++)
+      for (int n = 0; n < N; n++) {
+
+        std::vector<double> tau1        = generate_worst_case_scenario_vector(order, 0.0001, 0.0002);
+        std::vector<double> tau2        = generate_worst_case_scenario_vector(order, 0.0000, 0.0002);
+        std::vector<double> split_times = {0.000001};
+
+        compare_both_methods(tau1, tau2, split_times);
+      }
+  }
+  return 0;
+}
+*/
 

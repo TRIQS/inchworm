@@ -527,13 +527,13 @@ Again, following the same procedure from above, we see that it is evident that t
 \subsection{Inclusion-exclusion}
 \label{sec::inclu}
 
-This is a very brief summary of the algorithm. This is essentially the algorithm presented in~\cite{boag_inclusion-exclusion_2018} with one error corrected, and adapted to our definition of proper diagram. It is composed of two important classes: \Verb#segment# and \Verb#set_of_segment# and three important lists: a vector of single \Verb#segment#, a vector of \Verb#set_of_adjacent_segments# and a vector of \Verb#set_of_disjoint_segments#. If we reuse the same example configuration as in section~\ref{sec::proper}.
+This is a very brief summary of the algorithm. This is essentially the algorithm presented in~\cite{boag_inclusion-exclusion_2018} with one error corrected, and adapted to our definition of proper diagram. It is composed of two important classes: \Verb#segment_t# and \Verb#set_of_segment_t# and three important lists: \Verb#segment_list#, a \Verb#list_of_set_of_adjacent_segments# and \Verb#list_of_set_of_disjoint_segments#. If we reuse the same example configuration as in section~\ref{sec::proper}.
 
 
 \noindent\begin{minipage}[t]{.5\textwidth}
 \begin{bashInput3}
 \begin{lstlisting}[style=BashInputStyle]
-list of single segements:
+list of single segement:
             |    
 x-o-x-o-o-x-o-x
 === -----------
@@ -550,7 +550,7 @@ x-o-x-o-o-x-o-x
 
 \begin{bashInput3}
 \begin{lstlisting}[style=BashInputStyle]
-list of set of adjacent segments:
+list_of_set_of_adjacent_segments:
             |    
 x-o-x-o-o-x-o-x
 === === -------
@@ -567,7 +567,7 @@ x-o-x-o-o-x-o-x
 
 \begin{bashInput3}
 \begin{lstlisting}[style=BashInputStyle]
-list of set of disjoint segments:
+list_of_set_of_disjoint_segments:
             |    
 x-o-x-o-o-x-o-x
 === -----------
@@ -595,9 +595,9 @@ x-o-x-o-o-x-o-x
 \end{minipage}
 
 
-The vector of \Verb#segment# lists all the single segments possible on this diagram. A  \Verb#segment# must contain the same number of \Verb#o# (creation operator) and \Verb#x# (annihilation operator), and it must not cross a split point (vertical line on the graph). \Verb#===# lines represent segments and \Verb#---# lines represent the rest of the diagram that is not segment.
+The vector of \Verb#segment_list# contains all the single segments possible on this diagram. A \Verb#segment# must contain the same number of \Verb#o# (creation operator) and \Verb#x# (annihilation operator), and it must not cross a split point (vertical line on the graph). \Verb#===# lines represent segments and \Verb#---# lines represent the rest of the diagram that is not segment.
 
-From this list we can generate the two other lists by combining every possible segment, successively. If they are all adjacent, it is pushed back in the vector \Verb#set_of_adjacent_segments# and if they are all disjoint, it is pushed back in the vector of \Verb#set_of_disjoint_segments#. These three vectors are necessary and sufficient to calculate the value associated with every single \Verb#segment#.
+From this list we can generate the two other lists by combining every possible segment, successively. If they are all adjacent, it is pushed back in \Verb#list_of_set_of_adjacent_segments# and if they are all disjoint, it is pushed back in the vector of \Verb#set_of_disjoint_segments#, otherwise, it is forgotten. These three vectors are necessary and sufficient to calculate the value associated with every single \Verb#segment#.
 
 We start by calculating the value of the smaller segments as any \Verb#segment# depends only on the value of \Verb#segment# smaller than itself, and the smallest segments are trivial to calculate. 
 
@@ -609,15 +609,15 @@ c(S) &=\sum_{j} (-1)^{P(R^j)}  v(R^j) \prod_{i}\left[-a(D^j_{i})\right]
 \label{a_S}
 a(S) &=\sum_{j} \prod_{i}\left[-c(A^j_{i})\right]
 \end{align}
-where $D^j_{i}$ represent the $i^{th}$ individual segment in the $j^{th}$ \Verb#set_of_disjoint_segments#, $A^j_{i}$  represent the $i^{th}$ individual segment in the $j^{th}$ \Verb#set_of_adjacent_segments#, and finally $R^j = S \backslash \bigcup_{i} D^j_{i}$ is the remainder of the of the vertices in the segment $S$ that are not included in any segment $D^j_{i}$ for the $j^{th}$ \Verb#set_of_disjoint_segments#. $v(R^j)$ is the determinant of the hybridization difference matrix of the remainding indices $R^j$.
+where $D^j_{i}$ represent the $i^{th}$ individual segment in the $j^{th}$ set in \Verb#list_of_set_of_disjoint_segments#, $A^j_{i}$  represent the $i^{th}$ individual segment in the $j^{th}$ set in \Verb#list_of_set_of_adjacent_segments#, and finally $R^j = S \backslash \bigcup_{i} D^j_{i}$ is the remainder of the of the vertices in the segment $S$ that are not included in any segment $D^j_{i}$ for the $j^{th}$ set in \Verb#list_of_set_of_disjoint_segments#. $v(R^j)$ is the determinant of the hybridization difference matrix of the remainding indices $R^j$.
 
 Note that the sign $ (-1)^{P(R^j)}$ is important and missing from the paper of~\cite{boag_inclusion-exclusion_2018}. This sign is non trivial. The number $P(R^j)$ corresponds to the number of permutations that would be required to reunite all the indices in $R^j$ into a continuous segment at the rightmost position of the segment $S$. This $ (-1)^{P(R^j)}$ is necessary to reproduce the $\operatorname{sgn}(\sigma)$ part of Eq.~\eqref{eq::w_hyb}. 
 
 Let's take an example of a specific segment: the third segment of the first list (shown above), since it is long and non trivial. This segment define the range $[0,6[$. 
 
-For the calculation of $c(S)$ (Eq~\eqref{c_S}) we need to refer to the list of set of disjoint segments above: every \Verb#set_of_disjoint_segments# that enter into the range $[0,5[$ (not $[0,6[$) must be considered. Note that we need to exclude the \Verb#set_of_disjoint_segments# that overlap with the last vertex since we need to calculate the fully connected segment (see Boad et al. 2018 for details, for now at least). We use the value $a(S)$ from the previously calculated smaller segments, calculate the sign $ (-1)^{P(R^j)}$ and the determinant $v(R^j)$ of the remainding indices, and thus calculate Eq~\eqref{c_S}.
+For the calculation of $c(S)$ (Eq~\eqref{c_S}) we need to refer to the list of set of disjoint segments above: every \Verb#list_of_set_of_disjoint_segments# that enter into the range $[0,5[$ (not $[0,6[$) must be considered. Note that we need to exclude the \Verb#list_of_set_of_disjoint_segments# that overlap with the last vertex since we need to calculate the fully connected segment (see Boad et al. 2018 for details, for now at least). We use the value $a(S)$ from the previously calculated smaller segments, calculate the sign $ (-1)^{P(R^j)}$ and the determinant $v(R^j)$ of the remainding indices, and thus calculate Eq~\eqref{c_S}.
 
-For the calculation of $a(S)$ (Eq~\eqref{a_S}) we need to refer to the list of set of adjacent segments above: every \Verb#set_of_adjacent_segments# that have exactly the same range $[0,6[$ must be considered. We use the value $c(S)$ from the previously calculated smaller segments and thus calculate Eq~\eqref{a_S}. We show the segment used from the list above for the segment example considered here:
+For the calculation of $a(S)$ (Eq~\eqref{a_S}) we need to refer to the list of set of adjacent segments above: every \Verb#list_of_set_of_adjacent_segments# that have exactly the same range $[0,6[$ must be considered. We use the value $c(S)$ from the previously calculated smaller segments and thus calculate Eq~\eqref{a_S}. We show the segment used from the list above for the segment example considered here:
 
 \noindent\begin{minipage}[t]{.5\textwidth}
 \begin{bashInput3}
@@ -653,7 +653,7 @@ Calculation of value of a(S):
 
 Here the signs shown on the left of the set of segments represent the product of all the minus signs present in the equations above (one minus sign per segment, and $ (-1)^{P(R^j)}$). 
 
-We iterate the calculation of every segments that are in the list of single segment until the end, using this method. The last (full segment) is somewhat a little different since we do not exclude the last vertex. Indeed, what we want to find here is not the fully connected full segment, it is somewhat different. Hence we need to consider every segment in the vector of \Verb#set_of_disjoint_segments# above. The ``connectivity'' is given by the fact that no individual segment cross the split point. In other words, the final full segment, after the inclusion-exclusion procedure, will only contain ``diagrams'' that are proper by the definition of the Sec.~\ref{sec::definition}
+We iterate the calculation of every segments that are in the list of single segment until the end, using this method. The last (full segment) is somewhat a little different since we do not exclude the last vertex. Indeed, what we want to find here is not the fully connected full segment, it is somewhat different. Hence we need to consider every segment in the vector of \Verb#list_of_set_of_disjoint_segments# above. The ``connectivity'' is given by the fact that no individual segment cross the split point. In other words, the final full segment, after the inclusion-exclusion procedure, will only contain ``diagrams'' that are proper by the definition of the Sec.~\ref{sec::definition}
 
 \subsubsection{Optimizations}
 
@@ -662,6 +662,14 @@ The algorithm presented here already contain one optimization, the first one pre
 A third optimization is to remove the segment of length $4$ of the type \Verb#x-o-x-o# and  \Verb#o-x-o-x#, as they never can be fully connected, hence will always give zero. The proof is given to the reader, but essentially we just need to enumerate the possible diagrams (only 2), and see that only one hybridization line can cross the split point if it is just before the last vertex.
 
 A fourth optimization is to check, just before calculating a new determinant $v(R^j)$ if any of the previously calculated $D^j_{i}$ are zero. If this is the case, we can just skip the determinant calculation of $v(R^j)$.
+
+\subsubsection{Size of these list}
+
+It is hard to predict the exact size of these list. But we can consider the worst case scenario. Indeed, always alternating vertex \Verb#x-o-x-o-x-o-x-o-...-x-o# will generate the biggest number of segment, thus the biggest lists. The worst case is also when we have no split point (even if in theory, no split point is easier to calculate because the diagram become trivial: just equal to the determinant). I did the exact calculation for this worst case without the small segment optimization (including the segments of size $2$) for simplicity first. In that case, we know the  \Verb#segment_list# size exactly: $k+\sum_{n=1}^{k-1} (2n) = k^2$. The \Verb#list_of_set_of_adjacent_segments# size is exactly: $\sum_{n=1}^{k-1} 2^{n-1}(2n+1) $. The factor $2^{n-1}$ comes from the fact that there is exactly this numer of way to cut an alternating segment with $2n$ vertex (personnal notes: proven with the sum of rows in the Pascal triangle). These two lists are the smallest. The list that is a problem is the  \Verb#list_of_set_of_disjoint_segments#. I did not find a way to calculate the exact upperbound size, but it is quite large.
+
+Of course, removing the segment of size $2$ make these list much smaller. 
+
+
 
 
 \section{Monte Carlo}

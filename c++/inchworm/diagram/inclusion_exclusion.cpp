@@ -123,6 +123,16 @@ namespace inchworm::diagram {
     print_line(num_vector);
   }
 
+  // print one segment
+  //
+  void print_seg(std::vector<segment_t> const &segment_list, int segment_id, time_diagram_t const &diagram) {
+    std::vector<int> num_vector(diagram.size(), 0);
+
+    for (int k = segment_list[segment_id].pos1; k < segment_list[segment_id].pos2; k++) num_vector[k] = 1;
+    print_line(num_vector);
+  }
+
+
   // This function generates the list of distjoint / adjoint sets
   // given the list of all possible segments
   //
@@ -175,32 +185,16 @@ namespace inchworm::diagram {
     return set_list;
   }
 
-  // Remove "segment_size" elements of a vector of int, starting at the value "segment_min".
-  // Of course is requires the "segment_min" to be in the vector and more than "segment_size"
-  // away from the end of the vector. This is ensured by the EXPECTS() check.
-  /*
-  std::vector<int> remove_segment_from_list(std::vector<int> const &list, int segment_min, int segment_size) {
-    std::vector<int> output;
-    output.reserve(list.size() - segment_size);
-
-    int segment_max = segment_min + segment_size;
-    for (auto l : list)
-      if ((l < segment_min) or (l >= segment_max)) { output.push_back(l); }
-
-    EXPECTS(output.size() == list.size() - segment_size)
-    return output;
-  }*/
-
   // Calculate the value of one segment
   // by analysing every segments of the set of segment (of both lists)
   //
   // special only if segment is full segment of diagram
   void calculate_segment(int segment_id,
-                         std::vector<segment_t> &segments_list, // not const: modified
-                         std::vector<set_of_segments_t> const &set_disjoint_list, std::vector<set_of_segments_t> const &set_adjacent_list,
+                         std::vector<segment_t> &segment_list, // not const: modified
+                         std::vector<set_of_segments_t> const &list_of_set_of_disjoint_segments, std::vector<set_of_segments_t> const &list_of_set_of_adjacent_segments,
                          hyb_matrix_t const &hyb_mat, time_diagram_t const &diagram, bool special, int verbose) {
 
-    auto &seg      = segments_list[segment_id];
+    auto &seg      = segment_list[segment_id];
     seg.calculated = true;
     if (verbose > 1) { print_segment(seg, diagram); }
 
@@ -217,7 +211,7 @@ namespace inchworm::diagram {
     seg.value += hyb_mat.extract_det(range_of_vertex);
     if (verbose > 2) std::printf("\nsegment[%d]= % 4.8f\n\n", segment_id, hyb_mat.extract_det(range_of_vertex));
 
-    for (auto const &set : set_disjoint_list) {
+    for (auto const &set : list_of_set_of_disjoint_segments) {
       if ((not special) and not((seg.pos1 <= set.pos1) and (seg.pos2 > set.pos2))) continue;
 
       if (special
@@ -226,14 +220,13 @@ namespace inchworm::diagram {
         continue; // this is tricky, might have to change this at some point
 
       scalar_t value = 1.0;
-      //std::vector<int> range_of_subvertex_old(range_of_vertex);
       int sign_of_parcollet_charlebois = 1;
       bool is_finite                   = true;
 
       int number_of_vertex_to_remove = 0;
       //for (auto sub_segment_id : set.list) 
       for (int j=0; j < set.N_seg; j++)
-        number_of_vertex_to_remove += segments_list[set.list[j]].size;
+        number_of_vertex_to_remove += segment_list[set.list[j]].size;
       
       std::vector<int> range_of_subvertex(range_of_vertex.size() - number_of_vertex_to_remove);
       
@@ -242,7 +235,7 @@ namespace inchworm::diagram {
 
       //for (auto sub_segment_id : set.list) {
       for (int j=0; j < set.N_seg; j++) {
-        segment_t subseg = segments_list[set.list[j]];
+        segment_t subseg = segment_list[set.list[j]];
         EXPECTS(seg.calculated);
 
         if (subseg.value == 0.0) { // somehow, this seems to happen often even if we consider float (does it still holds for complex numbers?)
@@ -250,19 +243,13 @@ namespace inchworm::diagram {
           //std::printf("is not finite: %e \n", seg.value);
         }
         value *= -subseg.value;
-
-        //////////////////
-        //range_of_subvertex_old = remove_segment_from_list(range_of_subvertex_old, subseg.pos1, subseg.size);
         
-        
-        ////////////////// new section
         if(pos != subseg.pos1){
           int number_of_new_vertex = (subseg.pos1 - pos);
           std::iota(range_of_subvertex.begin() + index, range_of_subvertex.begin() + index + number_of_new_vertex, pos);
           index += number_of_new_vertex;
         }
         pos = subseg.pos1 + subseg.size;
-        //////////////////
         
         if (subseg.size % 4 != 0)
           if ((subseg.pos2 - seg.pos1) % 2 == 1) sign_of_parcollet_charlebois *= -1;
@@ -292,7 +279,7 @@ namespace inchworm::diagram {
 
     seg.value_without_cuts = seg.value;
 
-    for (auto const &cuts : set_adjacent_list) {
+    for (auto const &cuts : list_of_set_of_adjacent_segments) {
       // Make sure that adjecent subset covers exactly the segment
       if (seg.pos1 == cuts.pos1)
         if (seg.pos2 == cuts.pos2) {
@@ -301,7 +288,7 @@ namespace inchworm::diagram {
 
           for (int j=0; j < cuts.N_seg; j++) {
           //for (auto sub_segment_id : cuts.list) {
-            segment_t subseg = segments_list[cuts.list[j]];
+            segment_t subseg = segment_list[cuts.list[j]];
             EXPECTS(subseg.calculated);
 
             value *= -subseg.value_without_cuts;
@@ -329,25 +316,29 @@ namespace inchworm::diagram {
     if (verbose) std::printf("\n\n##################\nINCLUSION-EXCLUSION:\n");
     if (verbose > 1) {
       if (verbose > 2) hyb_mat.print();
-      std::printf("list of single segements:\n");
-      print_diag(diagram);
     }
     std::vector<segment_t> segment_list = determine_segments(diagram);
     if (verbose) std::printf("\nsegment number = %lu\n\n", segment_list.size());
 
-    std::vector<set_of_segments_t> set_disjoint_list = combine_segments(segment_list, diagram, true);
-    std::vector<set_of_segments_t> set_adjacent_list = combine_segments(segment_list, diagram, false);
+    std::vector<set_of_segments_t> list_of_set_of_disjoint_segments = combine_segments(segment_list, diagram, true);
+    std::vector<set_of_segments_t> list_of_set_of_adjacent_segments = combine_segments(segment_list, diagram, false);
 
     if (verbose > 1) {
+      std::printf("list of single segements:\n");
+      print_diag(diagram);
+      for (int j=0; j<segment_list.size(); j++) {
+        print_seg(segment_list, j, diagram);
+        std::printf("\n");
+      }
       std::printf("\n\nlist of set of disjoint segments:\n");
       print_diag(diagram);
-      for (auto comb : set_disjoint_list) {
+      for (auto comb : list_of_set_of_disjoint_segments) {
         print_set(segment_list, comb, diagram);
         std::printf("\n");
       }
       std::printf("\n\nlist of set of adjacent segments:\n");
       print_diag(diagram);
-      for (auto comb : set_adjacent_list) {
+      for (auto comb : list_of_set_of_adjacent_segments) {
         print_set(segment_list, comb, diagram);
         std::printf("\n");
       }
@@ -358,7 +349,7 @@ namespace inchworm::diagram {
         if (seg.size == length) {
           bool special = false;
           if (length == 2 * diagram.perturbation_order()) special = true;
-          calculate_segment(seg.id, segment_list, set_disjoint_list, set_adjacent_list, hyb_mat, diagram, special, verbose);
+          calculate_segment(seg.id, segment_list, list_of_set_of_disjoint_segments, list_of_set_of_adjacent_segments, hyb_mat, diagram, special, verbose);
         }
       }
     }
@@ -367,8 +358,8 @@ namespace inchworm::diagram {
       std::printf("\n## diagram = '%s'\n", diagram_string(diagram).c_str());
       std::printf("kOrder = %d\n", diagram.perturbation_order());
       std::printf("number of segments = %lu\n", segment_list.size());
-      std::printf("number of adjacent sets = %lu\n", set_adjacent_list.size());
-      std::printf("number of disjoint sets = %lu\n", set_disjoint_list.size());
+      std::printf("number of adjacent sets = %lu\n", list_of_set_of_adjacent_segments.size());
+      std::printf("number of disjoint sets = %lu\n", list_of_set_of_disjoint_segments.size());
     }
 
     return segment_list.back().value;
