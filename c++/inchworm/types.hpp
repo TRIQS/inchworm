@@ -81,6 +81,8 @@ namespace inchworm {
     /// The orbital (or non-block) index
     long idx;
 
+    bool operator==(fop_t const &) const = default;
+
     friend inline bool operator<(fop_t const &o1, fop_t const &o2) { return o1.tau < o2.tau; }
   };
 

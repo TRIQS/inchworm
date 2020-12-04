@@ -37,8 +37,7 @@ namespace inchworm {
     auto res = frame_t{shape_of_frame.size()};
 
     for (auto [bl, n] : enumerate(shape_of_frame)) {
-      res[bl] = matrix_t{n, n};
-      res[bl] = 0.;
+      res[bl] = matrix_t::zeros({n, n});
     }
     return res;
   }
@@ -48,8 +47,7 @@ namespace inchworm {
 
     for (auto bl : range(gf_struct.size())) {
       auto &[blname, blsize] = gf_struct[bl];
-      res[bl]                = matrix_t{blsize, blsize};
-      res[bl]                = 0.;
+      res[bl]                = matrix_t::zeros({blsize, blsize});
     }
     return res;
   }

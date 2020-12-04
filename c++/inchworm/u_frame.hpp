@@ -55,7 +55,6 @@ namespace inchworm {
   // --------------- Block Gf specific functions -----------------------
 
   // Get the frame of a Block Green function
-  // TODO Only used in one place -> remove
   frame_t get_frame(u_tau_t const &u_tau, int idx);
 
   // Set a single frame of a Block Green function given a block matrix and the block index
