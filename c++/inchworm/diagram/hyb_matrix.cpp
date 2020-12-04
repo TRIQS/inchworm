@@ -82,8 +82,7 @@ namespace inchworm::diagram {
         list_of_d[j++] = diagram.op_list[idx].order_index;
     }
 
-    //matrix_t m(N, N);
-    nda::matrix<scalar_t, nda::C_layout, nda::sso<1000>> m(N, N); // we might need to play with this number
+    matrix_t m(N, N);
     for (int i = 0; i < N; i++) {
       for (int j = 0; j < N; j++) { m(i, j) = mat(list_of_d[i], list_of_d_dag[j]); }
     }

@@ -30,7 +30,7 @@ namespace inchworm {
   using scalar_t     = double;
   using hyb_target_t = matrix_real_valued;
 #endif
-  using matrix_t = matrix<scalar_t>;
+  using matrix_t = nda::matrix<scalar_t, nda::C_layout, nda::sso<1000>>;
 
   /// Short-hand for SSO vector type
   template <typename value_t>
