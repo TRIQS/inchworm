@@ -4,20 +4,23 @@
 #include "diagram/diagram.hpp"
 
 namespace inchworm {
-  using time_diagram_t = diagram::time_diagram_t;
 
   /** 
-   * Calculate the product: u_frame = u(tau_0) op u(tau_1-tau_0) op u(tau_2-tau_1) op u(tau_3-tau_2) ... op u(tau-tau_n)
-   * where op is either c_dag or c operator, depending on the configuration
+   * Calculate the operator product
    *
-   * @param ad atom_diag of the system considered here.
-   * @param diagram configuration of the n operators (op) of the present monte carlo step.
+   *  u_frame = u(tau_max - tau_{n-1}) op_{n-1} u(tau_{n-1}-tau_{n-2}) op_{n-2} ... op_1 u(tau_1 - tau_0) op_0 u(tau_0 - tau_min)
+   *
+   * where (op_{n-1}, .., op_0) is a time-ordered list of c and c_dag operators defined by the configuration and (tau_max, tau_min),
+   * such that tau_max < tau_{n-1} < .. < tau_0 < tau_min
+   *
+   * @param ad atom_diag object of the system under consideration
+   * @param diagram The diagram configuration
    * @param tau_min The smallest time of the segment
    * @param tau_max The largest time of the segment
-   * @param u_tau_p pointer to the full propagator (u_tau) calculated up until this point (0 < tau < tau_split). 
-   * @return frame_t, at time tau_max, resulting from this product.
+   * @param u_tau_p Pointer to the full propagator. Must be initialized for all 0 < tau < tau_max - tau_min
+   * @return The operator product
    */
-  u_partial_t impurity_product(atom_diag const &ad, time_diagram_t const &diagram, double tau_max, double tau_min,
+  u_partial_t impurity_product(atom_diag const &ad, diagram::time_diagram_t const &diagram, double tau_max, double tau_min,
                                u_tau_t const *const u_tau_p = nullptr);
 
 } // namespace inchworm
