@@ -199,9 +199,8 @@ namespace inchworm::diagram {
     seg.calculated = true;
     if (verbose > 1) { print_segment(seg, diagram); }
 
-    nda_fast_vector2 range_of_vertex;
+    sso_vector<int> range_of_vertex;
     range_of_vertex.resize(seg.size);
-    
     //std::array<int, 20> range_of_vertex;
     //std::vector<int> range_of_vertex(seg.size);
     
@@ -236,7 +235,7 @@ namespace inchworm::diagram {
         number_of_vertex_to_remove += segment_list[set.list[j]].size;
       
       //std::array<int, 20> range_of_subvertex;
-      nda_fast_vector2 range_of_subvertex;
+      sso_vector<int> range_of_subvertex;
       range_of_subvertex.resize(seg.size - number_of_vertex_to_remove);
       
       int subseg_size = seg.size - number_of_vertex_to_remove;

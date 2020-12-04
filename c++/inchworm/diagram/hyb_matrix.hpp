@@ -26,9 +26,6 @@
 #include "../types.hpp"
 #include "../qmc_config_data.hpp"
 
-using nda_fast_vector  = nda::basic_array<int, 1, nda::C_layout, 'V', nda::sso<160>>; // preallocated up to order 25
-using nda_fast_vector2 = nda::basic_array<int, 1, nda::C_layout, 'V', nda::sso<400>>; // preallocated up to order 25
-
 namespace inchworm::diagram {
 
   struct hyb_matrix_t {
@@ -47,7 +44,7 @@ namespace inchworm::diagram {
     scalar_t det() const;
 
     /// Calculate the determinant of the submatrix defined by list_of_indices
-    scalar_t extract_det(nda_fast_vector2  const &list_of_indices) const;
+    scalar_t extract_det(sso_vector<int> const &list_of_indices) const;
 
     void print() const;
 

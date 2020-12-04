@@ -32,6 +32,10 @@ namespace inchworm {
 #endif
   using matrix_t = matrix<scalar_t>;
 
+  /// Short-hand for SSO vector type
+  template <typename value_t>
+  using sso_vector = nda::vector<value_t, nda::sso<100>>;
+
   /// The frame of a Green function or Propagator
   using frame_t = nda::array<matrix_t, 1>;
 
