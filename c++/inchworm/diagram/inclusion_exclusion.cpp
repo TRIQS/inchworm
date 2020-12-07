@@ -24,15 +24,9 @@
 #include "./print.hpp"
 
 namespace inchworm::diagram {
-  segment_t::segment_t(int p1, int p2, int n) : pos1{p1}, pos2{p2}, id{n} {
+  segment_t::segment_t(int pos1_, int pos2_, int id_) : pos1{pos1_}, pos2{pos2_}, id{id_} {
     EXPECTS(pos2 > pos1);
     size = pos2 - pos1;
-  }
-
-  void print_segment(segment_t const &segment, time_diagram_t const &diagram) {
-    std::vector<int> num_vector(diagram.size(), 0);
-    for (int k = segment.pos1; k < segment.pos2; k++) num_vector[k] = 1;
-    print_line(num_vector);
   }
 
   std::vector<segment_t> determine_segments(time_diagram_t const &diagram) {
@@ -70,14 +64,15 @@ namespace inchworm::diagram {
   }
 
   set_of_segments_t::set_of_segments_t(segment_t const &seg0, time_diagram_t const &diagram)
-     : pos1{seg0.pos1}, pos2{seg0.pos2}, size{seg0.size}, list(diagram.perturbation_order() / (smallest_segment / 2)) {
-    N_seg         = 0;
-    list[N_seg++] = seg0.id;
+     : pos1{seg0.pos1}, pos2{seg0.pos2}, size{seg0.size}, segment_ids(diagram.perturbation_order() / (smallest_segment / 2)) {
+    N_seg                = 0;
+    segment_ids[N_seg++] = seg0.id;
   }
 
-  // Function to add a segment to the present set of segments:
   void set_of_segments_t::append(segment_t const &seg1, time_diagram_t const &diagram) {
     //FIXME void set_of_segments_t::append(segment_t const &seg1) {
+    EXPECTS(seg1.pos1 >= pos2);
+
     if (seg1.pos1 != pos2)
       adjacent = false;
     else if (std::any_of(begin(diagram.split_points), end(diagram.split_points), [j = pos2](int i) { return i == j; }))
@@ -85,25 +80,9 @@ namespace inchworm::diagram {
     else
       disjoint = false; // note, we consider that even if two segments touch at the split point, the set is still disjoint.
 
-    size          = seg1.pos2 - pos1;
-    pos2          = seg1.pos2;
-    list[N_seg++] = seg1.id;
-  }
-
-  void print_set(std::vector<segment_t> const &segment_list, set_of_segments_t const &set_of_segments, time_diagram_t const &diagram) {
-    std::vector<int> num_vector(diagram.size(), 0);
-
-    for (int j = 0; j < set_of_segments.N_seg; j++) {
-      for (int k = segment_list[set_of_segments.list[j]].pos1; k < segment_list[set_of_segments.list[j]].pos2; k++) num_vector[k] = j + 1;
-    }
-    print_line(num_vector);
-  }
-
-  void print_seg(std::vector<segment_t> const &segment_list, int segment_id, time_diagram_t const &diagram) {
-    std::vector<int> num_vector(diagram.size(), 0);
-
-    for (int k = segment_list[segment_id].pos1; k < segment_list[segment_id].pos2; k++) num_vector[k] = 1;
-    print_line(num_vector);
+    size                 = seg1.pos2 - pos1;
+    pos2                 = seg1.pos2;
+    segment_ids[N_seg++] = seg1.id;
   }
 
   std::vector<set_of_segments_t> combine_segments(std::vector<segment_t> const &segment_list, time_diagram_t const &diagram, bool search_disjoint) {
@@ -124,7 +103,7 @@ namespace inchworm::diagram {
         set_of_segments_t previous_set = set_list[prev_index];
         //if we do not search for disjoint set, we search for adjacent set, only. We do not need the ones that are neither.
 
-        for (auto additional_segment : segment_list) {
+        for (auto const &additional_segment : segment_list) {
           // Only consider segments that start to the right of the current rightmost segment
           if (additional_segment.pos1 >= previous_set.pos2) {
             set_of_segments_t new_set = previous_set;
@@ -147,10 +126,6 @@ namespace inchworm::diagram {
     return set_list;
   }
 
-  // Calculate the value of one segment
-  // by analysing every segments of the set of segment (of both lists)
-  //
-  // special only if segment is full segment of diagram
   void calculate_segment(int segment_id,
                          std::vector<segment_t> &segment_list, // not const: modified
                          std::vector<set_of_segments_t> const &list_of_set_of_disjoint_segments,
@@ -161,6 +136,7 @@ namespace inchworm::diagram {
     seg.calculated = true;
     if (verbose > 1) { print_segment(seg, diagram); }
 
+    // [seg.pos1, ... , seg.pos2)
     sso_vector<int> range_of_vertex(seg.size);
     std::iota(range_of_vertex.begin(), range_of_vertex.end(), seg.pos1);
 
@@ -187,7 +163,7 @@ namespace inchworm::diagram {
       bool is_finite                   = true;
 
       int number_of_vertex_to_remove = 0;
-      for (int j = 0; j < set.N_seg; j++) number_of_vertex_to_remove += segment_list[set.list[j]].size;
+      for (int j = 0; j < set.N_seg; j++) number_of_vertex_to_remove += segment_list[set.segment_ids[j]].size;
 
       sso_vector<int> range_of_subvertex;
       range_of_subvertex.resize(seg.size - number_of_vertex_to_remove);
@@ -198,7 +174,7 @@ namespace inchworm::diagram {
       int pos   = range_of_vertex[0];
 
       for (int j = 0; j < set.N_seg; j++) {
-        segment_t subseg = segment_list[set.list[j]];
+        auto const &subseg = segment_list[set.segment_ids[j]];
         EXPECTS(seg.calculated);
 
         if (subseg.value == 0.0) { // somehow, this seems to happen often even if we consider float (does it still holds for complex numbers?)
@@ -238,7 +214,7 @@ namespace inchworm::diagram {
 
           scalar_t value = 1.0;
           for (int j = 0; j < cuts.N_seg; j++) {
-            segment_t subseg = segment_list[cuts.list[j]];
+            auto const &subseg = segment_list[cuts.segment_ids[j]];
             ASSERT(subseg.calculated);
             value *= -subseg.value_without_cuts;
           }
@@ -271,7 +247,7 @@ namespace inchworm::diagram {
       std::printf("list of single segements:\n");
       print_diag(diagram);
       for (int j = 0; j < segment_list.size(); j++) {
-        print_seg(segment_list, j, diagram);
+        print_segment(segment_list[j], diagram);
         std::printf("\n");
       }
       std::printf("\n\nlist of set of disjoint segments:\n");
@@ -308,6 +284,21 @@ namespace inchworm::diagram {
     }
 
     return segment_list.back().value;
+  }
+
+  void print_segment(segment_t const &segment, time_diagram_t const &diagram) {
+    std::vector<int> num_vector(diagram.size(), 0);
+    for (int k = segment.pos1; k < segment.pos2; k++) num_vector[k] = 1;
+    print_line(num_vector);
+  }
+
+  void print_set(std::vector<segment_t> const &segment_list, set_of_segments_t const &set_of_segments, time_diagram_t const &diagram) {
+    std::vector<int> num_vector(diagram.size(), 0);
+
+    for (int j = 0; j < set_of_segments.N_seg; j++) {
+      for (int k = segment_list[set_of_segments.segment_ids[j]].pos1; k < segment_list[set_of_segments.segment_ids[j]].pos2; k++) num_vector[k] = j + 1;
+    }
+    print_line(num_vector);
   }
 
 } // namespace inchworm::diagram

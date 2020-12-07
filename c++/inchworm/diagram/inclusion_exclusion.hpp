@@ -26,24 +26,22 @@
 namespace inchworm::diagram {
 
   /**
-   * This class represents a single continuous segment of operators
+   * This class represents a single continuous segment with vertices in [pos1, pos2)
    *
    */
   struct segment_t {
 
-    int pos1                    = 0;
-    int pos2                    = 0; // note: by definition here, segment goes from index pos1 to pos2-1
-    int size                    = 0;
+    int pos1                    = 0;  // Index of the leftmost vertex
+    int pos2                    = 0;  // Index one past the rightmost vertex
+    int size                    = 0;  // The number of vertices in the segment
     scalar_t value              = 0.;
     scalar_t value_without_cuts = 0.;
 
-    bool calculated = false;
-    int id          = 0;
+    bool calculated = false; // Has this segment been calculated?
+    int id          = 0;     // The segment identifier
 
-    segment_t(int p1, int p2, int n);
+    segment_t(int pos1_, int pos2_, int id_);
   };
-
-  void print_segment(segment_t const &segment, time_diagram_t const &diagram);
 
   /**
    * Determine every possible segment based on the time_diagram definition.
@@ -56,31 +54,32 @@ namespace inchworm::diagram {
   std::vector<segment_t> determine_segments(time_diagram_t const &diagram);
 
   /**
-   * This class represents a set of non-overlapping segments
+   * This class represents a set of non-overlapping segments contained in [pos1, pos2)
    *
    */
   struct set_of_segments_t {
 
-    int pos1;
-    int pos2;             // note: by definition here, the set of segments goes from index pos1 to pos2-1
-    int size;             // total length of ths segment
-    bool disjoint = true; // we define disjoint when 2 segments does not touch (by convention, we choose a segment alone to be disjoint too)
-    bool adjacent = true; // we define adjacent when all segments touches. If one does not, it is false.
+    int pos1; // Index of the leftmost vertex
 
-    //std::vector<int> list;
-    sso_vector<int> list; // I tried this solution, but it is slower
-    int N_seg;            // number of segments in the set, length of the list.
+    int pos2;             // Index one past the rightmost vertex
+    int size;             // Total length of the segment: pos2 - pos1
+    bool disjoint = true; // The set is disjoint if all segments are separated by at least one vertex
+    bool adjacent = true; // The set is adjacent if all segments touch and span the full range [pos1, pos2)
+
+    sso_vector<int> segment_ids; // List that stores the subsegment indices. Initialize with maximal possible size.
+    int N_seg;                   // Number of of segments, i.e. values in segment_ids that have been initialized
 
     // Constructor:
     //FIXME set_of_segments_t(time_diagram_t const &diagram);
     set_of_segments_t(segment_t const &seg0, time_diagram_t const &diagram);
 
-    // Function to add a segment to the present set of segments:
+    /**
+     * Function to add a segment to the present set of segments.
+     *
+     * The function assumes that seg1 lies to the right of all segments contained so far.
+     */
     void append(segment_t const &seg1, time_diagram_t const &diagram);
   };
-
-  // print one set of segments
-  void print_set(std::vector<segment_t> const &segment_list, set_of_segments_t const &set_of_segments, time_diagram_t const &diagram);
 
   /**
    * This function generates the list of distjoint / adjoint sets
@@ -95,7 +94,11 @@ namespace inchworm::diagram {
    */
   std::vector<set_of_segments_t> combine_segments(std::vector<segment_t> const &segment_list, time_diagram_t const &diagram, bool search_disjoint);
 
-  // Calculate the value of one segment by analysing every segments of the set of segment (of both lists)
+  /**
+   * Calculate the value of one segment by analysing every segments of the set of segment (of both lists)
+   *
+   * The segment is coined special only if is the full segment of the diagram
+   */
   void calculate_segment(int segment_id,
                          std::vector<segment_t> &segments_list, // not const: modified
                          std::vector<set_of_segments_t> const &list_of_set_of_disjoint_segments,
@@ -109,4 +112,15 @@ namespace inchworm::diagram {
    * and another fully adjacent.
    */
   scalar_t inclusion_exclusion(time_diagram_t const &diagram, hyb_matrix_t hyb_mat, int verbose = 0);
+
+  /**
+   * Print a single segment
+   */
+  void print_segment(segment_t const &segment, time_diagram_t const &diagram);
+
+  /**
+   * Print a set of segments
+   */
+  void print_set(std::vector<segment_t> const &segment_list, set_of_segments_t const &set_of_segments, time_diagram_t const &diagram);
+
 } // namespace inchworm::diagram
