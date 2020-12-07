@@ -29,21 +29,12 @@ namespace inchworm::diagram {
     size = pos2 - pos1;
   }
 
-  // print one segment
-  //
   void print_segment(segment_t const &segment, time_diagram_t const &diagram) {
     std::vector<int> num_vector(diagram.size(), 0);
     for (int k = segment.pos1; k < segment.pos2; k++) num_vector[k] = 1;
     print_line(num_vector);
   }
 
-  // Determine every possible segment based on the time_diagram definition.
-  // The simple rule is: "Any segment should: 1. contain the same number of d
-  // and d_dag and 2. not cross a split point".
-  //
-  // Additionnal optimisation: a segment of length 4 and of type xoxo or oxox
-  // does not need to be considered as it cannot be fully connected
-  //
   std::vector<segment_t> determine_segments(time_diagram_t const &diagram) {
 
     EXPECTS(not diagram.is_trivial);
@@ -51,7 +42,6 @@ namespace inchworm::diagram {
     std::vector<segment_t> seg_list;
     int N = diagram.size();
 
-    //std::printf("split point: %d \n",diagram.split_points[0]);
     int N_segment = 0;
     for (int i = 0; i < N - 1; i++)                           //starting position of segment
       for (int a = smallest_segment; a < N - i + 1; a += 2) { //length of segment
@@ -68,38 +58,26 @@ namespace inchworm::diagram {
         // count the number of dag, must be half of the lenght a:
         for (int j = i; j < i + a; j++)
           if (diagram.op_list[j].dag) Ndag++;
-        if (2 * Ndag == a) // check if same number of d_dag an d in the segment starting at i and ending before i+a
-        {
-          seg_list.push_back({i, i + a, N_segment++});
-          //if constexpr (verbose > 0) {
-          //  print_segment(seg_list.back(), diagram);
-          //  std::printf("\n");
-          //}
-        }
+
+        // check if same number of d_dag an d in the segment starting at i and ending before i+a
+        if (2 * Ndag == a) seg_list.push_back({i, i + a, N_segment++});
       }
 
     //lastly, put the last segment (this one is k-connected and not fully connected. So we bypass the condition that it should not cross the split point:
     segment_t seg(0, N, N_segment++);
     seg_list.push_back(seg);
-    //if constexpr (verbose) print_segment(seg, diagram);
     return seg_list;
   }
 
   set_of_segments_t::set_of_segments_t(segment_t const &seg0, time_diagram_t const &diagram)
-     : pos1{seg0.pos1}, pos2{seg0.pos2}, size{seg0.size} { //, diagram = {diagram0} {
-    list.resize(diagram.perturbation_order() / (smallest_segment/ 2));
-    //list.reserve(
-    //   diagram.perturbation_order()
-    //   / (smallest_segment
-    //      / 2)); //If smallest segment is length 2, we know that this is the maximum number of segments in a set. If the smallest is 4, then it becomes k_order/2.
-    //list.push_back(seg0.id);
-    N_seg=0;
+     : pos1{seg0.pos1}, pos2{seg0.pos2}, size{seg0.size}, list(diagram.perturbation_order() / (smallest_segment / 2)) {
+    N_seg         = 0;
     list[N_seg++] = seg0.id;
   }
 
   // Function to add a segment to the present set of segments:
   void set_of_segments_t::append(segment_t const &seg1, time_diagram_t const &diagram) {
-    //void set_of_segments_t::append(segment_t const &seg1) {
+    //FIXME void set_of_segments_t::append(segment_t const &seg1) {
     if (seg1.pos1 != pos2)
       adjacent = false;
     else if (std::any_of(begin(diagram.split_points), end(diagram.split_points), [j = pos2](int i) { return i == j; }))
@@ -107,14 +85,11 @@ namespace inchworm::diagram {
     else
       disjoint = false; // note, we consider that even if two segments touch at the split point, the set is still disjoint.
 
-    size = seg1.pos2 - pos1;
-    pos2 = seg1.pos2;
-    //list.push_back(seg1.id);
+    size          = seg1.pos2 - pos1;
+    pos2          = seg1.pos2;
     list[N_seg++] = seg1.id;
   }
 
-  // print one set of segments
-  //
   void print_set(std::vector<segment_t> const &segment_list, set_of_segments_t const &set_of_segments, time_diagram_t const &diagram) {
     std::vector<int> num_vector(diagram.size(), 0);
 
@@ -124,8 +99,6 @@ namespace inchworm::diagram {
     print_line(num_vector);
   }
 
-  // print one segment
-  //
   void print_seg(std::vector<segment_t> const &segment_list, int segment_id, time_diagram_t const &diagram) {
     std::vector<int> num_vector(diagram.size(), 0);
 
@@ -133,24 +106,12 @@ namespace inchworm::diagram {
     print_line(num_vector);
   }
 
-
-  // This function generates the list of distjoint / adjoint sets
-  // given the list of all possible segments
-  //
-  // It proceed in steps. Every step reuse the previous set of segment. For exemple
-  // when we try to generate set of 3 segments, we reuse every set
-  // of 2 segment and try to append segments the segments in segment_list.
-  // For this reason, we keep the information of the indices where the "N segments"
-  // set start in the list "set_list". This is kept in the vector
-  // start_index_list.
-  //
   std::vector<set_of_segments_t> combine_segments(std::vector<segment_t> const &segment_list, time_diagram_t const &diagram, bool search_disjoint) {
 
     int n_seg = segment_list.size();
 
     std::vector<int> start_index_list = {0, 0};
-    //std::vector<set_of_segments_t> set_list; // return value (pair[1])
-    auto set_list = std::vector<set_of_segments_t>{}; // return value (pair[1])
+    auto set_list                     = std::vector<set_of_segments_t>{}; // return value (pair[1])
 
     for (int j = 0; j < n_seg; j++) { set_list.push_back(set_of_segments_t(segment_list[j], diagram)); }
     for (int number_of_segment = 2; number_of_segment <= diagram.perturbation_order(); number_of_segment++) {
@@ -192,20 +153,16 @@ namespace inchworm::diagram {
   // special only if segment is full segment of diagram
   void calculate_segment(int segment_id,
                          std::vector<segment_t> &segment_list, // not const: modified
-                         std::vector<set_of_segments_t> const &list_of_set_of_disjoint_segments, std::vector<set_of_segments_t> const &list_of_set_of_adjacent_segments,
-                         hyb_matrix_t const &hyb_mat, time_diagram_t const &diagram, bool special, int verbose) {
+                         std::vector<set_of_segments_t> const &list_of_set_of_disjoint_segments,
+                         std::vector<set_of_segments_t> const &list_of_set_of_adjacent_segments, hyb_matrix_t const &hyb_mat,
+                         time_diagram_t const &diagram, bool special, int verbose) {
 
     auto &seg      = segment_list[segment_id];
     seg.calculated = true;
     if (verbose > 1) { print_segment(seg, diagram); }
 
-    sso_vector<int> range_of_vertex;
-    range_of_vertex.resize(seg.size);
-    //std::array<int, 20> range_of_vertex;
-    //std::vector<int> range_of_vertex(seg.size);
-    
-    std::iota(range_of_vertex.begin(), range_of_vertex.begin()+seg.size, seg.pos1);
-    //std::iota(range_of_vertex.begin(), range_of_vertex.end(), seg.pos1);
+    sso_vector<int> range_of_vertex(seg.size);
+    std::iota(range_of_vertex.begin(), range_of_vertex.end(), seg.pos1);
 
     if (verbose > 2) {
       std::printf("range of vertex: ");
@@ -225,55 +182,41 @@ namespace inchworm::diagram {
           and ((seg.pos1 == set.pos1) and (seg.pos2 == set.pos2)))
         continue; // this is tricky, might have to change this at some point
 
-      scalar_t value = 1.0;
+      scalar_t value                   = 1.0;
       int sign_of_parcollet_charlebois = 1;
       bool is_finite                   = true;
 
       int number_of_vertex_to_remove = 0;
-      //for (auto sub_segment_id : set.list) 
-      for (int j=0; j < set.N_seg; j++)
-        number_of_vertex_to_remove += segment_list[set.list[j]].size;
-      
-      //std::array<int, 20> range_of_subvertex;
+      for (int j = 0; j < set.N_seg; j++) number_of_vertex_to_remove += segment_list[set.list[j]].size;
+
       sso_vector<int> range_of_subvertex;
       range_of_subvertex.resize(seg.size - number_of_vertex_to_remove);
-      
-      int subseg_size = seg.size - number_of_vertex_to_remove;
-      
-      int index = 0;
-      int pos = range_of_vertex[0];
 
-      //for (auto sub_segment_id : set.list) {
-      for (int j=0; j < set.N_seg; j++) {
+      int subseg_size = seg.size - number_of_vertex_to_remove;
+
+      int index = 0;
+      int pos   = range_of_vertex[0];
+
+      for (int j = 0; j < set.N_seg; j++) {
         segment_t subseg = segment_list[set.list[j]];
         EXPECTS(seg.calculated);
 
         if (subseg.value == 0.0) { // somehow, this seems to happen often even if we consider float (does it still holds for complex numbers?)
           is_finite = false;
-          //std::printf("is not finite: %e \n", seg.value);
         }
         value *= -subseg.value;
-        
-        if(pos != subseg.pos1){
+
+        if (pos != subseg.pos1) {
           int number_of_new_vertex = (subseg.pos1 - pos);
           std::iota(range_of_subvertex.begin() + index, range_of_subvertex.begin() + index + number_of_new_vertex, pos);
           index += number_of_new_vertex;
         }
         pos = subseg.pos1 + subseg.size;
-        
+
         if (subseg.size % 4 != 0)
           if ((subseg.pos2 - seg.pos1) % 2 == 1) sign_of_parcollet_charlebois *= -1;
       }
       std::iota(range_of_subvertex.begin() + index, range_of_subvertex.begin() + subseg_size, pos);
-      //print_vector(range_of_subvertex);
-      //print_vector(range_of_subvertex2);
-      //if(not(range_of_subvertex == range_of_subvertex_old)) exit(-1);
-      
-      //std::printf("\n");
-            
-
-      //if (verbose > 1)  std::printf("sign_parcollet_charlebois  % d\n", sign_of_parcollet_charlebois);
-      //if (verbose > 1)  std::printf("value1 = % 4.8f\n", value);
 
       if constexpr (remove_not_finite) {
         if (not is_finite) continue;
@@ -283,7 +226,6 @@ namespace inchworm::diagram {
         scalar_t det1 = hyb_mat.extract_det(range_of_subvertex);
         value *= sign_of_parcollet_charlebois * det1;
       }
-      //if (verbose > 1)  std::printf("value2 = % 4.8f\n", value);
       seg.value += value;
     }
 
@@ -295,12 +237,9 @@ namespace inchworm::diagram {
         if (seg.pos2 == cuts.pos2) {
 
           scalar_t value = 1.0;
-
-          for (int j=0; j < cuts.N_seg; j++) {
-          //for (auto sub_segment_id : cuts.list) {
+          for (int j = 0; j < cuts.N_seg; j++) {
             segment_t subseg = segment_list[cuts.list[j]];
-            EXPECTS(subseg.calculated);
-
+            ASSERT(subseg.calculated);
             value *= -subseg.value_without_cuts;
           }
           seg.value -= value;
@@ -309,11 +248,6 @@ namespace inchworm::diagram {
     if (verbose > 1) std::printf("   % 15.8f      % 15.8f\n", seg.value, seg.value_without_cuts);
   }
 
-  // inclusion_exclusion algo based on Boag et al. PRB (2018) (with few changes)
-  // We first determine the independent segments. We then combine
-  // them into two lists: one fully disjoint (except for split points)
-  // and another fully adjacent.
-  //
   scalar_t inclusion_exclusion(time_diagram_t const &diagram, hyb_matrix_t hyb_mat, int verbose) {
 
     if (diagram.size() == 0) return 1.0;
@@ -336,7 +270,7 @@ namespace inchworm::diagram {
     if (verbose > 1) {
       std::printf("list of single segements:\n");
       print_diag(diagram);
-      for (int j=0; j<segment_list.size(); j++) {
+      for (int j = 0; j < segment_list.size(); j++) {
         print_seg(segment_list, j, diagram);
         std::printf("\n");
       }
@@ -359,7 +293,8 @@ namespace inchworm::diagram {
         if (seg.size == length) {
           bool special = false;
           if (length == 2 * diagram.perturbation_order()) special = true;
-          calculate_segment(seg.id, segment_list, list_of_set_of_disjoint_segments, list_of_set_of_adjacent_segments, hyb_mat, diagram, special, verbose);
+          calculate_segment(seg.id, segment_list, list_of_set_of_disjoint_segments, list_of_set_of_adjacent_segments, hyb_mat, diagram, special,
+                            verbose);
         }
       }
     }

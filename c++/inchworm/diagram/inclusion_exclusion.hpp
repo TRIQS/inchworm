@@ -24,8 +24,11 @@
 #include "hyb_matrix.hpp"
 
 namespace inchworm::diagram {
-  // Definition of a segment:
-  //
+
+  /**
+   * This class represents a single continuous segment of operators
+   *
+   */
   struct segment_t {
 
     int pos1                    = 0;
@@ -35,45 +38,41 @@ namespace inchworm::diagram {
     scalar_t value_without_cuts = 0.;
 
     bool calculated = false;
-    int id      = 0;
+    int id          = 0;
 
-    // Constructor:
     segment_t(int p1, int p2, int n);
   };
 
-  // print one segment
-  //
   void print_segment(segment_t const &segment, time_diagram_t const &diagram);
 
-  // Determine every possible segment based on the time_diagram definition.
-  // The simple rule is: "Any segment should: 1. contain the same number of c
-  // and d_dag and 2. not cross a split point".
-  //
-  // Additionnal optimisation: a segment of length 4 and of type xoxo or oxox
-  // does not need to be considered as it cannot be fully connected
-  //
+  /**
+   * Determine every possible segment based on the time_diagram definition.
+   * The simple rule is: "Any segment should: 1. contain the same number of d
+   * and d_dag and 2. not cross a split point".
+   *
+   * Additionnal optimisation: a segment of length 4 and of type xoxo or oxox
+   * does not need to be considered as it cannot be fully connected
+   */
   std::vector<segment_t> determine_segments(time_diagram_t const &diagram);
 
-  // Definition of set_of_segments_t
-  //
+  /**
+   * This class represents a set of non-overlapping segments
+   *
+   */
   struct set_of_segments_t {
 
     int pos1;
-    int pos2; // note: by definition here, the set of segments goes from index pos1 to pos2-1
-    int size; // total length of ths segment
+    int pos2;             // note: by definition here, the set of segments goes from index pos1 to pos2-1
+    int size;             // total length of ths segment
     bool disjoint = true; // we define disjoint when 2 segments does not touch (by convention, we choose a segment alone to be disjoint too)
     bool adjacent = true; // we define adjacent when all segments touches. If one does not, it is false.
-    
-    
+
     //std::vector<int> list;
     sso_vector<int> list; // I tried this solution, but it is slower
-    //std::array<int, 30> list;  // preallocated for speedup FIXME: 20 might be too constraining.
-    int N_seg; // number of segments in the set, length of the list.
-    
-    //time_diagram_t & diagram;
+    int N_seg;            // number of segments in the set, length of the list.
 
     // Constructor:
-    //set_of_segments_t(time_diagram_t const &diagram);
+    //FIXME set_of_segments_t(time_diagram_t const &diagram);
     set_of_segments_t(segment_t const &seg0, time_diagram_t const &diagram);
 
     // Function to add a segment to the present set of segments:
@@ -81,42 +80,33 @@ namespace inchworm::diagram {
   };
 
   // print one set of segments
-  //
   void print_set(std::vector<segment_t> const &segment_list, set_of_segments_t const &set_of_segments, time_diagram_t const &diagram);
 
-  // Combine the different segments defined in segment_list. It proceed in
-  // steps. Every step reuse the previous set of segment. For exemple
-  // when we try to generate set of 3 segments, we reuse every set
-  // of 2 segment and try to append segments the segments in segment_list.
-  // For this reason, we keep the information of the indices where the "N segments"
-  // set start in the list "set_list". This is kept in the vector
-  // start_index_list.
-  //
+  /**
+   * This function generates the list of distjoint / adjoint sets
+   * given the list of all possible segments
+   *
+   * It proceeds in steps. Every step reuses the previous set of segment. For exemple
+   * when we try to generate set of 3 segments, we reuse every set
+   * of 2 segment and try to append segments the segments in segment_list.
+   * For this reason, we keep the information of the indices where the "N segments"
+   * set start in the list "set_list". This is kept in the vector
+   * start_index_list.
+   */
   std::vector<set_of_segments_t> combine_segments(std::vector<segment_t> const &segment_list, time_diagram_t const &diagram, bool search_disjoint);
 
-  // Remove "segment_size" elements of a vector of int, starting at the value "segment_min".
-  // Of course is requires the "segment_min" to be in the vector and more than "segment_size"
-  // away from the end of the vector. This is ensured by the EXPECTS() check.
-  //
-  //std::vector<int> remove_segment_from_list(std::vector<int> const &list, int segment_min, int segment_size);
-
-  // Calculate the value of one segment
-  // by analysing every segments of the set of segment (of both lists)
-  //
+  // Calculate the value of one segment by analysing every segments of the set of segment (of both lists)
   void calculate_segment(int segment_id,
                          std::vector<segment_t> &segments_list, // not const: modified
-                         std::vector<set_of_segments_t> const &list_of_set_of_disjoint_segments, std::vector<set_of_segments_t> const &list_of_set_of_adjacent_segments,
-                         hyb_matrix_t const &hyb_mat, time_diagram_t const &diagram, bool special = false, int verbose = 0);
+                         std::vector<set_of_segments_t> const &list_of_set_of_disjoint_segments,
+                         std::vector<set_of_segments_t> const &list_of_set_of_adjacent_segments, hyb_matrix_t const &hyb_mat,
+                         time_diagram_t const &diagram, bool special = false, int verbose = 0);
 
-  // inclusion_exclusion algo based on Boag et al. PRB (2018) (with few changes)
-  // We first determine the independent segments. We then combine
-  // them into two lists: one fully disjoint (except for split points)
-  // and another fully adjacent.
-  //
-  //scalar_t inclusion_exclusion(time_diagram_t const &diagram, hyb_adaptor_t const &hyb_tau);
-  //scalar_t inclusion_exclusion(time_diagram_t const &diagram, std::function<scalar_t(double)>);
-
-  //scalar_t determinant(time_diagram_t const &diagram, hyb_adaptor_t const &hyb_tau);
-  //scalar_t determinant(time_diagram_t const &diagram, std::function<scalar_t(double)>);
+  /**
+   * inclusion_exclusion algo based on Boag et al. PRB (2018) (with few changes)
+   * We first determine the independent segments. We then combine
+   * them into two lists: one fully disjoint (except for split points)
+   * and another fully adjacent.
+   */
   scalar_t inclusion_exclusion(time_diagram_t const &diagram, hyb_matrix_t hyb_mat, int verbose = 0);
 } // namespace inchworm::diagram
