@@ -31,27 +31,17 @@ namespace inchworm::diagram {
    */
   struct segment_t {
 
-    int pos1                    = 0;  // Index of the leftmost vertex
-    int pos2                    = 0;  // Index one past the rightmost vertex
-    int size                    = 0;  // The number of vertices in the segment
-    scalar_t value              = 0.;
-    scalar_t value_without_cuts = 0.;
+    const int pos1; // Index of the leftmost vertex
+    const int pos2; // Index one past the rightmost vertex
+    const int id;   // The segment identifier
+    const int size; // The number of vertices in the segment
 
-    bool calculated = false; // Has this segment been calculated?
-    int id          = 0;     // The segment identifier
+    bool calculated             = false; // Has this segment been calculated?
+    scalar_t value              = 0.;    // The full value of the segment, c.f. Eq (14) arXiv:1807.00290v1
+    scalar_t value_without_cuts = 0.;    // The value of the segment if split points are not considered // FIXME CHECK
 
     segment_t(int pos1_, int pos2_, int id_);
   };
-
-  /**
-   * Determine every possible segment based on the time_diagram definition.
-   * The simple rule is: "Any segment should: 1. contain the same number of d
-   * and d_dag and 2. not cross a split point".
-   *
-   * Additionnal optimisation: a segment of length 4 and of type xoxo or oxox
-   * does not need to be considered as it cannot be fully connected
-   */
-  std::vector<segment_t> determine_segments(time_diagram_t const &diagram);
 
   /**
    * This class represents a set of non-overlapping segments contained in [pos1, pos2)

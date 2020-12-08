@@ -24,46 +24,55 @@
 #include "./print.hpp"
 
 namespace inchworm::diagram {
-  segment_t::segment_t(int pos1_, int pos2_, int id_) : pos1{pos1_}, pos2{pos2_}, id{id_} {
-    EXPECTS(pos2 > pos1);
-    size = pos2 - pos1;
-  }
+  segment_t::segment_t(int pos1_, int pos2_, int id_) : pos1{pos1_}, pos2{pos2_}, id{id_}, size{pos2_ - pos1_} { EXPECTS(pos2 > pos1); }
 
+  /**
+   * Determine every possible segment within the diagram.
+   * Each segment should:
+   *  1. contain the same number of d and d_dag and
+   *  2. not cross a split point
+   *
+   * Additionnal optimisation: a segment of length 4 and of type xoxo or oxox
+   * does not need to be considered as it cannot be fully connected
+   *
+   * FIXME The full segment is currently always considered!
+   */
   std::vector<segment_t> determine_segments(time_diagram_t const &diagram) {
+    EXPECTS(not diagram.is_trivial); // FIXME Because of doublecounting of full segment?
 
-    EXPECTS(not diagram.is_trivial);
+    int diag_size = diagram.size();
 
     std::vector<segment_t> seg_list;
-    int N = diagram.size();
 
-    int N_segment = 0;
-    for (int i = 0; i < N - 1; i++)                           //starting position of segment
-      for (int a = smallest_segment; a < N - i + 1; a += 2) { //length of segment
+    int segment_id = 0;
 
+    for (auto pos1 : range(0, diag_size - 1))                              //starting position of segment
+      for (auto pos2 : range(pos1 + smallest_segment, diag_size + 1, 2)) { //one past the end of segment
+	int len = pos2 - pos1;
+
+	// No split-point should fall into the segment
         if (std::any_of(diagram.split_points.begin(), diagram.split_points.end(),
-                        [i, a](auto &split_point) { return segment_cross_p(i, i + a, split_point); }))
+                        [&](auto &sp) { return pos1 < sp and sp < pos2; }))
           continue;
 
-        int Ndag = 0;
+	// Optimization: Do not consider segments of length four
+	if constexpr (remove_xoxo)
+	  if (len == 4 and diagram.op_list[pos1].dag == diagram.op_list[pos1 + 2].dag) continue;
 
-        if constexpr (remove_xoxo)
-          if (a == 4 and diagram.op_list[i].dag == diagram.op_list[i + 2].dag) continue;
-
-        // count the number of dag, must be half of the lenght a:
-        for (int j = i; j < i + a; j++)
-          if (diagram.op_list[j].dag) Ndag++;
-
-        // check if same number of d_dag an d in the segment starting at i and ending before i+a
-        if (2 * Ndag == a) seg_list.push_back({i, i + a, N_segment++});
+	// If [pos1, pos2) contains the same number of d and d_dag, add it to the list
+	auto Ndag = std::count_if(diagram.op_list.cbegin() + pos1, diagram.op_list.cbegin() + pos2, [](auto &op) { return op.dag; });
+	if (2 * Ndag == len) seg_list.emplace_back(pos1, pos2, segment_id++);
       }
 
+    // FIXME WHY?
     //lastly, put the last segment (this one is k-connected and not fully connected. So we bypass the condition that it should not cross the split point:
-    segment_t seg(0, N, N_segment++);
-    seg_list.push_back(seg);
+    seg_list.emplace_back(0, diag_size, segment_id++);
+
     return seg_list;
   }
 
   set_of_segments_t::set_of_segments_t(segment_t const &seg0, time_diagram_t const &diagram)
+     //FIXME set should be initialized empty
      : pos1{seg0.pos1}, pos2{seg0.pos2}, size{seg0.size}, segment_ids(diagram.perturbation_order() / (smallest_segment / 2)) {
     N_seg                = 0;
     segment_ids[N_seg++] = seg0.id;
@@ -296,7 +305,8 @@ namespace inchworm::diagram {
     std::vector<int> num_vector(diagram.size(), 0);
 
     for (int j = 0; j < set_of_segments.N_seg; j++) {
-      for (int k = segment_list[set_of_segments.segment_ids[j]].pos1; k < segment_list[set_of_segments.segment_ids[j]].pos2; k++) num_vector[k] = j + 1;
+      for (int k = segment_list[set_of_segments.segment_ids[j]].pos1; k < segment_list[set_of_segments.segment_ids[j]].pos2; k++)
+        num_vector[k] = j + 1;
     }
     print_line(num_vector);
   }

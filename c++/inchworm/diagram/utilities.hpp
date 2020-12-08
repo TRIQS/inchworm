@@ -30,26 +30,6 @@ namespace inchworm::diagram {
                                            // the remainder when one segment is equal to zero (double == 0.0).
                                            // But it might be not as straightforward when doing this comparison for complex values.
 
-  // check if an arch cross a point,
-  //
-  // example1: cross
-  //             p
-  //         a______b
-  //
-  // example2: do not cross
-  //     p
-  //         a______b
-  //
-  // example3: do not cross
-  //         p
-  //         a______b
-  //
-  // example4: do not cross
-  //                p
-  //         a______b
-  //
-  inline bool segment_cross_p(int a, int b, int p) { return (a - p) * (b - p) < 0; }
-
   // check if two arches cross,
   //  i.e. if one end of one arch arrive in the middle of the other arch.
   //
