@@ -46,22 +46,21 @@ namespace inchworm::diagram {
 
     int segment_id = 0;
 
-    for (auto pos1 : range(0, diag_size - 1))                              //starting position of segment
-      for (auto pos2 : range(pos1 + smallest_segment, diag_size + 1, 2)) { //one past the end of segment
-	int len = pos2 - pos1;
+    // Create segments from smallest to largest, to respect calculation order
+    for (auto len : range(smallest_segment, diag_size + 1, 2))
+      for (auto pos1 : range(0, diag_size - len + 1)) { //starting position of segment
+        int pos2 = pos1 + len;                          //one past the end of segment
 
-	// No split-point should fall into the segment
-        if (std::any_of(diagram.split_points.begin(), diagram.split_points.end(),
-                        [&](auto &sp) { return pos1 < sp and sp < pos2; }))
-          continue;
+        // No split-point should fall into the segment
+        if (std::any_of(diagram.split_points.begin(), diagram.split_points.end(), [&](auto &sp) { return pos1 < sp and sp < pos2; })) continue;
 
-	// Optimization: Do not consider segments of length four
-	if constexpr (remove_xoxo)
-	  if (len == 4 and diagram.op_list[pos1].dag == diagram.op_list[pos1 + 2].dag) continue;
+        // Optimization: Do not consider segments of length four
+        if constexpr (remove_xoxo)
+          if (len == 4 and diagram.op_list[pos1].dag == diagram.op_list[pos1 + 2].dag) continue;
 
-	// If [pos1, pos2) contains the same number of d and d_dag, add it to the list
-	auto Ndag = std::count_if(diagram.op_list.cbegin() + pos1, diagram.op_list.cbegin() + pos2, [](auto &op) { return op.dag; });
-	if (2 * Ndag == len) seg_list.emplace_back(pos1, pos2, segment_id++);
+        // If [pos1, pos2) contains the same number of d and d_dag, add it to the list
+        auto Ndag = std::count_if(diagram.op_list.cbegin() + pos1, diagram.op_list.cbegin() + pos2, [](auto &op) { return op.dag; });
+        if (2 * Ndag == len) seg_list.emplace_back(pos1, pos2, segment_id++);
       }
 
     // FIXME WHY?
@@ -237,17 +236,20 @@ namespace inchworm::diagram {
 
     if (diagram.size() == 0) return 1.0;
 
-    //hyb_matrix_t hyb_mat(diagram, hyb_tau);
-    hyb_mat.optimize_inclusion_exclusion(); // put some values to zero in hyb matrix (segment of length 2)
-    if (diagram.is_trivial) { return 0; }   // not a question anymore: return 0 or det??
+    // Ignore segments of lenght 2 by setting necessary matrix elements to zero
+    hyb_mat.optimize_inclusion_exclusion();
+
+    // We need to have at least one split-point between operators for a finite hybridization weight
+    if (diagram.is_trivial) { return 0; }
+
     if (diagram.perturbation_order() == 1) { return hyb_mat.det(); };
 
-    if (verbose) std::printf("\n\n##################\nINCLUSION-EXCLUSION:\n");
-    if (verbose > 1) {
-      if (verbose > 2) hyb_mat.print();
-    }
+    if (verbose > 0) std::printf("\n\n##################\nINCLUSION-EXCLUSION:\n");
+    if (verbose > 2) hyb_mat.print();
+
     std::vector<segment_t> segment_list = determine_segments(diagram);
-    if (verbose) std::printf("\nsegment number = %lu\n\n", segment_list.size());
+
+    if (verbose > 0) std::printf("\nnumber of segments = %lu\n\n", segment_list.size());
 
     std::vector<set_of_segments_t> list_of_set_of_disjoint_segments = combine_segments(segment_list, diagram, true);
     std::vector<set_of_segments_t> list_of_set_of_adjacent_segments = combine_segments(segment_list, diagram, false);
@@ -261,27 +263,21 @@ namespace inchworm::diagram {
       }
       std::printf("\n\nlist of set of disjoint segments:\n");
       print_diag(diagram);
-      for (auto comb : list_of_set_of_disjoint_segments) {
-        print_set(segment_list, comb, diagram);
+      for (auto const &s : list_of_set_of_disjoint_segments) {
+        print_set(segment_list, s, diagram);
         std::printf("\n");
       }
       std::printf("\n\nlist of set of adjacent segments:\n");
       print_diag(diagram);
-      for (auto comb : list_of_set_of_adjacent_segments) {
-        print_set(segment_list, comb, diagram);
+      for (auto const &s : list_of_set_of_adjacent_segments) {
+        print_set(segment_list, s, diagram);
         std::printf("\n");
       }
     }
 
-    for (int length = smallest_segment; length <= 2 * diagram.perturbation_order(); length += 2) {
-      for (auto seg : segment_list) {
-        if (seg.size == length) {
-          bool special = false;
-          if (length == 2 * diagram.perturbation_order()) special = true;
-          calculate_segment(seg.id, segment_list, list_of_set_of_disjoint_segments, list_of_set_of_adjacent_segments, hyb_mat, diagram, special,
-                            verbose);
-        }
-      }
+    for (auto const &seg : segment_list) { // segment_list is sorted w.r.t. segment size
+      bool special = (seg.size == 2 * diagram.perturbation_order());
+      calculate_segment(seg.id, segment_list, list_of_set_of_disjoint_segments, list_of_set_of_adjacent_segments, hyb_mat, diagram, special, verbose);
     }
 
     if (verbose > 0) {
