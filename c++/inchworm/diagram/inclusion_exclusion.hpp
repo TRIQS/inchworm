@@ -56,8 +56,8 @@ namespace inchworm::diagram {
     bool disjoint = true; // The set is disjoint if all segments are separated by at least one vertex
     bool adjacent = true; // The set is adjacent if all segments touch and span the full diagram
 
-    sso_vector<int> segment_ids; // List that stores the subsegment indices. Initialize with maximal possible size.
-    int N_seg;                   // Number of of segments, i.e. values in segment_ids that have been initialized
+    sso_vector<int> seg_ids; // List that stores the subsegment indices. Initialize with maximal possible size.
+    int N_seg;               // Number of of segments, i.e. values in seg_ids that have been initialized
 
     // Constructor:
     //FIXME set_of_segments_t(time_diagram_t const &diagram);

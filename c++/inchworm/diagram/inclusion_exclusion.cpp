@@ -28,9 +28,9 @@ namespace inchworm::diagram {
 
   set_of_segments_t::set_of_segments_t(segment_t const &seg0, time_diagram_t const &diagram)
      //FIXME set should be initialized empty
-     : begin{seg0.begin}, end{seg0.end}, size{seg0.size}, segment_ids(diagram.perturbation_order() / (smallest_segment / 2)) {
+     : begin{seg0.begin}, end{seg0.end}, size{seg0.size}, seg_ids(diagram.perturbation_order() / (smallest_segment / 2)) {
     N_seg                = 0;
-    segment_ids[N_seg++] = seg0.id;
+    seg_ids[N_seg++]     = seg0.id;
   }
 
   void set_of_segments_t::append(segment_t const &seg1, time_diagram_t const &diagram) {
@@ -46,7 +46,7 @@ namespace inchworm::diagram {
 
     size                 = seg1.end - begin;
     end                  = seg1.end;
-    segment_ids[N_seg++] = seg1.id;
+    seg_ids[N_seg++]     = seg1.id;
   }
 
   std::vector<set_of_segments_t> combine_segments(std::vector<segment_t> const &segment_list, time_diagram_t const &diagram, bool search_disjoint) {
@@ -119,7 +119,7 @@ namespace inchworm::diagram {
       bool is_finite                   = true;
 
       int number_of_vertex_to_remove = 0;
-      for (int j = 0; j < set.N_seg; j++) number_of_vertex_to_remove += segment_list[set.segment_ids[j]].size;
+      for (int j = 0; j < set.N_seg; j++) number_of_vertex_to_remove += segment_list[set.seg_ids[j]].size;
 
       sso_vector<int> range_of_subvertex;
       range_of_subvertex.resize(seg.size - number_of_vertex_to_remove);
@@ -130,7 +130,7 @@ namespace inchworm::diagram {
       int pos   = range_of_vertex[0];
 
       for (int j = 0; j < set.N_seg; j++) {
-        auto const &subseg = segment_list[set.segment_ids[j]];
+        auto const &subseg = segment_list[set.seg_ids[j]];
         EXPECTS(seg.calculated);
 
         if (subseg.value == 0.0) { // somehow, this seems to happen often even if we consider float (does it still holds for complex numbers?)
@@ -170,7 +170,7 @@ namespace inchworm::diagram {
 
           scalar_t value = 1.0;
           for (int j = 0; j < cuts.N_seg; j++) {
-            auto const &subseg = segment_list[cuts.segment_ids[j]];
+            auto const &subseg = segment_list[cuts.seg_ids[j]];
             ASSERT(subseg.calculated);
             value *= -subseg.value_without_cuts;
           }
@@ -288,10 +288,12 @@ namespace inchworm::diagram {
     print_line(num_vector);
   }
 
-  void print_set(std::vector<segment_t> const &segment_list, set_of_segments_t const &set_of_segments, time_diagram_t const &diagram) {
+  void print_set(std::vector<segment_t> const &segment_list, set_of_segments_t const &set, time_diagram_t const &diagram) {
     std::vector<int> num_vector(diagram.size(), 0);
-    for (auto const &seg_id : set_of_segments.segment_ids)
-      for (auto k : range(segment_list[seg_id].begin, segment_list[seg_id].end)) num_vector[k] = 1;
+    for (int j = 0; j < set.N_seg; j++) {
+      auto const &seg = segment_list[set.seg_ids[j]];
+      for (auto k : range(seg.begin, seg.end)) num_vector[k] = 1;
+    }
     print_line(num_vector);
   }
 
