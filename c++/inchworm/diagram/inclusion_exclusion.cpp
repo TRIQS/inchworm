@@ -24,28 +24,28 @@
 #include "./print.hpp"
 
 namespace inchworm::diagram {
-  segment_t::segment_t(int pos1_, int pos2_, int id_) : pos1{pos1_}, pos2{pos2_}, id{id_}, size{pos2_ - pos1_} { EXPECTS(pos2 > pos1); }
+  segment_t::segment_t(int begin_, int end_, int id_) : begin{begin_}, end{end_}, id{id_}, size{end_ - begin_} { EXPECTS(end > begin); }
 
   set_of_segments_t::set_of_segments_t(segment_t const &seg0, time_diagram_t const &diagram)
      //FIXME set should be initialized empty
-     : pos1{seg0.pos1}, pos2{seg0.pos2}, size{seg0.size}, segment_ids(diagram.perturbation_order() / (smallest_segment / 2)) {
+     : begin{seg0.begin}, end{seg0.end}, size{seg0.size}, segment_ids(diagram.perturbation_order() / (smallest_segment / 2)) {
     N_seg                = 0;
     segment_ids[N_seg++] = seg0.id;
   }
 
   void set_of_segments_t::append(segment_t const &seg1, time_diagram_t const &diagram) {
     //FIXME void set_of_segments_t::append(segment_t const &seg1) {
-    EXPECTS(seg1.pos1 >= pos2);
+    EXPECTS(seg1.begin >= end);
 
-    if (seg1.pos1 != pos2)
+    if (seg1.begin != end)
       adjacent = false;
-    else if (std::any_of(begin(diagram.split_points), end(diagram.split_points), [j = pos2](int i) { return i == j; }))
+    else if (std::any_of(begin(diagram.split_points), end(diagram.split_points), [j = end](int i) { return i == j; }))
       adjacent = false; // if the previous set of segments already ends at a split point, adding another one will make this set not adjacent anymore.
     else
       disjoint = false; // note, we consider that even if two segments touch at the split point, the set is still disjoint.
 
-    size                 = seg1.pos2 - pos1;
-    pos2                 = seg1.pos2;
+    size                 = seg1.end - begin;
+    end                  = seg1.end;
     segment_ids[N_seg++] = seg1.id;
   }
 
@@ -69,7 +69,7 @@ namespace inchworm::diagram {
 
         for (auto const &additional_segment : segment_list) {
           // Only consider segments that start to the right of the current rightmost segment
-          if (additional_segment.pos1 >= previous_set.pos2) {
+          if (additional_segment.begin >= previous_set.end) {
             set_of_segments_t new_set = previous_set;
             new_set.append(additional_segment, diagram);
 
@@ -100,9 +100,9 @@ namespace inchworm::diagram {
     seg.calculated = true;
     if (verbose > 1) { print_segment(seg, diagram); }
 
-    // [seg.pos1, ... , seg.pos2)
+    // [seg.begin, ... , seg.end)
     sso_vector<int> range_of_vertex(seg.size);
-    std::iota(range_of_vertex.begin(), range_of_vertex.end(), seg.pos1);
+    std::iota(range_of_vertex.begin(), range_of_vertex.end(), seg.begin);
 
     if (verbose > 2) {
       std::printf("range of vertex: ");
@@ -115,11 +115,11 @@ namespace inchworm::diagram {
     if (verbose > 2) std::printf("\nsegment[%d]= % 4.8f\n\n", segment_id, hyb_mat.extract_det(range_of_vertex));
 
     for (auto const &set : list_of_set_of_disjoint_segments) {
-      if ((not special) and not((seg.pos1 <= set.pos1) and (seg.pos2 > set.pos2))) continue;
+      if ((not special) and not((seg.begin <= set.begin) and (seg.end > set.end))) continue;
 
       if (special
           and (set.N_seg == 1) // this is the special case where we evaluate the full segment (at the end). We still need to exclude the itself.
-          and ((seg.pos1 == set.pos1) and (seg.pos2 == set.pos2)))
+          and ((seg.begin == set.begin) and (seg.end == set.end)))
         continue; // this is tricky, might have to change this at some point
 
       scalar_t value                   = 1.0;
@@ -146,15 +146,15 @@ namespace inchworm::diagram {
         }
         value *= -subseg.value;
 
-        if (pos != subseg.pos1) {
-          int number_of_new_vertex = (subseg.pos1 - pos);
+        if (pos != subseg.begin) {
+          int number_of_new_vertex = (subseg.begin - pos);
           std::iota(range_of_subvertex.begin() + index, range_of_subvertex.begin() + index + number_of_new_vertex, pos);
           index += number_of_new_vertex;
         }
-        pos = subseg.pos1 + subseg.size;
+        pos = subseg.begin + subseg.size;
 
         if (subseg.size % 4 != 0)
-          if ((subseg.pos2 - seg.pos1) % 2 == 1) sign_of_parcollet_charlebois *= -1;
+          if ((subseg.end - seg.begin) % 2 == 1) sign_of_parcollet_charlebois *= -1;
       }
       std::iota(range_of_subvertex.begin() + index, range_of_subvertex.begin() + subseg_size, pos);
 
@@ -173,8 +173,8 @@ namespace inchworm::diagram {
 
     for (auto const &cuts : list_of_set_of_adjacent_segments) {
       // Make sure that adjecent subset covers exactly the segment
-      if (seg.pos1 == cuts.pos1)
-        if (seg.pos2 == cuts.pos2) {
+      if (seg.begin == cuts.begin)
+        if (seg.end == cuts.end) {
 
           scalar_t value = 1.0;
           for (int j = 0; j < cuts.N_seg; j++) {
@@ -204,19 +204,19 @@ namespace inchworm::diagram {
     int segment_id = 0;
     std::vector<segment_t> seg_list;
     for (auto size : range(smallest_segment, diag_size - 1, 2))
-      for (auto pos1 : range(0, diag_size - size + 1)) { //starting position of segment
-        auto pos2 = pos1 + size;                         //one past the end of segment
+      for (auto begin : range(0, diag_size - size + 1)) {
+        auto end = begin + size;
 
         // Optimization: Do not consider vanishing segments of size four (xoxo & oxox)
         if constexpr (remove_xoxo)
-          if (size == 4 and diagram.op_list[pos1].dag == diagram.op_list[pos1 + 2].dag) continue;
+          if (size == 4 and diagram.op_list[begin].dag == diagram.op_list[begin + 2].dag) continue;
 
         // Consider only subsegments that do not contain a split-point
-        if (std::any_of(diagram.split_points.begin(), diagram.split_points.end(), [&](auto &sp) { return pos1 < sp and sp < pos2; })) continue;
+        if (std::any_of(diagram.split_points.begin(), diagram.split_points.end(), [&](auto &sp) { return begin < sp and sp < end; })) continue;
 
-        // If [pos1, pos2) contains the same number of d and d_dag, add it to the list
-        auto Ndag = std::count_if(diagram.op_list.cbegin() + pos1, diagram.op_list.cbegin() + pos2, [](auto &op) { return op.dag; });
-        if (2 * Ndag == size) seg_list.emplace_back(pos1, pos2, segment_id++);
+        // If [begin, end) contains the same number of d and d_dag, add it to the list
+        auto Ndag = std::count_if(diagram.op_list.cbegin() + begin, diagram.op_list.cbegin() + end, [](auto &op) { return op.dag; });
+        if (2 * Ndag == size) seg_list.emplace_back(begin, end, segment_id++);
       }
 
     // Finally, add the full segment, which may contain a split-point
@@ -286,17 +286,14 @@ namespace inchworm::diagram {
 
   void print_segment(segment_t const &segment, time_diagram_t const &diagram) {
     std::vector<int> num_vector(diagram.size(), 0);
-    for (int k = segment.pos1; k < segment.pos2; k++) num_vector[k] = 1;
+    for (auto k : range(segment.begin, segment.end)) num_vector[k] = 1;
     print_line(num_vector);
   }
 
   void print_set(std::vector<segment_t> const &segment_list, set_of_segments_t const &set_of_segments, time_diagram_t const &diagram) {
     std::vector<int> num_vector(diagram.size(), 0);
-
-    for (int j = 0; j < set_of_segments.N_seg; j++) {
-      for (int k = segment_list[set_of_segments.segment_ids[j]].pos1; k < segment_list[set_of_segments.segment_ids[j]].pos2; k++)
-        num_vector[k] = j + 1;
-    }
+    for (auto const &seg_id : set_of_segments.segment_ids)
+      for (auto k : range(segment_list[seg_id].begin, segment_list[seg_id].end)) num_vector[k] = 1;
     print_line(num_vector);
   }
 

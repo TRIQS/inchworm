@@ -26,35 +26,35 @@
 namespace inchworm::diagram {
 
   /**
-   * This class represents a single continuous segment with vertices in [pos1, pos2)
+   * This class represents a single continuous segment with vertices in [begin, end)
    *
    */
   struct segment_t {
 
-    const int pos1; // Index of the leftmost vertex
-    const int pos2; // Index one past the rightmost vertex
-    const int id;   // The segment identifier
-    const int size; // The number of vertices in the segment
+    const int begin; // Index of the leftmost vertex
+    const int end;   // Index one past the rightmost vertex
+    const int id;    // The segment identifier
+    const int size;  // The number of vertices in the segment
 
     bool calculated             = false; // Has this segment been calculated?
     scalar_t value              = 0.;    // The full value of the segment, c.f. Eq (14) arXiv:1807.00290v1
     scalar_t value_without_cuts = 0.;    // The value of the segment if split points are not considered // FIXME CHECK
 
-    segment_t(int pos1_, int pos2_, int id_);
+    segment_t(int begin_, int end_, int id_);
   };
 
   /**
-   * This class represents a set of non-overlapping segments contained in [pos1, pos2)
+   * This class represents a set of non-overlapping segments contained in [begin, end)
    *
    */
   struct set_of_segments_t {
 
-    int pos1; // Index of the leftmost vertex
+    int begin; // Index of the leftmost vertex
+    int end;   // Index one past the rightmost vertex
+    int size;  // Total length of the segment: end - begin
 
-    int pos2;             // Index one past the rightmost vertex
-    int size;             // Total length of the segment: pos2 - pos1
     bool disjoint = true; // The set is disjoint if all segments are separated by at least one vertex
-    bool adjacent = true; // The set is adjacent if all segments touch and span the full range [pos1, pos2)
+    bool adjacent = true; // The set is adjacent if all segments touch and span the full diagram
 
     sso_vector<int> segment_ids; // List that stores the subsegment indices. Initialize with maximal possible size.
     int N_seg;                   // Number of of segments, i.e. values in segment_ids that have been initialized
