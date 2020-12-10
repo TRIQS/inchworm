@@ -29,8 +29,8 @@ namespace inchworm::diagram {
   set_of_segments_t::set_of_segments_t(segment_t const &seg0, time_diagram_t const &diagram)
      //FIXME set should be initialized empty
      : begin{seg0.begin}, end{seg0.end}, size{seg0.size}, seg_ids(diagram.perturbation_order() / (smallest_segment / 2)) {
-    N_seg                = 0;
-    seg_ids[N_seg++]     = seg0.id;
+    N_seg            = 0;
+    seg_ids[N_seg++] = seg0.id;
   }
 
   void set_of_segments_t::append(segment_t const &seg1, time_diagram_t const &diagram) {
@@ -44,48 +44,36 @@ namespace inchworm::diagram {
     else
       disjoint = false; // note, we consider that even if two segments touch at the split point, the set is still disjoint.
 
-    size                 = seg1.end - begin;
-    end                  = seg1.end;
-    seg_ids[N_seg++]     = seg1.id;
+    size             = seg1.end - begin;
+    end              = seg1.end;
+    seg_ids[N_seg++] = seg1.id;
   }
 
   std::vector<set_of_segments_t> combine_segments(std::vector<segment_t> const &segment_list, time_diagram_t const &diagram, bool search_disjoint) {
 
-    int n_seg = segment_list.size();
+    auto set_list = std::vector<set_of_segments_t>{};
+    for (auto const &seg : segment_list) { set_list.emplace_back(seg, diagram); }
 
-    std::vector<int> start_index_list = {0, 0};
-    auto set_list                     = std::vector<set_of_segments_t>{}; // return value (pair[1])
+    // Loop over the (continuously growing) list of sets until we have reached the end
+    for (int set_idx = 0; set_idx != set_list.size(); ++set_idx) {
 
-    for (int j = 0; j < n_seg; j++) { set_list.push_back(set_of_segments_t(segment_list[j], diagram)); }
-    for (int number_of_segment = 2; number_of_segment <= diagram.perturbation_order(); number_of_segment++) {
-      start_index_list.push_back(set_list.size());
+      for (auto const &additional_segment : segment_list) {
 
-      int i1 = start_index_list.size() - 2;
-      int i2 = start_index_list.size() - 1;
-      for (int prev_index = start_index_list[i1]; prev_index < start_index_list[i2]; prev_index++) {
+        // Only consider segments that start to the right of the current rightmost segment
+        if (additional_segment.begin < set_list[set_idx].end) continue;
 
-        set_of_segments_t previous_set = set_list[prev_index];
-        //if we do not search for disjoint set, we search for adjacent set, only. We do not need the ones that are neither.
+        set_of_segments_t new_set = set_list[set_idx];
+        new_set.append(additional_segment, diagram);
 
-        for (auto const &additional_segment : segment_list) {
-          // Only consider segments that start to the right of the current rightmost segment
-          if (additional_segment.begin >= previous_set.end) {
-            set_of_segments_t new_set = previous_set;
-            new_set.append(additional_segment, diagram);
-
-            if (search_disjoint) {
-              if (not new_set.disjoint) continue;
-            } else { // IMPORTANT distinction. A segment does not have to be disjoint or adjacent. But here, if we do not search for disjoint, we necessarly search for adjacent.
-              if (not new_set.adjacent) continue;
-            } //important brackets
-
-            set_list.push_back(new_set);
-          }
-        }
+        // Add set iff disjoint/adjacent when searching for disjoint/adjacent
+        if ((search_disjoint && new_set.disjoint) or (not search_disjoint && new_set.adjacent)) {
+	  set_list.emplace_back(std::move(new_set));
+	}
       }
     }
-    if (not search_disjoint) // if search adjacent erase the single segments (not necessary anymore)
-      set_list.erase(set_list.begin(), set_list.begin() + start_index_list[2]);
+
+    // If searching adjacent sets, erase all single segments
+    if (not search_disjoint) set_list.erase(set_list.begin(), set_list.begin() + segment_list.size());
 
     return set_list;
   }
