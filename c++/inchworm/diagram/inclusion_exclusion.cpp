@@ -26,27 +26,28 @@
 namespace inchworm::diagram {
   segment_t::segment_t(int begin_, int end_, int id_) : begin{begin_}, end{end_}, id{id_}, size{end_ - begin_} { EXPECTS(end > begin); }
 
-  set_of_segments_t::set_of_segments_t(segment_t const &seg0, time_diagram_t const &diagram)
-     //FIXME set should be initialized empty
-     : begin{seg0.begin}, end{seg0.end}, size{seg0.size}, seg_ids(diagram.perturbation_order() / (smallest_segment / 2)) {
-    N_seg            = 0;
-    seg_ids[N_seg++] = seg0.id;
+  set_of_segments_t::set_of_segments_t(segment_t const &seg, time_diagram_t const &diagram)
+     : begin{seg.begin},
+       end{seg.end},
+       size{seg.size},
+       seg_ids(diagram.perturbation_order() / (smallest_segment / 2)),
+       N_seg{1},
+       split_points_ptr{&diagram.split_points} {
+    seg_ids[0] = seg.id;
   }
 
-  void set_of_segments_t::append(segment_t const &seg1, time_diagram_t const &diagram) {
-    //FIXME void set_of_segments_t::append(segment_t const &seg1) {
-    EXPECTS(seg1.begin >= end);
+  void set_of_segments_t::append_right(segment_t const &seg) {
+    EXPECTS(seg.begin >= end);
 
-    if (seg1.begin != end)
+    // We loose 'adjacency' if the new segment does not touch the previous right-most one or is separated by a split-point
+    if (seg.begin > end or std::any_of(split_points_ptr->begin(), split_points_ptr->end(), [&](auto sp) { return sp == end; }))
       adjacent = false;
-    else if (std::any_of(diagram.split_points.begin(), diagram.split_points.end(), [j = end](int i) { return i == j; }))
-      adjacent = false; // if the previous set of segments already ends at a split point, adding another one will make this set not adjacent anymore.
-    else
-      disjoint = false; // note, we consider that even if two segments touch at the split point, the set is still disjoint.
+    else // We loose 'disjointness' if the new segment touches the previous right-most one and no split-point separates them
+      disjoint = false;
 
-    size             = seg1.end - begin;
-    end              = seg1.end;
-    seg_ids[N_seg++] = seg1.id;
+    size             = seg.end - begin;
+    end              = seg.end;
+    seg_ids[N_seg++] = seg.id;
   }
 
   std::vector<set_of_segments_t> combine_segments(std::vector<segment_t> const &segment_list, time_diagram_t const &diagram, bool search_disjoint) {
@@ -63,7 +64,7 @@ namespace inchworm::diagram {
         if (additional_segment.begin < set_list[set_idx].end) continue;
 
         set_of_segments_t new_set = set_list[set_idx];
-        new_set.append(additional_segment, diagram);
+        new_set.append_right(additional_segment);
 
         // Add set iff disjoint/adjacent when searching for disjoint/adjacent
         if ((search_disjoint && new_set.disjoint) or (not search_disjoint && new_set.adjacent)) {
@@ -72,7 +73,7 @@ namespace inchworm::diagram {
       }
     }
 
-    // If searching adjacent sets, erase all single segments
+    // If searching adjacent sets, erase all sets with a single segment
     if (not search_disjoint) set_list.erase(set_list.begin(), set_list.begin() + segment_list.size());
 
     return set_list;

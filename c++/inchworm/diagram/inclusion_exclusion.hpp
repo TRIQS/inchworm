@@ -59,8 +59,9 @@ namespace inchworm::diagram {
     sso_vector<int> seg_ids; // List that stores the subsegment indices. Initialize with maximal possible size.
     int N_seg;               // Number of of segments, i.e. values in seg_ids that have been initialized
 
+    std::vector<int> const * split_points_ptr; // Pointer to split_points vector of associated diagram
+
     // Constructor:
-    //FIXME set_of_segments_t(time_diagram_t const &diagram);
     set_of_segments_t(segment_t const &seg0, time_diagram_t const &diagram);
 
     /**
@@ -68,7 +69,7 @@ namespace inchworm::diagram {
      *
      * The function assumes that seg1 lies to the right of all segments contained so far.
      */
-    void append(segment_t const &seg1, time_diagram_t const &diagram);
+    void append_right(segment_t const &seg);
   };
 
   /**
