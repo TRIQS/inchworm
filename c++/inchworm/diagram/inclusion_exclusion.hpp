@@ -86,14 +86,12 @@ namespace inchworm::diagram {
 
   /**
    * Calculate the value of one segment by analysing every segments of the set of segment (of both lists)
-   *
-   * The segment is coined special only if is the full segment of the diagram
    */
   void calculate_segment(int segment_id,
                          std::vector<segment_t> &segments_list, // not const: modified
                          std::vector<set_of_segments_t> const &list_of_set_of_disjoint_segments,
                          std::vector<set_of_segments_t> const &list_of_set_of_adjacent_segments, hyb_matrix_t const &hyb_mat,
-                         time_diagram_t const &diagram, bool special = false, bool verbose = false);
+                         time_diagram_t const &diagram, bool verbose = false);
 
   /**
    * inclusion_exclusion algo based on Boag et al. PRB (2018) (with few changes)

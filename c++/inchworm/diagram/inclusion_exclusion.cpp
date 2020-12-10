@@ -94,7 +94,7 @@ namespace inchworm::diagram {
                          std::vector<segment_t> &segment_list, // not const: modified
                          std::vector<set_of_segments_t> const &list_of_set_of_disjoint_segments,
                          std::vector<set_of_segments_t> const &list_of_set_of_adjacent_segments, hyb_matrix_t const &hyb_mat,
-                         time_diagram_t const &diagram, bool special, bool verbose) {
+                         time_diagram_t const &diagram, bool verbose) {
 
     auto &seg      = segment_list[segment_id];
     seg.calculated = true;
@@ -107,9 +107,9 @@ namespace inchworm::diagram {
     seg.value += hyb_mat.extract_det(range_of_vertex);
 
     for (auto const &set : list_of_set_of_disjoint_segments) {
-      if ((not special) and not((seg.begin <= set.begin) and (seg.end > set.end))) continue;
+      if ((seg.size != diagram.size()) and not((seg.begin <= set.begin) and (seg.end > set.end))) continue;
 
-      if (special
+      if (seg.size == diagram.size()
           and (set.N_seg == 1) // this is the special case where we evaluate the full segment (at the end). We still need to exclude the itself.
           and ((seg.begin == set.begin) and (seg.end == set.end)))
         continue; // this is tricky, might have to change this at some point
@@ -244,8 +244,7 @@ namespace inchworm::diagram {
     std::vector<set_of_segments_t> list_of_set_of_adjacent_segments = combine_segments(segment_list, diagram, false);
 
     for (auto const &seg : segment_list) { // segment_list is sorted w.r.t. segment size
-      bool special = (seg.size == 2 * diagram.perturbation_order());
-      calculate_segment(seg.id, segment_list, list_of_set_of_disjoint_segments, list_of_set_of_adjacent_segments, hyb_mat, diagram, special, verbose);
+      calculate_segment(seg.id, segment_list, list_of_set_of_disjoint_segments, list_of_set_of_adjacent_segments, hyb_mat, diagram, verbose);
     }
 
     // ------------ Debug Prints ------------
