@@ -39,7 +39,7 @@ namespace inchworm::diagram {
 
     if (seg1.begin != end)
       adjacent = false;
-    else if (std::any_of(begin(diagram.split_points), end(diagram.split_points), [j = end](int i) { return i == j; }))
+    else if (std::any_of(diagram.split_points.begin(), diagram.split_points.end(), [j = end](int i) { return i == j; }))
       adjacent = false; // if the previous set of segments already ends at a split point, adding another one will make this set not adjacent anymore.
     else
       disjoint = false; // note, we consider that even if two segments touch at the split point, the set is still disjoint.
@@ -94,25 +94,17 @@ namespace inchworm::diagram {
                          std::vector<segment_t> &segment_list, // not const: modified
                          std::vector<set_of_segments_t> const &list_of_set_of_disjoint_segments,
                          std::vector<set_of_segments_t> const &list_of_set_of_adjacent_segments, hyb_matrix_t const &hyb_mat,
-                         time_diagram_t const &diagram, bool special, int verbose) {
+                         time_diagram_t const &diagram, bool special, bool verbose) {
 
     auto &seg      = segment_list[segment_id];
     seg.calculated = true;
-    if (verbose > 1) { print_segment(seg, diagram); }
 
     // [seg.begin, ... , seg.end)
     sso_vector<int> range_of_vertex(seg.size);
     std::iota(range_of_vertex.begin(), range_of_vertex.end(), seg.begin);
 
-    if (verbose > 2) {
-      std::printf("range of vertex: ");
-      for (auto o : range_of_vertex) std::printf("%d ", o);
-      hyb_mat.print();
-    }
-
     // Calculate the determinant of the full segment
     seg.value += hyb_mat.extract_det(range_of_vertex);
-    if (verbose > 2) std::printf("\nsegment[%d]= % 4.8f\n\n", segment_id, hyb_mat.extract_det(range_of_vertex));
 
     for (auto const &set : list_of_set_of_disjoint_segments) {
       if ((not special) and not((seg.begin <= set.begin) and (seg.end > set.end))) continue;
@@ -185,7 +177,17 @@ namespace inchworm::diagram {
           seg.value -= value;
         }
     }
-    if (verbose > 1) std::printf("   % 15.8f      % 15.8f\n", seg.value, seg.value_without_cuts);
+
+    // ------------ Debug Prints ------------
+    if (verbose) {
+      print_segment(seg, diagram);
+      std::printf("range of vertex: ");
+      for (auto o : range_of_vertex) std::printf("%d ", o);
+      hyb_mat.print();
+      std::printf("\nsegment[%d]= % 4.8f\n\n", segment_id, hyb_mat.extract_det(range_of_vertex));
+      std::printf("   % 15.8f      % 15.8f\n", seg.value, seg.value_without_cuts);
+    }
+    // --------------------------------------
   }
 
   /**
@@ -225,7 +227,7 @@ namespace inchworm::diagram {
     return seg_list;
   }
 
-  scalar_t inclusion_exclusion(time_diagram_t const &diagram, hyb_matrix_t hyb_mat, int verbose) {
+  scalar_t inclusion_exclusion(time_diagram_t const &diagram, hyb_matrix_t hyb_mat, bool verbose) {
 
     if (diagram.size() == 0) return 1.0;
 
@@ -237,17 +239,20 @@ namespace inchworm::diagram {
 
     if (diagram.perturbation_order() == 1) { return hyb_mat.det(); };
 
-    if (verbose > 0) std::printf("\n\n##################\nINCLUSION-EXCLUSION:\n");
-    if (verbose > 2) hyb_mat.print();
-
-    std::vector<segment_t> segment_list = determine_segments(diagram);
-
-    if (verbose > 0) std::printf("\nnumber of segments = %lu\n\n", segment_list.size());
-
+    std::vector<segment_t> segment_list                             = determine_segments(diagram);
     std::vector<set_of_segments_t> list_of_set_of_disjoint_segments = combine_segments(segment_list, diagram, true);
     std::vector<set_of_segments_t> list_of_set_of_adjacent_segments = combine_segments(segment_list, diagram, false);
 
-    if (verbose > 1) {
+    for (auto const &seg : segment_list) { // segment_list is sorted w.r.t. segment size
+      bool special = (seg.size == 2 * diagram.perturbation_order());
+      calculate_segment(seg.id, segment_list, list_of_set_of_disjoint_segments, list_of_set_of_adjacent_segments, hyb_mat, diagram, special, verbose);
+    }
+
+    // ------------ Debug Prints ------------
+    if (verbose) {
+      std::printf("\n\n##################\nINCLUSION-EXCLUSION:\n");
+      hyb_mat.print();
+      std::printf("\nnumber of segments = %lu\n\n", segment_list.size());
       std::printf("list of single segements:\n");
       print_diag(diagram);
       for (int j = 0; j < segment_list.size(); j++) {
@@ -266,20 +271,13 @@ namespace inchworm::diagram {
         print_set(segment_list, s, diagram);
         std::printf("\n");
       }
-    }
-
-    for (auto const &seg : segment_list) { // segment_list is sorted w.r.t. segment size
-      bool special = (seg.size == 2 * diagram.perturbation_order());
-      calculate_segment(seg.id, segment_list, list_of_set_of_disjoint_segments, list_of_set_of_adjacent_segments, hyb_mat, diagram, special, verbose);
-    }
-
-    if (verbose > 0) {
       std::printf("\n## diagram = '%s'\n", diagram_string(diagram).c_str());
       std::printf("kOrder = %d\n", diagram.perturbation_order());
       std::printf("number of segments = %lu\n", segment_list.size());
       std::printf("number of adjacent sets = %lu\n", list_of_set_of_adjacent_segments.size());
       std::printf("number of disjoint sets = %lu\n", list_of_set_of_disjoint_segments.size());
     }
+    // --------------------------------------
 
     return segment_list.back().value;
   }

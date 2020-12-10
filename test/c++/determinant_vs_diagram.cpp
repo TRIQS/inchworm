@@ -43,7 +43,7 @@ void compare_proper_with_det(std::vector<double> &tau1, std::vector<double> &tau
   scalar_t value_det = hyb_mat.det();
   hyb_mat.print();
   //int N_proper = find_proper_diagrams(diagram);
-  scalar_t value_proper = full_enum(diagram, hyb_mat, 1);
+  scalar_t value_proper = full_enum(diagram, hyb_mat, true /*verbose*/);
   std::printf("full-enum c_k   = % 4.6e\n", value_proper);
   std::printf("determinant c_k = % 4.6e\n\n", value_det);
 

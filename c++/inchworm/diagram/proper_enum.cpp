@@ -86,7 +86,7 @@ namespace inchworm::diagram {
   // that keep track of the arches that cross the split_point, we name
   // this vector cross_split_point_pile.
   //
-  bool test_diagram_connection(const std::vector<int> &permutation, time_diagram_t const &diagram, int verbose) {
+  bool test_diagram_connection(const std::vector<int> &permutation, time_diagram_t const &diagram, bool verbose) {
 
     std::vector<bool> cross_split_point(diagram.perturbation_order(), false); // for graphic purpose only (to change)
     std::vector<bool> visited(diagram.perturbation_order(), false);
@@ -107,7 +107,7 @@ namespace inchworm::diagram {
       }
     }
 
-    if (verbose > 2) {
+    if (verbose) {
       std::printf("\n");
       print_graph(permutation, cross_split_point, visited, diagram);
     }
@@ -118,7 +118,7 @@ namespace inchworm::diagram {
       grow_pile(arch, permutation, visited, diagram);
     }
 
-    if (verbose > 2) print_graph(permutation, cross_split_point, visited, diagram);
+    if (verbose) print_graph(permutation, cross_split_point, visited, diagram);
 
     return std::all_of(visited.begin(), visited.end(), [](bool v) { return v; });
   }
@@ -127,7 +127,7 @@ namespace inchworm::diagram {
   // for a given diagram definition. We can use the function
   // "test_diagram_connection" to define if a diagram is proper or not.
   //
-  scalar_t proper_enum(time_diagram_t const &diagram, hyb_matrix_t const &hyb_mat, int verbose) {
+  scalar_t proper_enum(time_diagram_t const &diagram, hyb_matrix_t const &hyb_mat, bool verbose) {
 
     if (verbose) std::printf("\n\n##################\nPROPER-ENUMERATION:\n");
 
@@ -146,10 +146,9 @@ namespace inchworm::diagram {
       value      = 1.0;
       for (int i = 0; i < permutation.size(); i++) {
         value *= hyb_mat.mat(i, permutation[i]);
-        //if (verbose > 2) std::printf("permutation[i] = %d, i = %d, hyb_mat.mat = % 4.8f  \n", permutation[i], i, hyb_mat.mat(permutation[i], i));
       }
 
-      if (verbose > 2) {
+      if (verbose) {
         std::printf("\ndiagram #%d:  permutation (", NN);
         for (auto i : permutation) std::printf("%d ", i);
         std::printf(")");
@@ -157,8 +156,8 @@ namespace inchworm::diagram {
       if (test_diagram_connection(permutation, diagram, verbose)) {
         N_proper += 1;
         total_value += parity * value;
-        if (verbose > 2) std::printf("PROPER,                value=% 4.7f, parity=%d\n\n", value, parity);
-      } else if (verbose > 2)
+        if (verbose) std::printf("PROPER,                value=% 4.7f, parity=%d\n\n", value, parity);
+      } else if (verbose)
         std::printf("improper, value=% 4.7f, parity=%d\n\n", value, parity);
     } while (std::next_permutation(permutation.begin(), permutation.end()));
 
@@ -173,7 +172,7 @@ namespace inchworm::diagram {
 
   // Just calculate the determinant using full enmuration
   //
-  scalar_t full_enum(time_diagram_t const &diagram, hyb_matrix_t const &hyb_mat, int verbose) {
+  scalar_t full_enum(time_diagram_t const &diagram, hyb_matrix_t const &hyb_mat, bool verbose) {
 
     if (verbose) std::printf("\n\n##################\nFULL-ENUMERATION:\n");
     //auto hyb_mat     = hyb_matrix_t{diagram, hyb_function};

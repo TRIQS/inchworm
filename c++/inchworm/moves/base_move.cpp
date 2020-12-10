@@ -99,8 +99,8 @@ namespace inchworm::moves {
     std::printf("\n\nsign= %d  w_hyb=% 4.7f  w_imp=% 4.7f    old_w_hyb=% 4.7f  old_w_imp=% 4.7f \n", prop_data.sign, prop_data.weights.hyb,
                 prop_data.weights.imp, data.w.hyb, data.w.imp);
     std::printf("\n\nsign_ratio= %d  w_hyb_ratio=% 4.7f  w_imp_ratio=% 4.7f  t_ratio=% 4.7f\n", sign_ratio, w_hyb_ratio, w_imp_ratio, t_ratio);
-    std::printf("proper_enum w.hyb         =% 4.7f \n", diagram::proper_enum(diagram, hyb_mat, 10));
-    std::printf("inclusion_exclusion w.hyb =% 4.7f \n", diagram::inclusion_exclusion(diagram, hyb_mat, 10));
+    std::printf("proper_enum w.hyb         =% 4.7f \n", diagram::proper_enum(diagram, hyb_mat, true /*verbose*/));
+    std::printf("inclusion_exclusion w.hyb =% 4.7f \n", diagram::inclusion_exclusion(diagram, hyb_mat, true /*verbose*/));
 #endif
 
     return ratio;

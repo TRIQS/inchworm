@@ -41,7 +41,7 @@ void compare_both_methods(std::vector<double> &tau1, std::vector<double> &tau2, 
   time_diagram_t diagram(c, cdag, split_times);
   auto hyb_mat = hyb_matrix_t(diagram);
 
-  scalar_t value_inclus = inclusion_exclusion(diagram, hyb_mat, 0);
+  scalar_t value_inclus = inclusion_exclusion(diagram, hyb_mat);
 }
 
 std::vector<double> generate_random_vector(double beta, int n_tau) {

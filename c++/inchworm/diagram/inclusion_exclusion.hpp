@@ -93,7 +93,7 @@ namespace inchworm::diagram {
                          std::vector<segment_t> &segments_list, // not const: modified
                          std::vector<set_of_segments_t> const &list_of_set_of_disjoint_segments,
                          std::vector<set_of_segments_t> const &list_of_set_of_adjacent_segments, hyb_matrix_t const &hyb_mat,
-                         time_diagram_t const &diagram, bool special = false, int verbose = 0);
+                         time_diagram_t const &diagram, bool special = false, bool verbose = false);
 
   /**
    * inclusion_exclusion algo based on Boag et al. PRB (2018) (with few changes)
@@ -101,7 +101,7 @@ namespace inchworm::diagram {
    * them into two lists: one fully disjoint (except for split points)
    * and another fully adjacent.
    */
-  scalar_t inclusion_exclusion(time_diagram_t const &diagram, hyb_matrix_t hyb_mat, int verbose = 0);
+  scalar_t inclusion_exclusion(time_diagram_t const &diagram, hyb_matrix_t hyb_mat, bool verbose = false);
 
   /**
    * Print a single segment
