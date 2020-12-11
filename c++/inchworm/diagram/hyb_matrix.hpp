@@ -44,7 +44,7 @@ namespace inchworm::diagram {
     scalar_t det() const;
 
     /// Calculate the determinant of the submatrix defined by list_of_indices
-    scalar_t extract_det(sso_vector<int> const &list_of_indices) const;
+    template <typename R> scalar_t extract_det(R const &list_of_indices) const;
 
     void print() const;
 
@@ -57,4 +57,27 @@ namespace inchworm::diagram {
     /// The matrix
     matrix_t mat;
   };
+
+  template <typename R> scalar_t hyb_matrix_t::extract_det(R const &list_of_indices) const {
+    EXPECTS(list_of_indices.size() % 2 == 0);
+
+    // Creation of C-Style arrays slightly more performant than sso nda::array
+    int N = list_of_indices.size() / 2;
+    int list_of_d[N], list_of_d_dag[N];
+
+    for (int i = 0, j = 0; auto idx : list_of_indices) {
+      if (diagram.op_list[idx].dag)
+        list_of_d_dag[i++] = diagram.op_list[idx].order_index;
+      else
+        list_of_d[j++] = diagram.op_list[idx].order_index;
+    }
+
+    matrix_t m(N, N);
+    for (int i = 0; i < N; i++) {
+      for (int j = 0; j < N; j++) { m(i, j) = mat(list_of_d[i], list_of_d_dag[j]); }
+    }
+
+    return determinant_in_place(m);
+  }
+
 } // namespace inchworm::diagram
