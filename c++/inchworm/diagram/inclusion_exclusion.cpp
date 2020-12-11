@@ -90,15 +90,13 @@ namespace inchworm::diagram {
     // Calculate the determinant of the full segment
     seg.value = hyb_mat.extract_det(range(seg.begin, seg.end));
 
+    // Vertex list for the det calculation. Allocate once and reuse
+    std::vector<int> det_vertices;
+    det_vertices.reserve(seg.size);
+
     for (auto const &set : list_of_set_of_disjoint_segments) {
       // FIXME Why do we have to make a distinction here between full segment and smaller? <= ?
       if ((seg.size < diagram.size()) and (set.begin < seg.begin or seg.end <= set.end)) continue;
-
-      int number_of_vertex_to_remove = 0;
-      for (int j = 0; j < set.N_seg; j++) number_of_vertex_to_remove += segment_list[set.seg_ids[j]].size;
-
-      sso_vector<int> det_vertices(seg.size - number_of_vertex_to_remove);
-      int n_det_vertices = 0;
 
       int pos        = seg.begin;
       scalar_t value = 1.0;
@@ -110,7 +108,7 @@ namespace inchworm::diagram {
         value *= -subseg.value;
 
         // Register any non-segment vertices before segment for det calculation
-        for (auto i : range(pos, subseg.begin)) det_vertices[n_det_vertices++] = i;
+        for (auto i : range(pos, subseg.begin)) det_vertices.push_back(i);
         pos = subseg.end;
 
         // Caution: If pulling the sub-segment to the front of the current segment corresponds to
@@ -118,10 +116,12 @@ namespace inchworm::diagram {
         // Note: We could move this into the extract_det function
         if (subseg.size % 4 != 0 && (subseg.begin - seg.begin) % 2 == 1) value *= -1;
       }
-      std::iota(det_vertices.begin() + n_det_vertices, det_vertices.begin() + seg.size - number_of_vertex_to_remove, pos);
+      for (auto i : range(pos, seg.end)) det_vertices.push_back(i);
 
       if (det_vertices.size() > 0 && value != 0.0) { value *= hyb_mat.extract_det(det_vertices); }
       seg.value += value;
+
+      det_vertices.clear();
     }
 
     seg.value_without_cuts = seg.value; // This should be the value in Eq (14) !?
