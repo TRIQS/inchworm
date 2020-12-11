@@ -30,10 +30,10 @@ namespace inchworm::diagram {
      : begin{seg.begin},
        end{seg.end},
        size{seg.size},
-       seg_ids(diagram.perturbation_order() / (smallest_segment / 2)),
+       seg_ids_arr(diagram.perturbation_order() / (smallest_segment / 2)),
        N_seg{1},
        split_points_ptr{&diagram.split_points} {
-    seg_ids[0] = seg.id;
+    seg_ids_arr[0] = seg.id;
   }
 
   void set_of_segments_t::append_right(segment_t const &seg) {
@@ -45,9 +45,9 @@ namespace inchworm::diagram {
     else // We loose 'disjointness' if the new segment touches the previous right-most one and no split-point separates them
       disjoint = false;
 
-    size             = seg.end - begin;
-    end              = seg.end;
-    seg_ids[N_seg++] = seg.id;
+    size                 = seg.end - begin;
+    end                  = seg.end;
+    seg_ids_arr[N_seg++] = seg.id;
   }
 
   std::vector<set_of_segments_t> combine_segments(std::vector<segment_t> const &segment_list, time_diagram_t const &diagram, bool search_disjoint) {
@@ -101,8 +101,8 @@ namespace inchworm::diagram {
       int pos        = seg.begin;
       scalar_t value = 1.0;
 
-      for (auto j : range(set.N_seg)) {
-        auto const &subseg = segment_list[set.seg_ids[j]];
+      for (auto seg_id : set.seg_ids()) {
+        auto const &subseg = segment_list[seg_id];
         ASSERT(subseg.calculated);
 
         value *= -subseg.value;
@@ -129,10 +129,9 @@ namespace inchworm::diagram {
     for (auto const &set : list_of_set_of_adjacent_segments) {
       if (seg.begin == set.begin && seg.end == set.end) {
         scalar_t value = 1.0;
-        for (auto j : range(set.N_seg)) {
-          auto const &subseg = segment_list[set.seg_ids[j]];
-          ASSERT(subseg.calculated);
-          value *= -subseg.value_without_cuts;
+        for (auto seg_id : set.seg_ids()) {
+          ASSERT(segment_list[seg_id].calculated);
+          value *= -segment_list[seg_id].value_without_cuts;
         }
         seg.value -= value;
       }
@@ -249,8 +248,8 @@ namespace inchworm::diagram {
 
   void print_set(std::vector<segment_t> const &segment_list, set_of_segments_t const &set, time_diagram_t const &diagram) {
     std::vector<int> num_vector(diagram.size(), 0);
-    for (int j = 0; j < set.N_seg; j++) {
-      auto const &seg = segment_list[set.seg_ids[j]];
+    for (auto seg_id : set.seg_ids()) {
+      auto const &seg = segment_list[seg_id];
       for (auto k : range(seg.begin, seg.end)) num_vector[k] = 1;
     }
     print_line(num_vector);

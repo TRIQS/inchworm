@@ -23,6 +23,8 @@
 
 #include "hyb_matrix.hpp"
 
+#include <span>
+
 namespace inchworm::diagram {
 
   /**
@@ -56,13 +58,11 @@ namespace inchworm::diagram {
     bool disjoint = true; // The set is disjoint if all segments are separated by at least one vertex
     bool adjacent = true; // The set is adjacent if all segments touch and span the full diagram
 
-    sso_vector<int> seg_ids; // List that stores the subsegment indices. Initialize with maximal possible size.
-    int N_seg;               // Number of of segments, i.e. values in seg_ids that have been initialized
-
-    std::vector<int> const * split_points_ptr; // Pointer to split_points vector of associated diagram
-
     // Constructor:
     set_of_segments_t(segment_t const &seg0, time_diagram_t const &diagram);
+
+    inline std::span<int> seg_ids() { return {seg_ids_arr.data(), N_seg}; }
+    inline std::span<const int> seg_ids() const { return {seg_ids_arr.data(), N_seg}; }
 
     /**
      * Function to add a segment to the present set of segments.
@@ -70,6 +70,12 @@ namespace inchworm::diagram {
      * The function assumes that seg1 lies to the right of all segments contained so far.
      */
     void append_right(segment_t const &seg);
+
+    private:
+    sso_vector<int> seg_ids_arr; // Data array to store the subsegment indices. Initialized with maximal possible size.
+    size_t N_seg;                // Number of of segments, i.e. values in data that have been initialized
+
+    std::vector<int> const *split_points_ptr; // Pointer to split_points vector of associated diagram
   };
 
   /**
