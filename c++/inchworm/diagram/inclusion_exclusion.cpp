@@ -54,6 +54,7 @@ namespace inchworm::diagram {
 
     auto set_list = std::vector<set_of_segments_t>{};
     for (auto const &seg : segment_list) { set_list.emplace_back(seg, diagram); }
+    if (not set_list.empty()) set_list.pop_back(); // Do not consider the full segment
 
     // Loop over the (continuously growing) list of sets until we have reached the end
     for (int set_idx = 0; set_idx != set_list.size(); ++set_idx) {
@@ -67,14 +68,12 @@ namespace inchworm::diagram {
         new_set.append_right(additional_segment);
 
         // Add set iff disjoint/adjacent when searching for disjoint/adjacent
-        if ((search_disjoint && new_set.disjoint) or (not search_disjoint && new_set.adjacent)) {
-	  set_list.emplace_back(std::move(new_set));
-	}
+        if ((search_disjoint && new_set.disjoint) or (not search_disjoint && new_set.adjacent)) { set_list.emplace_back(std::move(new_set)); }
       }
     }
 
     // If searching adjacent sets, erase all sets with a single segment
-    if (not search_disjoint) set_list.erase(set_list.begin(), set_list.begin() + segment_list.size());
+    if (not search_disjoint) set_list.erase(set_list.begin(), set_list.begin() + segment_list.size() - 1);
 
     return set_list;
   }
@@ -96,12 +95,7 @@ namespace inchworm::diagram {
     seg.value += hyb_mat.extract_det(range_of_vertex);
 
     for (auto const &set : list_of_set_of_disjoint_segments) {
-      if ((seg.size != diagram.size()) and not((seg.begin <= set.begin) and (seg.end > set.end))) continue;
-
-      if (seg.size == diagram.size()
-          and (set.N_seg == 1) // this is the special case where we evaluate the full segment (at the end). We still need to exclude the itself.
-          and ((seg.begin == set.begin) and (seg.end == set.end)))
-        continue; // this is tricky, might have to change this at some point
+      if ((seg.size < diagram.size()) and (set.begin < seg.begin or seg.end <= set.end)) continue;
 
       scalar_t value                   = 1.0;
       int sign_of_parcollet_charlebois = 1;
