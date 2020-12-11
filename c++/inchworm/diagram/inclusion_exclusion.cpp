@@ -83,91 +83,68 @@ namespace inchworm::diagram {
                          std::vector<set_of_segments_t> const &list_of_set_of_disjoint_segments,
                          std::vector<set_of_segments_t> const &list_of_set_of_adjacent_segments, hyb_matrix_t const &hyb_mat,
                          time_diagram_t const &diagram, bool verbose) {
-
-    auto &seg      = segment_list[segment_id];
+    auto &seg = segment_list[segment_id];
+    EXPECTS(not seg.calculated);
     seg.calculated = true;
 
-    // [seg.begin, ... , seg.end)
-    sso_vector<int> range_of_vertex(seg.size);
-    std::iota(range_of_vertex.begin(), range_of_vertex.end(), seg.begin);
-
     // Calculate the determinant of the full segment
-    seg.value += hyb_mat.extract_det(range_of_vertex);
+    seg.value = hyb_mat.extract_det(range(seg.begin, seg.end));
 
     for (auto const &set : list_of_set_of_disjoint_segments) {
+      // FIXME Why do we have to make a distinction here between full segment and smaller? <= ?
       if ((seg.size < diagram.size()) and (set.begin < seg.begin or seg.end <= set.end)) continue;
-
-      scalar_t value                   = 1.0;
-      int sign_of_parcollet_charlebois = 1;
-      bool is_finite                   = true;
 
       int number_of_vertex_to_remove = 0;
       for (int j = 0; j < set.N_seg; j++) number_of_vertex_to_remove += segment_list[set.seg_ids[j]].size;
 
-      sso_vector<int> range_of_subvertex;
-      range_of_subvertex.resize(seg.size - number_of_vertex_to_remove);
+      sso_vector<int> det_vertices(seg.size - number_of_vertex_to_remove);
+      int n_det_vertices = 0;
 
-      int subseg_size = seg.size - number_of_vertex_to_remove;
+      int pos        = seg.begin;
+      scalar_t value = 1.0;
 
-      int index = 0;
-      int pos   = range_of_vertex[0];
-
-      for (int j = 0; j < set.N_seg; j++) {
+      for (auto j : range(set.N_seg)) {
         auto const &subseg = segment_list[set.seg_ids[j]];
-        EXPECTS(seg.calculated);
+        ASSERT(subseg.calculated);
 
-        if (subseg.value == 0.0) { // somehow, this seems to happen often even if we consider float (does it still holds for complex numbers?)
-          is_finite = false;
-        }
         value *= -subseg.value;
 
-        if (pos != subseg.begin) {
-          int number_of_new_vertex = (subseg.begin - pos);
-          std::iota(range_of_subvertex.begin() + index, range_of_subvertex.begin() + index + number_of_new_vertex, pos);
-          index += number_of_new_vertex;
-        }
-        pos = subseg.begin + subseg.size;
+        // Register any non-segment vertices before segment for det calculation
+        for (auto i : range(pos, subseg.begin)) det_vertices[n_det_vertices++] = i;
+        pos = subseg.end;
 
-        if (subseg.size % 4 != 0)
-          if ((subseg.end - seg.begin) % 2 == 1) sign_of_parcollet_charlebois *= -1;
+        // Caution: If pulling the sub-segment to the front of the current segment corresponds to
+        // an odd number of row and column permutations in the segment submatrix we get an additional minus sign
+        // Note: We could move this into the extract_det function
+        if (subseg.size % 4 != 0 && (subseg.begin - seg.begin) % 2 == 1) value *= -1;
       }
-      std::iota(range_of_subvertex.begin() + index, range_of_subvertex.begin() + subseg_size, pos);
+      std::iota(det_vertices.begin() + n_det_vertices, det_vertices.begin() + seg.size - number_of_vertex_to_remove, pos);
 
-      if constexpr (remove_not_finite) {
-        if (not is_finite) continue;
-      } // avoid determinant calculation.
-
-      if (range_of_subvertex.size() > 0) {
-        scalar_t det1 = hyb_mat.extract_det(range_of_subvertex);
-        value *= sign_of_parcollet_charlebois * det1;
-      }
+      if (det_vertices.size() > 0 && value != 0.0) { value *= hyb_mat.extract_det(det_vertices); }
       seg.value += value;
     }
 
-    seg.value_without_cuts = seg.value;
+    seg.value_without_cuts = seg.value; // This should be the value in Eq (14) !?
 
-    for (auto const &cuts : list_of_set_of_adjacent_segments) {
-      // Make sure that adjecent subset covers exactly the segment
-      if (seg.begin == cuts.begin)
-        if (seg.end == cuts.end) {
-
-          scalar_t value = 1.0;
-          for (int j = 0; j < cuts.N_seg; j++) {
-            auto const &subseg = segment_list[cuts.seg_ids[j]];
-            ASSERT(subseg.calculated);
-            value *= -subseg.value_without_cuts;
-          }
-          seg.value -= value;
+    for (auto const &set : list_of_set_of_adjacent_segments) {
+      if (seg.begin == set.begin && seg.end == set.end) {
+        scalar_t value = 1.0;
+        for (auto j : range(set.N_seg)) {
+          auto const &subseg = segment_list[set.seg_ids[j]];
+          ASSERT(subseg.calculated);
+          value *= -subseg.value_without_cuts;
         }
+        seg.value -= value;
+      }
     }
 
     // ------------ Debug Prints ------------
     if (verbose) {
       print_segment(seg, diagram);
       std::printf("range of vertex: ");
-      for (auto o : range_of_vertex) std::printf("%d ", o);
+      for (auto o : range(seg.begin, seg.end)) std::printf("%ld ", o);
       hyb_mat.print();
-      std::printf("\nsegment[%d]= % 4.8f\n\n", segment_id, hyb_mat.extract_det(range_of_vertex));
+      std::printf("\nsegment[%d]= % 4.8f\n\n", segment_id, hyb_mat.extract_det(range(seg.begin, seg.end)));
       std::printf("   % 15.8f      % 15.8f\n", seg.value, seg.value_without_cuts);
     }
     // --------------------------------------

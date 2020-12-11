@@ -26,9 +26,6 @@ namespace inchworm::diagram {
   // Global variables to set optimization levels
   constexpr int smallest_segment   = 4;    // must be 2 or 4, beware.
   constexpr bool remove_xoxo       = true; // new optimisation 1: IMPORTANT, only works with the option smallest_segment = 4;
-  constexpr bool remove_not_finite = true; // new optimisation 2: do not calculate determinant of
-                                           // the remainder when one segment is equal to zero (double == 0.0).
-                                           // But it might be not as straightforward when doing this comparison for complex values.
 
   // check if two arches cross,
   //  i.e. if one end of one arch arrive in the middle of the other arch.
