@@ -26,13 +26,14 @@
 namespace inchworm::diagram {
   segment_t::segment_t(int begin_, int end_, int id_) : begin{begin_}, end{end_}, id{id_}, size{end_ - begin_} { EXPECTS(end > begin); }
 
-  set_of_segments_t::set_of_segments_t(segment_t const &seg, time_diagram_t const &diagram)
+  set_of_segments_t::set_of_segments_t(segment_t const &seg, time_diagram_t const &diagram, std::vector<segment_t> const &segment_list)
      : begin{seg.begin},
        end{seg.end},
        size{seg.size},
        seg_ids_arr(diagram.perturbation_order() / (smallest_segment / 2)),
-       N_seg{1},
-       split_points_ptr{&diagram.split_points} {
+       N_segs{1},
+       split_points_ptr{&diagram.split_points},
+       segment_list_ptr{&segment_list} {
     seg_ids_arr[0] = seg.id;
   }
 
@@ -45,15 +46,15 @@ namespace inchworm::diagram {
     else // We loose 'disjointness' if the new segment touches the previous right-most one and no split-point separates them
       disjoint = false;
 
-    size                 = seg.end - begin;
-    end                  = seg.end;
-    seg_ids_arr[N_seg++] = seg.id;
+    size                  = seg.end - begin;
+    end                   = seg.end;
+    seg_ids_arr[N_segs++] = seg.id;
   }
 
   std::vector<set_of_segments_t> combine_segments(std::vector<segment_t> const &segment_list, time_diagram_t const &diagram, bool search_disjoint) {
 
     auto set_list = std::vector<set_of_segments_t>{};
-    for (auto const &seg : segment_list) { set_list.emplace_back(seg, diagram); }
+    for (auto const &seg : segment_list) { set_list.emplace_back(seg, diagram, segment_list); }
     if (not set_list.empty()) set_list.pop_back(); // Do not consider the full segment
 
     // Loop over the (continuously growing) list of sets until we have reached the end
@@ -101,8 +102,7 @@ namespace inchworm::diagram {
       int pos        = seg.begin;
       scalar_t value = 1.0;
 
-      for (auto seg_id : set.seg_ids()) {
-        auto const &subseg = segment_list[seg_id];
+      for (auto const &subseg : set.segs()) {
         ASSERT(subseg.calculated);
 
         value *= -subseg.value;
@@ -129,9 +129,9 @@ namespace inchworm::diagram {
     for (auto const &set : list_of_set_of_adjacent_segments) {
       if (seg.begin == set.begin && seg.end == set.end) {
         scalar_t value = 1.0;
-        for (auto seg_id : set.seg_ids()) {
-          ASSERT(segment_list[seg_id].calculated);
-          value *= -segment_list[seg_id].value_without_cuts;
+        for (auto const &subseg : set.segs()) {
+          ASSERT(subseg.calculated);
+          value *= -subseg.value_without_cuts;
         }
         seg.value -= value;
       }

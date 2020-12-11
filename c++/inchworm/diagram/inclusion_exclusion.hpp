@@ -24,6 +24,7 @@
 #include "hyb_matrix.hpp"
 
 #include <span>
+#include <cppcoro/generator.hpp>
 
 namespace inchworm::diagram {
 
@@ -59,10 +60,14 @@ namespace inchworm::diagram {
     bool adjacent = true; // The set is adjacent if all segments touch and span the full diagram
 
     // Constructor:
-    set_of_segments_t(segment_t const &seg0, time_diagram_t const &diagram);
+    set_of_segments_t(segment_t const &seg, time_diagram_t const &diagram, std::vector<segment_t> const &segment_list);
 
-    inline std::span<int> seg_ids() { return {seg_ids_arr.data(), N_seg}; }
-    inline std::span<const int> seg_ids() const { return {seg_ids_arr.data(), N_seg}; }
+    inline std::span<int> seg_ids() { return {seg_ids_arr.data(), N_segs}; }
+    inline std::span<const int> seg_ids() const { return {seg_ids_arr.data(), N_segs}; }
+
+    inline cppcoro::generator<segment_t const &> segs() const {
+      for (auto i : range(N_segs)) co_yield(*segment_list_ptr)[seg_ids_arr(i)];
+    }
 
     /**
      * Function to add a segment to the present set of segments.
@@ -73,9 +78,10 @@ namespace inchworm::diagram {
 
     private:
     sso_vector<int> seg_ids_arr; // Data array to store the subsegment indices. Initialized with maximal possible size.
-    size_t N_seg;                // Number of of segments, i.e. values in data that have been initialized
+    size_t N_segs;               // Number of of segments, i.e. values in data that have been initialized
 
-    std::vector<int> const *split_points_ptr; // Pointer to split_points vector of associated diagram
+    std::vector<int> const *split_points_ptr;       // Pointer to split_points vector of associated diagram
+    std::vector<segment_t> const *segment_list_ptr; // Pointer to segment_list vector of associated diagram
   };
 
   /**
