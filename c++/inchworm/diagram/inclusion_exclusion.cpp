@@ -20,37 +20,22 @@
  *
  ******************************************************************************/
 #include "./inclusion_exclusion.hpp"
-#include "./utilities.hpp"
+#include "./segment.hpp"
 #include "./print.hpp"
 
 namespace inchworm::diagram {
-  segment_t::segment_t(int begin_, int end_, int id_) : begin{begin_}, end{end_}, id{id_}, size{end_ - begin_} { EXPECTS(end > begin); }
 
-  set_of_segments_t::set_of_segments_t(segment_t const &seg, time_diagram_t const &diagram, std::vector<segment_t> const &segment_list)
-     : begin{seg.begin},
-       end{seg.end},
-       size{seg.size},
-       seg_ids_arr(diagram.perturbation_order() / (smallest_segment / 2)),
-       N_segs{1},
-       split_points_ptr{&diagram.split_points},
-       segment_list_ptr{&segment_list} {
-    seg_ids_arr[0] = seg.id;
-  }
-
-  void set_of_segments_t::append_right(segment_t const &seg) {
-    EXPECTS(seg.begin >= end);
-
-    // We loose 'adjacency' if the new segment does not touch the previous right-most one or is separated by a split-point
-    if (seg.begin > end or std::any_of(split_points_ptr->begin(), split_points_ptr->end(), [&](auto sp) { return sp == end; }))
-      adjacent = false;
-    else // We loose 'disjointness' if the new segment touches the previous right-most one and no split-point separates them
-      disjoint = false;
-
-    size                  = seg.end - begin;
-    end                   = seg.end;
-    seg_ids_arr[N_segs++] = seg.id;
-  }
-
+  /**
+   * This function generates the list of distjoint / adjoint sets
+   * given the list of all possible segments
+   *
+   * It proceeds in steps. Every step reuses the previous set of segment. For exemple
+   * when we try to generate set of 3 segments, we reuse every set
+   * of 2 segment and try to append segments the segments in segment_list.
+   * For this reason, we keep the information of the indices where the "N segments"
+   * set start in the list "set_list". This is kept in the vector
+   * start_index_list.
+   */
   std::vector<set_of_segments_t> combine_segments(std::vector<segment_t> const &segment_list, time_diagram_t const &diagram, bool search_disjoint) {
 
     auto set_list = std::vector<set_of_segments_t>{};
@@ -79,6 +64,11 @@ namespace inchworm::diagram {
     return set_list;
   }
 
+  // ------------------------------------------------------------------
+
+  /**
+   * Calculate the value of one segment by analysing every segments of the set of segment (of both lists)
+   */
   void calculate_segment(int segment_id,
                          std::vector<segment_t> &segment_list, // not const: modified
                          std::vector<set_of_segments_t> const &list_of_set_of_disjoint_segments,
@@ -148,6 +138,8 @@ namespace inchworm::diagram {
     }
     // --------------------------------------
   }
+
+  // ------------------------------------------------------------------
 
   /**
    * Determine all relevant segment within the diagram.
@@ -238,21 +230,6 @@ namespace inchworm::diagram {
     // --------------------------------------
 
     return segment_list.back().value;
-  }
-
-  void print_segment(segment_t const &segment, time_diagram_t const &diagram) {
-    std::vector<int> num_vector(diagram.size(), 0);
-    for (auto k : range(segment.begin, segment.end)) num_vector[k] = 1;
-    print_line(num_vector);
-  }
-
-  void print_set(std::vector<segment_t> const &segment_list, set_of_segments_t const &set, time_diagram_t const &diagram) {
-    std::vector<int> num_vector(diagram.size(), 0);
-    for (auto seg_id : set.seg_ids()) {
-      auto const &seg = segment_list[seg_id];
-      for (auto k : range(seg.begin, seg.end)) num_vector[k] = 1;
-    }
-    print_line(num_vector);
   }
 
 } // namespace inchworm::diagram

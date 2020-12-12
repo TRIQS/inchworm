@@ -20,7 +20,7 @@
  *
  ******************************************************************************/
 #include "./hyb_matrix.hpp"
-#include "./utilities.hpp"
+#include "./segment.hpp"
 
 #include <iomanip>
 

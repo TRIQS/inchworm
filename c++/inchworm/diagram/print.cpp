@@ -114,4 +114,19 @@ namespace inchworm::diagram {
     printf("\n");
   }
 
+  void print_segment(segment_t const &segment, time_diagram_t const &diagram) {
+    std::vector<int> num_vector(diagram.size(), 0);
+    for (auto k : range(segment.begin, segment.end)) num_vector[k] = 1;
+    print_line(num_vector);
+  }
+
+  void print_set(std::vector<segment_t> const &segment_list, set_of_segments_t const &set, time_diagram_t const &diagram) {
+    std::vector<int> num_vector(diagram.size(), 0);
+    for (auto seg_id : set.seg_ids()) {
+      auto const &seg = segment_list[seg_id];
+      for (auto k : range(seg.begin, seg.end)) num_vector[k] = 1;
+    }
+    print_line(num_vector);
+  }
+
 } // namespace inchworm::diagram

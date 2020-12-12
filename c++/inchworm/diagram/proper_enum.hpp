@@ -25,6 +25,36 @@
 #include "hyb_matrix.hpp"
 
 namespace inchworm::diagram {
+
+  // check if two arches cross,
+  //  i.e. if one end of one arch arrive in the middle of the other arch.
+  //
+  // example1: cross
+  // ____________
+  //         ________
+  //
+  // example2: do not cross
+  // ___
+  //         ________
+  //
+  // example3: do not cross
+  //           ___
+  //         ________
+  //
+  inline bool arches_cross(int a1, int b1, int a2, int b2) { return (a1 - a2) * (b1 - a2) * (b1 - b2) * (a1 - b2) < 0; }
+
+  // check if an arch cross a point,
+  //
+  // example1: cross
+  //             |
+  //         ________
+  //
+  // example2: do not cross
+  //     |
+  //         ________
+  //
+  inline bool arch_crosses_point(int a, int b, int point) { return (a - (point + 0.5)) * (b - (point + 0.5)) < 0.0; }
+
   // find parity of a permutation by evaluating
   // by evaluating the parity of all cycle (or orbits)
   //
