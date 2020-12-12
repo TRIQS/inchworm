@@ -19,14 +19,8 @@
 #
 # ##############################################################################
 
-cmake_minimum_required(VERSION 3.3.2 FATAL_ERROR)
-cmake_policy(VERSION 3.3.2)
-if(POLICY CMP0074)
-  cmake_policy(SET CMP0074 NEW)
-endif()
-if(POLICY CMP0077)
-  cmake_policy(SET CMP0077 NEW)
-endif()
+cmake_minimum_required(VERSION 3.13.0 FATAL_ERROR)
+cmake_policy(VERSION 3.13.0)
 
 # ############
 # Define Project
@@ -99,6 +93,16 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # Global compiler options
 option(BUILD_SHARED_LIBS "Enable compilation of shared libraries" OFF)
 add_compile_options($<$<CONFIG:Debug>:-ggdb3>)
+include(CheckIPOSupported)
+check_ipo_supported(RESULT ipo_supported OUTPUT output)
+if(NOT ipo_supported)
+  message(STATUS "Linktime optimizations could not be enabled!")
+  #message(STATUS "LTO Example failed to compile with error:\n${output}")
+else()
+  message(STATUS "Linktime optimizations enabled!")
+  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+  add_link_options($<$<CXX_COMPILER_ID:Clang>:-fuse-ld=gold>)
+endif()
 
 # Create an Interface target for compiler warnings
 add_library(${PROJECT_NAME}_warnings INTERFACE)
