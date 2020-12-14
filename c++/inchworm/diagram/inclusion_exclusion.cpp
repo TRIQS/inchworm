@@ -39,6 +39,8 @@ namespace inchworm::diagram {
   std::vector<set_of_segments_t> combine_segments(std::vector<segment_t> const &segment_list, time_diagram_t const &diagram, bool search_disjoint) {
 
     auto set_list = std::vector<set_of_segments_t>{};
+    set_list.reserve(1 << (diagram.size() / 3)); // FIXME Improve estimate for set size
+
     for (auto const &seg : segment_list) { set_list.emplace_back(seg, diagram, segment_list); }
     if (not set_list.empty()) set_list.pop_back(); // Do not consider the full segment
 
