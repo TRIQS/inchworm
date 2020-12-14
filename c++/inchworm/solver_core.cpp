@@ -77,7 +77,7 @@ namespace inchworm {
     // Finding the ratio between theoretical zeroth order and Monte Carlo sampled zeroth order.
     // Usually first value of u_frame is the most significant, due to order of eigenvalues.
     auto u_frame_bare          = make_bare_u_frame(ad_imp, tau_max);
-    scalar_t normalization_cte = res.frame_0th_order[0](0, 0) / u_frame_bare[0](0, 0);
+    scalar_t normalization_cte = frobenius_norm(res.frame_0th_order) / frobenius_norm(u_frame_bare);
     res.normalize(normalization_cte);
 
     // Print results
@@ -105,7 +105,7 @@ namespace inchworm {
 
     // Normalize the result using the ratio between theoretical zeroth order and Monte Carlo sampled zeroth order
     auto u_frame_zeroth_order  = frame_t{eval_frame(u_tau, tau_max - tau_split) * eval_frame(u_tau, tau_split)};
-    scalar_t normalization_cte = res.frame_0th_order[0](0, 0) / u_frame_zeroth_order[0](0, 0);
+    scalar_t normalization_cte = frobenius_norm(res.frame_0th_order) / frobenius_norm(u_frame_zeroth_order);
     res.normalize(normalization_cte);
 
     // Print results
@@ -160,10 +160,10 @@ namespace inchworm {
       scalar_t normalization_cte;
       if (use_bare_propagator) {
         auto u_frame_bare = make_bare_u_frame(ad_imp, tau_max);
-        normalization_cte = res.frame_0th_order[0](0, 0) / u_frame_bare[0](0, 0);
+        normalization_cte = frobenius_norm(res.frame_0th_order) / frobenius_norm(u_frame_bare);
       } else {
         auto u_frame_zeroth_order = frame_t{eval_frame(u_tau, tau_max - tau_split) * eval_frame(u_tau, tau_split)};
-        normalization_cte         = res.frame_0th_order[0](0, 0) / u_frame_zeroth_order[0](0, 0);
+        normalization_cte         = frobenius_norm(res.frame_0th_order) / frobenius_norm(u_frame_zeroth_order);
       }
       res.normalize(normalization_cte);
 
@@ -225,7 +225,7 @@ namespace inchworm {
 
       // Normalize the result using the ratio between theoretical zeroth order and Monte Carlo sampled zeroth order
       frame_t g_frame_zeroth_order = make_bare_g_frame(ad_imp, u_tau, constr_params.gf_struct, tau_split, beta);
-      scalar_t normalization_cte   = Tr_Ubeta * res.frame_0th_order[0](0, 0) / g_frame_zeroth_order[0](0, 0);
+      scalar_t normalization_cte   = Tr_Ubeta * frobenius_norm(res.frame_0th_order) / frobenius_norm(g_frame_zeroth_order);
       res.normalize(normalization_cte);
 
       // Print results
