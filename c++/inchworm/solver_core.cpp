@@ -165,6 +165,7 @@ namespace inchworm {
         auto u_frame_zeroth_order = frame_t{eval_frame(u_tau, tau_max - tau_split) * eval_frame(u_tau, tau_split)};
         normalization_cte         = frobenius_norm(res.frame_0th_order) / frobenius_norm(u_frame_zeroth_order);
       }
+      if(normalization_cte == 0) TRIQS_RUNTIME_ERROR << "Failed to calculate normalization ratio due to insufficient sampling of zeroth order propagator";
       res.normalize(normalization_cte);
 
       // Print results
@@ -226,6 +227,7 @@ namespace inchworm {
       // Normalize the result using the ratio between theoretical zeroth order and Monte Carlo sampled zeroth order
       frame_t g_frame_zeroth_order = make_bare_g_frame(ad_imp, u_tau, constr_params.gf_struct, tau_split, beta);
       scalar_t normalization_cte   = Tr_Ubeta * frobenius_norm(res.frame_0th_order) / frobenius_norm(g_frame_zeroth_order);
+      if(normalization_cte == 0) TRIQS_RUNTIME_ERROR << "Failed to calculate normalization ratio due to insufficient sampling of zeroth order Green function";
       res.normalize(normalization_cte);
 
       // Print results
