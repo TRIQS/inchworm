@@ -98,6 +98,12 @@ namespace inchworm {
     return res;
   }
 
+  frame_t eval_frame(u_tau_t const &u_tau, double tau) {
+    frame_t res{u_tau.size()};
+    for (auto bl : range(u_tau.size())) res[bl] = u_tau[bl](tau);
+    return res;
+  }
+
   double relative_distance(u_tau_t const &l, u_tau_t const &r) {
     double dist = 0.0;
     for (int i = 0; i < l[0].mesh().size(); ++i) dist = std::max(dist, relative_distance(get_frame(l, i), get_frame(r, i)));

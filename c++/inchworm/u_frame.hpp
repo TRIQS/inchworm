@@ -57,6 +57,9 @@ namespace inchworm {
   // Get the frame of a Block Green function
   frame_t get_frame(u_tau_t const &u_tau, int idx);
 
+  // Get the frame of a Block Green function using Green function evaluation
+  frame_t eval_frame(u_tau_t const &u_tau, double tau);
+
   // Set a single frame of a Block Green function given a block matrix and the block index
   // TODO Should be as easy as
   //   bgf[bl_][frame_number] << frame[bl_];

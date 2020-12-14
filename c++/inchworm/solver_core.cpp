@@ -77,7 +77,7 @@ namespace inchworm {
     // Finding the ratio between theoretical zeroth order and Monte Carlo sampled zeroth order.
     // Usually first value of u_frame is the most significant, due to order of eigenvalues.
     auto u_frame_bare          = make_bare_u_frame(ad_imp, tau_max);
-    scalar_t normalization_cte = (double)res.frame_0th_order[0](0, 0) / ((double)u_frame_bare[0](0, 0));
+    scalar_t normalization_cte = res.frame_0th_order[0](0, 0) / u_frame_bare[0](0, 0);
     res.normalize(normalization_cte);
 
     // Print results
@@ -92,7 +92,8 @@ namespace inchworm {
   //------------------------------
 
   // Self consistent solution (one step, with precalculated U(beta) from ED)
-  single_step_results_t solver_core::solve_self_consistently(solve_params_t const &solve_params, u_tau_t const &u_tau_, double tau_split, double tau_max) {
+  single_step_results_t solver_core::solve_self_consistently(solve_params_t const &solve_params, u_tau_t const &u_tau_, double tau_split,
+                                                             double tau_max) {
     // Initialize solver
     this->init(solve_params);
 
@@ -103,8 +104,8 @@ namespace inchworm {
     auto res = single_step(solve_params, tau_split, tau_max, false, 0);
 
     // Normalize the result using the ratio between theoretical zeroth order and Monte Carlo sampled zeroth order
-    auto u_frame_zeroth_order  = u_tau[0](tau_max - tau_split) * u_tau[0](tau_split);
-    scalar_t normalization_cte = (double)res.frame_0th_order[0](0, 0) / ((double)u_frame_zeroth_order(0, 0)); //FIXME: need to do better at some point
+    auto u_frame_zeroth_order  = frame_t{eval_frame(u_tau, tau_max - tau_split) * eval_frame(u_tau, tau_split)};
+    scalar_t normalization_cte = res.frame_0th_order[0](0, 0) / u_frame_zeroth_order[0](0, 0);
     res.normalize(normalization_cte);
 
     // Print results
@@ -135,10 +136,9 @@ namespace inchworm {
 
     double beta = constr_params.beta;
 
-    int n_step = constr_params.n_tau_inch - 1;
     // loop on different inchworm steps
-    for (int n = 0; n < n_step; n++) {
-      if (solve_params.verbosity > 0) std::printf(" ..step %d/%d\n", n + 1, n_step);
+    for (auto n : range(1, constr_params.n_tau_inch)) {
+      if (solve_params.verbosity > 0) std::printf(" ..step %ld/%d\n", n, constr_params.n_tau_inch - 1);
 
       // define the tau_split and tau_max for this specific inchworm step.
       //
@@ -147,11 +147,11 @@ namespace inchworm {
       //
       // tau_split < tau_max <= beta
       //
-      double tau_split = beta * (double)n / (double)n_step;
-      double tau_max   = beta * (double)(n + 1) / (double)n_step;
+      double tau_split = beta * (n - 1) / (constr_params.n_tau_inch - 1);
+      double tau_max   = beta * n / (constr_params.n_tau_inch - 1);
 
       // use bare propagator (cthyb) only on the first inchworm iteration:
-      bool use_bare_propagator = (n == 0);
+      bool use_bare_propagator = (n == 1);
 
       // calculation of the Monte Carlo solution:
       auto res = single_step(solve_params, tau_split, tau_max, use_bare_propagator, 0);
@@ -160,10 +160,10 @@ namespace inchworm {
       scalar_t normalization_cte;
       if (use_bare_propagator) {
         auto u_frame_bare = make_bare_u_frame(ad_imp, tau_max);
-        normalization_cte = (double)res.frame_0th_order[0](0, 0) / ((double)u_frame_bare[0](0, 0));
+        normalization_cte = res.frame_0th_order[0](0, 0) / u_frame_bare[0](0, 0);
       } else {
-        auto u_frame_zeroth_order = u_tau[0](tau_max - tau_split) * u_tau[0](tau_split);
-        normalization_cte         = (double)res.frame_0th_order[0](0, 0) / ((double)u_frame_zeroth_order(0, 0)); //need to do better at some point
+        auto u_frame_zeroth_order = frame_t{eval_frame(u_tau, tau_max - tau_split) * eval_frame(u_tau, tau_split)};
+        normalization_cte         = res.frame_0th_order[0](0, 0) / u_frame_zeroth_order[0](0, 0);
       }
       res.normalize(normalization_cte);
 
@@ -175,7 +175,7 @@ namespace inchworm {
       if (solve_params.verbosity > 0) { std::printf("     average_k: %5f\n", res.average_k); }
 
       // Assign u_frame to the propagator u_tau, in order to be able to use it in next iteration
-      set_frame(res.frame, u_tau, n + 1);
+      set_frame(res.frame, u_tau, n);
     }
   }
 
@@ -206,10 +206,10 @@ namespace inchworm {
     set_frame(g_frame_n0, G_tau, 0);
     set_frame(g_frame_nB, G_tau, constr_params.n_tau_green - 1);
 
-    // loop on different inchworm steps
+    // loop on different green function tau values
     // n == 0 and n == n_tau - 1 already treated
-    for (int n = 1; n < constr_params.n_tau_green - 1; n++) {
-      if (solve_params.verbosity > 0) std::printf(" ..step %d/%d\n", n, constr_params.n_tau_green - 2);
+    for (auto n : range(1, constr_params.n_tau_green - 1)) {
+      if (solve_params.verbosity > 0) std::printf(" ..step %ld/%d\n", n, constr_params.n_tau_green - 2);
 
       // define the tau_split and tau_max for this specific inchworm step.
       //
@@ -225,7 +225,7 @@ namespace inchworm {
 
       // Normalize the result using the ratio between theoretical zeroth order and Monte Carlo sampled zeroth order
       frame_t g_frame_zeroth_order = make_bare_g_frame(ad_imp, u_tau, constr_params.gf_struct, tau_split, beta);
-      scalar_t normalization_cte   = Tr_Ubeta * (double)res.frame_0th_order[0](0, 0) / ((double)g_frame_zeroth_order[0](0, 0));
+      scalar_t normalization_cte   = Tr_Ubeta * res.frame_0th_order[0](0, 0) / g_frame_zeroth_order[0](0, 0);
       res.normalize(normalization_cte);
 
       // Print results
