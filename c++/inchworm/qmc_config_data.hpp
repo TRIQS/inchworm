@@ -62,10 +62,10 @@ namespace inchworm {
     double tau_split;         // in the inchworm, this should be the tau_max of the previous inching. 0 < tau_split <= tau_max
     bool use_bare_propagator; // true only for the first iteration of the inchworm calculation
 
-    int mode;
+    MODE mode;
 
     qmc_params_t(h_tau_t const &hyb_tau, atom_diag const &ad_imp, u_tau_t const &u_tau, double tau_max, double tau_split, bool use_bare_propagator,
-                 int mode)
+                 MODE mode)
        : hyb_adaptor(hyb_tau),
          ad_imp(ad_imp),
          u_tau(u_tau),

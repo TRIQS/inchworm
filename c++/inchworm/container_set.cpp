@@ -25,18 +25,18 @@
 
 namespace inchworm {
 
-  single_step_results_t::single_step_results_t(std::vector<int> const &shape_of_frame) : expansion_order(10, 0), samples_expansion_order(10, 0) {
+  qmc_step_results_t::qmc_step_results_t(std::vector<int> const &shape_of_frame) : expansion_order(10, 0), samples_expansion_order(10, 0) {
     frame           = make_zero_frame(shape_of_frame);
     frame_0th_order = frame;
   };
 
-  void single_step_results_t::normalize(double normalization_cte) {
+  void qmc_step_results_t::normalize(double normalization_cte) {
     for (auto &Bl : frame) Bl /= normalization_cte;
     for (auto &Bl : frame_0th_order) Bl /= normalization_cte;
     for (auto &o : expansion_order) o /= normalization_cte;
   };
 
-  void single_step_results_t::print(int verbosity) {
+  void qmc_step_results_t::print(int verbosity) {
 
     if (verbosity > 4)
       for (auto Bl : frame) print_matrix(Bl);

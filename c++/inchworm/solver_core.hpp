@@ -61,11 +61,11 @@ namespace inchworm {
 
     // solve cthyb (no split point + bare propagator):
     CPP2PY_IGNORE
-    single_step_results_t solve_cthyb(solve_params_t const &solve_params, double tau_max);
+    qmc_step_results_t solve_cthyb(solve_params_t const &solve_params, double tau_max);
 
     // self consistent solution (one step, with precalculated U(beta) from ED)
     CPP2PY_IGNORE
-    single_step_results_t solve_self_consistently(solve_params_t const &solve_params, u_tau_t const &u_tau_, double tau_split, double tau_max);
+    qmc_step_results_t solve_self_consistently(solve_params_t const &solve_params, u_tau_t const &u_tau_, double tau_split, double tau_max);
 
     // Run inchworm to calculate S.u_tau
     CPP2PY_ARG_AS_DICT
@@ -80,7 +80,7 @@ namespace inchworm {
     void init(solve_params_t const &solve_params);
 
     // one Monte Carlo step calculation (common to the 3 solve scheme above):
-    single_step_results_t single_step(solve_params_t const &solve_params, double tau_split, double tau_max, bool use_bare_propagator, int mode);
+    qmc_step_results_t qmc_step(solve_params_t const &solve_params, double tau_split, double tau_max, bool use_bare_propagator, MODE mode);
 
     public:
     // Struct containing the parameters relevant for the solve process

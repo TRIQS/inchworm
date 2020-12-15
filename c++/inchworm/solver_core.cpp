@@ -62,7 +62,7 @@ namespace inchworm {
 
   //------------------------------
   // solve cthyb (no split point + bare propagator):
-  single_step_results_t solver_core::solve_cthyb(solve_params_t const &solve_params, double tau_max) {
+  qmc_step_results_t solver_core::solve_cthyb(solve_params_t const &solve_params, double tau_max) {
 
     // Initialize solver
     this->init(solve_params);
@@ -72,7 +72,7 @@ namespace inchworm {
     bool use_bare_propagator = true;
 
     // Execute cthyb sampling
-    auto res = single_step(solve_params, tau_split, tau_max, use_bare_propagator, 0);
+    auto res = qmc_step(solve_params, tau_split, tau_max, use_bare_propagator, MODE::PROPAGATOR);
 
     // Finding the ratio between theoretical zeroth order and Monte Carlo sampled zeroth order.
     // Usually first value of u_frame is the most significant, due to order of eigenvalues.
@@ -92,8 +92,8 @@ namespace inchworm {
   //------------------------------
 
   // Self consistent solution (one step, with precalculated U(beta) from ED)
-  single_step_results_t solver_core::solve_self_consistently(solve_params_t const &solve_params, u_tau_t const &u_tau_, double tau_split,
-                                                             double tau_max) {
+  qmc_step_results_t solver_core::solve_self_consistently(solve_params_t const &solve_params, u_tau_t const &u_tau_, double tau_split,
+                                                          double tau_max) {
     // Initialize solver
     this->init(solve_params);
 
@@ -101,7 +101,7 @@ namespace inchworm {
     u_tau = u_tau_;
 
     // Execute u_tau self-consistency sampling
-    auto res = single_step(solve_params, tau_split, tau_max, false, 0);
+    auto res = qmc_step(solve_params, tau_split, tau_max, false, MODE::PROPAGATOR);
 
     // Normalize the result using the ratio between theoretical zeroth order and Monte Carlo sampled zeroth order
     auto u_frame_zeroth_order  = frame_t{eval_frame(u_tau, tau_max - tau_split) * eval_frame(u_tau, tau_split)};
@@ -154,7 +154,7 @@ namespace inchworm {
       bool use_bare_propagator = (n == 1);
 
       // calculation of the Monte Carlo solution:
-      auto res = single_step(solve_params, tau_split, tau_max, use_bare_propagator, 0);
+      auto res = qmc_step(solve_params, tau_split, tau_max, use_bare_propagator, MODE::PROPAGATOR);
 
       // Normalize the result using the ratio between theoretical zeroth order and Monte Carlo sampled zeroth order
       scalar_t normalization_cte;
@@ -222,7 +222,7 @@ namespace inchworm {
       double tau_split = beta * (double)n / (double)(constr_params.n_tau_green - 1);
 
       // calculation of the Monte Carlo solution:
-      auto res = single_step(solve_params, tau_split, beta, false, 1);
+      auto res = qmc_step(solve_params, tau_split, beta, false, MODE::GREENFUNCTION);
 
       // Normalize the result using the ratio between theoretical zeroth order and Monte Carlo sampled zeroth order
       frame_t g_frame_zeroth_order = make_bare_g_frame(ad_imp, u_tau, constr_params.gf_struct, tau_split, beta);
@@ -244,11 +244,8 @@ namespace inchworm {
   //------------------------------
 
   // One Monte Carlo sampling step (common to all solve scheme above):
-  single_step_results_t solver_core::single_step(solve_params_t const &solve_params, double tau_split, double tau_max, bool use_bare_propagator,
-                                                 int mode) {
-    // mode 0 = propagator (inchworm)
-    // mode 1 = green function
-
+  qmc_step_results_t solver_core::qmc_step(solve_params_t const &solve_params, double tau_split, double tau_max, bool use_bare_propagator,
+                                           MODE mode) {
     params_t params(constr_params, solve_params);
 
     // Construct the generic Monte-Carlo solver
@@ -259,9 +256,9 @@ namespace inchworm {
 
     // Create Monte-Carlo configuration
     qmc_config_data_t qmc_config_data{};
-    if (mode == 0) {
+    if (mode  == MODE::PROPAGATOR) {
       qmc_config_data.frame = make_bare_u_frame(ad_imp, tau_split);
-    } else {
+    } else { // MODE::GREENFUNCTION
       qmc_config_data.frame = make_bare_g_frame(ad_imp, u_tau, params.gf_struct, tau_split, params.beta);
     }
 
@@ -275,21 +272,14 @@ namespace inchworm {
     mc.add_move(moves::double_insert{qmc_config_data, params.gf_struct, qmc_params, rng}, "double insert move");
     mc.add_move(moves::double_remove{qmc_config_data, params.gf_struct, qmc_params, rng}, "double remove move");
 
-    // Determine the shape of the result
+    // Initialize result container
     std::vector<int> shape_of_frame;
-    if (mode == 0) {
+    if (mode == MODE::PROPAGATOR) {
       for (int bl = 0; bl < ad_imp.n_subspaces(); bl++) { shape_of_frame.push_back(ad_imp.get_subspace_dim(bl)); }
-    } else {
+    } else { // MODE::GREENFUNCTION
       for (auto const &[blname, blsize] : params.gf_struct) { shape_of_frame.push_back(blsize); }
     }
-
-    // Initialize result container
-    single_step_results_t results{shape_of_frame};
-    if (mode == 0)
-      results.frame = make_zero_frame(ad_imp.get_subspace_dims());
-    else if (mode == 1)
-      results.frame = make_zero_frame(params.gf_struct);
-    results.frame_0th_order = results.frame;
+    qmc_step_results_t results{shape_of_frame};
 
     // Register all measurements
     mc.add_measure(measures::frame{params, qmc_config_data, results}, "measure a single propagator / green function frame");

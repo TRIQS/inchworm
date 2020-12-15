@@ -193,8 +193,8 @@ namespace inchworm::diagram {
     if (diagram.perturbation_order() == 1) { return hyb_mat.det(); };
 
     std::vector<segment_t> segment_list                             = determine_segments(diagram);
-    std::vector<set_of_segments_t> list_of_set_of_disjoint_segments = combine_segments(segment_list, diagram, true);
-    std::vector<set_of_segments_t> list_of_set_of_adjacent_segments = combine_segments(segment_list, diagram, false);
+    std::vector<set_of_segments_t> list_of_set_of_disjoint_segments = combine_segments(segment_list, diagram, true /*disjointness*/);
+    std::vector<set_of_segments_t> list_of_set_of_adjacent_segments = combine_segments(segment_list, diagram, false /*disjointness*/);
 
     for (auto const &seg : segment_list) { // segment_list is sorted w.r.t. segment size
       calculate_segment(seg.id, segment_list, list_of_set_of_disjoint_segments, list_of_set_of_adjacent_segments, hyb_mat, diagram, verbose);

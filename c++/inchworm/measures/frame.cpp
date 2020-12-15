@@ -2,7 +2,7 @@
 
 namespace inchworm::measures {
 
-  frame::frame(params_t const &, qmc_config_data_t const &data_, single_step_results_t &results_) : data(data_), results(results_) {}
+  frame::frame(params_t const &, qmc_config_data_t const &data_, qmc_step_results_t &results_) : data(data_), results(results_) {}
 
   void frame::accumulate(scalar_t sign) {
 

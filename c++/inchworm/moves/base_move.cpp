@@ -48,7 +48,7 @@ namespace inchworm::moves {
 
     // ------ Calculate the impurity frame weight -------
 
-    if (params.mode == 0) { // --- Propagator Mode
+    if (params.mode == MODE::PROPAGATOR) {
       if (params.use_bare_propagator) {
         prop_data.frame = make_frame(impurity_product(params.ad_imp, diagram, params.tau_max, 0));
       } else { // FIXME incorporate treatment of tau_split into impurity product
@@ -56,7 +56,7 @@ namespace inchworm::moves {
                                      * impurity_product(params.ad_imp, diagram, params.tau_split, 0, &params.u_tau));
       }
 
-    } else if (params.mode == 1) { // --- Green Function Mode
+    } else { // MODE::GREENFUNCTION
       EXPECTS(not params.use_bare_propagator);
 
       prop_data.frame = make_zero_frame(gf_struct);
@@ -70,9 +70,7 @@ namespace inchworm::moves {
       // Account for the sign due to the additional operator insertions
       auto const &ops = diagram.op_list;
       int nop_r       = std::count_if(begin(ops), end(ops), [tau_split = params.tau_split](auto const &op) { return tau_split > op.tau; });
-      if (nop_r % 2 == 1) {
-        for (auto &bl : prop_data.frame) bl *= -1;
-      }
+      if (nop_r % 2 == 1) { prop_data.frame *= -1; }
     }
 
     prop_data.weights.imp = frobenius_norm(prop_data.frame);
@@ -90,9 +88,9 @@ namespace inchworm::moves {
 #ifdef INCHWORM_DEBUG_PRINTS
     std::printf("\n\n====== Try %s ======\n", name());
     print_configuration(diagram);
-    if (params.mode == 0)
+    if (params.mode == MODE::PROPAGATOR)
       print(prop_data.u_partial);
-    else
+    else // MODE::GREENFUNCTION
       print(prop_data.g_frame);
     hyb_mat.print();
     std::printf("\n\nhyb.det()=% 4.7f \n", hyb_mat.det());

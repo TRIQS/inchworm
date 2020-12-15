@@ -32,6 +32,8 @@ namespace inchworm {
 #endif
   using matrix_t = nda::matrix<scalar_t, nda::C_layout, nda::sso<1000>>;
 
+  enum class MODE { PROPAGATOR, GREENFUNCTION };
+
   /// Short-hand for SSO vector type
   template <typename value_t>
   using sso_vector = nda::vector<value_t, nda::sso<100>>;
