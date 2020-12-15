@@ -25,6 +25,9 @@ namespace inchworm::moves {
     /// Destructor
     virtual ~base_move() = default;
 
+    /// The cutoff for the weighting function
+    inline static long reweighting_cutoff = 0;
+
     protected:
     /// The function to update the configuration
     virtual scalar_t try_config_update(config_t &) = 0;

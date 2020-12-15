@@ -285,9 +285,12 @@ namespace inchworm {
     mc.add_measure(measures::frame{params, qmc_config_data, results}, "measure a single propagator / green function frame");
 
     // Perform QMC run and collect results
-    int status =
-       mc.warmup_and_accumulate(params.n_warmup_cycles, params.n_cycles, params.length_cycle, triqs::utility::clock_callback(params.max_time));
-    mc.collect_results(world);
+    int status = mc.warmup(params.n_warmup_cycles, params.length_cycle, triqs::utility::clock_callback(params.max_time));
+    if (status == 0) {
+      moves::base_move::reweighting_cutoff = qmc_config_data.config.size() / 2;
+      status                               = mc.accumulate(params.n_cycles, params.length_cycle, triqs::utility::clock_callback(params.max_time));
+      mc.collect_results(world);
+    }
 
     // Post Processing
     //if (params.post_process) { post_process(params); }
