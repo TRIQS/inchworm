@@ -25,30 +25,30 @@
 
 namespace inchworm {
 
-  qmc_step_results_t::qmc_step_results_t(std::vector<int> const &shape_of_frame) : expansion_order(10, 0), samples_expansion_order(10, 0) {
-    frame           = make_zero_frame(shape_of_frame);
-    frame_0th_order = frame;
+  qmc_results_t::qmc_results_t(std::vector<int> const &shape_of_frame)
+     : frame{make_zero_frame(shape_of_frame)}, frame_0th_order{make_zero_frame(shape_of_frame)} {};
+
+  void qmc_results_t::normalize(double normalization_cte) {
+    frame /= normalization_cte;
+    frame_0th_order /= normalization_cte;
+    if (frame_by_order)
+      for (auto &frame_k : *frame_by_order) frame_k /= normalization_cte;
   };
 
-  void qmc_step_results_t::normalize(double normalization_cte) {
-    for (auto &Bl : frame) Bl /= normalization_cte;
-    for (auto &Bl : frame_0th_order) Bl /= normalization_cte;
-    for (auto &o : expansion_order) o /= normalization_cte;
-  };
-
-  void qmc_step_results_t::print(int verbosity) {
+  void qmc_results_t::print(int verbosity) {
 
     if (verbosity > 4)
       for (auto Bl : frame) print_matrix(Bl);
 
     if (verbosity > 3) {
-      int max_order = std::min(samples_expansion_order.size(), 15ul);
-
-      std::printf("\n\norder breakdown: \n");
-      for (auto k : range(max_order)) std::printf("%10d ", samples_expansion_order[k]);
-      std::printf("\n");
-      for (auto k : range(max_order)) std::printf("% 10.5f ", expansion_order[k]);
-      std::printf("\n");
+      if (order_histogram) {
+        std::printf("\n\nperturbation order histogram (normalized): \n");
+        for (auto k : range(std::min(order_histogram->size(), 15ul))) std::printf("%10f ", (*order_histogram)[k]);
+      }
+      if (frame_by_order) {
+        std::printf("\n\nframe norm by order: \n");
+        for (auto k : range(std::min(frame_by_order->size(), 15ul))) std::printf("% 10.5f ", frobenius_norm((*frame_by_order)[k]));
+      }
     }
   }
 

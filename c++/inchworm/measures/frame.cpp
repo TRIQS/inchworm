@@ -2,52 +2,25 @@
 
 namespace inchworm::measures {
 
-  frame::frame(params_t const &, qmc_config_data_t const &data_, qmc_step_results_t &results_) : data(data_), results(results_) {}
+  frame::frame(params_t const &, qmc_data_t const &qmc_data_, qmc_results_t &results)
+     : qmc_data(qmc_data_), frame_ref(results.frame), frame_0th_order_ref(results.frame_0th_order) {}
 
   void frame::accumulate(scalar_t sign) {
 
     // We weight the Monte-Carlo by the frobenius norm of the current frame
     // This importance sampling factor has to be corrected in the measurement
-    scalar_t s = sign / (data.weights.imp);
+    scalar_t s = sign / (qmc_data.weights.imp);
 
-    size_t pert_order = data.config.size();
-    if (pert_order >= results.expansion_order.size()) {
-      size_t new_size = std::max(2 * results.expansion_order.size(), pert_order + 1);
-      results.expansion_order.resize(new_size, 0);
-      results.samples_expansion_order.resize(new_size, 0);
-    }
-
-    if (not data.frame[0].empty())
-      results.expansion_order[pert_order] += s * data.frame[0](0, 0);
-    results.samples_expansion_order[pert_order]++;
-    results.measure_count++;
-    results.average_k += pert_order;
-
-    for (int bl = 0; bl < results.frame.size(); bl++) {
-      if (not data.frame[bl].empty()) results.frame[bl] += s * data.frame[bl];
-    }
+    for (int bl : range(frame_ref.size()))
+      if (not qmc_data.frame[bl].empty()) frame_ref[bl] += s * qmc_data.frame[bl];
 
     // For normalization purpose, we sample the zeroth order separatly:
-    if (pert_order == 0) {
-      for (int bl = 0; bl < results.frame_0th_order.size(); bl++) {
-        results.frame_0th_order[bl] += s * data.frame[bl];
-      }
-    }
+    if (qmc_data.config.size() == 0) frame_0th_order_ref += s * qmc_data.frame;
   }
 
   void frame::collect_results(mpi::communicator const &comm) {
-    results.frame_0th_order = mpi::all_reduce(results.frame_0th_order, comm);
-    results.frame           = mpi::all_reduce(results.frame, comm);
-    results.measure_count   = mpi::all_reduce(results.measure_count, comm);
-    results.average_k       = mpi::all_reduce(results.average_k, comm) / results.measure_count;
-
-    auto max_size = mpi::all_reduce(results.expansion_order.size(), comm, MPI_MAX);
-    results.expansion_order.resize(max_size, 0);
-    results.expansion_order = mpi::all_reduce(results.expansion_order, comm);
-
-    max_size = mpi::all_reduce(results.samples_expansion_order.size(), comm, MPI_MAX);
-    results.samples_expansion_order.resize(max_size, 0.0);
-    results.samples_expansion_order = mpi::all_reduce(results.samples_expansion_order, comm);
+    frame_0th_order_ref = mpi::all_reduce(frame_0th_order_ref, comm);
+    frame_ref           = mpi::all_reduce(frame_ref, comm);
   }
 
 } // namespace inchworm::measures

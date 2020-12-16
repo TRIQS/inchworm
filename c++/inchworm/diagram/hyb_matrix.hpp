@@ -24,7 +24,7 @@
 #include "diagram.hpp"
 
 #include "../types.hpp"
-#include "../qmc_config_data.hpp"
+#include "../qmc_data.hpp"
 
 namespace inchworm::diagram {
 

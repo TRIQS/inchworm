@@ -97,6 +97,9 @@ namespace inchworm {
     /// Name of the random generator
     std::string random_name = "";
 
+    /// Use double insertion
+    int use_double_insertion = true;
+
     /// Maximum running time in seconds (-1 : no limit)
     int max_time = -1;
 
@@ -105,8 +108,14 @@ namespace inchworm {
 
     // ----------- Measurements -----------
 
-    /// Measure the MC sign
-    bool measure_sign = true;
+    /// Measure the average perturbation order
+    bool measure_average_order = true;
+
+    /// Measure the average perturbation order
+    bool measure_order_histogram = false;
+
+    /// Measure the average perturbation order
+    bool measure_frame_by_order = false;
 
     /// Perform post processing
     bool post_process = true;

@@ -6,24 +6,26 @@
 
 namespace inchworm::measures {
 
-  /// Measurement of a single frame of a propagator or Green function
-  struct frame {
+  /// Measure of the average perturbation order
+  struct average_order {
 
-    frame(params_t const &, qmc_data_t const &qmc_data_, qmc_results_t &results);
+    average_order(params_t const &, qmc_data_t const &qmc_data_, qmc_results_t &results);
 
-    /// Invoke a single measurement
+    /// Accumulate average sign
     void accumulate(scalar_t);
 
-    /// Finalize
+    /// Reduce and normalize
     void collect_results(mpi::communicator const &comm);
 
     private:
     // The Monte-Carlo configuration and data
     qmc_data_t const &qmc_data;
 
-    // References to the accumulation frames
-    frame_t &frame_ref;
-    frame_t &frame_0th_order_ref;
+    // Reference to double for accumulation
+    double &average_order_ref;
+
+    // Accumulation counter
+    long long N = 0;
   };
 
 } // namespace inchworm::measures

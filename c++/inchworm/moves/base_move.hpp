@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../types.hpp"
-#include "../qmc_config_data.hpp"
+#include "../qmc_data.hpp"
 
 #include <triqs/mc_tools/random_generator.hpp>
 
@@ -20,7 +20,7 @@ namespace inchworm::moves {
     void reject() {}
 
     /// Constructor FIXME params naming
-    base_move(qmc_config_data_t &data, gf_struct_t const &gf_struct, qmc_params_t const &qmc_params, triqs::mc_tools::random_generator &rng);
+    base_move(qmc_data_t &data, gf_struct_t const &gf_struct, qmc_params_t const &qmc_params, triqs::mc_tools::random_generator &rng);
 
     /// Destructor
     virtual ~base_move() = default;
@@ -42,10 +42,10 @@ namespace inchworm::moves {
     std::vector<fop_t> all_d_dag_ops;
 
     /// The Monte-Carlo configuration
-    qmc_config_data_t &data;
+    qmc_data_t &data;
 
     /// The Monte-Carlo configuration
-    qmc_config_data_t prop_data;
+    qmc_data_t prop_data;
 
     /// The Monte-Carlo parameters
     qmc_params_t const &params;

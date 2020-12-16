@@ -7,7 +7,7 @@
 
 namespace inchworm::moves {
 
-  base_move::base_move(qmc_config_data_t &data, gf_struct_t const &gf_struct, qmc_params_t const &qmc_params, triqs::mc_tools::random_generator &rng)
+  base_move::base_move(qmc_data_t &data, gf_struct_t const &gf_struct, qmc_params_t const &qmc_params, triqs::mc_tools::random_generator &rng)
      : data(data), prop_data(data), params(qmc_params), rng(rng), gf_struct(gf_struct) {
 
     for (auto const &op : qmc_params.ad_imp.get_fops()) {

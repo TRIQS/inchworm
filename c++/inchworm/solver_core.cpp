@@ -2,7 +2,7 @@
 #include "./u_frame.hpp"
 #include "./atom_diag.hpp"
 #include "./post_process.hpp"
-#include "./measures/frame.hpp"
+#include "./measures.hpp"
 #include "./moves/insert.hpp"
 #include "./moves/remove.hpp"
 
@@ -62,7 +62,7 @@ namespace inchworm {
 
   //------------------------------
   // solve cthyb (no split point + bare propagator):
-  qmc_step_results_t solver_core::solve_cthyb(solve_params_t const &solve_params, double tau_max) {
+  qmc_results_t solver_core::solve_cthyb(solve_params_t const &solve_params, double tau_max) {
 
     // Initialize solver
     this->init(solve_params);
@@ -92,8 +92,7 @@ namespace inchworm {
   //------------------------------
 
   // Self consistent solution (one step, with precalculated U(beta) from ED)
-  qmc_step_results_t solver_core::solve_self_consistently(solve_params_t const &solve_params, u_tau_t const &u_tau_, double tau_split,
-                                                          double tau_max) {
+  qmc_results_t solver_core::solve_self_consistently(solve_params_t const &solve_params, u_tau_t const &u_tau_, double tau_split, double tau_max) {
     // Initialize solver
     this->init(solve_params);
 
@@ -173,7 +172,7 @@ namespace inchworm {
         std::printf("\n\n##################\ninchworm U(tau_max):\n");
         res.print(solve_params.verbosity);
       }
-      if (solve_params.verbosity > 0) { std::printf("     average_k: %5f\n", res.average_k); }
+      if (solve_params.verbosity > 0) { std::printf("     average_order: %5f\n", res.average_order); }
 
       // Assign u_frame to the propagator u_tau, in order to be able to use it in next iteration
       set_frame(res.frame, u_tau, n);
@@ -235,7 +234,7 @@ namespace inchworm {
         std::printf("\n\n##################\ninchworm G(tau_split):\n");
         res.print(solve_params.verbosity);
       }
-      if (solve_params.verbosity > 0) { std::printf("     average_k: %5f\n", res.average_k); }
+      if (solve_params.verbosity > 0) { std::printf("     average_order: %5f\n", res.average_order); }
 
       set_frame(res.frame, G_tau, n);
     }
@@ -244,8 +243,7 @@ namespace inchworm {
   //------------------------------
 
   // One Monte Carlo sampling step (common to all solve scheme above):
-  qmc_step_results_t solver_core::qmc_step(solve_params_t const &solve_params, double tau_split, double tau_max, bool use_bare_propagator,
-                                           MODE mode) {
+  qmc_results_t solver_core::qmc_step(solve_params_t const &solve_params, double tau_split, double tau_max, bool use_bare_propagator, MODE mode) {
     params_t params(constr_params, solve_params);
 
     // Construct the generic Monte-Carlo solver
@@ -255,22 +253,24 @@ namespace inchworm {
     auto &rng = mc.get_rng();
 
     // Create Monte-Carlo configuration
-    qmc_config_data_t qmc_config_data{};
+    qmc_data_t qmc_data{};
     if (mode  == MODE::PROPAGATOR) {
-      qmc_config_data.frame = make_bare_u_frame(ad_imp, tau_split);
+      qmc_data.frame = make_bare_u_frame(ad_imp, tau_split);
     } else { // MODE::GREENFUNCTION
-      qmc_config_data.frame = make_bare_g_frame(ad_imp, u_tau, params.gf_struct, tau_split, params.beta);
+      qmc_data.frame = make_bare_g_frame(ad_imp, u_tau, params.gf_struct, tau_split, params.beta);
     }
 
     // Create Monte-Carlo params
     qmc_params_t qmc_params{Delta_tau, ad_imp, u_tau, tau_max, tau_split, use_bare_propagator, mode};
 
     // Add moves
-    mc.add_move(moves::insert{qmc_config_data, params.gf_struct, qmc_params, rng}, "insert move");
-    mc.add_move(moves::remove{qmc_config_data, params.gf_struct, qmc_params, rng}, "remove move");
+    mc.add_move(moves::insert{qmc_data, params.gf_struct, qmc_params, rng}, "insert move");
+    mc.add_move(moves::remove{qmc_data, params.gf_struct, qmc_params, rng}, "remove move");
 
-    mc.add_move(moves::double_insert{qmc_config_data, params.gf_struct, qmc_params, rng}, "double insert move");
-    mc.add_move(moves::double_remove{qmc_config_data, params.gf_struct, qmc_params, rng}, "double remove move");
+    if (params.use_double_insertion) {
+      mc.add_move(moves::double_insert{qmc_data, params.gf_struct, qmc_params, rng}, "double insert move");
+      mc.add_move(moves::double_remove{qmc_data, params.gf_struct, qmc_params, rng}, "double remove move");
+    }
 
     // Initialize result container
     std::vector<int> shape_of_frame;
@@ -279,15 +279,20 @@ namespace inchworm {
     } else { // MODE::GREENFUNCTION
       for (auto const &[blname, blsize] : params.gf_struct) { shape_of_frame.push_back(blsize); }
     }
-    qmc_step_results_t results{shape_of_frame};
+    qmc_results_t results{shape_of_frame};
 
     // Register all measurements
-    mc.add_measure(measures::frame{params, qmc_config_data, results}, "measure a single propagator / green function frame");
+    mc.add_measure(measures::frame{params, qmc_data, results}, "measure the propagator / green function frame");
+    if (params.measure_average_order) mc.add_measure(measures::average_order{params, qmc_data, results}, "measure the average perturbation order");
+    if (params.measure_order_histogram)
+      mc.add_measure(measures::order_histogram{params, qmc_data, results}, "measure the perturbation order histogram");
+    if (params.measure_frame_by_order)
+      mc.add_measure(measures::frame_by_order{params, qmc_data, results}, "measure the propagator / green function frame by order");
 
     // Perform QMC run and collect results
     int status = mc.warmup(params.n_warmup_cycles, params.length_cycle, triqs::utility::clock_callback(params.max_time));
     if (status == 0) {
-      moves::base_move::reweighting_cutoff = qmc_config_data.config.size() / 2;
+      moves::base_move::reweighting_cutoff = qmc_data.config.size() / 2;
       status                               = mc.accumulate(params.n_cycles, params.length_cycle, triqs::utility::clock_callback(params.max_time));
       mc.collect_results(world);
     }

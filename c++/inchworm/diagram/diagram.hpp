@@ -22,7 +22,7 @@
 #pragma once
 
 #include "../types.hpp"
-#include "../qmc_config_data.hpp"
+#include "../qmc_data.hpp"
 
 #include <vector>
 

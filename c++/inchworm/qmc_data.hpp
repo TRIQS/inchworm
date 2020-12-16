@@ -19,12 +19,12 @@ namespace inchworm {
   };
 
   /// The Monte-Carlo Configuration structure
-  struct qmc_config_data_t {
+  struct qmc_data_t {
     // last accepted paraemeters
-    config_t config       = {};       // last accepted configuration of d and d_dag
-    weights_t weights     = {1., 1.}; // weight values of the last accepted configuration
-    int sign              = 1;        // sign of the last accepted configuration
-    frame_t frame;                    // the configuration (propagator or green function) frame
+    config_t config   = {};       // last accepted configuration of d and d_dag
+    weights_t weights = {1., 1.}; // weight values of the last accepted configuration
+    int sign          = 1;        // sign of the last accepted configuration
+    frame_t frame;                // the configuration (propagator or green function) frame
   };
 
   // structure to calculate hybridization function for tau, tau_dag, and orbital (linear) indices.

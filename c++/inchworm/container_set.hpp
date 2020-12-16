@@ -26,15 +26,18 @@
 namespace inchworm {
 
   // structure to gather result of one Monte Carlo run:
-  struct qmc_step_results_t {
+  struct qmc_results_t {
+
     frame_t frame;
     frame_t frame_0th_order;
-    long measure_count = 0;
-    double average_k   = 0.0;
-    std::vector<double> expansion_order;
-    std::vector<int> samples_expansion_order;
 
-    qmc_step_results_t(std::vector<int> const &shape_of_frame);
+    std::optional<std::vector<frame_t>> frame_by_order;
+    std::optional<std::vector<double>> order_histogram;
+
+    long long measure_count = 0;
+    double average_order    = 0.0;
+
+    qmc_results_t(std::vector<int> const &shape_of_frame);
 
     void normalize(double normalization_cte);
     void print(int verbosity = 4);

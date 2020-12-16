@@ -25,6 +25,11 @@
 
 namespace inchworm::diagram {
 
+  //long fibonacci(long n) {
+  //if (n < 2) return n;
+  //return fibonacci(n-1) + fibonacci(n-2);
+  //}
+
   /**
    * This function generates the list of distjoint / adjoint sets
    * given the list of all possible segments
@@ -63,6 +68,7 @@ namespace inchworm::diagram {
     // If searching adjacent sets, erase all sets with a single segment
     if (not search_disjoint) set_list.erase(set_list.begin(), set_list.begin() + segment_list.size() - 1);
 
+    //set_list.shrink_to_fit();
     return set_list;
   }
 
