@@ -19,8 +19,8 @@
 #
 # ##############################################################################
 
-cmake_minimum_required(VERSION 3.13.0 FATAL_ERROR)
-cmake_policy(VERSION 3.13.0)
+cmake_minimum_required(VERSION 3.13.5 FATAL_ERROR)
+cmake_policy(VERSION 3.13.5)
 
 # ############
 # Define Project
@@ -101,7 +101,9 @@ if(NOT ipo_supported)
 else()
   message(STATUS "Linktime optimizations enabled!")
   set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
-  add_link_options($<$<CXX_COMPILER_ID:Clang>:-fuse-ld=gold>)
+  if(CMAKE_SYSTEM_NAME EQUAL "Linux")
+    add_link_options($<$<CXX_COMPILER_ID:Clang>:-fuse-ld=gold>)
+  endif()
 endif()
 
 # Create an Interface target for compiler warnings
