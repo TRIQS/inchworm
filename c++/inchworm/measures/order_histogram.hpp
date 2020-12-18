@@ -22,7 +22,7 @@ namespace inchworm::measures {
     qmc_data_t const &qmc_data;
 
     // Reference to accumulation vector
-    std::optional<std::vector<double>> &order_histogram_ref;
+    std::vector<double> &order_histogram_ref;
 
     // Accumulation counter
     long long N = 0;

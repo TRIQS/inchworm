@@ -123,6 +123,9 @@ namespace inchworm {
     // Initialize solver
     this->init(solve_params);
 
+    // Reset the results
+    container_set::operator=(container_set{});
+
     // Initialize empty propagator
     u_tau = u_tau_t{{constr_params.beta, Fermion, constr_params.n_tau_inch}, ad_imp.get_subspace_dims()};
 
@@ -176,6 +179,9 @@ namespace inchworm {
 
       // Assign u_frame to the propagator u_tau, in order to be able to use it in next iteration
       set_frame(res.frame, u_tau, n);
+
+      // Initialize other results
+      if(solve_params.measure_order_histogram) order_histograms.push_back(res.order_histogram);
     }
   }
 

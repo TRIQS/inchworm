@@ -31,11 +31,10 @@ namespace inchworm {
     frame_t frame;
     frame_t frame_0th_order;
 
-    std::optional<std::vector<frame_t>> frame_by_order;
-    std::optional<std::vector<double>> order_histogram;
+    std::vector<frame_t> frame_by_order;
+    std::vector<double> order_histogram;
 
-    long long measure_count = 0;
-    double average_order    = 0.0;
+    double average_order = 0.0;
 
     qmc_results_t(std::vector<int> const &shape_of_frame);
 
@@ -48,6 +47,9 @@ namespace inchworm {
 
     /// Greens function in imaginary time
     g_tau_t G_tau;
+
+    /// Order histograms
+    std::vector<std::vector<double>> order_histograms;
 
     /// Function that writes all containers to hdf5 file
     friend void h5_write(h5::group h5group, std::string subgroup_name, container_set const &c);

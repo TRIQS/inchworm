@@ -31,8 +31,7 @@ namespace inchworm {
   void qmc_results_t::normalize(double normalization_cte) {
     frame /= normalization_cte;
     frame_0th_order /= normalization_cte;
-    if (frame_by_order)
-      for (auto &frame_k : *frame_by_order) frame_k /= normalization_cte;
+    for (auto &frame_k : frame_by_order) frame_k /= normalization_cte;
   };
 
   void qmc_results_t::print(int verbosity) {
@@ -41,13 +40,13 @@ namespace inchworm {
       for (auto Bl : frame) print_matrix(Bl);
 
     if (verbosity > 3) {
-      if (order_histogram) {
+      if (not order_histogram.empty()) {
         std::printf("\n\nperturbation order histogram (normalized): \n");
-        for (auto k : range(std::min(order_histogram->size(), 15ul))) std::printf("%10f ", (*order_histogram)[k]);
+        for (auto k : range(std::min(order_histogram.size(), 15ul))) std::printf("%10f ", order_histogram[k]);
       }
-      if (frame_by_order) {
+      if (not frame_by_order.empty()) {
         std::printf("\n\nframe norm by order: \n");
-        for (auto k : range(std::min(frame_by_order->size(), 15ul))) std::printf("% 10.5f ", frobenius_norm((*frame_by_order)[k]));
+        for (auto k : range(std::min(frame_by_order.size(), 15ul))) std::printf("% 10.5f ", frobenius_norm(frame_by_order[k]));
       }
     }
   }

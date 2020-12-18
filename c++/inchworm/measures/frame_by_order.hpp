@@ -22,7 +22,7 @@ namespace inchworm::measures {
     qmc_data_t const &qmc_data;
 
     // Reference to the accumulation vector
-    std::optional<std::vector<frame_t>> &frame_by_order_ref;
+    std::vector<frame_t> &frame_by_order_ref;
 
     // A zero initialized frame
     frame_t zero_frame;

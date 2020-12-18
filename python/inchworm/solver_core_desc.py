@@ -38,6 +38,11 @@ c.add_member(c_name = "G_tau",
              read_only= True,
              doc = r"""Greens function in imaginary time""")
 
+c.add_member(c_name = "order_histograms",
+             c_type = "std::vector<std::vector<double>>",
+             read_only= True,
+             doc = r"""Order histograms""")
+
 c.add_member(c_name = "u_tau",
              c_type = "inchworm::u_tau_t",
              read_only= True,
