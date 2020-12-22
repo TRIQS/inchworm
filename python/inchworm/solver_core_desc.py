@@ -1,5 +1,5 @@
 # Generated automatically using the command :
-# c++2py ../../c++/inchworm/solver_core.hpp -p --members_read_only -N inchworm -a inchworm -m solver_core -o solver_core --moduledoc="The inchworm solve_core module" -C triqs --cxxflags="-std=c++20" --target_file_only
+# c++2py ../../c++/inchworm/solver_core.hpp -p --members_read_only -N inchworm -a inchworm -m solver_core -o solver_core --moduledoc="The inchworm solve_core module" -C triqs -C nda --cxxflags="-std=c++20" --only="solver_core qmc_results_t"
 from cpp2py.wrap_generator import *
 
 # The module
@@ -15,8 +15,10 @@ module.add_include("inchworm/solver_core.hpp")
 module.add_preamble("""
 #include <cpp2py/converters/optional.hpp>
 #include <cpp2py/converters/pair.hpp>
+#include <cpp2py/converters/std_array.hpp>
 #include <cpp2py/converters/string.hpp>
 #include <cpp2py/converters/vector.hpp>
+#include <nda_py/cpp2py_converters.hpp>
 #include <triqs/cpp2py_converters/gf.hpp>
 #include <triqs/cpp2py_converters/operators_real_complex.hpp>
 #include <triqs/cpp2py_converters/real_or_complex.hpp>
@@ -24,6 +26,49 @@ module.add_preamble("""
 using namespace inchworm;
 """)
 
+
+# The class qmc_results_t
+c = class_(
+        py_type = "QmcResultsT",  # name of the python class
+        c_type = "inchworm::qmc_results_t",   # name of the C++ class
+        doc = r"""""",   # doc of the C++ class
+        hdf5 = False,
+)
+
+c.add_member(c_name = "frame",
+             c_type = "inchworm::frame_t",
+             read_only= True,
+             doc = r"""""")
+
+c.add_member(c_name = "frame_0th_order",
+             c_type = "inchworm::frame_t",
+             read_only= True,
+             doc = r"""""")
+
+c.add_member(c_name = "frame_by_order",
+             c_type = "std::vector<frame_t>",
+             read_only= True,
+             doc = r"""""")
+
+c.add_member(c_name = "order_histogram",
+             c_type = "std::vector<double>",
+             read_only= True,
+             doc = r"""""")
+
+c.add_member(c_name = "average_order",
+             c_type = "double",
+             read_only= True,
+             doc = r"""""")
+
+c.add_constructor("""(std::vector<int> shape_of_frame)""", doc = r"""""")
+
+c.add_method("""void normalize (double normalization_cte)""",
+             doc = r"""""")
+
+c.add_method("""void print (int verbosity = 4)""",
+             doc = r"""""")
+
+module.add_class(c)
 
 # The class solver_core
 c = class_(
@@ -43,16 +88,6 @@ c.add_member(c_name = "order_histograms",
              read_only= True,
              doc = r"""Order histograms""")
 
-c.add_member(c_name = "u_tau",
-             c_type = "inchworm::u_tau_t",
-             read_only= True,
-             doc = r"""The propagator in imaginary time""")
-
-c.add_member(c_name = "ad_imp",
-             c_type = "inchworm::atom_diag",
-             read_only= True,
-             doc = r"""Diagonalization of the local problem""")
-
 c.add_member(c_name = "constr_params",
              c_type = "inchworm::constr_params_t",
              read_only= True,
@@ -63,15 +98,20 @@ c.add_member(c_name = "last_solve_params",
              read_only= True,
              doc = r"""""")
 
+c.add_member(c_name = "ad_imp",
+             c_type = "inchworm::atom_diag",
+             read_only= True,
+             doc = r"""Diagonalization of the local problem""")
+
 c.add_member(c_name = "Delta_tau",
              c_type = "inchworm::h_tau_t",
              read_only= True,
              doc = r"""""")
 
-c.add_member(c_name = "G0_iw",
-             c_type = "inchworm::g_iw_t",
+c.add_member(c_name = "u_tau",
+             c_type = "inchworm::u_tau_t",
              read_only= True,
-             doc = r"""""")
+             doc = r"""The propagator in imaginary time""")
 
 c.add_constructor("""(**inchworm::constr_params_t)""", doc = r"""Construct a INCHWORM solver
 
@@ -133,6 +173,9 @@ c.add_method("""void solve (**inchworm::solve_params_t)""",
 | post_process            | bool                                 | true                                    | Perform post processing                          |
 +-------------------------+--------------------------------------+-----------------------------------------+--------------------------------------------------+
 """)
+
+c.add_method("""inchworm::qmc_results_t solve_self_consistently (inchworm::solve_params_t solve_params, inchworm::u_tau_t u_tau_, double tau_split, double tau_max)""",
+             doc = r"""""")
 
 c.add_method("""void solve_inchworm (**inchworm::solve_params_t)""",
              doc = r"""
