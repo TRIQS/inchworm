@@ -30,7 +30,8 @@ namespace inchworm {
   using scalar_t     = double;
   using hyb_target_t = matrix_real_valued;
 #endif
-  using matrix_t = nda::matrix<scalar_t, nda::C_layout, nda::sso<1000>>;
+  using matrix_t     = nda::matrix<scalar_t>;
+  using matrix_sso_t = nda::matrix<scalar_t, nda::C_layout, nda::sso<1000>>;
 
   enum class MODE { PROPAGATOR, GREENFUNCTION };
 
