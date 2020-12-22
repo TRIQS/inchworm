@@ -28,11 +28,11 @@ namespace inchworm {
   /// The parameters for the solver construction
   struct constr_params_t {
 
-    /// Number of tau points for the propagator
-    int n_tau_inch = 11;
-
     /// Number of tau points for the hybridization function
     int n_tau = 101;
+
+    /// Number of tau points for the propagator
+    int n_tau_inch = 11;
 
     /// Number of tau points for the Green function
     int n_tau_green = 101;

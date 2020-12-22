@@ -39,13 +39,13 @@ namespace inchworm {
     return u_frame;
   }
 
-  u_tau_t make_ED_propagator(atom_diag const &ad_tot, atom_diag const &ad_atom, atom_diag const &ad_bath, double beta, int n_tau) {
+  u_tau_t make_ED_propagator(atom_diag const &ad_tot, atom_diag const &ad_imp, atom_diag const &ad_bath, double beta, int n_tau) {
 
-    auto u_tau = u_tau_t{{beta, Fermion, n_tau}, ad_atom.get_subspace_dims()};
+    auto u_tau = u_tau_t{{beta, Fermion, n_tau}, ad_imp.get_subspace_dims()};
 
     double dtau = beta / (n_tau - 1.);
     for (int i_tau = 0; i_tau < n_tau; i_tau++) {
-      auto u_frame = partial_trace_bath(ad_tot, ad_atom, ad_bath, beta, dtau * i_tau);
+      auto u_frame = partial_trace_bath(ad_tot, ad_imp, ad_bath, beta, dtau * i_tau);
       set_frame(u_frame, u_tau, i_tau);
     }
 
@@ -147,13 +147,15 @@ namespace inchworm {
 
         if (fs_bath_i == fs_bath_j) {
 
-          auto [bl_imp, i_imp]   = fs_to_bl_and_idx(fs_imp_i, ad_imp);
+          auto [bl_imp_i, i_imp] = fs_to_bl_and_idx(fs_imp_i, ad_imp);
           auto [bl_imp_j, j_imp] = fs_to_bl_and_idx(fs_imp_j, ad_imp);
-          ASSERT(bl_imp == bl_imp_j);
+
+	  if(bl_imp_i != bl_imp_j)
+	    TRIQS_RUNTIME_ERROR << "Block structore of ad_imp incompatible with hybridization";
 
           auto [bl_bath, i_bath] = fs_to_bl_and_idx(fs_bath_i, ad_bath);
 
-          utau_imp[bl_imp](i_imp, j_imp) += e_H_tot_tau_fs[bl](i, j) * e_H_bath_beta_minus_tau_fs[bl_bath](i_bath, i_bath);
+          utau_imp[bl_imp_i](i_imp, j_imp) += e_H_tot_tau_fs[bl](i, j) * e_H_bath_beta_minus_tau_fs[bl_bath](i_bath, i_bath);
         }
       }
     }
