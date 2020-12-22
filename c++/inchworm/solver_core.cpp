@@ -330,6 +330,8 @@ namespace inchworm {
     h5_write(grp, "", s.result_set());
     h5_write(grp, "constr_params", s.constr_params);
     h5_write(grp, "last_solve_params", s.last_solve_params);
+    h5_write(grp, "ad_imp", s.ad_imp);
+    h5_write(grp, "Delta_tau", s.Delta_tau);
     h5_write(grp, "u_tau", s.u_tau);
   }
 
@@ -339,6 +341,8 @@ namespace inchworm {
     auto s             = solver_core{constr_params};
     h5_read(grp, "", s.result_set());
     h5_read(grp, "last_solve_params", s.last_solve_params);
+    h5_read(grp, "ad_imp", s.ad_imp);
+    h5_read(grp, "Delta_tau", s.Delta_tau);
     h5_read(grp, "u_tau", s.u_tau);
     return s;
   }

@@ -54,11 +54,13 @@ namespace inchworm {
   void h5_write(h5::group h5group, std::string subgroup_name, container_set const &c) {
     auto grp = h5group.create_group(subgroup_name);
     h5_write(grp, "G_tau", c.G_tau);
+    h5_write(grp, "order_histograms", c.order_histograms);
   }
 
   void h5_read(h5::group h5group, std::string subgroup_name, container_set &c) {
     auto grp = h5group.open_group(subgroup_name);
     h5_read(grp, "G_tau", c.G_tau);
+    h5_read(grp, "order_histograms", c.order_histograms);
   }
 
 } // namespace inchworm
