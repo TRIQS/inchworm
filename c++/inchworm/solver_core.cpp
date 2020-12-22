@@ -105,6 +105,8 @@ namespace inchworm {
     // Normalize the result using the ratio between theoretical zeroth order and Monte Carlo sampled zeroth order
     auto u_frame_zeroth_order  = frame_t{eval_frame(u_tau, tau_max - tau_split) * eval_frame(u_tau, tau_split)};
     scalar_t normalization_cte = frobenius_norm(res.frame_0th_order) / frobenius_norm(u_frame_zeroth_order);
+    if (normalization_cte == 0)
+      TRIQS_RUNTIME_ERROR << "Failed to calculate normalization ratio due to insufficient sampling of zeroth order propagator";
     res.normalize(normalization_cte);
 
     // Print results
