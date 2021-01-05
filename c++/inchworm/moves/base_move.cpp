@@ -78,8 +78,8 @@ namespace inchworm::moves {
     //// Reweight perturbation orders below the reweighting_cutoff to guarantee
     //// that the zeroth order is sampled properly for normalization purposes
     //// FIXME Improve reweighting using proper perturbation order histogram
-    //if (diagram.perturbation_order() < reweighting_cutoff)
-      //return prop_data.weights.imp *= std::pow(reweighting_cutoff - diagram.perturbation_order(), 2);
+    if (diagram.perturbation_order() < reweighting_cutoff)
+      prop_data.weights.imp *= std::pow(reweighting_cutoff - diagram.perturbation_order(), 2);
 
     // ------ Calculate overall weight ratio -------
 
