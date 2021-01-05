@@ -180,13 +180,21 @@ namespace inchworm {
         std::printf("\n\n##################\ninchworm U(tau_max):\n");
         res.print(solve_params.verbosity);
       }
-      if (solve_params.verbosity > 0) { std::printf("     average_order: %5f\n", res.average_order); }
+      if (solve_params.verbosity > 0) {
+        std::printf("     average_order: %4f\n", res.average_order);
+        if (res.order_histogram.size() > 0) {
+          std::printf("     order_histogram: [");
+          for (auto v : res.order_histogram)
+            if (v != 0.0) std::printf(" %.3f, ", v);
+          std::printf("]\n");
+        }
+      }
 
       // Assign u_frame to the propagator u_tau, in order to be able to use it in next iteration
       set_frame(res.frame, u_tau, n);
 
       // Initialize other results
-      if(solve_params.measure_order_histogram) order_histograms.push_back(res.order_histogram);
+      if (solve_params.measure_order_histogram) order_histograms.push_back(res.order_histogram);
     }
   }
 
@@ -246,9 +254,20 @@ namespace inchworm {
         std::printf("\n\n##################\ninchworm G(tau_split):\n");
         res.print(solve_params.verbosity);
       }
-      if (solve_params.verbosity > 0) { std::printf("     average_order: %5f\n", res.average_order); }
+      if (solve_params.verbosity > 0) {
+	std::printf("     average_order: %5f\n", res.average_order);
+        if (res.order_histogram.size() > 0) {
+          std::printf("     order_histogram: [");
+          for (auto v : res.order_histogram)
+            if (v != 0.0) std::printf(" %.3f, ", v);
+          std::printf("]\n");
+        }
+      }
 
       set_frame(res.frame, G_tau, n);
+
+      // Initialize other results
+      if (solve_params.measure_order_histogram) order_histograms.push_back(res.order_histogram);
     }
   }
 
@@ -266,7 +285,7 @@ namespace inchworm {
 
     // Create Monte-Carlo configuration
     qmc_data_t qmc_data{};
-    if (mode  == MODE::PROPAGATOR) {
+    if (mode == MODE::PROPAGATOR) {
       qmc_data.frame = make_bare_u_frame(ad_imp, tau_split);
     } else { // MODE::GREENFUNCTION
       qmc_data.frame = make_bare_g_frame(ad_imp, u_tau, params.gf_struct, tau_split, params.beta);
