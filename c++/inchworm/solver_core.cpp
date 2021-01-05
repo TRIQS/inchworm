@@ -323,7 +323,7 @@ namespace inchworm {
     // Perform QMC run and collect results
     int status = mc.warmup(params.n_warmup_cycles, params.length_cycle, triqs::utility::clock_callback(params.max_time));
     if (status == 0) {
-      moves::base_move::reweighting_cutoff = qmc_data.config.size() / 2;
+      moves::base_move::reweighting_cutoff = mpi::all_reduce(qmc_data.config.size()) / (world.size() * 2);
       status                               = mc.accumulate(params.n_cycles, params.length_cycle, triqs::utility::clock_callback(params.max_time));
       mc.collect_results(world);
     }
