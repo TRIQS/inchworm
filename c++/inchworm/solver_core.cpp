@@ -116,6 +116,15 @@ namespace inchworm {
       std::printf("\n##################\ninchworm U(beta):\n");
       res.print(solve_params.verbosity);
     }
+    if (solve_params.verbosity > 0) {
+      std::printf("     average_order: %5f\n", res.average_order);
+      if (res.order_histogram.size() > 0) {
+        std::printf("     order_histogram: [");
+        for (auto v : res.order_histogram)
+          if (v != 0.0) std::printf(" %.3f, ", v);
+        std::printf("]\n");
+      }
+    }
 
     return res;
   }
@@ -255,7 +264,7 @@ namespace inchworm {
         res.print(solve_params.verbosity);
       }
       if (solve_params.verbosity > 0) {
-	std::printf("     average_order: %5f\n", res.average_order);
+        std::printf("     average_order: %5f\n", res.average_order);
         if (res.order_histogram.size() > 0) {
           std::printf("     order_histogram: [");
           for (auto v : res.order_histogram)
