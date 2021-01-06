@@ -52,26 +52,27 @@ namespace inchworm {
 
     // same for every inch step:
     hyb_adaptor_t hyb_adaptor;
-    atom_diag const &ad_imp; // Diagonalization of the atomic problem
+    atom_diag const &ad_imp;      // Diagonalization of the atomic problem
+    bool use_bare_propagator;     // True only for the first iteration of the inchworm calculation
+    MODE mode;                    // The sampling mode, either PROPAGATOR or GREENFUNCTION
+    std::optional<int> max_order; // The maximum perturbation order [optional]
 
     // updated at every inch step:
-    u_tau_t const &u_tau; // THE propagator
+    u_tau_t const &u_tau; // The propagator
 
     // different at every inch step:
-    double tau_max;           // similar to beta, but configuration here does not always goes up to beta. 0 < tau_max <= beta
-    double tau_split;         // in the inchworm, this should be the tau_max of the previous inching. 0 < tau_split <= tau_max
-    bool use_bare_propagator; // true only for the first iteration of the inchworm calculation
-
-    MODE mode;
+    double tau_max;   // similar to beta, but configuration here does not always goes up to beta. 0 < tau_max <= beta
+    double tau_split; // in the inchworm, this should be the tau_max of the previous inching. 0 < tau_split <= tau_max
 
     qmc_params_t(h_tau_t const &hyb_tau, atom_diag const &ad_imp, u_tau_t const &u_tau, double tau_max, double tau_split, bool use_bare_propagator,
-                 MODE mode)
+                 MODE mode, std::optional<int> max_order)
        : hyb_adaptor(hyb_tau),
          ad_imp(ad_imp),
+         use_bare_propagator(use_bare_propagator),
+         mode(mode),
+         max_order(max_order),
          u_tau(u_tau),
          tau_max(tau_max),
-         tau_split(tau_split),
-         use_bare_propagator(use_bare_propagator),
-         mode(mode) {}
+         tau_split(tau_split) {}
   };
 } // namespace inchworm

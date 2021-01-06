@@ -2,9 +2,9 @@
 
 namespace inchworm::measures {
 
-  order_histogram::order_histogram(params_t const &, qmc_data_t const &qmc_data_, qmc_results_t &results)
+  order_histogram::order_histogram(params_t const &params, qmc_data_t const &qmc_data_, qmc_results_t &results)
      : qmc_data(qmc_data_), order_histogram_ref(results.order_histogram) {
-    order_histogram_ref = std::vector<double>(10);
+    order_histogram_ref = std::vector<double>(1 + params.max_order.value_or(10), 0.0);
   }
 
   void order_histogram::accumulate(scalar_t) {

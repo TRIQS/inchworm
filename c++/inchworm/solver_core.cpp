@@ -301,7 +301,7 @@ namespace inchworm {
     }
 
     // Create Monte-Carlo params
-    qmc_params_t qmc_params{Delta_tau, ad_imp, u_tau, tau_max, tau_split, use_bare_propagator, mode};
+    qmc_params_t qmc_params{Delta_tau, ad_imp, u_tau, tau_max, tau_split, use_bare_propagator, mode, params.max_order};
 
     // Add moves
     mc.add_move(moves::insert{qmc_data, params.gf_struct, qmc_params, rng}, "insert move");
@@ -319,7 +319,36 @@ namespace inchworm {
     } else { // MODE::GREENFUNCTION
       for (auto const &[blname, blsize] : params.gf_struct) { shape_of_frame.push_back(blsize); }
     }
-    qmc_results_t results{shape_of_frame};
+    auto results = qmc_results_t{shape_of_frame};
+
+    // Run the warmup and callibration
+    auto callibration_results = results;
+    mc.add_measure(measures::average_order{params, qmc_data, callibration_results}, "measure the average perturbation order");
+    mc.add_measure(measures::order_histogram{params, qmc_data, callibration_results}, "measure the perturbation order histogram");
+    int status = mc.warmup_and_accumulate(params.n_warmup_cycles, params.n_callibration_cycles, 100 /* warmup & callibration cycle length */,
+                                          triqs::utility::clock_callback(params.max_time));
+    mc.collect_results(world);
+    mc.clear_measures();
+
+    auto acc_rates = mc.get_acceptance_rates();
+    if (acc_rates["insert move"] == 0) TRIQS_RUNTIME_ERROR << "Zero acceptance rate for insertion move";
+    if (acc_rates["remove move"] == 0) TRIQS_RUNTIME_ERROR << "Zero acceptance rate for removal move";
+    if (params.max_order && callibration_results.order_histogram[*params.max_order] > 0.0)
+      if (world.rank() == 0)
+        std::cout << "WARNING: Maximum perturbation order was sampled with a finite probability of "
+                  << callibration_results.order_histogram[*params.max_order] << ". Check convergence w.r.t. max_order!\n";
+
+    // Update reweighting coefficients based on perturbation order histogram
+    moves::base_move::reweighting_cutoff = callibration_results.average_order;
+    moves::base_move::reweighting_coeffs = std::vector<double>(callibration_results.average_order);
+    for (auto k : range(callibration_results.average_order))
+      moves::base_move::reweighting_coeffs[k] = 1.0 / std::max(callibration_results.order_histogram[k], 0.5 / params.n_callibration_cycles);
+
+    // Auto-deduce cycle length if not set
+    // FIXME Use autocorrelation time as deduced from e.g. perturbation order here
+    auto length_cycle = params.length_cycle.value_or(
+       std::max(10l, long(0.5 * callibration_results.average_order / std::min(acc_rates["insert move"], acc_rates["remove move"]))));
+    if (not params.length_cycle && params.verbosity > 2) { std::cout << "Cycle length deduced in callibration phase: " << length_cycle << "\n"; }
 
     // Register all measurements
     mc.add_measure(measures::frame{params, qmc_data, results}, "measure the propagator / green function frame");
@@ -330,10 +359,8 @@ namespace inchworm {
       mc.add_measure(measures::frame_by_order{params, qmc_data, results}, "measure the propagator / green function frame by order");
 
     // Perform QMC run and collect results
-    int status = mc.warmup(params.n_warmup_cycles, params.length_cycle, triqs::utility::clock_callback(params.max_time));
     if (status == 0) {
-      moves::base_move::reweighting_cutoff = mpi::all_reduce(qmc_data.config.size()) / (world.size() * 2);
-      status                               = mc.accumulate(params.n_cycles, params.length_cycle, triqs::utility::clock_callback(params.max_time));
+      status = mc.accumulate(params.n_cycles, length_cycle, triqs::utility::clock_callback(params.max_time));
       mc.collect_results(world);
     }
 

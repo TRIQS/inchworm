@@ -31,6 +31,8 @@ namespace inchworm::moves {
 
     auto t_ratio = try_config_update(prop_data.config);
     if (t_ratio == 0.0) return 0.0; // Check if move has failed
+    auto prop_pert_order = prop_data.config.size();
+    if (params.max_order && prop_pert_order > *params.max_order) return 0.0;
 
     // ------ Calculate the hybridization weight -------
 
@@ -77,9 +79,7 @@ namespace inchworm::moves {
 
     //// Reweight perturbation orders below the reweighting_cutoff to guarantee
     //// that the zeroth order is sampled properly for normalization purposes
-    //// FIXME Improve reweighting using proper perturbation order histogram
-    if (diagram.perturbation_order() < reweighting_cutoff)
-      prop_data.weights.imp *= std::pow(reweighting_cutoff - diagram.perturbation_order(), 2);
+    if (prop_pert_order < reweighting_cutoff) prop_data.weights.imp *= reweighting_coeffs[prop_pert_order];
 
     // ------ Calculate overall weight ratio -------
 

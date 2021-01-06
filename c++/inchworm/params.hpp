@@ -85,11 +85,17 @@ namespace inchworm {
     /// Number of MC cycles
     int n_cycles;
 
-    /// Length of a MC cycles
-    int length_cycle = 50;
+    /// Length of a MC cycles, auto-deduce if not provided
+    std::optional<int> length_cycle = {};
 
     /// Number of warmup cycles
-    int n_warmup_cycles = 5000;
+    int n_warmup_cycles = 1000;
+
+    /// Number of callibration cycles
+    int n_callibration_cycles = 1000;
+
+    /// The maximum order [optional]
+    std::optional<int> max_order = {};
 
     /// Random seed of the random generator
     int random_seed = 34789 + 928374 * mpi::communicator().rank();

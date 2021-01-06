@@ -25,8 +25,11 @@ namespace inchworm::moves {
     /// Destructor
     virtual ~base_move() = default;
 
-    /// The cutoff for the weighting function
-    inline static long reweighting_cutoff = 0;
+    /// The reweighting cutoff order
+    inline static int reweighting_cutoff = 0;
+
+    /// The reweighting coefficients
+    inline static std::vector<double> reweighting_coeffs = {};
 
     protected:
     /// The function to update the configuration
