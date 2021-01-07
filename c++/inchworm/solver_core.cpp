@@ -120,8 +120,7 @@ namespace inchworm {
       std::printf("     average_order: %5f\n", res.average_order);
       if (res.order_histogram.size() > 0) {
         std::printf("     order_histogram: [");
-        for (auto v : res.order_histogram)
-          if (v != 0.0) std::printf(" %.3f, ", v);
+        for (auto v : res.order_histogram) std::printf(" %.3f, ", v);
         std::printf("]\n");
       }
     }
@@ -193,8 +192,7 @@ namespace inchworm {
         std::printf("     average_order: %4f\n", res.average_order);
         if (res.order_histogram.size() > 0) {
           std::printf("     order_histogram: [");
-          for (auto v : res.order_histogram)
-            if (v != 0.0) std::printf(" %.3f, ", v);
+          for (auto v : res.order_histogram) std::printf(" %.3f, ", v);
           std::printf("]\n");
         }
       }
@@ -267,8 +265,7 @@ namespace inchworm {
         std::printf("     average_order: %5f\n", res.average_order);
         if (res.order_histogram.size() > 0) {
           std::printf("     order_histogram: [");
-          for (auto v : res.order_histogram)
-            if (v != 0.0) std::printf(" %.3f, ", v);
+          for (auto v : res.order_histogram) std::printf(" %.3f, ", v);
           std::printf("]\n");
         }
       }
@@ -321,34 +318,46 @@ namespace inchworm {
     }
     auto results = qmc_results_t{shape_of_frame};
 
-    // Run the warmup and callibration
-    auto callibration_results = results;
-    mc.add_measure(measures::average_order{params, qmc_data, callibration_results}, "measure the average perturbation order");
-    mc.add_measure(measures::order_histogram{params, qmc_data, callibration_results}, "measure the perturbation order histogram");
-    int status = mc.warmup_and_accumulate(params.n_warmup_cycles, params.n_callibration_cycles, 100 /* warmup & callibration cycle length */,
-                                          triqs::utility::clock_callback(params.max_time));
-    mc.collect_results(world);
-    mc.clear_measures();
+    // Run the warmup and callibration loop
+    auto length_cycle = params.length_cycle.value_or(100);
+    int status        = mc.warmup(params.n_warmup_cycles, length_cycle, triqs::utility::clock_callback(params.max_time));
+    for (int n = 1; status == 0; ++n) {
+      if (params.verbosity > 2) std::cout << "\nCallibration-loop " << n << "\n";
 
-    auto acc_rates = mc.get_acceptance_rates();
-    if (acc_rates["insert move"] == 0) TRIQS_RUNTIME_ERROR << "Zero acceptance rate for insertion move";
-    if (acc_rates["remove move"] == 0) TRIQS_RUNTIME_ERROR << "Zero acceptance rate for removal move";
-    if (params.max_order && callibration_results.order_histogram[*params.max_order] > 0.0)
-      if (world.rank() == 0)
-        std::cout << "WARNING: Maximum perturbation order was sampled with a finite probability of "
-                  << callibration_results.order_histogram[*params.max_order] << ". Check convergence w.r.t. max_order!\n";
+      auto callibration_results = results;
+      mc.add_measure(measures::average_order{params, qmc_data, callibration_results}, "measure the average perturbation order");
+      mc.add_measure(measures::order_histogram{params, qmc_data, callibration_results}, "measure the perturbation order histogram");
+      status = mc.accumulate(params.n_callibration_cycles, length_cycle, triqs::utility::clock_callback(params.max_time));
+      if (status != 0) break;
+      mc.collect_results(world);
+      mc.clear_measures();
 
-    // Update reweighting coefficients based on perturbation order histogram
-    moves::base_move::reweighting_cutoff = callibration_results.average_order;
-    moves::base_move::reweighting_coeffs = std::vector<double>(callibration_results.average_order);
-    for (auto k : range(callibration_results.average_order))
-      moves::base_move::reweighting_coeffs[k] = 1.0 / std::max(callibration_results.order_histogram[k], 0.5 / params.n_callibration_cycles);
+      // Fix the reweighting cutoff only on the first callibration loop
+      if (n == 1) {
+        moves::base_move::reweighting_cutoff = std::ceil(callibration_results.average_order);
+        moves::base_move::reweighting_coeffs.resize(moves::base_move::reweighting_cutoff, 1.0);
+      }
 
-    // Auto-deduce cycle length if not set
-    // FIXME Use autocorrelation time as deduced from e.g. perturbation order here
-    auto length_cycle = params.length_cycle.value_or(
-       std::max(10l, long(0.5 * callibration_results.average_order / std::min(acc_rates["insert move"], acc_rates["remove move"]))));
-    if (not params.length_cycle && params.verbosity > 2) { std::cout << "Cycle length deduced in callibration phase: " << length_cycle << "\n"; }
+      // Update reweighting coefficients based on perturbation order histogram and average_order
+      for (auto k : range(callibration_results.average_order))
+        moves::base_move::reweighting_coeffs[k] *= callibration_results.order_histogram[callibration_results.average_order]
+           / std::max(callibration_results.order_histogram[k], 0.5 / params.n_callibration_cycles);
+
+      // Auto-deduce cycle length if not set
+      // FIXME Use autocorrelation time as deduced from e.g. perturbation order here
+      auto acc_rates             = mc.get_acceptance_rates();
+      double max_insert_acc_rate = std::max(acc_rates.at("insert move"), params.use_double_insertion ? acc_rates.at("double insert move") : 0.0);
+      double max_remove_acc_rate = std::max(acc_rates.at("remove move"), params.use_double_insertion ? acc_rates.at("double remove move") : 0.0);
+      if (max_insert_acc_rate == 0) TRIQS_RUNTIME_ERROR << "Zero acceptance rate for insertion moves";
+      if (max_remove_acc_rate == 0) TRIQS_RUNTIME_ERROR << "Zero acceptance rate for removal moves";
+      length_cycle = params.length_cycle.value_or(
+         std::max(10l, long(0.5 * callibration_results.average_order / std::min(max_insert_acc_rate, max_remove_acc_rate))));
+      if (not params.length_cycle && params.verbosity > 2) { std::cout << "  Deduced cycle length: " << length_cycle << "\n"; }
+
+      // Iterate the callibration until the zeroth order is sampled with finite probability
+      if (world.rank() == 0) PRINT(callibration_results.order_histogram[0]);
+      if (callibration_results.order_histogram[0] > 0.0) break;
+    }
 
     // Register all measurements
     mc.add_measure(measures::frame{params, qmc_data, results}, "measure the propagator / green function frame");
@@ -362,6 +371,10 @@ namespace inchworm {
     if (status == 0) {
       status = mc.accumulate(params.n_cycles, length_cycle, triqs::utility::clock_callback(params.max_time));
       mc.collect_results(world);
+      if (params.max_order && results.order_histogram[*params.max_order] > 0.0)
+        if (world.rank() == 0)
+          std::cout << "WARNING: Maximum perturbation order was sampled with a finite probability of " << results.order_histogram[*params.max_order]
+                    << ". Check convergence w.r.t. max_order!\n";
     }
 
     // Post Processing
