@@ -319,6 +319,8 @@ namespace inchworm {
     auto results = qmc_results_t{shape_of_frame};
 
     // Run the warmup and callibration loop
+    moves::base_move::reweighting_cutoff = 0;
+    moves::base_move::reweighting_coeffs.clear();
     auto length_cycle = params.length_cycle.value_or(100);
     int status        = mc.warmup(params.n_warmup_cycles, length_cycle, triqs::utility::clock_callback(params.max_time));
     for (int n = 1; status == 0; ++n) {
@@ -332,16 +334,17 @@ namespace inchworm {
       mc.collect_results(world);
       mc.clear_measures();
 
-      // Fix the reweighting cutoff only on the first callibration loop
+      // Fix the reweighting cutoff on the first callibration loop
       if (n == 1) {
         moves::base_move::reweighting_cutoff = std::ceil(callibration_results.average_order);
         moves::base_move::reweighting_coeffs.resize(moves::base_move::reweighting_cutoff, 1.0);
       }
 
-      // Update reweighting coefficients based on perturbation order histogram and average_order
-      for (auto k : range(callibration_results.average_order))
-        moves::base_move::reweighting_coeffs[k] *= callibration_results.order_histogram[callibration_results.average_order]
-           / std::max(callibration_results.order_histogram[k], 0.5 / params.n_callibration_cycles);
+      // Update reweighting coefficients based on the perturbation order histogram taking the histogram max as a reference
+      double order_histogram_max = *max_element(begin(callibration_results.order_histogram), end(callibration_results.order_histogram));
+      for (auto k : range(moves::base_move::reweighting_cutoff))
+        moves::base_move::reweighting_coeffs[k] *=
+           std::max(1.0, order_histogram_max / std::max(callibration_results.order_histogram[k], 0.5 / params.n_callibration_cycles));
 
       // Auto-deduce cycle length if not set
       // FIXME Use autocorrelation time as deduced from e.g. perturbation order here
@@ -355,7 +358,6 @@ namespace inchworm {
       if (not params.length_cycle && params.verbosity > 2) { std::cout << "  Deduced cycle length: " << length_cycle << "\n"; }
 
       // Iterate the callibration until the zeroth order is sampled with finite probability
-      if (world.rank() == 0) PRINT(callibration_results.order_histogram[0]);
       if (callibration_results.order_histogram[0] > 0.0) break;
     }
 
