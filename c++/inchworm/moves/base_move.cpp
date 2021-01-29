@@ -1,5 +1,6 @@
 #include "./base_move.hpp"
 #include "./../diagram/hyb_matrix.hpp"
+#include "./../diagram/proper_enum.hpp"
 #include "./../diagram/inclusion_exclusion.hpp"
 #include "./../u_frame.hpp"
 #include "./../atom_diag.hpp"
@@ -43,7 +44,11 @@ namespace inchworm::moves {
     if (params.use_bare_propagator)
       prop_data.weights.hyb = hyb_mat.det();
     else
+#ifdef PROPER_ENUMERATION
+      prop_data.weights.hyb = diagram::proper_enum(diagram, hyb_mat);
+#else
       prop_data.weights.hyb = diagram::inclusion_exclusion(diagram, hyb_mat);
+#endif
 
     double tol = 1e-12;
     if (std::abs(prop_data.weights.hyb) < tol) return 0.0;

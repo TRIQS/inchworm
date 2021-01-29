@@ -22,6 +22,7 @@ target_compile_definitions(${PROJECT_NAME}_c PUBLIC
 				$<$<BOOL:${Debug_Prints}>:INCHWORM_DEBUG_PRINTS>
 				$<$<BOOL:${Hybridisation_is_complex}>:HYBRIDISATION_IS_COMPLEX>
 				$<$<BOOL:${Local_hamiltonian_is_complex}>:LOCAL_HAMILTONIAN_IS_COMPLEX>
+				$<$<BOOL:${Proper_Enumeration}>:PROPER_ENUMERATION>
 			  )
 
 # Install library and headers
