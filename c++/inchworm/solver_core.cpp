@@ -189,6 +189,8 @@ namespace inchworm {
         res.print(solve_params.verbosity);
       }
       if (solve_params.verbosity > 0) {
+        std::printf("     max_element frame: %.4e\n", max_element(nda::map([](matrix_t const & m){ return max_element(m); })(res.frame)));
+        std::printf("     min_element frame: %.4e\n", min_element(nda::map([](matrix_t const & m){ return min_element(m); })(res.frame)));
         std::printf("     average_order: %4f\n", res.average_order);
         if (res.order_histogram.size() > 0) {
           std::printf("     order_histogram: [");
@@ -355,11 +357,11 @@ namespace inchworm {
       if (max_remove_acc_rate == 0) TRIQS_RUNTIME_ERROR << "Zero acceptance rate for removal moves";
       length_cycle = params.length_cycle.value_or(
          std::max(10l, long(0.5 * callibration_results.average_order / std::min(max_insert_acc_rate, max_remove_acc_rate))));
-      if (not params.length_cycle && params.verbosity > 2) { std::cout << "  Deduced cycle length: " << length_cycle << "\n"; }
 
       // Iterate the callibration until the zeroth order is sampled with finite probability
       if (callibration_results.order_histogram[0] > 0.0) break;
     }
+    if (not params.length_cycle && params.verbosity > 0) { std::cout << "     deduced cycle length: " << length_cycle << "\n"; }
 
     // Register all measurements
     mc.add_measure(measures::frame{params, qmc_data, results}, "measure the propagator / green function frame");
