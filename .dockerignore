@@ -3,6 +3,5 @@ CITATIONS.bib
 ChangeLog.md
 Dockerfile
 Jenkinsfile
-TODO
-.git/objecs/pack
+.git/objects/pack
 build*
