@@ -1,5 +1,5 @@
 # Generated automatically using the command :
-# c++2py ../../c++/inchworm/solver_core.hpp -p --members_read_only -N inchworm -a inchworm -m solver_core -o solver_core --moduledoc="The inchworm solve_core module" -C triqs -C nda --cxxflags="-std=c++20" --only="solver_core qmc_results_t"
+# c++2py ../../c++/inchworm/solver_core.hpp -p --members_read_only -N inchworm -a inchworm -m solver_core -o solver_core --moduledoc="The inchworm solve_core module" -C triqs -C nda_py --cxxflags="-std=c++20" --only="solver_core qmc_results_t"
 from cpp2py.wrap_generator import *
 
 # The module
@@ -177,6 +177,9 @@ c.add_method("""void solve (**inchworm::solve_params_t)""",
 | post_process            | bool                                 | true                                    | Perform post processing                             |
 +-------------------------+--------------------------------------+-----------------------------------------+-----------------------------------------------------+
 """)
+
+c.add_method("""inchworm::qmc_results_t solve_cthyb (inchworm::solve_params_t solve_params, double tau_max)""",
+             doc = r"""""")
 
 c.add_method("""inchworm::qmc_results_t solve_self_consistently (inchworm::solve_params_t solve_params, inchworm::u_tau_t u_tau_, double tau_split, double tau_max)""",
              doc = r"""""")

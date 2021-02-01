@@ -63,7 +63,6 @@ namespace inchworm {
     void solve(solve_params_t const &solve_params);
 
     // solve cthyb (no split point + bare propagator):
-    CPP2PY_IGNORE
     qmc_results_t solve_cthyb(solve_params_t const &solve_params, double tau_max);
 
     // self consistent solution (one step, with precalculated U(beta) from ED)
