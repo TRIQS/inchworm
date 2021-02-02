@@ -69,8 +69,7 @@ namespace inchworm {
     qmc_results_t solve_self_consistently(solve_params_t const &solve_params, u_tau_t const &u_tau_, double tau_split, double tau_max);
 
     // Run inchworm to calculate S.u_tau
-    CPP2PY_ARG_AS_DICT
-    void solve_inchworm(solve_params_t const &solve_params);
+    void solve_inchworm(solve_params_t const &solve_params, bool use_cthyb = false);
 
     // Sample the Green function S.G_tau
     CPP2PY_ARG_AS_DICT

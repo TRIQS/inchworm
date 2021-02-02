@@ -130,7 +130,7 @@ namespace inchworm {
 
   //------------------------------
 
-  void solver_core::solve_inchworm(solve_params_t const &solve_params) {
+  void solver_core::solve_inchworm(solve_params_t const &solve_params, bool use_cthyb) {
 
     // Initialize solver
     this->init(solve_params);
@@ -161,11 +161,11 @@ namespace inchworm {
       //
       // tau_split < tau_max <= beta
       //
-      double tau_split = beta * (n - 1) / (constr_params.n_tau_inch - 1);
+      double tau_split = use_cthyb ? 0.0 : beta * (n - 1) / (constr_params.n_tau_inch - 1);
       double tau_max   = beta * n / (constr_params.n_tau_inch - 1);
 
       // use bare propagator (cthyb) only on the first inchworm iteration:
-      bool use_bare_propagator = (n == 1);
+      bool use_bare_propagator = (n == 1) or use_cthyb;
 
       // calculation of the Monte Carlo solution:
       auto res = qmc_step(solve_params, tau_split, tau_max, use_bare_propagator, MODE::PROPAGATOR);
