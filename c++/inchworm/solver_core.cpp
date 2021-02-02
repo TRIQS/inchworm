@@ -204,6 +204,9 @@ namespace inchworm {
 
       // Initialize other results
       if (solve_params.measure_order_histogram) order_histograms.push_back(res.order_histogram);
+
+      // Break out of loop when interrupted by signal
+      if (res.status == 2) break;
     }
   }
 
@@ -276,6 +279,9 @@ namespace inchworm {
 
       // Initialize other results
       if (solve_params.measure_order_histogram) order_histograms.push_back(res.order_histogram);
+
+      // Break out of loop when interrupted by signal
+      if (res.status == 2) break;
     }
   }
 
@@ -373,7 +379,7 @@ namespace inchworm {
 
     // Perform QMC run and collect results
     if (status == 0) {
-      status = mc.accumulate(params.n_cycles, length_cycle, triqs::utility::clock_callback(params.max_time));
+      results.status = mc.accumulate(params.n_cycles, length_cycle, triqs::utility::clock_callback(params.max_time));
       mc.collect_results(world);
       if (params.max_order && results.order_histogram[*params.max_order] > 0.0)
         if (world.rank() == 0)
@@ -384,7 +390,7 @@ namespace inchworm {
     // Post Processing
     //if (params.post_process) { post_process(params); }
 
-    if (status == 2) TRIQS_RUNTIME_ERROR << "Inchworm was stopped by signal";
+    if (results.status == 2) std::cerr << "Warning: Inchworm was interrupted by signal\n";
 
     return results;
   }

@@ -60,6 +60,11 @@ c.add_member(c_name = "average_order",
              read_only= True,
              doc = r"""""")
 
+c.add_member(c_name = "status",
+             c_type = "int",
+             read_only= True,
+             doc = r"""""")
+
 c.add_constructor("""(std::vector<int> shape_of_frame)""", doc = r"""""")
 
 c.add_method("""void normalize (double normalization_cte)""",
