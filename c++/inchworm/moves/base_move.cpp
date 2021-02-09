@@ -82,8 +82,8 @@ namespace inchworm::moves {
 
     prop_data.weights.imp = frobenius_norm(prop_data.frame);
 
-    //// Reweight perturbation orders below the reweighting_cutoff to guarantee
-    //// that the zeroth order is sampled properly for normalization purposes
+    // Reweight perturbation orders below the reweighting_cutoff to guarantee
+    // that the zeroth order is sampled properly for normalization purposes
     if (prop_pert_order < reweighting_cutoff) prop_data.weights.imp *= reweighting_coeffs[prop_pert_order];
 
     // ------ Calculate overall weight ratio -------
@@ -97,7 +97,7 @@ namespace inchworm::moves {
     // ------ Debugging Information -------
 
 #ifdef INCHWORM_DEBUG_PRINTS
-    std::printf("\n\n====== Try %s ======\n", name());
+    std::printf("\n\n====== Try %s ======\n", name().c_str());
     print_configuration(diagram);
     if (params.mode == MODE::PROPAGATOR)
       print(prop_data.u_partial);
