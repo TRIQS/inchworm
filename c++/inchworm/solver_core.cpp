@@ -344,15 +344,20 @@ namespace inchworm {
 
       // Fix the reweighting cutoff on the first callibration loop
       if (n == 1) {
-        moves::base_move::reweighting_cutoff = std::ceil(callibration_results.average_order);
+        moves::base_move::reweighting_cutoff = std::max(1.0, std::ceil(callibration_results.average_order));
         moves::base_move::reweighting_coeffs.resize(moves::base_move::reweighting_cutoff, 1.0);
       }
 
       // Update reweighting coefficients based on the perturbation order histogram taking the histogram max as a reference
-      double order_histogram_max = *max_element(begin(callibration_results.order_histogram), end(callibration_results.order_histogram));
+      auto const &order_histogram = callibration_results.order_histogram;
+      double order_histogram_max  = *max_element(begin(order_histogram), end(order_histogram));
       for (auto k : range(moves::base_move::reweighting_cutoff))
         moves::base_move::reweighting_coeffs[k] *=
-           std::max(1.0, order_histogram_max / std::max(callibration_results.order_histogram[k], 0.5 / params.n_callibration_cycles));
+           std::max(1.0, order_histogram_max / std::max(order_histogram[k], 0.5 / params.n_callibration_cycles));
+
+      // Sample zeroth only at most half of the time
+      if(0.5 < order_histogram[0])
+	moves::base_move::reweighting_coeffs[0] *= 0.95 * std::max(1.0 - order_histogram[0], 0.5 / params.n_callibration_cycles) / order_histogram[0];
 
       // Auto-deduce cycle length if not set
       // FIXME Use autocorrelation time as deduced from e.g. perturbation order here
@@ -365,9 +370,9 @@ namespace inchworm {
          std::max(10l, long(0.5 * callibration_results.average_order / std::min(max_insert_acc_rate, max_remove_acc_rate))));
 
       // Iterate the callibration until the zeroth order is sampled with finite probability
-      if (callibration_results.order_histogram[0] > 0.0) break;
+      if (order_histogram[0] > 0.0 and order_histogram[0] <= 0.5) break;
     }
-    if (not params.length_cycle && params.verbosity > 0) { std::cout << "     deduced cycle length: " << length_cycle << "\n"; }
+    if (not params.length_cycle and params.verbosity > 0) { std::cout << "     deduced cycle length: " << length_cycle << "\n"; }
 
     // Register all measurements
     mc.add_measure(measures::frame{params, qmc_data, results}, "measure the propagator / green function frame");
