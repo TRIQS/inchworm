@@ -85,6 +85,9 @@ namespace inchworm {
     /// Maximum probability of order zero sampling
     double max_prob_zeroth_order = 1.0;
 
+    /// Number of inchworm steps before interruption
+    int n_tau_inch_stop = 100000;
+
     /// Number of MC cycles
     int n_cycles;
 
