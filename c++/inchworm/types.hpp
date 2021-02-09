@@ -9,6 +9,8 @@
 #include <nda/macros.hpp>
 #include <nda/clef/literals.hpp>
 
+#include <iomanip>
+
 namespace inchworm {
 
   using namespace std::complex_literals; // Complex Unity 1i
@@ -92,5 +94,13 @@ namespace inchworm {
 
     friend inline bool operator<(fop_t const &o1, fop_t const &o2) { return o1.tau < o2.tau; }
   };
+
+  inline std::ostream &operator<<(std::ostream &os, fop_t const & op){
+    os << std::setprecision(4);
+    os << "c";
+    if(op.dag) os << "_dag";
+    os << "[tau: " << op.tau << ", bl: " << op.bl << ", idx: " << op.idx << "]";
+    return os;
+  }
 
 } // namespace inchworm
