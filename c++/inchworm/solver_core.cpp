@@ -189,8 +189,8 @@ namespace inchworm {
         res.print(solve_params.verbosity);
       }
       if (solve_params.verbosity > 0) {
-        std::printf("     max_element frame: %.4e\n", max_element(nda::map([](matrix_t const & m){ return max_element(m); })(res.frame)));
-        std::printf("     min_element frame: %.4e\n", min_element(nda::map([](matrix_t const & m){ return min_element(m); })(res.frame)));
+        std::printf("     max_element frame: %.4e\n", max_element(nda::map([](matrix_t const &m) { return max_element(m); })(res.frame)));
+        std::printf("     min_element frame: %.4e\n", min_element(nda::map([](matrix_t const &m) { return min_element(m); })(res.frame)));
         std::printf("     average_order: %4f\n", res.average_order);
         if (res.order_histogram.size() > 0) {
           std::printf("     order_histogram: [");
