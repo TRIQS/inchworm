@@ -329,8 +329,9 @@ namespace inchworm {
     // Run the warmup and callibration loop
     moves::base_move::reweighting_cutoff = 0;
     moves::base_move::reweighting_coeffs.clear();
-    auto length_cycle = params.length_cycle.value_or(100);
-    int status        = mc.warmup(params.n_warmup_cycles, length_cycle, triqs::utility::clock_callback(params.max_time));
+    auto length_cycle   = params.length_cycle.value_or(100);
+    size_t hist_max_idx = 0;
+    int status          = mc.warmup(params.n_warmup_cycles, length_cycle, triqs::utility::clock_callback(params.max_time));
     for (int n = 1; status == 0; ++n) {
       if (params.verbosity > 2) std::cout << "\nCallibration-loop " << n << "\n";
 
@@ -342,22 +343,18 @@ namespace inchworm {
       mc.collect_results(world);
       mc.clear_measures();
 
-      // Fix the reweighting cutoff on the first callibration loop
-      if (n == 1) {
-        moves::base_move::reweighting_cutoff = std::max(1.0, std::ceil(callibration_results.average_order));
+      // Update reweighting coefficients based on the perturbation order histogram taking the histogram max as a reference
+      auto const &hist = callibration_results.order_histogram;
+      if (n == 1) { // Set the hist_max_idx and reweighting cutoff on the first iteration
+        hist_max_idx                         = std::distance(begin(hist), max_element(begin(hist), end(hist)));
+        moves::base_move::reweighting_cutoff = std::max(1ul, hist_max_idx);
         moves::base_move::reweighting_coeffs.resize(moves::base_move::reweighting_cutoff, 1.0);
       }
-
-      // Update reweighting coefficients based on the perturbation order histogram taking the histogram max as a reference
-      auto const &order_histogram = callibration_results.order_histogram;
-      double order_histogram_max  = *max_element(begin(order_histogram), end(order_histogram));
-      for (auto k : range(moves::base_move::reweighting_cutoff))
-        moves::base_move::reweighting_coeffs[k] *=
-           std::max(1.0, order_histogram_max / std::max(order_histogram[k], 0.5 / params.n_callibration_cycles));
-
-      // Sample zeroth only at most half of the time
-      if(0.5 < order_histogram[0])
-	moves::base_move::reweighting_coeffs[0] *= 0.95 * std::max(1.0 - order_histogram[0], 0.5 / params.n_callibration_cycles) / order_histogram[0];
+      for (auto k : range(hist_max_idx)) // Scale up the weight for orders below hist_max_idx
+        moves::base_move::reweighting_coeffs[k] *= std::max(1.0, hist[hist_max_idx] / std::max(hist[k], 0.5 / params.n_callibration_cycles));
+      if (params.max_prob_zeroth_order < hist[0]) // Scale down the weight for the zeroth order if necessary
+        moves::base_move::reweighting_coeffs[0] *= 0.95 * std::max(1.0 - hist[0], 0.5 / params.n_callibration_cycles) / hist[0]
+           * params.max_prob_zeroth_order / (1.0 - params.max_prob_zeroth_order);
 
       // Auto-deduce cycle length if not set
       // FIXME Use autocorrelation time as deduced from e.g. perturbation order here
@@ -370,7 +367,7 @@ namespace inchworm {
          std::max(10l, long(0.5 * callibration_results.average_order / std::min(max_insert_acc_rate, max_remove_acc_rate))));
 
       // Iterate the callibration until the zeroth order is sampled with finite probability
-      if (order_histogram[0] > 0.0 and order_histogram[0] <= 0.5) break;
+      if (hist[0] > 0.0 and hist[0] <= params.max_prob_zeroth_order) break;
     }
     if (not params.length_cycle and params.verbosity > 0) { std::cout << "     deduced cycle length: " << length_cycle << "\n"; }
 

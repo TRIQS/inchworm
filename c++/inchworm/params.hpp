@@ -82,6 +82,9 @@ namespace inchworm {
 
     // ----------- QMC Specific -----------
 
+    /// Maximum probability of order zero sampling
+    double max_prob_zeroth_order = 1.0;
+
     /// Number of MC cycles
     int n_cycles;
 

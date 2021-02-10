@@ -153,6 +153,8 @@ c.add_method("""void solve (**inchworm::solve_params_t)""",
 +-------------------------+--------------------------------------+-----------------------------------------+-----------------------------------------------------+
 | quantum_numbers         | list(Operator)                       | [Total Particle Number]                 | Quantum numbers                                     |
 +-------------------------+--------------------------------------+-----------------------------------------+-----------------------------------------------------+
+| max_prob_zeroth_order   | double                               | 1.0                                     | Maximum probability of order zero sampling          |
++-------------------------+--------------------------------------+-----------------------------------------+-----------------------------------------------------+
 | n_cycles                | int                                  | --                                      | Number of MC cycles                                 |
 +-------------------------+--------------------------------------+-----------------------------------------+-----------------------------------------------------+
 | length_cycle            | std::optional<int>                   | {}                                      | Length of a MC cycles, auto-deduce if not provided  |
@@ -205,6 +207,8 @@ c.add_method("""void solve_green (**inchworm::solve_params_t)""",
 | partition_method        | str                                  | "automatic"                             | Partition method                                    |
 +-------------------------+--------------------------------------+-----------------------------------------+-----------------------------------------------------+
 | quantum_numbers         | list(Operator)                       | [Total Particle Number]                 | Quantum numbers                                     |
++-------------------------+--------------------------------------+-----------------------------------------+-----------------------------------------------------+
+| max_prob_zeroth_order   | double                               | 1.0                                     | Maximum probability of order zero sampling          |
 +-------------------------+--------------------------------------+-----------------------------------------+-----------------------------------------------------+
 | n_cycles                | int                                  | --                                      | Number of MC cycles                                 |
 +-------------------------+--------------------------------------+-----------------------------------------+-----------------------------------------------------+
@@ -269,6 +273,11 @@ c.add_member(c_name = "quantum_numbers",
              doc = r"""Quantum numbers
      type: list(Operator)
      default: [Total Particle Number]""")
+
+c.add_member(c_name = "max_prob_zeroth_order",
+             c_type = "double",
+             initializer = """ 1.0 """,
+             doc = r"""Maximum probability of order zero sampling""")
 
 c.add_member(c_name = "n_cycles",
              c_type = "int",
