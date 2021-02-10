@@ -32,7 +32,7 @@ namespace inchworm {
     int n_tau = 101;
 
     /// Number of tau points for the propagator
-    int n_tau_inch = 11;
+    int n_tau_inch = 101;
 
     /// Number of tau points for the Green function
     int n_tau_green = 101;

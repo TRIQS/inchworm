@@ -122,7 +122,7 @@ c.add_constructor("""(**inchworm::constr_params_t)""", doc = r"""Construct a INC
 +================+===================================+=========+======================================================+
 | n_tau          | int                               | 101     | Number of tau points for the hybridization function  |
 +----------------+-----------------------------------+---------+------------------------------------------------------+
-| n_tau_inch     | int                               | 11      | Number of tau points for the propagator              |
+| n_tau_inch     | int                               | 101     | Number of tau points for the propagator              |
 +----------------+-----------------------------------+---------+------------------------------------------------------+
 | n_tau_green    | int                               | 101     | Number of tau points for the Green function          |
 +----------------+-----------------------------------+---------+------------------------------------------------------+
@@ -391,7 +391,7 @@ c.add_member(c_name = "n_tau",
 
 c.add_member(c_name = "n_tau_inch",
              c_type = "int",
-             initializer = """ 11 """,
+             initializer = """ 101 """,
              doc = r"""Number of tau points for the propagator""")
 
 c.add_member(c_name = "n_tau_green",
