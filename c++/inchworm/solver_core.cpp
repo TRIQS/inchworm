@@ -139,12 +139,13 @@ namespace inchworm {
     container_set::operator=(container_set{});
 
     // Initialize empty propagator
-    u_tau = u_tau_t{{constr_params.beta, Fermion, constr_params.n_tau_inch}, ad_imp.get_subspace_dims()};
-
+    auto u_tau_zero = u_tau_t{{constr_params.beta, Fermion, constr_params.n_tau_inch}, ad_imp.get_subspace_dims()};
+    u_tau_zero() = 0.;
+    u_tau = u_tau_zero;
     for (auto &ubl : u_tau) {
-      ubl() = 0.;
       for (int i = 0; i < ubl.target_shape()[0]; ++i) ubl[0](i, i) = 1;
     }
+    u_tau_by_order = {u_tau};
 
     if (solve_params.verbosity > 0) std::cout << "\nStarting inchworm calculation of the propagator.. \n";
 
@@ -203,6 +204,12 @@ namespace inchworm {
 
       // Assign u_frame to the propagator u_tau, in order to be able to use it in next iteration
       set_frame(res.frame, u_tau, n);
+
+      // Assign u_frame_by_order to the propagator u_tau_by_order
+      if (solve_params.measure_frame_by_order) {
+        if (res.frame_by_order.size() > u_tau_by_order.size()) u_tau_by_order.resize(res.frame_by_order.size(), u_tau_zero);
+        for (auto k : range(res.frame_by_order.size())) set_frame(res.frame_by_order[k], u_tau_by_order[k], n);
+      }
 
       // Initialize other results
       if (solve_params.measure_order_histogram) order_histograms.push_back(res.order_histogram);

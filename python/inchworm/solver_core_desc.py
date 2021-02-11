@@ -88,6 +88,11 @@ c.add_member(c_name = "G_tau",
              read_only= True,
              doc = r"""Greens function in imaginary time""")
 
+c.add_member(c_name = "u_tau_by_order",
+             c_type = "std::vector<u_tau_t>",
+             read_only= True,
+             doc = r"""Order-resolved propagator""")
+
 c.add_member(c_name = "order_histograms",
              c_type = "std::vector<std::vector<double>>",
              read_only= True,
@@ -155,7 +160,7 @@ c.add_method("""void solve (**inchworm::solve_params_t)""",
 +-------------------------+--------------------------------------+-----------------------------------------+-----------------------------------------------------+
 | max_prob_zeroth_order   | double                               | 1.0                                     | Maximum probability of order zero sampling          |
 +-------------------------+--------------------------------------+-----------------------------------------+-----------------------------------------------------+
-| n_tau_inch_stop         | int                                  | 100000                                  | Number of MC cycles                                 |
+| n_tau_inch_stop         | int                                  | 100000                                  | Number of inchworm steps before interruption        |
 +-------------------------+--------------------------------------+-----------------------------------------+-----------------------------------------------------+
 | n_cycles                | int                                  | --                                      | Number of MC cycles                                 |
 +-------------------------+--------------------------------------+-----------------------------------------+-----------------------------------------------------+
@@ -212,7 +217,7 @@ c.add_method("""void solve_green (**inchworm::solve_params_t)""",
 +-------------------------+--------------------------------------+-----------------------------------------+-----------------------------------------------------+
 | max_prob_zeroth_order   | double                               | 1.0                                     | Maximum probability of order zero sampling          |
 +-------------------------+--------------------------------------+-----------------------------------------+-----------------------------------------------------+
-| n_tau_inch_stop         | int                                  | 100000                                  | Number of MC cycles                                 |
+| n_tau_inch_stop         | int                                  | 100000                                  | Number of inchworm steps before interruption        |
 +-------------------------+--------------------------------------+-----------------------------------------+-----------------------------------------------------+
 | n_cycles                | int                                  | --                                      | Number of MC cycles                                 |
 +-------------------------+--------------------------------------+-----------------------------------------+-----------------------------------------------------+
@@ -286,7 +291,7 @@ c.add_member(c_name = "max_prob_zeroth_order",
 c.add_member(c_name = "n_tau_inch_stop",
              c_type = "int",
              initializer = """ 100000 """,
-             doc = r"""Number of MC cycles""")
+             doc = r"""Number of inchworm steps before interruption""")
 
 c.add_member(c_name = "n_cycles",
              c_type = "int",

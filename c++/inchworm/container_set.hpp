@@ -50,6 +50,9 @@ namespace inchworm {
     /// Greens function in imaginary time
     g_tau_t G_tau;
 
+    /// Order-resolved propagator
+    std::vector<u_tau_t> u_tau_by_order;
+
     /// Order histograms
     std::vector<std::vector<double>> order_histograms;
 
