@@ -2,9 +2,11 @@
 #include "./../diagram/hyb_matrix.hpp"
 #include "./../diagram/proper_enum.hpp"
 #include "./../diagram/inclusion_exclusion.hpp"
+#include "./../diagram/print.hpp"
 #include "./../u_frame.hpp"
 #include "./../atom_diag.hpp"
 #include "./../impurity_product.hpp"
+#include "./../util.hpp"
 
 namespace inchworm::moves {
 
@@ -99,17 +101,18 @@ namespace inchworm::moves {
 #ifdef INCHWORM_DEBUG_PRINTS
     std::printf("\n\n====== Try %s ======\n", name().c_str());
     print_configuration(diagram);
-    if (params.mode == MODE::PROPAGATOR)
-      print(prop_data.u_partial);
-    else // MODE::GREENFUNCTION
-      print(prop_data.g_frame);
+    print(prop_data.frame);
     hyb_mat.print();
     std::printf("\n\nhyb.det()=% 4.7f \n", hyb_mat.det());
     std::printf("\n\nsign= %d  w_hyb=% 4.7f  w_imp=% 4.7f    old_w_hyb=% 4.7f  old_w_imp=% 4.7f \n", prop_data.sign, prop_data.weights.hyb,
-                prop_data.weights.imp, data.w.hyb, data.w.imp);
+                prop_data.weights.imp, data.weights.hyb, data.weights.imp);
     std::printf("\n\nsign_ratio= %d  w_hyb_ratio=% 4.7f  w_imp_ratio=% 4.7f  t_ratio=% 4.7f\n", sign_ratio, w_hyb_ratio, w_imp_ratio, t_ratio);
-    std::printf("proper_enum w.hyb         =% 4.7f \n", diagram::proper_enum(diagram, hyb_mat, true /*verbose*/));
-    std::printf("inclusion_exclusion w.hyb =% 4.7f \n", diagram::inclusion_exclusion(diagram, hyb_mat, true /*verbose*/));
+    std::printf("\n\nratio=% 4.7f\n", ratio);
+    if (not params.use_bare_propagator) {
+      std::printf("proper_enum w.hyb         =% 4.7f \n", diagram::proper_enum(diagram, hyb_mat));
+      std::printf("inclusion_exclusion w.hyb =% 4.7f \n", diagram::inclusion_exclusion(diagram, hyb_mat));
+    }
+    getchar();
 #endif
 
     return ratio;
@@ -117,7 +120,7 @@ namespace inchworm::moves {
 
   scalar_t base_move::accept() {
 #ifdef INCHWORM_DEBUG_PRINTS
-    std::printf("\n\n====== Accept %s ======\n", name());
+    std::printf("\n\n====== Accept %s ======\n", name().c_str());
 #endif
     data = prop_data;
     return 1.0;
