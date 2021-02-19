@@ -359,11 +359,17 @@ namespace inchworm {
         moves::base_move::reweighting_cutoff = std::max(1ul, hist_max_idx);
         moves::base_move::reweighting_coeffs.resize(moves::base_move::reweighting_cutoff, 1.0);
       }
-      for (auto k : range(hist_max_idx)) // Scale up the weight for orders below hist_max_idx
-        moves::base_move::reweighting_coeffs[k] *= std::max(1.0, hist[hist_max_idx] / std::max(hist[k], 0.5 / params.n_callibration_cycles));
-      if (params.max_prob_zeroth_order < hist[0]) // Scale down the weight for the zeroth order if necessary
-        moves::base_move::reweighting_coeffs[0] *= 0.95 * std::max(1.0 - hist[0], 0.5 / params.n_callibration_cycles) / hist[0]
-           * params.max_prob_zeroth_order / (1.0 - params.max_prob_zeroth_order);
+      for (auto k : range(hist_max_idx)) { // Scale up the weight for orders below hist_max_idx
+        auto hist_ratio = std::max(1.0, hist[hist_max_idx] / std::max(hist[k], 0.5 / params.n_callibration_cycles));
+        moves::base_move::reweighting_coeffs[k] *= hist_ratio;
+        if (qmc_data.config.size() == k) qmc_data.weights.imp *= hist_ratio;
+      }
+      if (params.max_prob_zeroth_order < hist[0]) { // Scale down the weight for the zeroth order if necessary
+        auto zero_reweight = 0.95 * std::max(1.0 - hist[0], 0.5 / params.n_callibration_cycles) / hist[0] * params.max_prob_zeroth_order
+           / (1.0 - params.max_prob_zeroth_order);
+        moves::base_move::reweighting_coeffs[0] *= zero_reweight;
+        if (qmc_data.config.size() == 0) qmc_data.weights.imp *= zero_reweight;
+      }
 
       // Auto-deduce cycle length if not set
       // FIXME Use autocorrelation time as deduced from e.g. perturbation order here
