@@ -38,6 +38,8 @@ namespace inchworm {
 
     int status = 0;
 
+    double auto_corr_time;
+
     qmc_results_t(std::vector<int> const &shape_of_frame);
 
     void normalize(double normalization_cte);

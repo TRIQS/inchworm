@@ -338,7 +338,7 @@ namespace inchworm {
     // Run the warmup and callibration loop
     moves::base_move::reweighting_cutoff = 0;
     moves::base_move::reweighting_coeffs.clear();
-    auto length_cycle   = params.length_cycle.value_or(100);
+    auto length_cycle   = params.length_cycle.value_or(1);
     size_t hist_max_idx = 0;
     int status          = mc.warmup(params.n_warmup_cycles, length_cycle, triqs::utility::clock_callback(params.max_time));
     for (int n = 1; status == 0; ++n) {
@@ -347,6 +347,8 @@ namespace inchworm {
       auto callibration_results = results;
       mc.add_measure(measures::average_order{params, qmc_data, callibration_results}, "measure the average perturbation order");
       mc.add_measure(measures::order_histogram{params, qmc_data, callibration_results}, "measure the perturbation order histogram");
+      mc.add_measure(measures::autocorr{params, qmc_data, callibration_results}, "measure the autocorrelation time");
+
       status = mc.accumulate(params.n_callibration_cycles, length_cycle, triqs::utility::clock_callback(params.max_time));
       if (status != 0) break;
       mc.collect_results(world);
@@ -372,14 +374,7 @@ namespace inchworm {
       }
 
       // Auto-deduce cycle length if not set
-      // FIXME Use autocorrelation time as deduced from e.g. perturbation order here
-      auto acc_rates             = mc.get_acceptance_rates();
-      double max_insert_acc_rate = std::max(acc_rates.at("insert move"), params.use_double_insertion ? acc_rates.at("double insert move") : 0.0);
-      double max_remove_acc_rate = std::max(acc_rates.at("remove move"), params.use_double_insertion ? acc_rates.at("double remove move") : 0.0);
-      if (max_insert_acc_rate == 0) TRIQS_RUNTIME_ERROR << "Zero acceptance rate for insertion moves";
-      if (max_remove_acc_rate == 0) TRIQS_RUNTIME_ERROR << "Zero acceptance rate for removal moves";
-      length_cycle = params.length_cycle.value_or(
-         std::max(10l, long(0.5 * callibration_results.average_order / std::min(max_insert_acc_rate, max_remove_acc_rate))));
+      length_cycle = params.length_cycle.value_or(std::ceil(length_cycle * callibration_results.auto_corr_time));
 
       // Iterate the callibration until the zeroth order is sampled with finite probability
       if (hist[0] > 0.0 and hist[0] <= params.max_prob_zeroth_order) break;

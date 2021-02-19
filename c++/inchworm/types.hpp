@@ -4,6 +4,7 @@
 #include <triqs/mesh.hpp>
 #include <triqs/operators/many_body_operator.hpp>
 #include <triqs/atom_diag/atom_diag.hpp>
+#include <triqs/stat/accumulator.hpp>
 
 #include <nda/nda.hpp>
 #include <nda/macros.hpp>
@@ -20,6 +21,7 @@ namespace inchworm {
   using namespace triqs::operators;
   using namespace triqs::hilbert_space;
   using namespace triqs::utility;
+  using namespace triqs::stat;
   using namespace h5;
   using namespace itertools;
   using namespace nda::clef::literals;
