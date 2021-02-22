@@ -31,7 +31,7 @@ namespace inchworm::measures {
 
     // Estimate auto-correlation time
     results.auto_corr_time = 1.0;
-    if (comm.rank() == 0 && errs[0] > 0) results.auto_corr_time = tau_estimate_from_errors(errs[errs.size() / 2], errs[0]);
+    if (comm.rank() == 0 && errs[0] > 0) results.auto_corr_time = tau_estimate_from_errors(errs[int(0.7 * errs.size())], errs[0]);
     mpi::broadcast(results.auto_corr_time, comm, 0);
 
     // Reset the accumulator
