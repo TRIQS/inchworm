@@ -3,6 +3,7 @@
 #include "container_set.hpp"
 #include "params.hpp"
 #include "types.hpp"
+#include "interpolator.hpp"
 
 namespace inchworm {
 
@@ -24,6 +25,9 @@ namespace inchworm {
 
     /// The propagator in imaginary time
     u_tau_t u_tau;
+
+    /// The interpolator on the propagator
+    interpolator_t u_interpolator;
 
     // The fundamental operator set associated with constr_params.gf_struct
     fundamental_operator_set fops;

@@ -30,6 +30,11 @@ install(TARGETS ${PROJECT_NAME}_c fmt EXPORT ${PROJECT_NAME}-targets DESTINATION
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} DESTINATION include FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h")
 
 
+# ========= GSL ==========
+
+find_package(GSL REQUIRED)
+target_link_libraries(${PROJECT_NAME}_c PRIVATE GSL::gsl)
+
 # ========= Static Analyzer Checks ==========
 
 option(ANALYZE_SOURCES OFF "Run static analyzer checks if found (clang-tidy, cppcheck)")

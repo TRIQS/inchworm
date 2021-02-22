@@ -1,6 +1,9 @@
 #include "./u_frame.hpp"
 #include "./util.hpp"
 
+#include <gsl/gsl_errno.h>
+#include <gsl/gsl_spline.h>
+
 namespace inchworm {
 
   // --------------- General frame / u_partial functionality ---------------
@@ -95,12 +98,6 @@ namespace inchworm {
   frame_t get_frame(u_tau_t const &u_tau, int idx) {
     frame_t res{u_tau.size()};
     for (auto bl : range(u_tau.size())) res[bl] = u_tau[bl][idx];
-    return res;
-  }
-
-  frame_t eval_frame(u_tau_t const &u_tau, double tau) {
-    frame_t res{u_tau.size()};
-    for (auto bl : range(u_tau.size())) res[bl] = u_tau[bl](tau);
     return res;
   }
 

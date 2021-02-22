@@ -57,6 +57,9 @@ namespace inchworm {
   // Get the frame of a Block Green function
   frame_t get_frame(u_tau_t const &u_tau, int idx);
 
+  // Evaluate a single block of a u_tau_t at tau using spline interpolation
+  matrix_t interpolate(u_tau_t const &u_tau, int bl, double tau, int n_tau_init);
+
   // Get the frame of a Block Green function using Green function evaluation
   frame_t eval_frame(u_tau_t const &u_tau, double tau);
 

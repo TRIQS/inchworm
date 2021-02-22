@@ -53,8 +53,8 @@ namespace inchworm::moves {
       if (params.use_bare_propagator) {
         prop_frame = make_frame(impurity_product(solver.ad_imp, diagram, params.tau_max, 0));
       } else { // FIXME incorporate treatment of tau_split into impurity product
-        prop_frame = make_frame(impurity_product(solver.ad_imp, diagram, params.tau_max, params.tau_split, &solver.u_tau)
-                                * impurity_product(solver.ad_imp, diagram, params.tau_split, 0, &solver.u_tau));
+        prop_frame = make_frame(impurity_product(solver.ad_imp, diagram, params.tau_max, params.tau_split, &solver.u_interpolator)
+                                * impurity_product(solver.ad_imp, diagram, params.tau_split, 0, &solver.u_interpolator));
       }
 
     } else { // MODE::GREENFUNCTION
@@ -64,8 +64,8 @@ namespace inchworm::moves {
 
       // Calculate -Tr[imp_prod(beta, tau) * c(tau) * imp_prod(tau, 0) * cdag(0)]
       // for all combinations of fundamental operator flavors
-      auto l          = impurity_product(solver.ad_imp, diagram, params.tau_max, params.tau_split, &solver.u_tau);
-      auto r          = impurity_product(solver.ad_imp, diagram, params.tau_split, 0, &solver.u_tau);
+      auto l          = impurity_product(solver.ad_imp, diagram, params.tau_max, params.tau_split, &solver.u_interpolator);
+      auto r          = impurity_product(solver.ad_imp, diagram, params.tau_split, 0, &solver.u_interpolator);
       prop_frame      = make_g_frame_from_l_and_r(solver.ad_imp, gf_struct, l, r);
 
       // Account for the sign due to the additional operator insertions

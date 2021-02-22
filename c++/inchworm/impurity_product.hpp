@@ -1,6 +1,7 @@
 #pragma once
 
 #include "types.hpp"
+#include "interpolator.hpp"
 #include "diagram/diagram.hpp"
 
 namespace inchworm {
@@ -26,10 +27,10 @@ namespace inchworm {
    * @param diagram The diagram configuration
    * @param tau_min The smallest time of the segment
    * @param tau_max The largest time of the segment
-   * @param u_tau_p Pointer to the full propagator. Must be initialized for all 0 < tau < tau_max - tau_min
+   * @param u_interpolator_p Pointer to the propagator interpolator. Must allow evaluation for all 0 < tau < tau_max - tau_min
    * @return The operator product
    */
   u_partial_t impurity_product(atom_diag const &ad, diagram::time_diagram_t const &diagram, double tau_max, double tau_min,
-                               u_tau_t const *const u_tau_p = nullptr);
+                               interpolator_t const *const u_interpolator_p = nullptr);
 
 } // namespace inchworm

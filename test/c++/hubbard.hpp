@@ -146,5 +146,5 @@ inline std::tuple<solver_core, solve_params_t, u_tau_t, g_tau_t> test_setup(int 
     }
   }
 
-  return {S, sp, u_tau, g_tau};
+  return {std::move(S), sp, u_tau, g_tau};
 }

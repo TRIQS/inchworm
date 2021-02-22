@@ -1,6 +1,7 @@
 #include "./impurity_product.hpp"
 #include "./atom_diag.hpp"
 #include "./u_frame.hpp"
+#include "./interpolator.hpp"
 
 namespace inchworm {
 
@@ -20,7 +21,7 @@ namespace inchworm {
   }
 
   u_partial_t impurity_product(atom_diag const &ad, diagram::time_diagram_t const &diagram, double tau_max, double tau_min,
-                               u_tau_t const *const u_tau_p) {
+                               interpolator_t const *const u_interpolator_p) {
     EXPECTS(tau_max > tau_min);
 
     // Filter out all operators in the time-window [tau_min, tau_max]
@@ -31,8 +32,8 @@ namespace inchworm {
 
     // Helper to calculate u_tau for both inchworm and cthyb case
     auto u_tau = [&](int bl, double tau) -> matrix_t {
-      if (u_tau_p) { // inchworm case, interpolate
-        return (*u_tau_p)[bl](tau);
+      if (u_interpolator_p) { // inchworm case, interpolate
+        return (*u_interpolator_p)(bl, tau);
       } else { // cthyb case
         auto bl_size = ad.get_subspace_dim(bl);
         auto res     = matrix_t::zeros({bl_size, bl_size});
