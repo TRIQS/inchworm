@@ -23,7 +23,7 @@ namespace inchworm::measures {
     auto errs = acc.log_bin_errors_mpi(comm);
 
     // Debug Prints
-    if (verbosity > 0) {
+    if (comm.rank() == 0 and verbosity > 1) {
       std::cout << "vars_mpi: [";
       for (auto err : errs) std::cout << err << " ";
       std::cout << "]\n";

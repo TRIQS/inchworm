@@ -379,7 +379,11 @@ namespace inchworm {
       // Iterate the callibration until the zeroth order is sampled with finite probability
       if (hist[0] > 0.0 and hist[0] <= params.max_prob_zeroth_order) break;
     }
-    if (not params.length_cycle and params.verbosity > 0) { std::cout << "     deduced cycle length: " << length_cycle << "\n"; }
+    if (not params.length_cycle and params.verbosity > 0) {
+      std::printf("     deduced cycle length: %d \n", length_cycle);
+      auto acc_rates = mc.get_acceptance_rates();
+      std::printf("     acceptance rates: %.4e, %.4e\n", acc_rates.at("insert move"), acc_rates.at("remove move"));
+    }
 
     // Register all measurements
     mc.add_measure(measures::frame{params, qmc_data, results}, "measure the propagator / green function frame");
