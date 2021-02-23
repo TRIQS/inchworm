@@ -153,7 +153,7 @@ namespace inchworm {
 
     // loop on different inchworm steps
     for (auto n : range(1, constr_params.n_tau_inch)) {
-      if (solve_params.verbosity > 0) std::printf(" ..step %ld/%d\n", n, constr_params.n_tau_inch - 1);
+      if (solve_params.verbosity > 0) std::printf("\n ..step %ld/%d\n", n, constr_params.n_tau_inch - 1);
 
       if (n > solve_params.n_tau_inch_stop) break;
 
@@ -341,6 +341,10 @@ namespace inchworm {
     auto length_cycle   = params.length_cycle.value_or(1);
     size_t hist_max_idx = 0;
     int status          = mc.warmup(params.n_warmup_cycles, length_cycle, triqs::utility::clock_callback(params.max_time));
+    if (params.verbosity > 0) {
+      std::printf("     Callibrating ...\n");
+      std::printf("         %-12s| %-12s| %-12s| %-12s| %-12s\n", "length_cycle", "hist0", "coeff0", "acc insert", "acc remove");
+    }
     for (int n = 1; status == 0; ++n) {
       if (params.verbosity > 2) std::cout << "\nCallibration-loop " << n << "\n";
 
@@ -376,13 +380,14 @@ namespace inchworm {
       // Auto-deduce cycle length if not set
       length_cycle = params.length_cycle.value_or(1.0 + std::ceil(length_cycle * callibration_results.auto_corr_time));
 
+      if (not params.length_cycle and params.verbosity > 0) {
+        auto acc_rates = mc.get_acceptance_rates();
+        std::printf("         %-12d| %-12.3f| %-12.3e| %-12.3f| %-12.3f\n", length_cycle, hist[0], moves::base_move::reweighting_coeffs[0],
+                    acc_rates.at("insert move"), acc_rates.at("remove move"));
+      }
+
       // Iterate the callibration until the zeroth order is sampled with finite probability
       if (hist[0] > 0.0 and hist[0] <= params.max_prob_zeroth_order) break;
-    }
-    if (not params.length_cycle and params.verbosity > 0) {
-      std::printf("     deduced cycle length: %d \n", length_cycle);
-      auto acc_rates = mc.get_acceptance_rates();
-      std::printf("     acceptance rates: %.4e, %.4e\n", acc_rates.at("insert move"), acc_rates.at("remove move"));
     }
 
     // Register all measurements
@@ -395,6 +400,7 @@ namespace inchworm {
 
     // Perform QMC run and collect results
     if (status == 0) {
+      if (params.verbosity > 0) std::printf("     Accumulating ...\n");
       results.status = mc.accumulate(params.n_cycles, length_cycle, triqs::utility::clock_callback(params.max_time));
       mc.collect_results(world);
       if (params.max_order && results.order_histogram[*params.max_order] > 0.0)

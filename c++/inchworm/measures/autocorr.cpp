@@ -24,7 +24,7 @@ namespace inchworm::measures {
 
     // Debug Prints
     if (comm.rank() == 0 and verbosity > 1) {
-      std::cout << "vars_mpi: [";
+      std::cout << "errs avg_k: [";
       for (auto err : errs) std::cout << err << " ";
       std::cout << "]\n";
     }
