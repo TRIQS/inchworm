@@ -374,7 +374,7 @@ namespace inchworm {
       }
 
       // Auto-deduce cycle length if not set
-      length_cycle = params.length_cycle.value_or(std::ceil(length_cycle * callibration_results.auto_corr_time));
+      length_cycle = params.length_cycle.value_or(1.0 + std::ceil(length_cycle * callibration_results.auto_corr_time));
 
       // Iterate the callibration until the zeroth order is sampled with finite probability
       if (hist[0] > 0.0 and hist[0] <= params.max_prob_zeroth_order) break;
