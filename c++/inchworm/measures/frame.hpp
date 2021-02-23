@@ -18,12 +18,18 @@ namespace inchworm::measures {
     void collect_results(mpi::communicator const &comm);
 
     private:
+    // Print verbosity
+    int verbosity;
+
     // The Monte-Carlo configuration and data
     qmc_data_t const &qmc_data;
 
     // References to the accumulation frames
     frame_t &frame_ref;
     frame_t &frame_0th_order_ref;
+
+    // The scalar accumulator for the auto-correlation analysis
+    accumulator<scalar_t> acc = {0.0, -1};
   };
 
 } // namespace inchworm::measures

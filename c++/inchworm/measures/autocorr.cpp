@@ -1,5 +1,4 @@
 #include "./autocorr.hpp"
-#include "./../u_frame.hpp"
 
 #include <h5/h5.hpp>
 
@@ -9,12 +8,6 @@ namespace inchworm::measures {
      : verbosity(params.verbosity), qmc_data(qmc_data_), results(results_) {}
 
   void autocorr::accumulate(scalar_t sign) {
-
-    // We weight the Monte-Carlo by the frobenius norm of the current frame
-    // This importance sampling factor has to be corrected in the measurement
-    scalar_t s = sign / (qmc_data.weights.imp);
-
-    //acc << s * trace(qmc_data.frame);
     acc << qmc_data.config.size();
   }
 

@@ -140,8 +140,8 @@ namespace inchworm {
 
     // Initialize empty propagator
     auto u_tau_zero = u_tau_t{{constr_params.beta, Fermion, constr_params.n_tau_inch}, ad_imp.get_subspace_dims()};
-    u_tau_zero() = 0.;
-    u_tau = u_tau_zero;
+    u_tau_zero()    = 0.;
+    u_tau           = u_tau_zero;
     for (auto &ubl : u_tau) {
       for (int i = 0; i < ubl.target_shape()[0]; ++i) ubl[0](i, i) = 1;
     }
