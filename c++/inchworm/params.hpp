@@ -95,10 +95,10 @@ namespace inchworm {
     std::optional<int> length_cycle = {};
 
     /// Number of warmup cycles
-    int n_warmup_cycles = 1000;
+    int n_warmup_cycles = 4096;
 
     /// Number of callibration cycles
-    int n_callibration_cycles = 1000;
+    int n_callibration_cycles = 4096;
 
     /// The maximum order [optional]
     std::optional<int> max_order = {};
