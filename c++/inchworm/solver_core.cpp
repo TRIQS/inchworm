@@ -155,7 +155,7 @@ namespace inchworm {
     for (auto n : range(1, constr_params.n_tau_inch)) {
       if (solve_params.verbosity > 0) std::printf("\n ..step %ld/%d\n", n, constr_params.n_tau_inch - 1);
 
-      if (n > solve_params.n_tau_inch_stop) break;
+      if (solve_params.n_tau_inch_stop && n > *solve_params.n_tau_inch_stop) break;
 
       // define the tau_split and tau_max for this specific inchworm step.
       //

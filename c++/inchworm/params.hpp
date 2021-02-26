@@ -86,7 +86,7 @@ namespace inchworm {
     double max_prob_zeroth_order = 1.0;
 
     /// Number of inchworm steps before interruption
-    int n_tau_inch_stop = 100000;
+    std::optional<int> n_tau_inch_stop = {};
 
     /// Number of MC cycles
     int n_cycles;
