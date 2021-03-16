@@ -20,7 +20,13 @@ namespace inchworm::moves {
   };
 
   struct double_remove : public base_move {
-    using base_move::base_move;
+
+    bool equal_blocks;
+
+    double_remove(qmc_data_t &data, gf_struct_t const &gf_struct, qmc_params_t const &qmc_params, triqs::mc_tools::random_generator &rng,
+                  bool equal_blocks)
+       : base_move(data, gf_struct, qmc_params, rng), equal_blocks(equal_blocks) {}
+
     inline std::string name() const override { return "Double Remove"; };
 
     /**

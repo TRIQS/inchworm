@@ -38,12 +38,6 @@ namespace inchworm::moves {
     /// The function to update the configuration
     virtual std::string name() const = 0;
 
-    /// The vector of all creation operators
-    std::vector<fop_t> all_d_ops;
-
-    /// The vector of all annihilation operators
-    std::vector<fop_t> all_d_dag_ops;
-
     /// The Monte-Carlo configuration
     qmc_data_t &data;
 
@@ -58,6 +52,12 @@ namespace inchworm::moves {
 
     /// the green function structure
     gf_struct_t const &gf_struct;
+
+    /// The vector of all creation operators
+    std::vector<std::vector<fop_t>> all_d_ops;
+
+    /// The vector of all annihilation operators
+    std::vector<std::vector<fop_t>> all_d_dag_ops;
   };
 
 } // namespace inchworm::moves

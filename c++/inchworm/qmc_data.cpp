@@ -3,63 +3,75 @@
 namespace inchworm {
 
   bool config_t::try_insert(fop_t const &d_dag, fop_t const &d) {
+    EXPECTS(d_dag.bl == d.bl);
+
     for (int i = 0; i < size() - 1; i++)
       if ((d_list[i].tau == d.tau) or (d_dag_list[i].tau == d_dag.tau)) return false;
-    if (d_dag.bl != d.bl) return false;
 
-    d_list.push_back(d);
-    d_dag_list.push_back(d_dag);
+    d_list.insert(std::upper_bound(d_list.begin(), d_list.end(), d), d);
+    d_dag_list.insert(std::upper_bound(d_dag_list.begin(), d_dag_list.end(), d_dag), d_dag);
+
+    d_bl_list[d.bl].push_back(d);
+    d_dag_bl_list[d_dag.bl].push_back(d_dag);
+
     return true;
   }
 
-  bool config_t::try_erase(int i_dag, int i) {
-    EXPECTS(i < size() && i_dag < size());
+  bool config_t::try_erase(long bl, long i_dag, long i) {
+    EXPECTS(i < size(bl) && i_dag < size(bl));
 
-    if (d_list[i].bl != d_dag_list[i_dag].bl) return false;
+    d_list.erase(std::find(begin(d_list), end(d_list), d_bl_list[bl][i]));
+    d_dag_list.erase(std::find(begin(d_dag_list), end(d_dag_list), d_dag_bl_list[bl][i_dag]));
 
-    d_list.erase(d_list.begin() + i);
-    d_dag_list.erase(d_dag_list.begin() + i_dag);
+    d_bl_list[bl].erase(d_bl_list[bl].begin() + i);
+    d_dag_bl_list[bl].erase(d_dag_bl_list[bl].begin() + i_dag);
 
     return true;
   }
 
   bool config_t::try_double_insert(fop_t const &d_dag1, fop_t const &d1, fop_t const &d_dag2, fop_t const &d2) {
+    EXPECTS(d_dag1.bl == d1.bl && d_dag2.bl == d2.bl);
+
     // Make sure that no two times are equal
+    // FIXME Protect equal time operator insertions
     for (int i = 0; i < size() - 1; i++)
       if ((d_list[i].tau == d1.tau) or (d_dag_list[i].tau == d_dag1.tau) or (d_list[i].tau == d2.tau) or (d_dag_list[i].tau == d_dag2.tau)
           or (d1.tau == d2.tau) or (d_dag1.tau == d_dag2.tau))
         return false;
 
-    // Each d_dag needs to have a d with a matching bl index
-    if (not((d_dag1.bl == d1.bl && d_dag2.bl == d2.bl) || //
-            (d_dag1.bl == d2.bl && d_dag2.bl == d1.bl)))
-      return false;
+    d_list.insert(std::upper_bound(d_list.begin(), d_list.end(), d1), d1);
+    d_list.insert(std::upper_bound(d_list.begin(), d_list.end(), d2), d2);
+    d_dag_list.insert(std::upper_bound(d_dag_list.begin(), d_dag_list.end(), d_dag1), d_dag1);
+    d_dag_list.insert(std::upper_bound(d_dag_list.begin(), d_dag_list.end(), d_dag2), d_dag2);
 
-    d_list.push_back(d1);
-    d_list.push_back(d2);
-    d_dag_list.push_back(d_dag1);
-    d_dag_list.push_back(d_dag2);
+    d_bl_list[d1.bl].push_back(d1);
+    d_bl_list[d2.bl].push_back(d2);
+    d_dag_bl_list[d_dag1.bl].push_back(d_dag1);
+    d_dag_bl_list[d_dag2.bl].push_back(d_dag2);
+
     return true;
   }
 
-  bool config_t::try_double_erase(int i_dag, int i, int j_dag, int j) {
-    EXPECTS(i < size() and i_dag < size());
-    EXPECTS(j < size() and j_dag < size());
+  bool config_t::try_double_erase(long bl1, long i1_dag, long i1, long bl2, long i2_dag, long i2) {
+    EXPECTS(i1 < size(bl1) and i1_dag < size(bl1));
+    EXPECTS(i2 < size(bl2) and i2_dag < size(bl2));
 
-    if (i == j or i_dag == j_dag) return false;
+    if (bl1 == bl2 and (i1 == i2 or i1_dag == i2_dag)) return false;
 
-    // Each d_dag needs to have a d with a matching bl index
-    if (not((d_dag_list[i_dag].bl == d_list[i].bl and d_dag_list[j_dag].bl == d_list[j].bl) or //
-            (d_dag_list[i_dag].bl == d_list[j].bl and d_dag_list[j_dag].bl == d_list[i].bl)))
-      return false;
+    d_list.erase(std::find(begin(d_list), end(d_list), d_bl_list[bl1][i1]));
+    d_list.erase(std::find(begin(d_list), end(d_list), d_bl_list[bl2][i2]));
 
-    if (i < j) std::swap(i, j);
-    d_list.erase(d_list.begin() + i);
-    d_list.erase(d_list.begin() + j);
+    d_dag_list.erase(std::find(begin(d_dag_list), end(d_dag_list), d_dag_bl_list[bl1][i1_dag]));
+    d_dag_list.erase(std::find(begin(d_dag_list), end(d_dag_list), d_dag_bl_list[bl2][i2_dag]));
 
-    if (i_dag < j_dag) std::swap(i_dag, j_dag);
-    d_dag_list.erase(d_dag_list.begin() + i_dag);
-    d_dag_list.erase(d_dag_list.begin() + j_dag);
+    if (i1 < i2 && bl1 == bl2) std::swap(i1, i2);
+    d_bl_list[bl1].erase(d_bl_list[bl1].begin() + i1);
+    d_bl_list[bl2].erase(d_bl_list[bl2].begin() + i2);
+
+    if (i1_dag < i2_dag && bl1 == bl2) std::swap(i1_dag, i2_dag);
+    d_dag_bl_list[bl1].erase(d_dag_bl_list[bl1].begin() + i1_dag);
+    d_dag_bl_list[bl2].erase(d_dag_bl_list[bl2].begin() + i2_dag);
+
     return true;
   }
 

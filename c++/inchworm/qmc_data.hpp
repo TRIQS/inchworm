@@ -5,12 +5,18 @@
 namespace inchworm {
 
   struct config_t {
-    std::vector<fop_t> d_list, d_dag_list; // list of d/d_dag not time ordered, but different
-    int size() const { return d_list.size(); }
+    std::vector<fop_t> d_list, d_dag_list;                      // list of d/d_dag time ordered
+    std::vector<std::vector<fop_t>> d_bl_list, d_dag_bl_list;   // list of d/d_dag by block, insertion ordered
+
+    config_t(long n_bl) : d_bl_list(n_bl), d_dag_bl_list(n_bl) {}
+
+    long size() const { return d_list.size(); }
+    long size(long bl) const { return d_bl_list[bl].size(); }
+
     bool try_insert(fop_t const &ddag, fop_t const &d);
-    bool try_erase(int i_dag, int i);
+    bool try_erase(long bl, long i_dag, long i);
     bool try_double_insert(fop_t const &d_dag1, fop_t const &d1, fop_t const &d_dag2, fop_t const &d2);
-    bool try_double_erase(int i_dag, int i, int j_dag, int j);
+    bool try_double_erase(long bl1, long i1_dag, long i1, long bl2, long i2_dag, long i2);
   };
 
   struct weights_t {
@@ -21,10 +27,12 @@ namespace inchworm {
   /// The Monte-Carlo Configuration structure
   struct qmc_data_t {
     // last accepted paraemeters
-    config_t config   = {};       // last accepted configuration of d and d_dag
+    config_t config;              // last accepted configuration of d and d_dag
     weights_t weights = {1., 1.}; // weight values of the last accepted configuration
     int sign          = 1;        // sign of the last accepted configuration
     frame_t frame;                // the configuration (propagator or green function) frame
+
+    qmc_data_t(long n_bl) : config(n_bl) {}
   };
 
   // structure to calculate hybridization function for tau, tau_dag, and orbital (linear) indices.

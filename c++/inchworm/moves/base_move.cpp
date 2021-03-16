@@ -11,7 +11,7 @@
 namespace inchworm::moves {
 
   base_move::base_move(qmc_data_t &data, gf_struct_t const &gf_struct, qmc_params_t const &qmc_params, triqs::mc_tools::random_generator &rng)
-     : data(data), prop_data(data), params(qmc_params), rng(rng), gf_struct(gf_struct) {
+     : data(data), prop_data(data), params(qmc_params), rng(rng), gf_struct(gf_struct), all_d_ops(gf_struct.size()), all_d_dag_ops(gf_struct.size()) {
 
     for (auto const &op : qmc_params.ad_imp.get_fops()) {
       auto bl_name = std::get<std::string>(op.index[0]);
@@ -21,8 +21,8 @@ namespace inchworm::moves {
       auto it = std::find_if(gf_struct.cbegin(), gf_struct.cend(), [&](auto &&x) { return x.first == bl_name; });
       long bl = std::distance(gf_struct.cbegin(), it);
 
-      all_d_ops.push_back({0.0, false, op.linear_index, bl, idx});
-      all_d_dag_ops.push_back({0.0, true, op.linear_index, bl, idx});
+      all_d_ops[bl].push_back({0.0, false, op.linear_index, bl, idx});
+      all_d_dag_ops[bl].push_back({0.0, true, op.linear_index, bl, idx});
     }
   }
 

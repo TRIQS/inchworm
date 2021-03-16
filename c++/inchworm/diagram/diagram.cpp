@@ -44,10 +44,6 @@ namespace inchworm::diagram {
     int order = d_list.size();
     if (order == 0) return;
 
-    // Keep the lists of d and d_dag operators sorted w.r.t. tau
-    std::sort(d_dag_list.begin(), d_dag_list.end(), std::less<>{});
-    std::sort(d_list.begin(), d_list.end(), std::less<>{});
-
     // Initialize the time-ordered list of all operators
     for (int i = 0, j = order; i < order; i++, j++) {
       op_list[i].tau          = d_list[i].tau;

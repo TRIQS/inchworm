@@ -3,38 +3,56 @@
 namespace inchworm::moves {
 
   scalar_t remove::try_config_update(config_t &config) {
-    int OldSize = config.size();
-    if (OldSize == 0) return 0;
+    long n_bl = gf_struct.size();
 
-    int idx     = rng(OldSize);
-    int idx_dag = rng(OldSize);
+    long bl         = rng(n_bl);
+    long old_nop_bl = config.size(bl);
 
-    if (not config.try_erase(idx_dag, idx)) return 0;
+    if (old_nop_bl == 0) return 0;
 
-    int n_fops = all_d_ops.size();
+    long idx     = rng(old_nop_bl);
+    long idx_dag = rng(old_nop_bl);
+
+    if (not config.try_erase(bl, idx_dag, idx)) return 0;
+
+    long bl_size = gf_struct[bl].second;
 
     // Account for special treatment of insertion into empty configuration
-    if (OldSize == 1 && (params.tau_split != 0.0)) {
+    if (config.size() == 0 && (params.tau_split != 0.0)) {
       auto dtau = params.tau_max - params.tau_split;
-      return 1.0 * OldSize * OldSize / (2.0 * params.tau_split * dtau * n_fops * n_fops);
+      return 1.0 / (2.0 * params.tau_split * dtau * bl_size * bl_size);
     } else {
-      return std::pow(OldSize / (n_fops * params.tau_max), 2);
+      return std::pow(old_nop_bl / (params.tau_max * bl_size), 2);
     }
   }
 
   scalar_t double_remove::try_config_update(config_t &config) {
-    int N = config.size();
-    if (N == 0) return 0;
+    long n_bl = gf_struct.size();
 
-    int idx1     = rng(N);
-    int idx1_dag = rng(N);
-    int idx2     = rng(N);
-    int idx2_dag = rng(N);
+    long bl1, bl2;
+    if (equal_blocks) {
+      bl1 = rng(n_bl);
+      bl2 = bl1;
+    } else {
+      bl1 = rng(n_bl);
+      bl2 = rng(n_bl);
+    }
 
-    if (not config.try_double_erase(idx1_dag, idx1, idx2_dag, idx2)) return 0;
+    long old_nop_bl1 = config.size(bl1);
+    long old_nop_bl2 = config.size(bl2);
 
-    int n_fops = all_d_ops.size();
-    return std::pow(N / (n_fops * params.tau_max), 4);
+    if (old_nop_bl1 == 0 or old_nop_bl2 == 0) return 0;
+
+    long idx1     = rng(old_nop_bl1);
+    long idx1_dag = rng(old_nop_bl1);
+    long idx2     = rng(old_nop_bl2);
+    long idx2_dag = rng(old_nop_bl2);
+
+    if (not config.try_double_erase(bl1, idx1_dag, idx1, bl2, idx2_dag, idx2)) return 0;
+
+    long bl1_size = gf_struct[bl1].second;
+    long bl2_size = gf_struct[bl2].second;
+    return std::pow(old_nop_bl1 * old_nop_bl2 / (params.tau_max * params.tau_max * bl1_size * bl2_size), 2);
   }
 
 } // namespace inchworm::moves

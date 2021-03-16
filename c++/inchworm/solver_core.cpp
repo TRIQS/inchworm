@@ -307,7 +307,7 @@ namespace inchworm {
     auto &rng = mc.get_rng();
 
     // Create Monte-Carlo configuration
-    qmc_data_t qmc_data{};
+    qmc_data_t qmc_data(params.gf_struct.size());
     if (mode == MODE::PROPAGATOR) {
       qmc_data.frame = make_bare_u_frame(ad_imp, tau_split);
     } else { // MODE::GREENFUNCTION
@@ -322,8 +322,10 @@ namespace inchworm {
     mc.add_move(moves::remove{qmc_data, params.gf_struct, qmc_params, rng}, "remove move");
 
     if (params.use_double_insertion) {
-      mc.add_move(moves::double_insert{qmc_data, params.gf_struct, qmc_params, rng}, "double insert move");
-      mc.add_move(moves::double_remove{qmc_data, params.gf_struct, qmc_params, rng}, "double remove move");
+      mc.add_move(moves::double_insert{qmc_data, params.gf_struct, qmc_params, rng, false}, "double insert move", 0.5);
+      mc.add_move(moves::double_remove{qmc_data, params.gf_struct, qmc_params, rng, false}, "double remove move", 0.5);
+      mc.add_move(moves::double_insert{qmc_data, params.gf_struct, qmc_params, rng, true}, "double insert move equal blocks", 0.5);
+      mc.add_move(moves::double_remove{qmc_data, params.gf_struct, qmc_params, rng, true}, "double remove move equal blocks", 0.5);
     }
 
     // Initialize result container
