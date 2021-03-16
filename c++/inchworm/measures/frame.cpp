@@ -26,7 +26,7 @@ namespace inchworm::measures {
     frame_0th_order_ref = mpi::all_reduce(frame_0th_order_ref, comm);
     frame_ref           = mpi::all_reduce(frame_ref, comm);
 
-    auto errs = acc.log_bin_errors_mpi(comm);
+    auto [errs, counts]  = acc.log_bin_errors_all_reduce(comm);
 
     // Debug Prints
     if (comm.rank() == 0 and verbosity > 1) {

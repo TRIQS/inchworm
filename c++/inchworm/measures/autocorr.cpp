@@ -13,7 +13,7 @@ namespace inchworm::measures {
 
   void autocorr::collect_results(mpi::communicator const &comm) {
 
-    auto errs = acc.log_bin_errors_mpi(comm);
+    auto [errs, counts] = acc.log_bin_errors_all_reduce(comm);
 
     // Debug Prints
     if (comm.rank() == 0 and verbosity > 1) {
