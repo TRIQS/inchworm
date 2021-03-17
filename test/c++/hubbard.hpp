@@ -135,7 +135,6 @@ inline std::tuple<solver_core, solve_params_t, u_tau_t, g_tau_t> test_setup(int 
   solve_params_t sp;
   sp.h_imp           = h_imp;
   sp.n_cycles        = 100000;
-  sp.length_cycle    = 10;
   sp.n_warmup_cycles = 20;
 
   // create hybridization:

@@ -72,7 +72,6 @@ class test_hubbard(unittest.TestCase):
     sp["h_imp"] =  U   * (n("up",0) * n("dn",0) + n("up",1) * n("dn",1)) \
                  - U/2 * (n("up",0) + n("dn",0) + n("up",1) + n("dn",1))
     sp["n_cycles"] = 100000
-    sp["length_cycle"] = 10
     sp["n_warmup_cycles"] = 20
    
     # Solve the model
