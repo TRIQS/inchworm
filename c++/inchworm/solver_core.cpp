@@ -380,7 +380,7 @@ namespace inchworm {
       // Auto-deduce cycle length if not set
       length_cycle = params.length_cycle.value_or(1.0 + std::ceil(length_cycle * callibration_results.auto_corr_time));
 
-      if (not params.length_cycle and params.verbosity > 0) {
+      if (params.verbosity > 0) {
         auto acc_rates = mc.get_acceptance_rates();
         std::printf("         %-12d| %-12.3f| %-12.3e| %-12.3f| %-12.3f\n", length_cycle, hist[0], moves::base_move::reweighting_coeffs[0],
                     acc_rates.at("insert move"), acc_rates.at("remove move"));
