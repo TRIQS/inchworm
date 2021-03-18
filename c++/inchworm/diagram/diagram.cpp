@@ -32,7 +32,7 @@ namespace inchworm::diagram {
   double time_diagram_t::max_tau() const { return op_list.back().tau; }
 
   int time_diagram_t::sign() const {
-    // Note: important to use pos_d_dag, not pos_d
+    // Note: use pos_d_dag, not pos_d as we consider <d_k ddag_k .. d_0 ddag_0> from the right
     return (std::accumulate(pos_d_dag.begin(), pos_d_dag.end(), 0) % 2 == 0 ? 1 : -1);
   }
 

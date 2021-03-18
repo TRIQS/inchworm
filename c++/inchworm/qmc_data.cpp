@@ -2,14 +2,16 @@
 
 namespace inchworm {
 
+  inline void insert_sorted(auto &vec, auto const &el) { vec.insert(std::upper_bound(vec.begin(), vec.end(), el), el); }
+
   bool config_t::try_insert(fop_t const &d_dag, fop_t const &d) {
     EXPECTS(d_dag.bl == d.bl);
 
     for (int i = 0; i < size() - 1; i++)
       if ((d_list[i].tau == d.tau) or (d_dag_list[i].tau == d_dag.tau)) return false;
 
-    d_list.insert(std::upper_bound(d_list.begin(), d_list.end(), d), d);
-    d_dag_list.insert(std::upper_bound(d_dag_list.begin(), d_dag_list.end(), d_dag), d_dag);
+    insert_sorted(d_list, d);
+    insert_sorted(d_dag_list, d_dag);
 
     d_bl_list[d.bl].push_back(d);
     d_dag_bl_list[d_dag.bl].push_back(d_dag);
@@ -20,8 +22,8 @@ namespace inchworm {
   bool config_t::try_erase(long bl, long i_dag, long i) {
     EXPECTS(i < size(bl) && i_dag < size(bl));
 
-    d_list.erase(std::find(begin(d_list), end(d_list), d_bl_list[bl][i]));
-    d_dag_list.erase(std::find(begin(d_dag_list), end(d_dag_list), d_dag_bl_list[bl][i_dag]));
+    std::erase(d_list, d_bl_list[bl][i]);
+    std::erase(d_dag_list, d_dag_bl_list[bl][i_dag]);
 
     d_bl_list[bl].erase(d_bl_list[bl].begin() + i);
     d_dag_bl_list[bl].erase(d_dag_bl_list[bl].begin() + i_dag);
@@ -39,10 +41,10 @@ namespace inchworm {
           or (d1.tau == d2.tau) or (d_dag1.tau == d_dag2.tau))
         return false;
 
-    d_list.insert(std::upper_bound(d_list.begin(), d_list.end(), d1), d1);
-    d_list.insert(std::upper_bound(d_list.begin(), d_list.end(), d2), d2);
-    d_dag_list.insert(std::upper_bound(d_dag_list.begin(), d_dag_list.end(), d_dag1), d_dag1);
-    d_dag_list.insert(std::upper_bound(d_dag_list.begin(), d_dag_list.end(), d_dag2), d_dag2);
+    insert_sorted(d_list, d1);
+    insert_sorted(d_list, d2);
+    insert_sorted(d_dag_list, d_dag1);
+    insert_sorted(d_dag_list, d_dag2);
 
     d_bl_list[d1.bl].push_back(d1);
     d_bl_list[d2.bl].push_back(d2);
@@ -58,11 +60,11 @@ namespace inchworm {
 
     if (bl1 == bl2 and (i1 == i2 or i1_dag == i2_dag)) return false;
 
-    d_list.erase(std::find(begin(d_list), end(d_list), d_bl_list[bl1][i1]));
-    d_list.erase(std::find(begin(d_list), end(d_list), d_bl_list[bl2][i2]));
+    std::erase(d_list, d_bl_list[bl1][i1]);
+    std::erase(d_list, d_bl_list[bl2][i2]);
 
-    d_dag_list.erase(std::find(begin(d_dag_list), end(d_dag_list), d_dag_bl_list[bl1][i1_dag]));
-    d_dag_list.erase(std::find(begin(d_dag_list), end(d_dag_list), d_dag_bl_list[bl2][i2_dag]));
+    std::erase(d_dag_list, d_dag_bl_list[bl1][i1_dag]);
+    std::erase(d_dag_list, d_dag_bl_list[bl2][i2_dag]);
 
     if (i1 < i2 && bl1 == bl2) std::swap(i1, i2);
     d_bl_list[bl1].erase(d_bl_list[bl1].begin() + i1);
