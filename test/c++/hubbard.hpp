@@ -134,8 +134,7 @@ inline std::tuple<solver_core, solve_params_t, u_tau_t, g_tau_t> test_setup(int 
   // Solve Parameters
   solve_params_t sp;
   sp.h_imp           = h_imp;
-  sp.n_cycles        = 100000;
-  sp.n_warmup_cycles = 20;
+  sp.n_cycles        = 50000;
 
   // create hybridization:
   for (auto const &tau : S.Delta_tau[0].mesh()) {

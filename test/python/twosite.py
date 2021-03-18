@@ -46,7 +46,7 @@ class test_hubbard(unittest.TestCase):
 
     # # Construct Parameters
     cp = {}
-    cp["beta"]        = 1.0
+    cp["beta"]        = 2.0
     cp["gf_struct"]   = [("up", 2), ("dn", 2)]
     cp["n_tau_green"] = 5
     cp["n_tau_inch"]  = 21
@@ -71,8 +71,7 @@ class test_hubbard(unittest.TestCase):
     sp = {}
     sp["h_imp"] =  U   * (n("up",0) * n("dn",0) + n("up",1) * n("dn",1)) \
                  - U/2 * (n("up",0) + n("dn",0) + n("up",1) + n("dn",1))
-    sp["n_cycles"] = 100000
-    sp["n_warmup_cycles"] = 20
+    sp["n_cycles"] = 40000
    
     # Solve the model
     S.solve(**sp)

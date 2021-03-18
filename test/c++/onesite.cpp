@@ -25,7 +25,7 @@
 TEST(inchworm, Hubbard_1site) { // NOLINT
 
   constr_params_t cp;
-  cp.beta        = 1.0;
+  cp.beta        = 2.0;
   cp.gf_struct   = {{"up", 1}, {"dn", 1}};
   cp.n_tau_green = 5;
   cp.n_tau_inch  = 21;
@@ -48,11 +48,11 @@ TEST(inchworm, Hubbard_1site) { // NOLINT
 
   // Test cthyb
   auto result_cthyb = S.solve_cthyb(sp, tau_max);
-  EXPECT_LT(relative_distance(get_frame(u_tau, cp.n_tau_inch - 1), result_cthyb.frame), 0.05);
+  EXPECT_LT(relative_distance(get_frame(u_tau, cp.n_tau_inch - 1), result_cthyb.frame), 0.02);
 
   // Test selfconsistent
   auto result_sc = S.solve_self_consistently(sp, u_tau, tau_split, tau_max);
-  EXPECT_LT(relative_distance(get_frame(u_tau, cp.n_tau_inch - 1), result_sc.frame), 0.05);
+  EXPECT_LT(relative_distance(get_frame(u_tau, cp.n_tau_inch - 1), result_sc.frame), 0.01);
 
   // Test inchworm
   S.solve_inchworm(sp);
