@@ -378,7 +378,7 @@ namespace inchworm {
       }
 
       // Auto-deduce cycle length if not set
-      length_cycle = params.length_cycle.value_or(1.0 + std::ceil(length_cycle * callibration_results.auto_corr_time));
+      length_cycle = params.length_cycle.value_or(1.0 + std::ceil(1.1 * length_cycle * callibration_results.auto_corr_time));
 
       if (params.verbosity > 0) {
         auto acc_rates = mc.get_acceptance_rates();
@@ -387,7 +387,9 @@ namespace inchworm {
       }
 
       // Iterate the callibration until the zeroth order is sampled with finite probability
-      if (hist[0] > 0.0 and hist[0] <= params.max_prob_zeroth_order) break;
+      if (hist[0] > 0.01 and hist[0] <= params.max_prob_zeroth_order
+          and (params.length_cycle.has_value() or callibration_results.auto_corr_time < 1.0))
+        break;
     }
 
     // Register all measurements
