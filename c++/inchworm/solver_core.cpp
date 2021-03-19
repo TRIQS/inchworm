@@ -343,7 +343,8 @@ namespace inchworm {
     int status          = mc.warmup(params.n_warmup_cycles, length_cycle, triqs::utility::clock_callback(params.max_time));
     if (params.verbosity > 0) {
       std::printf("     Callibrating ...\n");
-      std::printf("         %-12s| %-12s| %-12s| %-12s| %-12s\n", "length_cycle", "hist0", "coeff0", "acc insert", "acc remove");
+      std::printf("         %-12s| %-12s| %-12s| %-12s| %-12s| %-16s\n", "hist0", "autocorr", "acc insert", "acc remove", "new coeff0",
+                  "new length_cycle");
     }
     for (int n = 1; status == 0; ++n) {
       if (params.verbosity > 2) std::cout << "\nCallibration-loop " << n << "\n";
@@ -382,8 +383,8 @@ namespace inchworm {
 
       if (params.verbosity > 0) {
         auto acc_rates = mc.get_acceptance_rates();
-        std::printf("         %-12d| %-12.3f| %-12.3e| %-12.3f| %-12.3f\n", length_cycle, hist[0], moves::base_move::reweighting_coeffs[0],
-                    acc_rates.at("insert move"), acc_rates.at("remove move"));
+        std::printf("         %-12.3f| %-12.3f| %-12.3f| %-12.3f| %-12.3e| %-16d\n", hist[0], callibration_results.auto_corr_time,
+                    acc_rates.at("insert move"), acc_rates.at("remove move"), moves::base_move::reweighting_coeffs[0], length_cycle);
       }
 
       // Iterate the callibration until the zeroth order is sampled with finite probability
