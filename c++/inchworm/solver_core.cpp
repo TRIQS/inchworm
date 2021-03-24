@@ -83,10 +83,7 @@ namespace inchworm {
     res.normalize(normalization_cte);
 
     // Print results
-    if (solve_params.verbosity > 3) {
-      std::printf("\n\n##################\ncthyb U(tau_max):\n");
-      res.print(solve_params.verbosity);
-    }
+    res.print(solve_params.verbosity);
 
     return res;
   }
@@ -112,18 +109,7 @@ namespace inchworm {
     res.normalize(normalization_cte);
 
     // Print results
-    if (solve_params.verbosity > 3) {
-      std::printf("\n##################\ninchworm U(beta):\n");
-      res.print(solve_params.verbosity);
-    }
-    if (solve_params.verbosity > 0) {
-      std::printf("     average_order: %5f\n", res.average_order);
-      if (res.order_histogram.size() > 0) {
-        std::printf("     order_histogram: [");
-        for (auto v : res.order_histogram) std::printf(" %.3f, ", v);
-        std::printf("]\n");
-      }
-    }
+    res.print(solve_params.verbosity);
 
     return res;
   }
@@ -187,22 +173,9 @@ namespace inchworm {
       res.normalize(normalization_cte);
 
       // Print results
-      if (solve_params.verbosity > 3) {
-        std::printf("\n\n##################\ninchworm U(tau_max):\n");
-        res.print(solve_params.verbosity);
-      }
-      if (solve_params.verbosity > 0) {
-        std::printf("     max_element frame: %.4e\n", max_element(nda::map([](matrix_t const &m) { return max_element(m); })(res.frame)));
-        std::printf("     min_element frame: %.4e\n", min_element(nda::map([](matrix_t const &m) { return min_element(m); })(res.frame)));
-        std::printf("     average_order: %4f\n", res.average_order);
-        if (res.order_histogram.size() > 0) {
-          std::printf("     order_histogram: [");
-          for (auto v : res.order_histogram) std::printf(" %.3f, ", v);
-          std::printf("]\n");
-        }
-      }
+      res.print(solve_params.verbosity);
 
-      // Assign u_frame to the propagator u_tau, in order to be able to use it in next iteration
+      // Assign the current frame to the propagator u_tau (will be used in the next iteration)
       set_frame(res.frame, u_tau, n);
 
       // Assign u_frame_by_order to the propagator u_tau_by_order
@@ -271,19 +244,9 @@ namespace inchworm {
       res.normalize(normalization_cte);
 
       // Print results
-      if (solve_params.verbosity > 3) {
-        std::printf("\n\n##################\ninchworm G(tau_split):\n");
-        res.print(solve_params.verbosity);
-      }
-      if (solve_params.verbosity > 0) {
-        std::printf("     average_order: %5f\n", res.average_order);
-        if (res.order_histogram.size() > 0) {
-          std::printf("     order_histogram: [");
-          for (auto v : res.order_histogram) std::printf(" %.3f, ", v);
-          std::printf("]\n");
-        }
-      }
+      res.print(solve_params.verbosity);
 
+      // Assign the current frame to G_tau
       set_frame(res.frame, G_tau, n);
 
       // Initialize other results

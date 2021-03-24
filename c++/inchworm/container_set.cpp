@@ -36,19 +36,24 @@ namespace inchworm {
 
   void qmc_results_t::print(int verbosity) {
 
-    if (verbosity > 4)
-      for (auto Bl : frame) print_matrix(Bl);
-
-    if (verbosity > 3) {
-      if (not order_histogram.empty()) {
-        std::printf("\n\nperturbation order histogram (normalized): \n");
-        for (auto k : range(std::min(order_histogram.size(), 15ul))) std::printf("%10f ", order_histogram[k]);
+    if (verbosity > 0) {
+      std::printf("     max_element frame: %.4e\n", max_element(nda::map([](matrix_t const &m) { return max_element(m); })(frame)));
+      std::printf("     min_element frame: %.4e\n", min_element(nda::map([](matrix_t const &m) { return min_element(m); })(frame)));
+      std::printf("     average_order: %4f\n", average_order);
+      if (order_histogram.size() > 0) {
+        std::printf("     order_histogram: [");
+        for (auto v : order_histogram) std::printf(" %.3f, ", v);
+        std::printf("]\n");
       }
-      if (not frame_by_order.empty()) {
-        std::printf("\n\nframe norm by order: \n");
-        for (auto k : range(std::min(frame_by_order.size(), 15ul))) std::printf("% 10.5f ", frobenius_norm(frame_by_order[k]));
+      if (frame_by_order.size() > 0) {
+        std::printf("     order norms: [");
+        for (auto k : range(std::min(frame_by_order.size(), 15ul))) std::printf(" %10.3f, ", frobenius_norm(frame_by_order[k]));
+        std::printf("]\n");
       }
     }
+
+    if (verbosity > 4)
+      for (auto Bl : frame) print_matrix(Bl);
   }
 
   void h5_write(h5::group h5group, std::string subgroup_name, container_set const &c) {
