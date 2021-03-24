@@ -46,8 +46,8 @@ namespace inchworm {
         std::printf("]\n");
       }
       if (frame_by_order.size() > 0) {
-        std::printf("     order norms: [");
-        for (auto k : range(std::min(frame_by_order.size(), 15ul))) std::printf(" %10.3f, ", frobenius_norm(frame_by_order[k]));
+        std::printf("     order contribution: [");
+        for (auto &frame_k : frame_by_order) std::printf(" %.3f, ", frobenius_norm(frame_k) / frobenius_norm(frame));
         std::printf("]\n");
       }
     }
