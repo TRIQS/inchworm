@@ -38,6 +38,9 @@ namespace inchworm::moves {
     if (params.max_order && prop_pert_order > *params.max_order) return 0.0;
     auto diagram   = diagram::time_diagram_t{prop_data.config, {params.tau_split}};
 
+    // We need to have at least one split-point between operators for a finite hybridization weight
+    if (not params.use_bare_propagator and diagram.size() > 0 and diagram.is_trivial) return 0.0;
+
     // Quick-check for vanishing impurity trace
     if (params.mode == MODE::PROPAGATOR and has_zero_trace(params.ad_imp, diagram)) return 0.0;
 
