@@ -65,6 +65,11 @@ c.add_member(c_name = "status",
              read_only= True,
              doc = r"""""")
 
+c.add_member(c_name = "auto_corr_time",
+             c_type = "double",
+             read_only= True,
+             doc = r"""""")
+
 c.add_constructor("""(std::vector<int> shape_of_frame)""", doc = r"""""")
 
 c.add_method("""void normalize (double normalization_cte)""",
@@ -160,15 +165,15 @@ c.add_method("""void solve (**inchworm::solve_params_t)""",
 +-------------------------+--------------------------------------+-----------------------------------------+-----------------------------------------------------+
 | max_prob_zeroth_order   | double                               | 1.0                                     | Maximum probability of order zero sampling          |
 +-------------------------+--------------------------------------+-----------------------------------------+-----------------------------------------------------+
-| n_tau_inch_stop         | int                                  | 100000                                  | Number of inchworm steps before interruption        |
+| n_tau_inch_stop         | std::optional<int>                   | {}                                      | Number of inchworm steps before interruption        |
 +-------------------------+--------------------------------------+-----------------------------------------+-----------------------------------------------------+
 | n_cycles                | int                                  | --                                      | Number of MC cycles                                 |
 +-------------------------+--------------------------------------+-----------------------------------------+-----------------------------------------------------+
 | length_cycle            | std::optional<int>                   | {}                                      | Length of a MC cycles, auto-deduce if not provided  |
 +-------------------------+--------------------------------------+-----------------------------------------+-----------------------------------------------------+
-| n_warmup_cycles         | int                                  | 1000                                    | Number of warmup cycles                             |
+| n_warmup_cycles         | int                                  | 4096                                    | Number of warmup cycles                             |
 +-------------------------+--------------------------------------+-----------------------------------------+-----------------------------------------------------+
-| n_callibration_cycles   | int                                  | 1000                                    | Number of callibration cycles                       |
+| n_callibration_cycles   | int                                  | 4096                                    | Number of callibration cycles                       |
 +-------------------------+--------------------------------------+-----------------------------------------+-----------------------------------------------------+
 | max_order               | std::optional<int>                   | {}                                      | The maximum order [optional]                        |
 +-------------------------+--------------------------------------+-----------------------------------------+-----------------------------------------------------+
@@ -217,15 +222,15 @@ c.add_method("""void solve_green (**inchworm::solve_params_t)""",
 +-------------------------+--------------------------------------+-----------------------------------------+-----------------------------------------------------+
 | max_prob_zeroth_order   | double                               | 1.0                                     | Maximum probability of order zero sampling          |
 +-------------------------+--------------------------------------+-----------------------------------------+-----------------------------------------------------+
-| n_tau_inch_stop         | int                                  | 100000                                  | Number of inchworm steps before interruption        |
+| n_tau_inch_stop         | std::optional<int>                   | {}                                      | Number of inchworm steps before interruption        |
 +-------------------------+--------------------------------------+-----------------------------------------+-----------------------------------------------------+
 | n_cycles                | int                                  | --                                      | Number of MC cycles                                 |
 +-------------------------+--------------------------------------+-----------------------------------------+-----------------------------------------------------+
 | length_cycle            | std::optional<int>                   | {}                                      | Length of a MC cycles, auto-deduce if not provided  |
 +-------------------------+--------------------------------------+-----------------------------------------+-----------------------------------------------------+
-| n_warmup_cycles         | int                                  | 1000                                    | Number of warmup cycles                             |
+| n_warmup_cycles         | int                                  | 4096                                    | Number of warmup cycles                             |
 +-------------------------+--------------------------------------+-----------------------------------------+-----------------------------------------------------+
-| n_callibration_cycles   | int                                  | 1000                                    | Number of callibration cycles                       |
+| n_callibration_cycles   | int                                  | 4096                                    | Number of callibration cycles                       |
 +-------------------------+--------------------------------------+-----------------------------------------+-----------------------------------------------------+
 | max_order               | std::optional<int>                   | {}                                      | The maximum order [optional]                        |
 +-------------------------+--------------------------------------+-----------------------------------------+-----------------------------------------------------+
@@ -289,8 +294,8 @@ c.add_member(c_name = "max_prob_zeroth_order",
              doc = r"""Maximum probability of order zero sampling""")
 
 c.add_member(c_name = "n_tau_inch_stop",
-             c_type = "int",
-             initializer = """ 100000 """,
+             c_type = "std::optional<int>",
+             initializer = """ {} """,
              doc = r"""Number of inchworm steps before interruption""")
 
 c.add_member(c_name = "n_cycles",
@@ -305,12 +310,12 @@ c.add_member(c_name = "length_cycle",
 
 c.add_member(c_name = "n_warmup_cycles",
              c_type = "int",
-             initializer = """ 1000 """,
+             initializer = """ 4096 """,
              doc = r"""Number of warmup cycles""")
 
 c.add_member(c_name = "n_callibration_cycles",
              c_type = "int",
-             initializer = """ 1000 """,
+             initializer = """ 4096 """,
              doc = r"""Number of callibration cycles""")
 
 c.add_member(c_name = "max_order",
