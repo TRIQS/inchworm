@@ -48,11 +48,12 @@ namespace inchworm {
     h5_write(grp, "h_imp", sp.h_imp);
     h5_write(grp, "partition_method", sp.partition_method);
     h5_write(grp, "quantum_numbers", sp.quantum_numbers);
+    h5_write(grp, "max_prob_zeroth_order", sp.max_prob_zeroth_order);
     h5_write(grp, "n_cycles", sp.n_cycles);
     h5_write(grp, "length_cycle", sp.length_cycle);
-    h5_write(grp, "max_order", sp.max_order);
     h5_write(grp, "n_warmup_cycles", sp.n_warmup_cycles);
     h5_write(grp, "n_callibration_cycles", sp.n_callibration_cycles);
+    h5_write(grp, "max_order", sp.max_order);
     h5_write(grp, "random_seed", sp.random_seed);
     h5_write(grp, "random_name", sp.random_name);
     h5_write(grp, "use_double_insertion", sp.use_double_insertion);
@@ -70,11 +71,12 @@ namespace inchworm {
     h5_read(grp, "h_imp", sp.h_imp);
     h5_read(grp, "partition_method", sp.partition_method);
     h5_read(grp, "quantum_numbers", sp.quantum_numbers);
+    h5_try_read(grp, "max_prob_zeroth_order", sp.max_prob_zeroth_order);
     h5_read(grp, "n_cycles", sp.n_cycles);
     h5_read(grp, "length_cycle", sp.length_cycle);
-    h5_try_read(grp, "max_order", sp.max_order);
     h5_read(grp, "n_warmup_cycles", sp.n_warmup_cycles);
     h5_try_read(grp, "n_callibration_cycles", sp.n_callibration_cycles);
+    h5_try_read(grp, "max_order", sp.max_order);
     h5_read(grp, "random_name", sp.random_name);
     h5_read(grp, "use_double_insertion", sp.use_double_insertion);
     h5_read(grp, "max_time", sp.max_time);
