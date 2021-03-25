@@ -49,11 +49,15 @@ namespace inchworm::diagram {
       op_list[i].tau          = d_list[i].tau;
       op_list[i].dag          = false;
       op_list[i].linear_index = d_list[i].linear_index;
+      op_list[i].bl           = d_list[i].bl;
+      op_list[i].idx          = d_list[i].idx;
       op_list[i].order_index  = i;
 
       op_list[j].tau          = d_dag_list[i].tau;
       op_list[j].dag          = true;
       op_list[j].linear_index = d_dag_list[i].linear_index;
+      op_list[j].bl           = d_dag_list[i].bl;
+      op_list[j].idx          = d_dag_list[i].idx;
       op_list[j].order_index  = i;
     }
     std::sort(op_list.begin(), op_list.end(), std::less<>{});

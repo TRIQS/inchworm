@@ -21,12 +21,18 @@
  ******************************************************************************/
 #include "./print.hpp"
 
+#include <fmt/core.h>
+#include <fmt/color.h>
+
 namespace inchworm::diagram {
 
   void print_vector(std::vector<int> const &v) {
     for (auto l : v) { std::printf("%d ", l); }
     std::printf("\n");
   }
+
+  static std::vector<fmt::terminal_color> colors{fmt::terminal_color::red,  fmt::terminal_color::yellow, fmt::terminal_color::cyan,
+                                                 fmt::terminal_color::blue, fmt::terminal_color::green,  fmt::terminal_color::magenta};
 
   void print_diag(time_diagram_t const &diagram) {
     for (int j = 0; j < diagram.size(); j++) {
@@ -37,10 +43,11 @@ namespace inchworm::diagram {
     }
     std::printf("\n");
     for (int j = 0; j < diagram.size(); j++) {
-      if (diagram.op_list[j].dag)
-        std::printf("x");
+      auto &op = diagram.op_list[j];
+      if (op.dag)
+        fmt::print(fg(colors[op.bl]), "x");
       else
-        std::printf("o");
+        fmt::print(fg(colors[op.bl]), "o");
       if (j < diagram.size() - 1) std::printf("-");
     }
     std::printf("\n");
@@ -49,10 +56,11 @@ namespace inchworm::diagram {
   void print_configuration(time_diagram_t const &diagram) {
     print_diag(diagram);
     for (int j = 0; j < diagram.op_list.size(); j++) {
-      if (diagram.op_list[j].dag)
-        std::printf(" c(%2.12f)_%ld", diagram.op_list[j].tau, diagram.op_list[j].linear_index);
+      auto &op = diagram.op_list[j];
+      if (op.dag)
+        fmt::print("  c†({:.3f})_{}_{}", op.tau, op.bl, op.idx);
       else
-        std::printf(" c^+(%2.12f)_%ld", diagram.op_list[j].tau, diagram.op_list[j].linear_index);
+        fmt::print("  c({:.3f})_{}_{}", op.tau, op.bl, op.idx);
     }
     std::printf("\n");
   }
