@@ -4,6 +4,21 @@
 
 namespace inchworm {
 
+  bool has_zero_trace(atom_diag const &ad, diagram::time_diagram_t const & diagram) {
+    if(diagram.size() == 0) return false;
+
+    for (long initial_bl : range(ad.n_subspaces())) {
+      long curr_bl = initial_bl;
+      for (auto const &op : diagram.op_list) {
+        curr_bl = (op.dag ? ad.cdag_connection(op.linear_index, curr_bl) : ad.c_connection(op.linear_index, curr_bl));
+        if (curr_bl == -1) break;
+      }
+      // Any non-void block gives us a finite trace contribution
+      if (curr_bl != -1) return false;
+    }
+    return true;
+  }
+
   u_partial_t impurity_product(atom_diag const &ad, diagram::time_diagram_t const &diagram, double tau_max, double tau_min,
                                u_tau_t const *const u_tau_p) {
     EXPECTS(tau_max > tau_min);
@@ -28,7 +43,7 @@ namespace inchworm {
 
     // Calculate full operator product
     u_partial_t u_partial(ad.n_subspaces());
-    for (int initial_bl : range(ad.n_subspaces())) {
+    for (long initial_bl : range(ad.n_subspaces())) {
 
       // Treat the trivial case of zero operators separately
       if (op_lst.empty()) {
@@ -37,7 +52,7 @@ namespace inchworm {
       }
 
       // Short-circuit if the product contains a void block, i.e. -1
-      int curr_bl = initial_bl;
+      long curr_bl = initial_bl;
       for (auto const &op : op_lst) {
         curr_bl = (op.dag ? ad.cdag_connection(op.linear_index, curr_bl) : ad.c_connection(op.linear_index, curr_bl));
         if (curr_bl == -1) break;

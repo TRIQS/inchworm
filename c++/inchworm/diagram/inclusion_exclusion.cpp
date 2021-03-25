@@ -194,7 +194,7 @@ namespace inchworm::diagram {
     hyb_mat.optimize_inclusion_exclusion();
 
     // We need to have at least one split-point between operators for a finite hybridization weight
-    if (diagram.is_trivial) { return 0; }
+    if (diagram.is_trivial) { return 0.0; }
 
     if (diagram.perturbation_order() == 1) { return hyb_mat.det(); };
 

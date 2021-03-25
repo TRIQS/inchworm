@@ -5,6 +5,15 @@
 
 namespace inchworm {
 
+  /**
+   * Quickly check if the impurity trace defined by the diagram vanishes
+   *
+   * @param ad atom_diag object of the system under consideration
+   * @param diagram The diagram configuration
+   * @return True if it is zero, else false
+   */
+  bool has_zero_trace(atom_diag const &ad, diagram::time_diagram_t const & diagram);
+
   /** 
    * Calculate the operator product
    *

@@ -30,16 +30,19 @@ namespace inchworm::moves {
 
     prop_data = data;
 
-    // ------ Generate the new configuration -------
+    // ------ Generate the new configuration and diagram -------
 
     auto t_ratio = try_config_update(prop_data.config);
     if (t_ratio == 0.0) return 0.0; // Check if move has failed
     auto prop_pert_order = prop_data.config.size();
     if (params.max_order && prop_pert_order > *params.max_order) return 0.0;
+    auto diagram   = diagram::time_diagram_t{prop_data.config, {params.tau_split}};
+
+    // Quick-check for vanishing impurity trace
+    if (params.mode == MODE::PROPAGATOR and has_zero_trace(params.ad_imp, diagram)) return 0.0;
 
     // ------ Calculate the hybridization weight -------
 
-    auto diagram   = diagram::time_diagram_t{prop_data.config, {params.tau_split}};
     auto hyb_mat   = diagram::hyb_matrix_t(diagram, params.hyb_adaptor);
     prop_data.sign = diagram.sign();
 
