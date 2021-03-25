@@ -138,6 +138,7 @@ namespace inchworm {
 
     // Print results
     res.print(solve_params.verbosity);
+    if (solve_params.verbosity > 0) fmt::print("max_accepts_since_empty: {}", moves::base_move::max_accepts_since_empty);
 
     return res;
   }
@@ -369,6 +370,7 @@ namespace inchworm {
 
     // ----- Run the warmup
     if (params.verbosity > 0) std::printf("     Warming up ...\n");
+    moves::base_move::accumulating       = false;
     moves::base_move::reweighting_cutoff = 0;
     moves::base_move::reweighting_coeffs.clear();
     auto length_cycle = params.length_cycle.value_or(1);
@@ -426,6 +428,9 @@ namespace inchworm {
     }
     for (int n = 1; status == 0; ++n) {
       if (params.verbosity > 2) std::cout << "\nCallibration-loop " << n << "\n";
+
+      // Reset move statistics
+      moves::base_move::reject_stats = {};
 
       auto callibration_results = results;
       mc.add_measure(measures::average_order{params, config, callibration_results}, "measure the average perturbation order");
@@ -487,7 +492,11 @@ namespace inchworm {
     if (params.measure_frame_by_order)
       mc.add_measure(measures::frame_by_order{params, config, frame, results}, "measure the propagator / green function frame by order");
 
+    // Reset move statistics
+    moves::base_move::reject_stats = {};
+
     // Perform QMC run and collect results
+    moves::base_move::accumulating = true;
     if (status == 0) {
       if (params.verbosity > 0) std::printf("     Accumulating ...\n");
       results.status = mc.accumulate(params.n_cycles, length_cycle, triqs::utility::clock_callback(params.max_time));
@@ -498,6 +507,14 @@ namespace inchworm {
           std::cout << "WARNING: Maximum perturbation order was sampled with a finite probability of " << results.order_histogram[*params.max_order]
                     << ". Check convergence w.r.t. max_order!\n";
     }
+
+    for(auto & [tag, order_vec]: moves::base_move::reject_stats) {
+      auto max_order = mpi::all_reduce(order_vec.size(), world, MPI_MAX);
+      order_vec.resize(max_order, nda::zeros<double>(9));
+      order_vec = mpi::all_reduce(order_vec, world);
+    }
+    if (params.verbosity > 0) moves::base_move::print_reject_stats();
+    getchar();
 
     // Post Processing
     //if (params.post_process) { post_process(params); }

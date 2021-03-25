@@ -11,27 +11,98 @@
 
 namespace inchworm::moves {
 
+  bool base_move::print_condition() const { return accumulating && config.size() > 4; }
+
+  void base_move::print_move_stats() const {
+    fmt::print("Max Moves since empty: {}\n", max_moves_since_empty);
+    fmt::print("Moves since empty: {}\n", moves_since_empty);
+    fmt::print("Max Expensive Moves since empty: {}\n", max_expensive_moves_since_empty);
+    fmt::print("Expensive Moves since empty: {}\n", expensive_moves_since_empty);
+    fmt::print("Max Accepts since empty: {}\n", max_accepts_since_empty);
+    fmt::print("Accepts since empty: {}\n", accepts_since_empty);
+    fmt::print("Rejection count: {}\n", reject_count);
+  }
+
+  void base_move::print_reject_stats() {
+    fmt::print("Rejection Statistics\n");
+    fmt::print("====================");
+    for (auto [move_name, move_stats] : reject_stats) {
+      fmt::print("\n\nMove {}\n", move_name);
+      fmt::print("--------------------\n");
+      fmt::print("{:10}", "order");
+      for (auto name : stat_names) fmt::print("| {:10}", name);
+      for (auto k : range(move_stats.size())) {
+        fmt::print("\n{:<10}", k);
+        for (auto [n, stat] : enumerate(move_stats[k])) {
+          if (n == 0)
+            fmt::print("| {:<10}", stat);
+          else if (n == 1)
+            fmt::print("| {:<10.4f}", 1.0 - double(stat) / move_stats[k][0]);
+          else
+            fmt::print("| {:<10.3f}", double(stat) / move_stats[k][1]);
+        }
+      }
+    }
+    fmt::print("\n");
+  }
+
   scalar_t base_move::attempt() {
 
     prop_config = config;
 
+    auto pert_order = config.size();
+    if (reject_stats[name()].size() < (pert_order + 1)) reject_stats[name()].resize(pert_order + 1, nda::zeros<double>(9));
+
+    ++moves_since_empty;
+    ++reject_stats[name()][pert_order][0];
+
+    if (print_condition()) {
+      fmt::print("\n====== Try {} ======\n", name());
+      print_move_stats();
+      auto diagram = diagram::time_diagram_t{config, {params.tau_split}};
+      print_configuration(diagram);
+      getchar();
+    }
+
     // ------ Generate the new configuration and diagram -------
 
     auto t_ratio = try_config_update(prop_config);
-    if (t_ratio == 0.0) return 0.0; // Check if move has failed
+    if (t_ratio == 0.0) { // Check if config update has failed
+      rejection_reason = "try_config_update";
+      ++reject_stats[name()][pert_order][2];
+      return 0.0;
+    }
     auto prop_pert_order = prop_config.size();
-    if (prop_pert_order > solver.last_solve_params->max_order.value_or(prop_pert_order)) return 0.0;
+    if (prop_pert_order > solver.last_solve_params->max_order.value_or(prop_pert_order)) {
+      rejection_reason = "max_order";
+      ++reject_stats[name()][pert_order][3];
+      return 0.0;
+    }
     auto diagram = diagram::time_diagram_t{prop_config, {params.tau_split}};
 
     // We need to have at least one split-point between operators for a finite hybridization weight
-    if (not params.use_bare_propagator and diagram.size() > 0 and diagram.is_trivial) return 0.0;
+    if (not params.use_bare_propagator and diagram.size() > 0 and diagram.is_trivial) {
+      rejection_reason = "short_circuit hyb";
+      ++reject_stats[name()][pert_order][4];
+      return 0.0;
+    }
 
     // Quick-check for vanishing impurity trace
-    if (params.mode == MODE::PROPAGATOR and has_zero_trace(solver.ad_imp, diagram)) return 0.0;
+    if (params.mode == MODE::PROPAGATOR and has_zero_trace(solver.ad_imp, diagram)) {
+      rejection_reason = "short_circuit imp";
+      ++reject_stats[name()][pert_order][5];
+      return 0.0;
+    }
 
     // ------ Calculate the hybridization weight -------
 
-    auto hyb_mat     = diagram::hyb_matrix_t(diagram, solver.Delta_tau);
+    if (print_condition()) {
+      print_configuration(diagram);
+      getchar();
+    }
+    ++expensive_moves_since_empty;
+
+    auto hyb_mat   = diagram::hyb_matrix_t(diagram, solver.Delta_tau);
     prop_config.sign = diagram.sign();
 
     if (params.use_bare_propagator)
@@ -87,6 +158,13 @@ namespace inchworm::moves {
 
     auto ratio = sign_ratio * t_ratio * w_imp_ratio * w_hyb_ratio;
 
+    if (rng.preview() >= std::min(1.0, std::abs(ratio))) {
+      rejection_reason = fmt::format("ratio {}", ratio);
+      ++reject_stats[name()][pert_order][6];
+    } else {
+      rejection_reason = "ERROR rng.preview()";
+    }
+
     // ------ Debugging Information -------
 
 #ifdef INCHWORM_DEBUG_PRINTS
@@ -116,6 +194,26 @@ namespace inchworm::moves {
 #endif
     config = prop_config;
     frame  = prop_frame;
+
+    ++accepts_since_empty;
+    if (config.size() == 0) {
+      moves_since_empty           = 0;
+      expensive_moves_since_empty = 0;
+      accepts_since_empty         = 0;
+    }
+    max_moves_since_empty           = std::max(moves_since_empty, max_moves_since_empty);
+    max_expensive_moves_since_empty = std::max(expensive_moves_since_empty, max_expensive_moves_since_empty);
+    max_accepts_since_empty         = std::max(accepts_since_empty, max_accepts_since_empty);
+
+    if (print_condition()) {
+      fmt::print("\n====== Accept {} ======\n", name());
+      print_move_stats();
+      auto diagram = diagram::time_diagram_t{config, {params.tau_split}};
+      print_configuration(diagram);
+      getchar();
+    }
+    reject_count = 0;
+
     return 1.0;
   }
 
