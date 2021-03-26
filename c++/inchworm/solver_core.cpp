@@ -271,7 +271,7 @@ namespace inchworm {
 
     // Create Monte-Carlo configuration
     auto initial_frame =
-       (mode == MODE::PROPAGATOR) ? make_bare_u_frame(ad_imp, tau_split) : make_bare_g_frame(ad_imp, u_tau, params.gf_struct, tau_split, params.beta);
+       (mode == MODE::PROPAGATOR) ? make_bare_u_frame(ad_imp, tau_max) : make_bare_g_frame(ad_imp, u_tau, params.gf_struct, tau_split, tau_max);
     qmc_data_t qmc_data(params.gf_struct, initial_frame);
 
     // Create Monte-Carlo params
