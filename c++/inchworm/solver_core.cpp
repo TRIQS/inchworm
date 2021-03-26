@@ -270,12 +270,9 @@ namespace inchworm {
     auto &rng = mc.get_rng();
 
     // Create Monte-Carlo configuration
-    qmc_data_t qmc_data(params.gf_struct.size());
-    if (mode == MODE::PROPAGATOR) {
-      qmc_data.frame = make_bare_u_frame(ad_imp, tau_split);
-    } else { // MODE::GREENFUNCTION
-      qmc_data.frame = make_bare_g_frame(ad_imp, u_tau, params.gf_struct, tau_split, params.beta);
-    }
+    auto initial_frame =
+       (mode == MODE::PROPAGATOR) ? make_bare_u_frame(ad_imp, tau_split) : make_bare_g_frame(ad_imp, u_tau, params.gf_struct, tau_split, params.beta);
+    qmc_data_t qmc_data(params.gf_struct, initial_frame);
 
     // Create Monte-Carlo params
     qmc_params_t qmc_params{Delta_tau, ad_imp, u_tau, tau_max, tau_split, use_bare_propagator, mode, params.max_order};

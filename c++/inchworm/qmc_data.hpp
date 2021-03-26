@@ -1,12 +1,13 @@
 #pragma once
 
 #include "types.hpp"
+#include "u_frame.hpp"
 
 namespace inchworm {
 
   struct config_t {
-    std::vector<fop_t> d_list, d_dag_list;                      // list of d/d_dag time ordered
-    std::vector<std::vector<fop_t>> d_bl_list, d_dag_bl_list;   // list of d/d_dag by block, insertion ordered
+    std::vector<fop_t> d_list, d_dag_list;                    // list of d/d_dag time ordered
+    std::vector<std::vector<fop_t>> d_bl_list, d_dag_bl_list; // list of d/d_dag by block, insertion ordered
 
     config_t(long n_bl) : d_bl_list(n_bl), d_dag_bl_list(n_bl) {}
 
@@ -27,12 +28,12 @@ namespace inchworm {
   /// The Monte-Carlo Configuration structure
   struct qmc_data_t {
     // last accepted paraemeters
-    config_t config;              // last accepted configuration of d and d_dag
-    weights_t weights = {1., 1.}; // weight values of the last accepted configuration
-    int sign          = 1;        // sign of the last accepted configuration
-    frame_t frame;                // the configuration (propagator or green function) frame
+    config_t config;   // last accepted configuration of d and d_dag
+    weights_t weights; // weight values of the last accepted configuration
+    int sign = 1;      // sign of the last accepted configuration
+    frame_t frame;     // the configuration (propagator or green function) frame
 
-    qmc_data_t(long n_bl) : config(n_bl) {}
+    qmc_data_t(gf_struct_t const &gf_struct, frame_t const &frame) : config(gf_struct.size()), weights{frobenius_norm(frame), 1.0}, frame{frame} {}
   };
 
   // structure to calculate hybridization function for tau, tau_dag, and orbital (linear) indices.
