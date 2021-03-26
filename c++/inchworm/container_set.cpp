@@ -37,8 +37,8 @@ namespace inchworm {
   void qmc_results_t::print(int verbosity) {
 
     if (verbosity > 0) {
-      std::printf("     max_element frame: %.4e\n", max_element(nda::map([](matrix_t const &m) { return max_element(m); })(frame)));
-      std::printf("     min_element frame: %.4e\n", min_element(nda::map([](matrix_t const &m) { return min_element(m); })(frame)));
+      std::printf("     max(abs(frame)): %.4e\n", max_element(nda::map([](matrix_t const &m) { return max_element(abs(m)); })(frame)));
+      std::printf("     min(abs(frame)): %.4e\n", min_element(nda::map([](matrix_t const &m) { return min_element(abs(m)); })(frame)));
       std::printf("     average_order: %4f\n", average_order);
       if (order_histogram.size() > 0) {
         std::printf("     order_histogram: [");
