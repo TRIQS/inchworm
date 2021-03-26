@@ -32,10 +32,10 @@ namespace inchworm {
     return g_frame;
   }
 
-  frame_t make_bare_u_frame(atom_diag const &ad, double tau, bool set_gs_to_0) {
+  frame_t make_bare_u_frame(atom_diag const &ad, double tau) {
     auto u_frame = make_zero_frame(ad.get_subspace_dims());
     for (auto [bl, bl_size] : enumerate(ad.get_subspace_dims()))
-      for (int i : range(bl_size)) u_frame[bl](i, i) = std::exp(-tau * (ad.get_eigenvalue(bl, i) + (set_gs_to_0 ? 0. : ad.get_gs_energy())));
+      for (int i : range(bl_size)) u_frame[bl](i, i) = std::exp(-tau * ad.get_eigenvalue(bl, i));
     return u_frame;
   }
 
@@ -167,7 +167,10 @@ namespace inchworm {
       utau_imp[bl_imp] = 1.0 / Z_bath * dagger(rot) * utau_imp[bl_imp] * rot;
     }
 
-    return utau_imp;
+    // Correct for using different reference energies in imp, bath and tot
+    double factor = std::exp((ad_bath.get_gs_energy() + ad_imp.get_gs_energy() - ad_tot.get_gs_energy()) * tau);
+
+    return factor * utau_imp;
   }
 
 } // namespace inchworm

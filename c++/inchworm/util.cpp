@@ -45,7 +45,7 @@ namespace inchworm {
       auto sp     = ad.get_eigensystems()[s];
       auto E_Udag = matrix_t{dagger(sp.unitary_matrix)};
       for (int i = 0; i < sp.eigenvalues.size(); i++) {
-        for (int j = 0; j < sp.eigenvalues.size(); j++) E_Udag(i, j) *= sp.eigenvalues[i] + ad.get_gs_energy();
+        for (int j = 0; j < sp.eigenvalues.size(); j++) E_Udag(i, j) *= sp.eigenvalues[i];
       }
       auto H = sp.unitary_matrix * E_Udag;
 

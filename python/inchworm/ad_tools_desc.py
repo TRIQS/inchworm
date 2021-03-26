@@ -32,7 +32,7 @@ module.add_function ("inchworm::u_partial_t inchworm::get_op_block_matrix (inchw
 
 module.add_function ("inchworm::frame_t inchworm::make_g_frame_from_l_and_r (inchworm::atom_diag ad_imp, triqs::hilbert_space::gf_struct_t gf_struct, inchworm::u_partial_t l, inchworm::u_partial_t r)", doc = r"""""")
 
-module.add_function ("inchworm::frame_t inchworm::make_bare_u_frame (inchworm::atom_diag ad, double tau, bool set_gs_to_0 = false)", doc = r"""""")
+module.add_function ("inchworm::frame_t inchworm::make_bare_u_frame (inchworm::atom_diag ad, double tau)", doc = r"""""")
 
 module.add_function ("inchworm::frame_t inchworm::make_bare_g_frame (inchworm::atom_diag ad_imp, inchworm::u_tau_t u_tau, triqs::hilbert_space::gf_struct_t gf_struct, double tau_split, double beta)", doc = r"""""")
 

@@ -16,7 +16,8 @@ namespace inchworm {
   frame_t make_g_frame_from_l_and_r(atom_diag const &ad_imp, gf_struct_t const &gf_struct, u_partial_t const &l, u_partial_t const &r);
 
   // Initialize bare propagator frame U_0 = exp(-tau H_loc) in the diagonal basis of H_loc
-  frame_t make_bare_u_frame(atom_diag const &ad, double tau, bool set_gs_to_0 = false);
+  // CAUTION: Energies are w.r.t. the ground-state energy of the atom_diag object
+  frame_t make_bare_u_frame(atom_diag const &ad, double tau);
 
   // Initialize bare Green function frame
   frame_t make_bare_g_frame(atom_diag const &ad_imp, u_tau_t const &u_tau, gf_struct_t const &gf_struct, double tau_split, double beta);
