@@ -125,7 +125,7 @@ c.add_member(c_name = "Delta_tau",
 
 c.add_member(c_name = "u_tau",
              c_type = "inchworm::u_tau_t",
-             read_only= True,
+             read_only= False,
              doc = r"""The propagator in imaginary time""")
 
 c.add_constructor("""(**inchworm::constr_params_t)""", doc = r"""Construct a INCHWORM solver
