@@ -27,7 +27,10 @@ namespace inchworm::moves {
                   bool equal_blocks)
        : base_move(data, gf_struct, qmc_params, rng), equal_blocks(equal_blocks) {}
 
-    inline std::string name() const override { return "Double Insert"; };
+    inline std::string name() const override {
+      if (equal_blocks) return "Double Insert (equal_blocks)";
+      return "Double Insert";
+    };
 
     /**
      * Try to insert two (cdag, c) operator pairs into the configuration

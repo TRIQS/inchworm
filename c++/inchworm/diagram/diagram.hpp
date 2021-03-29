@@ -39,12 +39,12 @@ namespace inchworm::diagram {
     };
 
     public:
-    std::vector<op_t> op_list;             // Time ordered list of all operators
-    std::vector<int> split_points;         // Position of split points (index of first operator to the right of split time)
+    std::vector<op_t> op_list;                    // Time ordered list of all operators
+    std::vector<int> split_points;                // Position of split points (index of first operator to the right of split time)
     std::vector<fop_t> const &d_list, d_dag_list; // Time ordered list of d/d_dag
-    bool is_trivial = true;                // Diagram is trivial if no split_times are found between the smallest and largest operator time
-    std::vector<int> pos_d;                // Position of d in the op_list
-    std::vector<int> pos_d_dag;            // Position of d_dag in the op_list
+    bool is_trivial = true;                       // Diagram is trivial if no split_times are found between the smallest and largest operator time
+    std::vector<int> pos_d;                       // Position of d in the op_list
+    std::vector<int> pos_d_dag;                   // Position of d_dag in the op_list
 
     /// The perturbation order
     int perturbation_order() const;
@@ -67,4 +67,5 @@ namespace inchworm::diagram {
     time_diagram_t(config_t const &config, std::vector<double> const &split_times, int verbose = 0)
        : time_diagram_t(config.d_list, config.d_dag_list, split_times, verbose) {}
   };
+
 } // namespace inchworm::diagram

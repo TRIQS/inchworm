@@ -39,7 +39,7 @@ namespace inchworm::measures {
     if (comm.rank() == 0) {
       double auto_corr_time = 0.0;
       if (errs[0] > 0) auto_corr_time = std::max(0.0, tau_estimate_from_errors(errs[int(0.7 * errs.size())], errs[0]));
-      std::printf("     auto_corr_time: %.3f\n", auto_corr_time);
+      std::printf("     autocorr(frame): %.3f\n", auto_corr_time);
     }
   }
 

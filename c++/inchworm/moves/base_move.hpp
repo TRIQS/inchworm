@@ -50,7 +50,7 @@ namespace inchworm::moves {
     /// The random number generator
     triqs::mc_tools::random_generator &rng;
 
-    /// the green function structure
+    /// The green function structure
     gf_struct_t const &gf_struct;
 
     /// The vector of all creation operators

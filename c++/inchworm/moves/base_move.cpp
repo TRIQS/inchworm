@@ -110,7 +110,7 @@ namespace inchworm::moves {
     print(prop_data.frame);
     hyb_mat.print();
     std::printf("\n\nhyb.det()=% 4.7f \n", hyb_mat.det());
-    std::printf("\n\nsign= %d  w_hyb=% 4.7f  w_imp=% 4.7f    old_w_hyb=% 4.7f  old_w_imp=% 4.7f \n", prop_data.sign, prop_data.weights.hyb,
+    std::printf("\n\nsign= %d  w_hyb=% 4.7f  w_imp=% 4.7e    old_w_hyb=% 4.7f  old_w_imp=% 4.7e \n", prop_data.sign, prop_data.weights.hyb,
                 prop_data.weights.imp, data.weights.hyb, data.weights.imp);
     std::printf("\n\nsign_ratio= %d  w_hyb_ratio=% 4.7f  w_imp_ratio=% 4.7f  t_ratio=% 4.7f\n", sign_ratio, w_hyb_ratio, w_imp_ratio, t_ratio);
     std::printf("\n\nratio=% 4.7f\n", ratio);

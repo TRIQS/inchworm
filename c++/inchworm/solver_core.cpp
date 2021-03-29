@@ -305,7 +305,7 @@ namespace inchworm {
     int status          = mc.warmup(params.n_warmup_cycles, length_cycle, triqs::utility::clock_callback(params.max_time));
     if (params.verbosity > 0) {
       std::printf("     Callibrating ...\n");
-      std::printf("         %-12s| %-12s| %-12s| %-12s| %-12s| %-16s\n", "hist0", "autocorr", "acc insert", "acc remove", "new coeff0",
+      std::printf("         %-12s| %-12s| %-12s| %-12s| %-12s| %-16s\n", "hist0", "autocorr(k)", "acc insert", "acc remove", "new coeff0",
                   "new length_cycle");
     }
     for (int n = 1; status == 0; ++n) {
