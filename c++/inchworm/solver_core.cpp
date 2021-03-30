@@ -329,10 +329,11 @@ namespace inchworm {
 
     // Initialize the accumulators for the tau difference statistics
     long n_bl = params.gf_struct.size();
-    std::vector<nda::array<accumulator<double>, 3>> tau_diff_stat(n_bl);
+    std::vector<nda::array<std::vector<double>, 3>> tau_diff_stat(n_bl);
+    std::vector<nda::array<std::vector<double>, 2>> tau_insert_stat(n_bl);
     for (auto bl : range(n_bl)) {
-      tau_diff_stat[bl] = nda::array<accumulator<double>, 3>{params.gf_struct[bl].second, 2, 2};
-      tau_diff_stat[bl] = accumulator<double>{0.0, 0, -1}; // Lin-binning only
+      tau_diff_stat[bl]   = nda::array<std::vector<double>, 3>{params.gf_struct[bl].second, 2, 2};
+      tau_insert_stat[bl] = nda::array<std::vector<double>, 2>{params.gf_struct[bl].second, 2};
     }
 
     // FIXME Reset operator widths manually
@@ -349,13 +350,14 @@ namespace inchworm {
 
     // Add moves
     using moves::KIND;
-    mc.add_move(moves::insert<KIND::Single>{config, frame, qmc_params, *this, rng, tau_diff_stat}, "insert move");
+    mc.add_move(moves::insert<KIND::Single>{config, frame, qmc_params, *this, rng, tau_diff_stat, tau_insert_stat}, "insert move");
     mc.add_move(moves::remove<KIND::Single>{config, frame, qmc_params, *this, rng}, "remove move");
 
     if (params.use_double_insertion) {
-      mc.add_move(moves::insert<KIND::Double>{config, frame, qmc_params, *this, rng, tau_diff_stat}, "double insert move", 0.5);
+      mc.add_move(moves::insert<KIND::Double>{config, frame, qmc_params, *this, rng, tau_diff_stat, tau_insert_stat}, "double insert move", 0.5);
       mc.add_move(moves::remove<KIND::Double>{config, frame, qmc_params, *this, rng}, "double remove move", 0.5);
-      mc.add_move(moves::insert<KIND::DoubleEqBl>{config, frame, qmc_params, *this, rng, tau_diff_stat}, "double insert move equal blocks", 0.5);
+      mc.add_move(moves::insert<KIND::DoubleEqBl>{config, frame, qmc_params, *this, rng, tau_diff_stat, tau_insert_stat},
+                  "double insert move equal blocks", 0.5);
       mc.add_move(moves::remove<KIND::DoubleEqBl>{config, frame, qmc_params, *this, rng}, "double remove move equal blocks", 0.5);
     }
 
@@ -388,26 +390,26 @@ namespace inchworm {
       long below_threshold_count = 0;
       for (auto bl : range(n_bl)) {
         for (auto &op : all_d_ops[bl]) { // FIXME join(all_d_ops[bl], all_d_dag_ops[bl])
-          if (mpi::all_reduce(tau_diff_stat[bl](op.idx, op.dag, 0).n_lin_bins()) > 0)
-            op.left_width = mean_mpi(world, tau_diff_stat[bl](op.idx, op.dag, 0).linear_bins());
+          if (mpi::all_reduce(tau_diff_stat[bl](op.idx, op.dag, 0).size()) > 0)
+            op.left_width = mean_mpi(world, tau_diff_stat[bl](op.idx, op.dag, 0));
           else
             ++below_threshold_count;
 
-          if (mpi::all_reduce(tau_diff_stat[bl](op.idx, op.dag, 1).n_lin_bins()) > 0)
-            op.right_width = mean_mpi(world, tau_diff_stat[bl](op.idx, op.dag, 1).linear_bins());
+          if (mpi::all_reduce(tau_diff_stat[bl](op.idx, op.dag, 1).size()) > 0)
+            op.right_width = mean_mpi(world, tau_diff_stat[bl](op.idx, op.dag, 1));
           else
             ++below_threshold_count;
 
           if (params.verbosity > 0) std::cout << op << "\n";
         }
         for (auto &op : all_d_dag_ops[bl]) {
-          if (mpi::all_reduce(tau_diff_stat[bl](op.idx, op.dag, 0).n_lin_bins()) > 0)
-            op.left_width = mean_mpi(world, tau_diff_stat[bl](op.idx, op.dag, 0).linear_bins());
+          if (mpi::all_reduce(tau_diff_stat[bl](op.idx, op.dag, 0).size()) > 0)
+            op.left_width = mean_mpi(world, tau_diff_stat[bl](op.idx, op.dag, 0));
           else
             ++below_threshold_count;
 
-          if (mpi::all_reduce(tau_diff_stat[bl](op.idx, op.dag, 1).n_lin_bins()) > 0)
-            op.right_width = mean_mpi(world, tau_diff_stat[bl](op.idx, op.dag, 1).linear_bins());
+          if (mpi::all_reduce(tau_diff_stat[bl](op.idx, op.dag, 1).size()) > 0)
+            op.right_width = mean_mpi(world, tau_diff_stat[bl](op.idx, op.dag, 1));
           else
             ++below_threshold_count;
 
@@ -506,6 +508,16 @@ namespace inchworm {
         if (world.rank() == 0)
           std::cout << "WARNING: Maximum perturbation order was sampled with a finite probability of " << results.order_histogram[*params.max_order]
                     << ". Check convergence w.r.t. max_order!\n";
+    }
+
+    for (auto &stat_bl : tau_diff_stat) stat_bl = map([](auto &v) { return mpi::all_gather(v); })(stat_bl);
+    for (auto &stat_bl : tau_insert_stat) stat_bl = map([](auto &v) { return mpi::all_gather(v); })(stat_bl);
+
+    if (world.rank() == 0) {
+      h5::file f{"tau_accept_analysis.h5", 'w'};
+      h5::write(f, "Delta_tau", Delta_tau);
+      h5::write(f, "tau_diff_stat", tau_diff_stat);
+      h5::write(f, "tau_insert_stat", tau_insert_stat);
     }
 
     for(auto & [tag, order_vec]: moves::base_move::reject_stats) {

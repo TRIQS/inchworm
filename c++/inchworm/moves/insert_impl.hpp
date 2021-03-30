@@ -53,14 +53,15 @@ namespace inchworm::moves {
 
   template <KIND Kind> scalar_t insert<Kind>::accept() {
 
-    // Gather tau statistic during warmup
+    // Gather tau diff statistic during warmup
     if (gather_tau_diff_stat) {
       for (auto const &op : {last_d, last_d_dag}) {
         double tau_diff = cyclic_difference(op, prop_config, params.tau_max);
+        tau_insert_stat[op.bl](op.idx, op.dag).push_back(op.tau);
         if (tau_diff < params.tau_max / 2.0) // left_width
-          tau_diff_stat[op.bl](op.idx, op.dag, 0) << tau_diff;
+          tau_diff_stat[op.bl](op.idx, op.dag, 0).push_back(tau_diff);
         else // right_width
-          tau_diff_stat[op.bl](op.idx, op.dag, 1) << params.tau_max - tau_diff;
+          tau_diff_stat[op.bl](op.idx, op.dag, 1).push_back(params.tau_max - tau_diff);
       }
     }
 

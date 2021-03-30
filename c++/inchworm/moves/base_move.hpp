@@ -100,12 +100,6 @@ namespace inchworm::moves {
     /// The green function structure
     gf_struct_t const &gf_struct = solver.constr_params.gf_struct;
 
-    /// The vector of all creation operators
-    std::vector<std::vector<fop_t>> all_d_ops;
-
-    /// The vector of all annihilation operators
-    std::vector<std::vector<fop_t>> all_d_dag_ops;
-
     /// Rejection Count
     inline static long long reject_count = 0;
 
