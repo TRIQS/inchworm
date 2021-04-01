@@ -1,4 +1,6 @@
 #include "./remove.hpp"
+#include "./../torus.hpp"
+#include "./../distributions.hpp"
 
 namespace inchworm::moves {
 
@@ -13,16 +15,31 @@ namespace inchworm::moves {
     long idx     = rng(old_nop_bl);
     long idx_dag = rng(old_nop_bl);
 
+    double d_tau     = config.d_bl_list[bl][idx].tau;
+    double d_dag_tau = config.d_dag_bl_list[bl][idx].tau;
+
     if (not config.try_erase(bl, idx_dag, idx)) return 0;
 
     long bl_size = gf_struct[bl].second;
 
-    // Account for special treatment of insertion into empty configuration
-    if (config.size() == 0 && (params.tau_split != 0.0)) {
-      auto dtau = params.tau_max - params.tau_split;
-      return 1.0 / (2.0 * params.tau_split * dtau * bl_size * bl_size);
-    } else {
+    if (params.tau_split == 0.0) { // ----- CTHyb sampling with bare propagator
+
       return std::pow(old_nop_bl / (params.tau_max * bl_size), 2);
+
+    } else { // ----- Inchworm Sampling
+
+      // Account for special treatment of insertion into empty configuration
+      if (config.size() == 0) {
+        auto dtau = params.tau_max - params.tau_split;
+        return 1.0 / (2.0 * params.tau_split * dtau * bl_size * bl_size);
+      } else {
+
+        double prob_d_tau     = get_prob(d_tau, config.d_dag_list, params.tau_max);
+        double prob_d_dag_tau = get_prob(d_dag_tau, config.d_list, params.tau_max);
+
+        long new_pert_order = config.size();
+        return std::pow(double(old_nop_bl) / bl_size, 2) * prob_d_tau * prob_d_dag_tau;
+      }
     }
   }
 
