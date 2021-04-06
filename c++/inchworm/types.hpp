@@ -92,6 +92,10 @@ namespace inchworm {
     /// The orbital (or non-block) index
     long idx;
 
+    /// The left and right width of the insertion-move tau distribution
+    double left_width  = 10.0;
+    double right_width = 10.0;
+
     bool operator==(fop_t const &) const = default;
 
     friend inline bool operator<(fop_t const &o1, fop_t const &o2) { return o1.tau < o2.tau; }
@@ -101,7 +105,7 @@ namespace inchworm {
     os << std::setprecision(4);
     os << "c";
     if(op.dag) os << "_dag";
-    os << "[tau: " << op.tau << ", bl: " << op.bl << ", idx: " << op.idx << "]";
+    os << "[tau: " << op.tau << ", bl: " << op.bl << ", idx: " << op.idx << ", lw: " << op.left_width << ", rw: " << op.right_width << "]";
     return os;
   }
 

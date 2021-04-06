@@ -19,12 +19,12 @@ namespace inchworm {
 
   // Return the cyclic_difference between the creation/annihilation operator
   // and the closest annihilation/creation operator of the same block of the config
-  inline double cyclic_difference(auto const &op, config_t const &config, double tau_max) {
-    if (config.size(op.bl) == 0) TRIQS_RUNTIME_ERROR << "cyclic_difference requires the operator block to no be empty";
+  inline double cyclic_difference(auto const &op, config_t const &config, double tau_max, double tau_split = 0.0) {
+    if (config.size() == 0) return cyclic_difference(op.tau, tau_split, tau_max);
 
     double min_dist = tau_max;
     double res      = tau_max;
-    for (auto const &opdiag : op.dag ? config.d_bl_list[op.bl] : config.d_dag_bl_list[op.bl]) {
+    for (auto const &opdiag : op.dag ? config.d_list : config.d_dag_list) {
       auto diff = cyclic_difference(op.tau, opdiag.tau, tau_max);
       auto dist = cyclic_distance(op.tau, opdiag.tau, tau_max);
       if (dist < min_dist) {

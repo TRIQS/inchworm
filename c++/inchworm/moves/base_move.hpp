@@ -15,7 +15,7 @@ namespace inchworm::moves {
     scalar_t attempt();
 
     /// Accept vertex insertion
-    scalar_t accept();
+    virtual scalar_t accept();
 
     /// Reject vertex insertion
     void reject() {}

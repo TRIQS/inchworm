@@ -37,32 +37,28 @@ namespace inchworm {
     return tmax - icdf(2.0 - 2.0 * p, w2, tmax / 2.0);
   }
 
-  static const std::pair<double, double> widths_d     = {2.0, 2.0};
-  static const std::pair<double, double> widths_d_dag = {2.0, 2.0};
-
   // Calculate the value of the joint pdf defined through op_list and the double_pdf function
-  inline double get_prob(double tau, std::vector<fop_t> const &op_list, double tmax) {
+  inline double get_prob(fop_t const &op, std::vector<fop_t> const &op_list, double tmax) {
     double prob = 0.0;
-    for (auto const &op : op_list) {
-      double diff   = cyclic_difference(tau, op.tau, tmax);
-      auto [w1, w2] = op.dag ? widths_d : widths_d_dag;
-      prob += double_pdf(diff, w1, w2, tmax);
+    for (auto const &op_ref : op_list) {
+      double diff = cyclic_difference(op.tau, op_ref.tau, tmax);
+      prob += double_pdf(diff, op.left_width, op.right_width, tmax);
     }
     return prob / op_list.size();
   }
 
   // Draw a random time from the joint pdf defined through op_list the double_pdf function
-  inline double get_close_time(triqs::mc_tools::random_generator &rng, std::vector<fop_t> const &op_list, double tmax) {
-    auto const &op = op_list[rng(op_list.size())];
-    auto [w1, w2]  = op.dag ? widths_d : widths_d_dag;
-    return wrap(op.tau + double_icdf(rng(), w1, w2, tmax), tmax);
+  inline double get_close_time(triqs::mc_tools::random_generator &rng, fop_t const &op, std::vector<fop_t> const &op_list, double tmax) {
+    auto const &op_ref = op_list[rng(op_list.size())];
+    return wrap(op_ref.tau + double_icdf(rng(), op.left_width, op.right_width, tmax), tmax);
   }
 
   // Draw a random time from the joint pdf defined through op_list the double_pdf function
   // and return both the time and its proposition probability
-  inline std::pair<double, double> get_close_time_and_prob(triqs::mc_tools::random_generator &rng, std::vector<fop_t> const &op_list, double tmax) {
-    double tau = get_close_time(rng, op_list, tmax);
-    return {tau, get_prob(tau, op_list, tmax)};
+  inline std::pair<double, double> get_close_time_and_prob(triqs::mc_tools::random_generator &rng, fop_t op, std::vector<fop_t> const &op_list,
+                                                           double tmax) {
+    op.tau = get_close_time(rng, op, op_list, tmax);
+    return {op.tau, get_prob(op, op_list, tmax)};
   }
 
 } // namespace inchworm

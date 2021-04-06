@@ -9,6 +9,8 @@
 #include <triqs/utility/callbacks.hpp>
 #include <triqs/mc_tools/mc_generic.hpp>
 
+#include <fmt/core.h>
+
 namespace inchworm {
 
   //------------------------------
@@ -290,8 +292,28 @@ namespace inchworm {
     // Create Monte-Carlo params
     qmc_params_t qmc_params{tau_max, tau_split, use_bare_propagator, mode};
 
+    // Initialize the accumulators for the tau difference statistics
+    long n_bl = params.gf_struct.size();
+    std::vector<nda::array<accumulator<double>, 3>> tau_diff_stat(n_bl);
+    for (auto bl : range(n_bl)) {
+      tau_diff_stat[bl] = nda::array<accumulator<double>, 3>{params.gf_struct[bl].second, 2, 2};
+      tau_diff_stat[bl] = accumulator<double>{0.0, 0, -1}; // Lin-binning only
+    }
+
+    // FIXME Reset operator widths manually
+    for (auto bl : range(n_bl)) {
+      for (auto &op : all_d_ops[bl]) {
+        op.left_width  = fop_t{}.left_width;
+        op.right_width = fop_t{}.right_width;
+      }
+      for (auto &op : all_d_dag_ops[bl]) {
+        op.left_width  = fop_t{}.left_width;
+        op.right_width = fop_t{}.right_width;
+      }
+    }
+
     // Add moves
-    mc.add_move(moves::insert{config, frame, qmc_params, *this, rng}, "insert move");
+    mc.add_move(moves::insert{config, frame, qmc_params, *this, rng, tau_diff_stat}, "insert move");
     mc.add_move(moves::remove{config, frame, qmc_params, *this, rng}, "remove move");
 
     if (params.use_double_insertion) {
@@ -310,12 +332,59 @@ namespace inchworm {
     }
     auto results = qmc_results_t{shape_of_frame};
 
-    // Run the warmup and callibration loop
+    // ----- Run the warmup
+    if (params.verbosity > 0) std::printf("     Warming up ...\n");
     moves::base_move::reweighting_cutoff = 0;
     moves::base_move::reweighting_coeffs.clear();
-    auto length_cycle   = params.length_cycle.value_or(1);
+    auto length_cycle = params.length_cycle.value_or(1);
+    int status        = mc.warmup(params.n_warmup_cycles, length_cycle, triqs::utility::clock_callback(params.max_time));
+
+    // ----- Define Function for measuring and setting the operator distribution widths
+    auto gather_tau_diff_stat = [&, done = false]() mutable {
+      if (done) return;
+
+      // Gather the tau-diff statistics
+      moves::insert::gather_tau_diff_stat = true;
+      int status                          = mc.warmup(params.n_warmup_cycles, length_cycle, triqs::utility::clock_callback(params.max_time));
+      moves::insert::gather_tau_diff_stat = false;
+
+      // Adjust the operators accordingly
+      long below_threshold_count = 0;
+      for (auto bl : range(n_bl)) {
+        for (auto &op : all_d_ops[bl]) { // FIXME join(all_d_ops[bl], all_d_dag_ops[bl])
+          if (tau_diff_stat[bl](op.idx, op.dag, 0).n_lin_bins() > 0)
+            op.left_width = mean_mpi(world, tau_diff_stat[bl](op.idx, op.dag, 0).linear_bins());
+          else
+            ++below_threshold_count;
+
+          if (tau_diff_stat[bl](op.idx, op.dag, 1).n_lin_bins() > 0)
+            op.right_width = mean_mpi(world, tau_diff_stat[bl](op.idx, op.dag, 1).linear_bins());
+          else
+            ++below_threshold_count;
+
+          if (params.verbosity > 0) PRINT(op);
+        }
+        for (auto &op : all_d_dag_ops[bl]) {
+          if (tau_diff_stat[bl](op.idx, op.dag, 0).n_lin_bins() > 0)
+            op.left_width = mean_mpi(world, tau_diff_stat[bl](op.idx, op.dag, 0).linear_bins());
+          else
+            ++below_threshold_count;
+
+          if (tau_diff_stat[bl](op.idx, op.dag, 1).n_lin_bins() > 0)
+            op.right_width = mean_mpi(world, tau_diff_stat[bl](op.idx, op.dag, 1).linear_bins());
+          else
+            ++below_threshold_count;
+
+          if (params.verbosity > 0) PRINT(op);
+        }
+        done = true;
+      }
+      if (below_threshold_count > 0 && params.verbosity > 0)
+        fmt::print("         Found {} operators with insertion count below threshold, please raise n_warmup_cycles\n", below_threshold_count);
+    };
+
+    // -----  Run the callibration loop
     size_t hist_max_idx = 0;
-    int status          = mc.warmup(params.n_warmup_cycles, length_cycle, triqs::utility::clock_callback(params.max_time));
     if (params.verbosity > 0) {
       std::printf("     Callibrating ...\n");
       std::printf("         %-12s| %-12s| %-12s| %-12s| %-12s| %-16s\n", "hist0", "autocorr(k)", "acc insert", "acc remove", "new coeff0",
@@ -362,6 +431,9 @@ namespace inchworm {
         std::printf("         %-12.3f| %-12.3f| %-12.3f| %-12.3f| %-12.3e| %-16d\n", hist[0], callibration_results.auto_corr_time,
                     acc_rates.at("insert move"), acc_rates.at("remove move"), moves::base_move::reweighting_coeffs[0], length_cycle);
       }
+
+      // When not reweighting, set operator tau distribution widths
+      if (hist[0] > 0.7 * hist[hist_max_idx] and hist[0] <= params.max_prob_zeroth_order) gather_tau_diff_stat();
 
       // Iterate the callibration until the zeroth order is sampled with finite probability
       if (hist[0] > 0.01 and hist[0] <= params.max_prob_zeroth_order
