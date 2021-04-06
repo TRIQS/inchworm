@@ -145,4 +145,20 @@ namespace inchworm {
        : constr_params_t(constr_params_), solve_params_t(solve_params_) {}
   };
 
+  // static parameters of the Monte Carlo simulation
+  struct qmc_params_t {
+
+    /// Similar to beta, but configuration here does not always goes up to beta. 0 < tau_max <= beta
+    double tau_max;
+
+    /// In the inchworm, this should be the tau_max of the previous inching. 0 < tau_split <= tau_max
+    double tau_split;
+
+    // True only for the first iteration of the inchworm calculation
+    bool use_bare_propagator;
+
+    // The sampling mode, either PROPAGATOR or GREENFUNCTION
+    MODE mode;
+  };
+
 } // namespace inchworm

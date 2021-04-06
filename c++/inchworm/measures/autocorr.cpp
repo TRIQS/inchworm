@@ -4,12 +4,10 @@
 
 namespace inchworm::measures {
 
-  autocorr::autocorr(params_t const &params, qmc_data_t const &qmc_data_, qmc_results_t &results_)
-     : verbosity(params.verbosity), qmc_data(qmc_data_), results(results_) {}
+  autocorr::autocorr(params_t const &params, config_t const &config, qmc_results_t &results)
+     : verbosity(params.verbosity), config(config), results(results) {}
 
-  void autocorr::accumulate(scalar_t sign) {
-    acc << qmc_data.config.size();
-  }
+  void autocorr::accumulate(scalar_t sign) { acc << config.size(); }
 
   void autocorr::collect_results(mpi::communicator const &comm) {
 

@@ -23,8 +23,9 @@ namespace inchworm::moves {
 
     bool equal_blocks;
 
-    double_remove(qmc_data_t &data, qmc_params_t const &params, solver_core const &solver, triqs::mc_tools::random_generator &rng, bool equal_blocks)
-       : base_move(data, params, solver, rng), equal_blocks(equal_blocks) {}
+    double_remove(config_t &config, frame_t &frame, qmc_params_t const &params, solver_core const &solver, triqs::mc_tools::random_generator &rng,
+                  bool equal_blocks)
+       : base_move(config, frame, params, solver, rng), equal_blocks(equal_blocks) {}
 
     inline std::string name() const override {
       if (equal_blocks) return "Double Remove (equal_blocks)";

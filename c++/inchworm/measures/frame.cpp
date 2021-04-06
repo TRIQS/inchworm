@@ -3,28 +3,28 @@
 
 namespace inchworm::measures {
 
-  frame::frame(params_t const &params, qmc_data_t const &qmc_data_, qmc_results_t &results)
-     : verbosity(params.verbosity), qmc_data(qmc_data_), frame_ref(results.frame), frame_0th_order_ref(results.frame_0th_order) {}
+  frame::frame(params_t const &params, config_t const &config, frame_t const &frame, qmc_results_t &results)
+     : verbosity(params.verbosity), config(config), frame_(frame), acc_frame(results.frame), acc_frame_0th_order(results.frame_0th_order) {}
 
   void frame::accumulate(scalar_t sign) {
 
     // We weight the Monte-Carlo by the frobenius norm of the current frame
     // This importance sampling factor has to be corrected in the measurement
-    scalar_t s = sign / (qmc_data.weights.imp);
+    scalar_t s = sign / (config.imp_weight);
 
-    for (int bl : range(frame_ref.size()))
-      if (not qmc_data.frame[bl].empty()) frame_ref[bl] += s * qmc_data.frame[bl];
+    for (int bl : range(frame_.size()))
+      if (not frame_[bl].empty()) acc_frame[bl] += s * frame_[bl];
 
     // For normalization purpose, we sample the zeroth order separatly:
-    if (qmc_data.config.size() == 0) frame_0th_order_ref += s * qmc_data.frame;
+    if (config.size() == 0) acc_frame_0th_order += s * frame_;
 
     // Perform an autocorrelation analysis on the trace
-    acc << trace(qmc_data.frame);
+    acc << trace(frame_);
   }
 
   void frame::collect_results(mpi::communicator const &comm) {
-    frame_0th_order_ref = mpi::all_reduce(frame_0th_order_ref, comm);
-    frame_ref           = mpi::all_reduce(frame_ref, comm);
+    acc_frame_0th_order = mpi::all_reduce(acc_frame_0th_order, comm);
+    acc_frame           = mpi::all_reduce(acc_frame, comm);
 
     auto [errs, counts]  = acc.log_bin_errors_all_reduce(comm);
 

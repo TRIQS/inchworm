@@ -1,4 +1,4 @@
-#include "./qmc_data.hpp"
+#include "./config.hpp"
 
 namespace inchworm {
 

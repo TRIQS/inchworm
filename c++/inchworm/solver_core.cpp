@@ -269,23 +269,23 @@ namespace inchworm {
     // Capture random number generator
     auto &rng = mc.get_rng();
 
-    // Create Monte-Carlo configuration
-    auto initial_frame =
+    // Create frame and Monte-Carlo configuration
+    auto frame =
        (mode == MODE::PROPAGATOR) ? make_bare_u_frame(ad_imp, tau_max) : make_bare_g_frame(ad_imp, u_tau, params.gf_struct, tau_split, tau_max);
-    qmc_data_t qmc_data(params.gf_struct, initial_frame);
+    config_t config(frame, params.gf_struct);
 
     // Create Monte-Carlo params
-    qmc_params_t qmc_params{tau_max, tau_split, use_bare_propagator, mode, params.max_order};
+    qmc_params_t qmc_params{tau_max, tau_split, use_bare_propagator, mode};
 
     // Add moves
-    mc.add_move(moves::insert{qmc_data, qmc_params, *this, rng}, "insert move");
-    mc.add_move(moves::remove{qmc_data, qmc_params, *this, rng}, "remove move");
+    mc.add_move(moves::insert{config, frame, qmc_params, *this, rng}, "insert move");
+    mc.add_move(moves::remove{config, frame, qmc_params, *this, rng}, "remove move");
 
     if (params.use_double_insertion) {
-      mc.add_move(moves::double_insert{qmc_data, qmc_params, *this, rng, false /*equal_blocks*/}, "double insert move", 0.5);
-      mc.add_move(moves::double_remove{qmc_data, qmc_params, *this, rng, false}, "double remove move", 0.5);
-      mc.add_move(moves::double_insert{qmc_data, qmc_params, *this, rng, true}, "double insert move equal blocks", 0.5);
-      mc.add_move(moves::double_remove{qmc_data, qmc_params, *this, rng, true}, "double remove move equal blocks", 0.5);
+      mc.add_move(moves::double_insert{config, frame, qmc_params, *this, rng, false /*equal_blocks*/}, "double insert move", 0.5);
+      mc.add_move(moves::double_remove{config, frame, qmc_params, *this, rng, false}, "double remove move", 0.5);
+      mc.add_move(moves::double_insert{config, frame, qmc_params, *this, rng, true}, "double insert move equal blocks", 0.5);
+      mc.add_move(moves::double_remove{config, frame, qmc_params, *this, rng, true}, "double remove move equal blocks", 0.5);
     }
 
     // Initialize result container
@@ -312,9 +312,9 @@ namespace inchworm {
       if (params.verbosity > 2) std::cout << "\nCallibration-loop " << n << "\n";
 
       auto callibration_results = results;
-      mc.add_measure(measures::average_order{params, qmc_data, callibration_results}, "measure the average perturbation order");
-      mc.add_measure(measures::order_histogram{params, qmc_data, callibration_results}, "measure the perturbation order histogram");
-      mc.add_measure(measures::autocorr{params, qmc_data, callibration_results}, "measure the autocorrelation time");
+      mc.add_measure(measures::average_order{params, config, callibration_results}, "measure the average perturbation order");
+      mc.add_measure(measures::order_histogram{params, config, callibration_results}, "measure the perturbation order histogram");
+      mc.add_measure(measures::autocorr{params, config, callibration_results}, "measure the autocorrelation time");
 
       status = mc.accumulate(params.n_callibration_cycles, length_cycle, triqs::utility::clock_callback(params.max_time));
       if (status != 0) break;
@@ -331,13 +331,13 @@ namespace inchworm {
       for (auto k : range(hist_max_idx)) { // Scale up the weight for orders below hist_max_idx
         auto hist_ratio = std::max(1.0, hist[hist_max_idx] / std::max(hist[k], 0.5 / params.n_callibration_cycles));
         moves::base_move::reweighting_coeffs[k] *= hist_ratio;
-        if (qmc_data.config.size() == k) qmc_data.weights.imp *= hist_ratio;
+        if (config.size() == k) config.imp_weight *= hist_ratio;
       }
       if (params.max_prob_zeroth_order < hist[0]) { // Scale down the weight for the zeroth order if necessary
         auto zero_reweight = 0.95 * std::max(1.0 - hist[0], 0.5 / params.n_callibration_cycles) / hist[0] * params.max_prob_zeroth_order
            / (1.0 - params.max_prob_zeroth_order);
         moves::base_move::reweighting_coeffs[0] *= zero_reweight;
-        if (qmc_data.config.size() == 0) qmc_data.weights.imp *= zero_reweight;
+        if (config.size() == 0) config.imp_weight *= zero_reweight;
       }
 
       // When not reweighting, auto-deduce cycle length if not set
@@ -357,12 +357,12 @@ namespace inchworm {
     }
 
     // Register all measurements
-    mc.add_measure(measures::frame{params, qmc_data, results}, "measure the propagator / green function frame");
-    if (params.measure_average_order) mc.add_measure(measures::average_order{params, qmc_data, results}, "measure the average perturbation order");
+    mc.add_measure(measures::frame{params, config, frame, results}, "measure the propagator / green function frame");
+    if (params.measure_average_order) mc.add_measure(measures::average_order{params, config, results}, "measure the average perturbation order");
     if (params.measure_order_histogram)
-      mc.add_measure(measures::order_histogram{params, qmc_data, results}, "measure the perturbation order histogram");
+      mc.add_measure(measures::order_histogram{params, config, results}, "measure the perturbation order histogram");
     if (params.measure_frame_by_order)
-      mc.add_measure(measures::frame_by_order{params, qmc_data, results}, "measure the propagator / green function frame by order");
+      mc.add_measure(measures::frame_by_order{params, config, frame, results}, "measure the propagator / green function frame by order");
 
     // Perform QMC run and collect results
     if (status == 0) {

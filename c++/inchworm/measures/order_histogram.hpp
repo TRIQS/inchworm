@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../params.hpp"
-#include "../qmc_data.hpp"
+#include "../config.hpp"
 #include "../container_set.hpp" // qmc_results_t
 
 namespace inchworm::measures {
@@ -9,7 +9,7 @@ namespace inchworm::measures {
   // Measure the histogram of perturbation order
   struct order_histogram {
 
-    order_histogram(params_t const &, qmc_data_t const &qmc_data_, qmc_results_t &results);
+    order_histogram(params_t const &, config_t const &config, qmc_results_t &results);
 
     /// Accumulate perturbation order into histogram
     void accumulate(scalar_t);
@@ -19,7 +19,7 @@ namespace inchworm::measures {
 
     private:
     // The Monte-Carlo configuration and data
-    qmc_data_t const &qmc_data;
+    config_t const &config;
 
     // Reference to accumulation vector
     std::vector<double> &order_histogram_ref;

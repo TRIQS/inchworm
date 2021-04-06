@@ -2,7 +2,7 @@
 
 #include "../types.hpp"
 #include "../solver_core.hpp"
-#include "../qmc_data.hpp"
+#include "../config.hpp"
 
 #include <triqs/mc_tools/random_generator.hpp>
 
@@ -21,7 +21,8 @@ namespace inchworm::moves {
     void reject() {}
 
     /// Constructor
-    base_move(qmc_data_t &data, qmc_params_t const &params, solver_core const &solver, triqs::mc_tools::random_generator &rng);
+    base_move(config_t &config, frame_t &current_frame, qmc_params_t const &params, solver_core const &solver,
+              triqs::mc_tools::random_generator &rng);
 
     /// Destructor
     virtual ~base_move() = default;
@@ -40,10 +41,16 @@ namespace inchworm::moves {
     virtual std::string name() const = 0;
 
     /// The Monte-Carlo configuration
-    qmc_data_t &data;
+    config_t &config;
 
-    /// The Monte-Carlo configuration
-    qmc_data_t prop_data;
+    /// The proposed Monte-Carlo configuration
+    config_t prop_config = config;
+
+    /// The propagator or Green function frame
+    frame_t &frame;
+
+    /// The proposed propagator or Green function frame
+    frame_t prop_frame = frame;
 
     /// The Monte-Carlo parameters
     qmc_params_t const &params;

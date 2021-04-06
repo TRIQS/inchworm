@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../params.hpp"
-#include "../qmc_data.hpp"
+#include "../config.hpp"
 #include "../container_set.hpp" // qmc_results_t
 
 namespace inchworm::measures {
@@ -9,7 +9,7 @@ namespace inchworm::measures {
   /// Measurement of a single frame of a propagator or Green function
   struct frame {
 
-    frame(params_t const &, qmc_data_t const &qmc_data_, qmc_results_t &results);
+    frame(params_t const &, config_t const &config, frame_t const &frame, qmc_results_t &results);
 
     /// Invoke a single measurement
     void accumulate(scalar_t);
@@ -21,12 +21,15 @@ namespace inchworm::measures {
     // Print verbosity
     int verbosity;
 
-    // The Monte-Carlo configuration and data
-    qmc_data_t const &qmc_data;
+    // The Monte-Carlo configuration
+    config_t const &config;
+
+    // The current frame
+    frame_t const &frame_;
 
     // References to the accumulation frames
-    frame_t &frame_ref;
-    frame_t &frame_0th_order_ref;
+    frame_t &acc_frame;
+    frame_t &acc_frame_0th_order;
 
     // The scalar accumulator for the auto-correlation analysis
     accumulator<scalar_t> acc = {0.0, -1};
