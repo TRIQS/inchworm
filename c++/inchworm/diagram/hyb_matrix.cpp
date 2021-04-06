@@ -39,11 +39,22 @@ namespace inchworm::diagram {
     }
   }
 
-  hyb_matrix_t::hyb_matrix_t(time_diagram_t const &diagram, hyb_adaptor_t const &hyb_tau)
+  hyb_matrix_t::hyb_matrix_t(time_diagram_t const &diagram, h_tau_t const &Delta)
      : diagram{diagram}, size{diagram.perturbation_order()}, mat{size, size} {
 
+    auto eval_Delta = [&Delta](fop_t const &cdag, fop_t const &c) {
+      if (cdag.bl != c.bl) return 0.;
+
+      double dtau = cdag.tau - c.tau;
+      if (dtau >= 0.) {
+        return Delta[c.bl](dtau)(cdag.idx, c.idx);
+      } else {
+        return -Delta[c.bl](Delta[c.bl].domain().beta + dtau)(cdag.idx, c.idx);
+      }
+    };
+
     for (auto [i, d] : enumerate(diagram.d_list)) {
-      for (auto [j, d_dag] : enumerate(diagram.d_dag_list)) { mat(i, j) = hyb_tau(d_dag, d); }
+      for (auto [j, d_dag] : enumerate(diagram.d_dag_list)) { mat(i, j) = eval_Delta(d_dag, d); }
     }
   }
 

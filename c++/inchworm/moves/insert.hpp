@@ -23,9 +23,8 @@ namespace inchworm::moves {
 
     bool equal_blocks;
 
-    double_insert(qmc_data_t &data, gf_struct_t const &gf_struct, qmc_params_t const &qmc_params, triqs::mc_tools::random_generator &rng,
-                  bool equal_blocks)
-       : base_move(data, gf_struct, qmc_params, rng), equal_blocks(equal_blocks) {}
+    double_insert(qmc_data_t &data, qmc_params_t const &params, solver_core const &solver, triqs::mc_tools::random_generator &rng, bool equal_blocks)
+       : base_move(data, params, solver, rng), equal_blocks(equal_blocks) {}
 
     inline std::string name() const override {
       if (equal_blocks) return "Double Insert (equal_blocks)";

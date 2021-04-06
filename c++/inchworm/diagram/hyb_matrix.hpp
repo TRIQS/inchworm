@@ -34,7 +34,7 @@ namespace inchworm::diagram {
     hyb_matrix_t(time_diagram_t const &diagram);
 
     /// Construct hybridization matrix using a hyb_adaptor_t
-    hyb_matrix_t(time_diagram_t const &diagram, hyb_adaptor_t const &hyb_tau);
+    hyb_matrix_t(time_diagram_t const &diagram, h_tau_t const &Delta);
 
     /// Optimization for segments of length 2:
     ///   Set the value of adjacent vertices to zero in the matrix.

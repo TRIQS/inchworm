@@ -1,4 +1,5 @@
 #include "./base_move.hpp"
+
 #include "./../diagram/hyb_matrix.hpp"
 #include "./../diagram/proper_enum.hpp"
 #include "./../diagram/inclusion_exclusion.hpp"
@@ -10,10 +11,17 @@
 
 namespace inchworm::moves {
 
-  base_move::base_move(qmc_data_t &data, gf_struct_t const &gf_struct, qmc_params_t const &qmc_params, triqs::mc_tools::random_generator &rng)
-     : data(data), prop_data(data), params(qmc_params), rng(rng), gf_struct(gf_struct), all_d_ops(gf_struct.size()), all_d_dag_ops(gf_struct.size()) {
+  base_move::base_move(qmc_data_t &data, qmc_params_t const &params, solver_core const &solver, triqs::mc_tools::random_generator &rng)
+     : data(data),
+       prop_data(data),
+       params(params),
+       solver(solver),
+       rng(rng),
+       gf_struct(solver.constr_params.gf_struct),
+       all_d_ops(gf_struct.size()),
+       all_d_dag_ops(gf_struct.size()) {
 
-    for (auto const &op : qmc_params.ad_imp.get_fops()) {
+    for (auto const &op : solver.fops) {
       auto bl_name = std::get<std::string>(op.index[0]);
       auto idx     = std::get<long>(op.index[1]);
 
@@ -42,11 +50,11 @@ namespace inchworm::moves {
     if (not params.use_bare_propagator and diagram.size() > 0 and diagram.is_trivial) return 0.0;
 
     // Quick-check for vanishing impurity trace
-    if (params.mode == MODE::PROPAGATOR and has_zero_trace(params.ad_imp, diagram)) return 0.0;
+    if (params.mode == MODE::PROPAGATOR and has_zero_trace(solver.ad_imp, diagram)) return 0.0;
 
     // ------ Calculate the hybridization weight -------
 
-    auto hyb_mat   = diagram::hyb_matrix_t(diagram, params.hyb_adaptor);
+    auto hyb_mat   = diagram::hyb_matrix_t(diagram, solver.Delta_tau);
     prop_data.sign = diagram.sign();
 
     if (params.use_bare_propagator)
@@ -65,10 +73,10 @@ namespace inchworm::moves {
 
     if (params.mode == MODE::PROPAGATOR) {
       if (params.use_bare_propagator) {
-        prop_data.frame = make_frame(impurity_product(params.ad_imp, diagram, params.tau_max, 0));
+        prop_data.frame = make_frame(impurity_product(solver.ad_imp, diagram, params.tau_max, 0));
       } else { // FIXME incorporate treatment of tau_split into impurity product
-        prop_data.frame = make_frame(impurity_product(params.ad_imp, diagram, params.tau_max, params.tau_split, &params.u_tau)
-                                     * impurity_product(params.ad_imp, diagram, params.tau_split, 0, &params.u_tau));
+        prop_data.frame = make_frame(impurity_product(solver.ad_imp, diagram, params.tau_max, params.tau_split, &solver.u_tau)
+                                     * impurity_product(solver.ad_imp, diagram, params.tau_split, 0, &solver.u_tau));
       }
 
     } else { // MODE::GREENFUNCTION
@@ -78,9 +86,9 @@ namespace inchworm::moves {
 
       // Calculate -Tr[imp_prod(beta, tau) * c(tau) * imp_prod(tau, 0) * cdag(0)]
       // for all combinations of fundamental operator flavors
-      auto l          = impurity_product(params.ad_imp, diagram, params.tau_max, params.tau_split, &params.u_tau);
-      auto r          = impurity_product(params.ad_imp, diagram, params.tau_split, 0, &params.u_tau);
-      prop_data.frame = make_g_frame_from_l_and_r(params.ad_imp, gf_struct, l, r);
+      auto l          = impurity_product(solver.ad_imp, diagram, params.tau_max, params.tau_split, &solver.u_tau);
+      auto r          = impurity_product(solver.ad_imp, diagram, params.tau_split, 0, &solver.u_tau);
+      prop_data.frame = make_g_frame_from_l_and_r(solver.ad_imp, gf_struct, l, r);
 
       // Account for the sign due to the additional operator insertions
       auto const &ops = diagram.op_list;

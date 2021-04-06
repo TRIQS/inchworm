@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../types.hpp"
+#include "../solver_core.hpp"
 #include "../qmc_data.hpp"
 
 #include <triqs/mc_tools/random_generator.hpp>
@@ -19,8 +20,8 @@ namespace inchworm::moves {
     /// Reject vertex insertion
     void reject() {}
 
-    /// Constructor FIXME params naming
-    base_move(qmc_data_t &data, gf_struct_t const &gf_struct, qmc_params_t const &qmc_params, triqs::mc_tools::random_generator &rng);
+    /// Constructor
+    base_move(qmc_data_t &data, qmc_params_t const &params, solver_core const &solver, triqs::mc_tools::random_generator &rng);
 
     /// Destructor
     virtual ~base_move() = default;
@@ -46,6 +47,9 @@ namespace inchworm::moves {
 
     /// The Monte-Carlo parameters
     qmc_params_t const &params;
+
+    /// The solver object
+    solver_core const &solver;
 
     /// The random number generator
     triqs::mc_tools::random_generator &rng;

@@ -36,52 +36,12 @@ namespace inchworm {
     qmc_data_t(gf_struct_t const &gf_struct, frame_t const &frame) : config(gf_struct.size()), weights{frobenius_norm(frame), 1.0}, frame{frame} {}
   };
 
-  // structure to calculate hybridization function for tau, tau_dag, and orbital (linear) indices.
-  struct hyb_adaptor_t {
-    h_tau_t const &hyb_tau;
-
-    hyb_adaptor_t(h_tau_t const &hyb_tau) : hyb_tau(hyb_tau) {}
-
-    // function to link
-    scalar_t operator()(fop_t const &cdag, fop_t const &c) const {
-
-      if (cdag.bl != c.bl) return 0.;
-      double dtau = cdag.tau - c.tau;
-
-      if (dtau >= 0.) {
-        return hyb_tau[c.bl](dtau)(cdag.idx, c.idx);
-      } else {
-        return -hyb_tau[c.bl](hyb_tau[c.bl].domain().beta + dtau)(cdag.idx, c.idx);
-      }
-    }
-  };
-
   // static parameters of the Monte Carlo simulation
   struct qmc_params_t {
-
-    // same for every inch step:
-    hyb_adaptor_t hyb_adaptor;
-    atom_diag const &ad_imp;      // Diagonalization of the atomic problem
+    double tau_max;               // similar to beta, but configuration here does not always goes up to beta. 0 < tau_max <= beta
+    double tau_split;             // in the inchworm, this should be the tau_max of the previous inching. 0 < tau_split <= tau_max
     bool use_bare_propagator;     // True only for the first iteration of the inchworm calculation
     MODE mode;                    // The sampling mode, either PROPAGATOR or GREENFUNCTION
     std::optional<int> max_order; // The maximum perturbation order [optional]
-
-    // updated at every inch step:
-    u_tau_t const &u_tau; // The propagator
-
-    // different at every inch step:
-    double tau_max;   // similar to beta, but configuration here does not always goes up to beta. 0 < tau_max <= beta
-    double tau_split; // in the inchworm, this should be the tau_max of the previous inching. 0 < tau_split <= tau_max
-
-    qmc_params_t(h_tau_t const &hyb_tau, atom_diag const &ad_imp, u_tau_t const &u_tau, double tau_max, double tau_split, bool use_bare_propagator,
-                 MODE mode, std::optional<int> max_order)
-       : hyb_adaptor(hyb_tau),
-         ad_imp(ad_imp),
-         use_bare_propagator(use_bare_propagator),
-         mode(mode),
-         max_order(max_order),
-         u_tau(u_tau),
-         tau_max(tau_max),
-         tau_split(tau_split) {}
   };
 } // namespace inchworm

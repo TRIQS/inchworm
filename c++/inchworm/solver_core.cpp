@@ -275,17 +275,17 @@ namespace inchworm {
     qmc_data_t qmc_data(params.gf_struct, initial_frame);
 
     // Create Monte-Carlo params
-    qmc_params_t qmc_params{Delta_tau, ad_imp, u_tau, tau_max, tau_split, use_bare_propagator, mode, params.max_order};
+    qmc_params_t qmc_params{tau_max, tau_split, use_bare_propagator, mode, params.max_order};
 
     // Add moves
-    mc.add_move(moves::insert{qmc_data, params.gf_struct, qmc_params, rng}, "insert move");
-    mc.add_move(moves::remove{qmc_data, params.gf_struct, qmc_params, rng}, "remove move");
+    mc.add_move(moves::insert{qmc_data, qmc_params, *this, rng}, "insert move");
+    mc.add_move(moves::remove{qmc_data, qmc_params, *this, rng}, "remove move");
 
     if (params.use_double_insertion) {
-      mc.add_move(moves::double_insert{qmc_data, params.gf_struct, qmc_params, rng, false}, "double insert move", 0.5);
-      mc.add_move(moves::double_remove{qmc_data, params.gf_struct, qmc_params, rng, false}, "double remove move", 0.5);
-      mc.add_move(moves::double_insert{qmc_data, params.gf_struct, qmc_params, rng, true}, "double insert move equal blocks", 0.5);
-      mc.add_move(moves::double_remove{qmc_data, params.gf_struct, qmc_params, rng, true}, "double remove move equal blocks", 0.5);
+      mc.add_move(moves::double_insert{qmc_data, qmc_params, *this, rng, false /*equal_blocks*/}, "double insert move", 0.5);
+      mc.add_move(moves::double_remove{qmc_data, qmc_params, *this, rng, false}, "double remove move", 0.5);
+      mc.add_move(moves::double_insert{qmc_data, qmc_params, *this, rng, true}, "double insert move equal blocks", 0.5);
+      mc.add_move(moves::double_remove{qmc_data, qmc_params, *this, rng, true}, "double remove move equal blocks", 0.5);
     }
 
     // Initialize result container

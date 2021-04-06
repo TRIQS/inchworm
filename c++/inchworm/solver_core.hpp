@@ -25,10 +25,10 @@ namespace inchworm {
     /// The propagator in imaginary time
     u_tau_t u_tau;
 
-    private:
     // The fundamental operator set associated with constr_params.gf_struct
     fundamental_operator_set fops;
 
+    private:
     // Mpi Communicator
     mpi::communicator world;
 
