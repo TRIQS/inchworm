@@ -21,8 +21,8 @@ namespace inchworm::moves {
     void reject() {}
 
     /// Constructor
-    base_move(config_t &config, frame_t &current_frame, qmc_params_t const &params, solver_core const &solver,
-              triqs::mc_tools::random_generator &rng);
+    base_move(config_t &config, frame_t &frame, qmc_params_t const &params, solver_core const &solver, triqs::mc_tools::random_generator &rng)
+       : config(config), frame(frame), params(params), solver(solver), rng(rng) {}
 
     /// Destructor
     virtual ~base_move() = default;
@@ -62,13 +62,7 @@ namespace inchworm::moves {
     triqs::mc_tools::random_generator &rng;
 
     /// The green function structure
-    gf_struct_t const &gf_struct;
-
-    /// The vector of all creation operators
-    std::vector<std::vector<fop_t>> all_d_ops;
-
-    /// The vector of all annihilation operators
-    std::vector<std::vector<fop_t>> all_d_dag_ops;
+    gf_struct_t const &gf_struct = solver.constr_params.gf_struct;
   };
 
 } // namespace inchworm::moves

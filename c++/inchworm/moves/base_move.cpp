@@ -11,30 +11,6 @@
 
 namespace inchworm::moves {
 
-  base_move::base_move(config_t &config, frame_t &frame, qmc_params_t const &params, solver_core const &solver,
-                       triqs::mc_tools::random_generator &rng)
-     : config(config),
-       frame(frame),
-       params(params),
-       solver(solver),
-       rng(rng),
-       gf_struct(solver.constr_params.gf_struct),
-       all_d_ops(gf_struct.size()),
-       all_d_dag_ops(gf_struct.size()) {
-
-    for (auto const &op : solver.fops) {
-      auto bl_name = std::get<std::string>(op.index[0]);
-      auto idx     = std::get<long>(op.index[1]);
-
-      // Determine the number of the bl_name in gf_struct
-      auto it = std::find_if(gf_struct.cbegin(), gf_struct.cend(), [&](auto &&x) { return x.first == bl_name; });
-      long bl = std::distance(gf_struct.cbegin(), it);
-
-      all_d_ops[bl].push_back({0.0, false, op.linear_index, bl, idx});
-      all_d_dag_ops[bl].push_back({0.0, true, op.linear_index, bl, idx});
-    }
-  }
-
   scalar_t base_move::attempt() {
 
     prop_config = config;

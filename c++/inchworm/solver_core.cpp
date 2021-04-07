@@ -20,6 +20,19 @@ namespace inchworm {
 
     // Determine basis of operators to use
     fops = fundamental_operator_set{cp.gf_struct};
+
+    // Initialize containers containing all d and d_dag operators by block
+    long n_bl = cp.gf_struct.size();
+    all_d_ops.resize(n_bl, {});
+    all_d_dag_ops.resize(n_bl, {});
+
+    for (auto bl : range(n_bl)) {
+      auto [bl_name, bl_size] = cp.gf_struct[bl];
+      for (auto idx : range(bl_size)) {
+        all_d_ops[bl].push_back({0.0, false, fops[{bl_name, idx}], bl, idx});
+        all_d_dag_ops[bl].push_back({0.0, true, fops[{bl_name, idx}], bl, idx});
+      }
+    }
   }
 
   // -------------------------------------------------------------------------------

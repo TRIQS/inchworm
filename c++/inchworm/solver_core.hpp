@@ -28,6 +28,12 @@ namespace inchworm {
     // The fundamental operator set associated with constr_params.gf_struct
     fundamental_operator_set fops;
 
+    /// The vector of all creation operators
+    std::vector<std::vector<fop_t>> all_d_ops;
+
+    /// The vector of all annihilation operators
+    std::vector<std::vector<fop_t>> all_d_dag_ops;
+
     private:
     // Mpi Communicator
     mpi::communicator world;

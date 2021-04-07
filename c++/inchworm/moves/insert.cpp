@@ -8,8 +8,8 @@ namespace inchworm::moves {
     long bl      = rng(n_bl);
     long bl_size = gf_struct[bl].second;
 
-    auto d     = all_d_ops[bl][rng(bl_size)];
-    auto d_dag = all_d_dag_ops[bl][rng(bl_size)];
+    auto d     = solver.all_d_ops[bl][rng(bl_size)];
+    auto d_dag = solver.all_d_dag_ops[bl][rng(bl_size)];
 
     scalar_t t_ratio;
     if (config.size() == 0 && (params.tau_split != 0.0)) {
@@ -49,10 +49,10 @@ namespace inchworm::moves {
     long bl1_size = gf_struct[bl1].second;
     long bl2_size = gf_struct[bl2].second;
 
-    auto d1     = all_d_ops[bl1][rng(bl1_size)];
-    auto d1_dag = all_d_dag_ops[bl1][rng(bl1_size)];
-    auto d2     = all_d_ops[bl2][rng(bl2_size)];
-    auto d2_dag = all_d_dag_ops[bl2][rng(bl2_size)];
+    auto d1     = solver.all_d_ops[bl1][rng(bl1_size)];
+    auto d1_dag = solver.all_d_dag_ops[bl1][rng(bl1_size)];
+    auto d2     = solver.all_d_ops[bl2][rng(bl2_size)];
+    auto d2_dag = solver.all_d_dag_ops[bl2][rng(bl2_size)];
 
     d1.tau     = rng(params.tau_max);
     d1_dag.tau = rng(params.tau_max);
