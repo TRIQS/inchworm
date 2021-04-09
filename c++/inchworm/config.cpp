@@ -10,6 +10,9 @@ namespace inchworm {
     for (int i = 0; i < size() - 1; i++)
       if ((d_list[i].tau == d.tau) or (d_dag_list[i].tau == d_dag.tau)) return false;
 
+    split_times.push_back(d.tau);
+    split_times.push_back(d_dag.tau);
+
     insert_sorted(d_list, d);
     insert_sorted(d_dag_list, d_dag);
 
@@ -21,6 +24,9 @@ namespace inchworm {
 
   bool config_t::try_erase(long bl, long i_dag, long i) {
     EXPECTS(i < size(bl) && i_dag < size(bl));
+
+    std::erase(split_times, d_bl_list[bl][i].tau);
+    std::erase(split_times, d_dag_bl_list[bl][i_dag].tau);
 
     std::erase(d_list, d_bl_list[bl][i]);
     std::erase(d_dag_list, d_dag_bl_list[bl][i_dag]);
@@ -41,6 +47,11 @@ namespace inchworm {
           or (d1.tau == d2.tau) or (d_dag1.tau == d_dag2.tau))
         return false;
 
+    split_times.push_back(d1.tau);
+    split_times.push_back(d2.tau);
+    split_times.push_back(d_dag1.tau);
+    split_times.push_back(d_dag2.tau);
+
     insert_sorted(d_list, d1);
     insert_sorted(d_list, d2);
     insert_sorted(d_dag_list, d_dag1);
@@ -59,6 +70,11 @@ namespace inchworm {
     EXPECTS(i2 < size(bl2) and i2_dag < size(bl2));
 
     if (bl1 == bl2 and (i1 == i2 or i1_dag == i2_dag)) return false;
+
+    std::erase(split_times, d_bl_list[bl1][i1].tau);
+    std::erase(split_times, d_bl_list[bl2][i2].tau);
+    std::erase(split_times, d_dag_bl_list[bl1][i1_dag].tau);
+    std::erase(split_times, d_dag_bl_list[bl2][i2_dag].tau);
 
     std::erase(d_list, d_bl_list[bl1][i1]);
     std::erase(d_list, d_bl_list[bl2][i2]);

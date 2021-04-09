@@ -28,14 +28,14 @@ namespace inchworm::moves {
 
     } else { // ----- Inchworm Sampling
 
-      // Account for special treatment of insertion into empty configuration
       if (config.size() == 0) {
+        // Account for special treatment of insertion into empty configuration
         auto dtau = params.tau_max - params.tau_split;
         return 1.0 / (2.0 * params.tau_split * dtau * bl_size * bl_size);
       } else {
 
-        double prob_d_tau     = get_prob(d, config.d_dag_list, params.tau_max);
-        double prob_d_dag_tau = get_prob(d_dag, config.d_list, params.tau_max);
+        double prob_d_tau     = get_prob(d, config.split_times, params.tau_max);
+        double prob_d_dag_tau = get_prob(d_dag, config.split_times, params.tau_max);
         return std::pow(double(old_nop_bl) / bl_size, 2) * prob_d_tau * prob_d_dag_tau;
       }
     }

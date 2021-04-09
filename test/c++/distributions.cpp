@@ -28,7 +28,6 @@
 
 using namespace inchworm;
 
-
 TEST(Distributions, pdf) {
 
   std::vector<double> tmaxlst = {1.0, 10.0, 100.0};
@@ -41,8 +40,7 @@ TEST(Distributions, pdf) {
     for (auto tmax : tmaxlst) {
       for (auto w1 : wlst) {
         EXPECT_NEAR(pdf(x * tmax, w1, tmax), 1.0 / tmax, tol(tmax, w1));
-        for (auto w2 : wlst)
-	  EXPECT_NEAR(double_pdf(x * tmax, w1, w2, tmax), 1.0 / tmax, tol(tmax, std::min(w1,w2)));
+        for (auto w2 : wlst) EXPECT_NEAR(double_pdf(x * tmax, w1, w2, tmax), 1.0 / tmax, tol(tmax, std::min(w1, w2)));
       }
     }
   }
@@ -90,9 +88,9 @@ TEST(Distributions, icdf) {
       EXPECT_NEAR(icdf(1.0, w1, tmax), tmax, tol);
 
       for (auto w2 : wlst) {
-	EXPECT_NEAR(double_icdf(0.0, w1, w2, tmax), 0.0, tol);
-	EXPECT_NEAR(double_icdf(0.5, w1, w2, tmax), tmax/2.0, tol);
-	EXPECT_NEAR(double_icdf(1.0, w1, w2, tmax), tmax, tol);
+        EXPECT_NEAR(double_icdf(0.0, w1, w2, tmax), 0.0, tol);
+        EXPECT_NEAR(double_icdf(0.5, w1, w2, tmax), tmax / 2.0, tol);
+        EXPECT_NEAR(double_icdf(1.0, w1, w2, tmax), tmax, tol);
       }
     }
   }
@@ -182,18 +180,12 @@ TEST(Distributions, get_prob) {
   for (auto tmax : tmaxlst) {
     for (auto w1 : wlst) {
 
-      auto d1 = fop_t{0.1 * tmax, false, 0, 0, 0, w1, w1};
-
-      auto d_dag1 = fop_t{0.4 * tmax, true, 0, 0, 0, w1, w1};
-      auto d_dag2 = fop_t{0.7 * tmax, true, 0, 0, 0, w1, w1};
-      auto d_dag3 = fop_t{0.9 * tmax, true, 0, 1, 0, w1, w1};
-
-      auto op_list = std::vector{d_dag1, d_dag2, d_dag3};
+      auto d = fop_t{0.1 * tmax, false, 0, 0, 0, w1, w1};
 
       double tol = 1e-6;
       auto f     = [&](double tau) {
-        d1.tau = tau;
-        return get_prob(d1, op_list, tmax);
+        d.tau = tau;
+        return get_prob(d, {0.4 * tmax, 0.7 * tmax, 0.9 * tmax}, tmax);
       };
       EXPECT_NEAR(integrate(f, 0.0, tmax), 1.0, tol);
     }
