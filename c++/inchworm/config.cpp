@@ -62,7 +62,6 @@ namespace inchworm {
 
     std::erase(d_list, d_bl_list[bl1][i1]);
     std::erase(d_list, d_bl_list[bl2][i2]);
-
     std::erase(d_dag_list, d_dag_bl_list[bl1][i1_dag]);
     std::erase(d_dag_list, d_dag_bl_list[bl2][i2_dag]);
 
