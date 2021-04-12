@@ -25,17 +25,22 @@ namespace inchworm::moves {
 
     } else { // ----- Inchworm Sampling
 
-      if (config.size() == 0) {
-        // Choose tau values on seperate sides of the split point
-        auto dtau = params.tau_max - params.tau_split;
-        d.tau     = rng(params.tau_split);
-        d_dag.tau = params.tau_split + rng(dtau);
-        if (rng(2)) std::swap(d.tau, d_dag.tau);
-        t_ratio = 2.0 * params.tau_split * dtau * bl_size * bl_size;
+      if (config.size() == 0) { // Special treatment of empty config
+
+        // Make sure that we choose tau values on seperate sides of zero or tau_split
+        double dtau = params.tau_max - params.tau_split;
+        auto [d_tau, d_dag_tau, prop_prob] = rng(2) ?
+           get_close_smaller_and_larger_time_and_prob(rng, d, d_dag, params.tau_split, params.tau_split, dtau, params.tau_max) :
+           get_close_smaller_and_larger_time_and_prob(rng, d, d_dag, 0.0, dtau, params.tau_split, params.tau_max);
+        d.tau                              = d_tau;
+        d_dag.tau                          = d_dag_tau;
+
+        t_ratio = 2.0 * bl_size * bl_size / prop_prob;
+
       } else {
 
-	auto [d_tau, prob_d_tau]         = get_close_time_and_prob(rng, d, config.split_times, params.tau_max);
-	auto [d_dag_tau, prob_d_dag_tau] = get_close_time_and_prob(rng, d_dag, config.split_times, params.tau_max);
+        auto [d_tau, prob_d_tau]         = get_close_time_and_prob(rng, d, config.split_times, params.tau_max);
+        auto [d_dag_tau, prob_d_dag_tau] = get_close_time_and_prob(rng, d_dag, config.split_times, params.tau_max);
 
         d.tau     = d_tau;
         d_dag.tau = d_dag_tau;

@@ -48,11 +48,76 @@ namespace inchworm {
     return prob / split_times.size();
   }
 
+  // Calculate the probability to draw op.tau larger than tref
+  inline double get_prob_larger_time(fop_t const &op, double tref, double range, double period) {
+    double diff = cyclic_difference(op.tau, tref, period);
+    if (diff < range) return pdf(diff, op.left_width, range);
+    return 0.0;
+  }
+
+  // Calculate the probability to draw op.tau smaller than tref
+  inline double get_prob_smaller_time(fop_t const &op, double tref, double range, double period) {
+    double diff = cyclic_difference(tref, op.tau, period);
+    if (diff < range) return pdf(diff, op.right_width, range);
+    return 0.0;
+  }
+
+  // Calculate the value of the joint pdf defined through op_list and the double_pdf function
+  inline double get_prob_smaller_and_larger_time(fop_t const &op1, fop_t const &op2, std::vector<double> const &split_times, double tmax) {
+    double prob = 0.0;
+    for (auto const &tref : split_times) {
+      prob += get_prob_smaller_time(op1, tref, tmax / 2.0, tmax) * get_prob_larger_time(op2, tref, tmax / 2.0, tmax);
+      prob += get_prob_larger_time(op1, tref, tmax / 2.0, tmax) * get_prob_smaller_time(op2, tref, tmax / 2.0, tmax);
+    }
+    return prob / split_times.size() / 2.0;
+  }
+
+  // Calculate the value of the joint pdf defined through op_list and the double_pdf function
+  inline double get_prob_smaller_and_larger_time(fop_t const &op1, fop_t const &op2, double tref, double smaller_range, double larger_range,
+                                                 double period) {
+    double prob = get_prob_smaller_time(op1, tref, smaller_range, period) * get_prob_larger_time(op2, tref, larger_range, period)
+       + get_prob_larger_time(op1, tref, larger_range, period) * get_prob_smaller_time(op2, tref, smaller_range, period);
+    return prob / 2.0;
+  }
+
+  // -----------------------------------
+
   // Draw a random time from the joint pdf defined through split_times the double_pdf function
   inline double get_close_time(triqs::mc_tools::random_generator &rng, fop_t const &op, std::vector<double> const &split_times, double tmax) {
     double tau_ref = split_times[rng(split_times.size())];
     return wrap(tau_ref + double_icdf(rng(), op.left_width, op.right_width, tmax), tmax);
   }
+
+  // Draw a random time larger than tref using the pdf
+  inline double get_close_larger_time(triqs::mc_tools::random_generator &rng, fop_t const &op, double tref, double range, double period) {
+    return wrap(tref + icdf(rng(), op.left_width, range), period);
+  }
+
+  // Draw a random time smaller than tref using the pdf
+  inline double get_close_smaller_time(triqs::mc_tools::random_generator &rng, fop_t const &op, double tref, double range, double period) {
+    return wrap(tref - icdf(rng(), op.right_width, range), period);
+  }
+
+  // Draw a random time smaller and larger than a randomly chosen split_time
+  inline std::pair<double, double> get_close_smaller_and_larger_time(triqs::mc_tools::random_generator &rng, fop_t const &op1, fop_t const &op2,
+                                                                     std::vector<double> const &split_times, double tmax) {
+    double tref = split_times[rng(split_times.size())];
+    if (rng(2))
+      return {get_close_smaller_time(rng, op1, tref, tmax / 2.0, tmax), get_close_larger_time(rng, op2, tref, tmax / 2.0, tmax)};
+    else
+      return {get_close_larger_time(rng, op1, tref, tmax / 2.0, tmax), get_close_smaller_time(rng, op2, tref, tmax / 2.0, tmax)};
+  }
+
+  // Draw a random time smaller and larger than a randomly chosen split_time
+  inline std::pair<double, double> get_close_smaller_and_larger_time(triqs::mc_tools::random_generator &rng, fop_t const &op1, fop_t const &op2,
+                                                                     double tref, double smaller_range, double larger_range, double period) {
+    if (rng(2))
+      return {get_close_smaller_time(rng, op1, tref, smaller_range, period), get_close_larger_time(rng, op2, tref, larger_range, period)};
+    else
+      return {get_close_larger_time(rng, op1, tref, larger_range, period), get_close_smaller_time(rng, op2, tref, smaller_range, period)};
+  }
+
+  // -----------------------------------
 
   // Draw a random time from the joint pdf defined through split_times the double_pdf function
   // and return both the time and its proposition probability
@@ -60,6 +125,43 @@ namespace inchworm {
                                                            double tmax) {
     op.tau = get_close_time(rng, op, split_times, tmax);
     return {op.tau, get_prob(op, split_times, tmax)};
+  }
+
+  // Draw a random time larger than tref using the pdf
+  // and return both the time and its proposition probability
+  inline std::pair<double, double> get_close_larger_time_and_prob(triqs::mc_tools::random_generator &rng, fop_t op, double tref, double range,
+                                                                  double period) {
+    op.tau = get_close_larger_time(rng, op, tref, range, period);
+    return {op.tau, get_prob_larger_time(op, tref, range, period)};
+  }
+
+  // Draw a random time smaller than tref using the pdf
+  // and return both the time and its proposition probability
+  inline std::pair<double, double> get_close_smaller_time_and_prob(triqs::mc_tools::random_generator &rng, fop_t op, double tref, double range,
+                                                                   double period) {
+    op.tau = get_close_smaller_time(rng, op, tref, range, period);
+    return {op.tau, get_prob_smaller_time(op, tref, range, period)};
+  }
+
+  // Draw a random time smaller and larger than a randomly chosen split_time
+  // and return both the times and the proposition probability
+  inline std::tuple<double, double, double> get_close_smaller_and_larger_time_and_prob(triqs::mc_tools::random_generator &rng, fop_t op1, fop_t op2,
+                                                                                       std::vector<double> const &split_times, double tmax) {
+    auto [t1, t2] = get_close_smaller_and_larger_time(rng, op1, op2, split_times, tmax);
+    op1.tau       = t1;
+    op2.tau       = t2;
+    return {t1, t2, get_prob_smaller_and_larger_time(op1, op2, split_times, tmax)};
+  }
+
+  // Draw a random time smaller and larger than a randomly chosen split_time
+  // and return both the times and the proposition probability
+  inline std::tuple<double, double, double> get_close_smaller_and_larger_time_and_prob(triqs::mc_tools::random_generator &rng, fop_t op1, fop_t op2,
+                                                                                       double tref, double smaller_range, double larger_range,
+                                                                                       double period) {
+    auto [t1, t2] = get_close_smaller_and_larger_time(rng, op1, op2, tref, smaller_range, larger_range, period);
+    op1.tau       = t1;
+    op2.tau       = t2;
+    return {t1, t2, get_prob_smaller_and_larger_time(op1, op2, tref, smaller_range, larger_range, period)};
   }
 
 } // namespace inchworm

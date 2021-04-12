@@ -59,7 +59,7 @@ TEST(Torus, CyclicDifferenceConfig) {
   auto d_dag2 = fop_t{0.7, true, 0, 0};
   auto d_dag3 = fop_t{0.8, true, 0, 1};
 
-  config_t config({}, {{"0", 1}, {"1", 1}});
+  config_t config({}, {{"0", 1}, {"1", 1}}, {0.0});
   config.d_bl_list = {{d1, d2},{d3}};
   config.d_dag_bl_list = {{d_dag1, d_dag2},{d_dag3}};
 

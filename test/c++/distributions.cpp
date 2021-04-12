@@ -180,14 +180,41 @@ TEST(Distributions, get_prob) {
   for (auto tmax : tmaxlst) {
     for (auto w1 : wlst) {
 
-      auto d = fop_t{0.1 * tmax, false, 0, 0, 0, w1, w1};
+      auto d     = fop_t{0.1 * tmax, false, 0, 0, 0, w1, w1};
+      auto d_dag = fop_t{0.3 * tmax, true, 0, 0, 0, w1, w1};
+
+      auto tau_splits = std::vector{0.4*tmax, 0.7*tmax, 0.9*tmax};
 
       double tol = 1e-6;
       auto f     = [&](double tau) {
         d.tau = tau;
-        return get_prob(d, {0.4 * tmax, 0.7 * tmax, 0.9 * tmax}, tmax);
+        return get_prob(d, tau_splits, tmax);
       };
       EXPECT_NEAR(integrate(f, 0.0, tmax), 1.0, tol);
+
+      auto g = [&](double tau) {
+        d.tau = tau;
+        return get_prob_smaller_time(d, d_dag.tau, tmax / 2.0, tmax);
+      };
+      EXPECT_NEAR(integrate(g, 0.0, tmax), 1.0, tol);
+
+      auto h = [&](double tau) {
+        d.tau = tau;
+        return get_prob_larger_time(d, d_dag.tau, tmax / 2.0, tmax);
+      };
+      EXPECT_NEAR(integrate(h, 0.0, tmax), 1.0, tol);
+
+      // Test 2d integration for get_prob_smaller_and_larger_time
+      // Takes several minutes ..
+      //auto i = [&](double tau) {
+        //auto j = [&](double tau_dag) {
+          //d.tau = tau;
+          //d_dag.tau = tau_dag;
+          //return get_prob_smaller_and_larger_time(d, d_dag, tau_splits, tmax);
+        //};
+        //return integrate(j, 0, tmax, 1e+4);
+      //};
+      //EXPECT_NEAR(integrate(i, 0, tmax, 1e+4), 1.0, 1e-3);
     }
   }
 }
