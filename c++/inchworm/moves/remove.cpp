@@ -30,12 +30,16 @@ namespace inchworm::moves {
 
       if (config.size() == 0) { // Account for special treatment of empty config
 
-        // Account for insertion around tau_split and zero
-        double dtau = params.tau_max - params.tau_split;
-        double inverse_prop_prob = 0.5
-           * (get_prob_smaller_and_larger_time(d, d_dag, params.tau_split, params.tau_split, dtau, params.tau_max)
-              + get_prob_smaller_and_larger_time(d, d_dag, 0.0, dtau, params.tau_split, params.tau_max));
-        return inverse_prop_prob / bl_size / bl_size;
+	// Account for insertion around tau_split and zero
+	double dtau = params.tau_max - params.tau_split;
+	double inverse_prop_prob = 0.5
+	   * (get_prob_smaller_and_larger_time(d, d_dag, params.tau_split, params.tau_split, dtau, params.tau_max)
+	      + get_prob_smaller_and_larger_time(d, d_dag, 0.0, dtau, params.tau_split, params.tau_max));
+	return inverse_prop_prob / bl_size / bl_size;
+
+      } else if (config.size(bl) == 0) {
+	double inverse_prop_prob = get_prob_smaller_and_larger_time(d, d_dag, config.split_times, params.tau_max);
+	return inverse_prop_prob / bl_size / bl_size;
 
       } else {
 
