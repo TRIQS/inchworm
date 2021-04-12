@@ -340,9 +340,8 @@ namespace inchworm {
     int status        = mc.warmup(params.n_warmup_cycles, length_cycle, triqs::utility::clock_callback(params.max_time));
 
     // ----- Define Function for measuring and setting the operator distribution widths
-    auto gather_tau_diff_stat = [&, done = false]() mutable {
-      if (done) return;
-
+    bool tau_diff_stat_done = false;
+    auto gather_tau_diff_stat = [&]() {
       // Gather the tau-diff statistics
       moves::insert::gather_tau_diff_stat = true;
       int status                          = mc.warmup(params.n_warmup_cycles, length_cycle, triqs::utility::clock_callback(params.max_time));
@@ -377,7 +376,7 @@ namespace inchworm {
 
           if (params.verbosity > 0) PRINT(op);
         }
-        done = true;
+        tau_diff_stat_done = true;
       }
       if (below_threshold_count > 0 && params.verbosity > 0)
         fmt::print("         Found {} operators with insertion count below threshold, please raise n_warmup_cycles\n", below_threshold_count);
@@ -433,7 +432,10 @@ namespace inchworm {
       }
 
       // When not reweighting, set operator tau distribution widths
-      if (hist[0] > 0.7 * hist[hist_max_idx] and hist[0] <= params.max_prob_zeroth_order) gather_tau_diff_stat();
+      if (hist[0] > 0.7 * hist[hist_max_idx] and hist[0] <= params.max_prob_zeroth_order and not tau_diff_stat_done) {
+	gather_tau_diff_stat();
+	continue;
+      }
 
       // Iterate the callibration until the zeroth order is sampled with finite probability
       if (hist[0] > 0.7 * hist[hist_max_idx] and hist[0] <= params.max_prob_zeroth_order
