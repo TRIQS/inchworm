@@ -31,7 +31,8 @@ namespace inchworm {
       }
     };
 
-    for (double tau_ref: config.split_times) check_time_diff(tau_ref);
+    auto op_list = op.dag ? config.d_bl_list[op.bl] : config.d_dag_bl_list[op.bl];
+    for (auto const &op_ref : op_list) check_time_diff(op_ref.tau);
 
     return res;
   }

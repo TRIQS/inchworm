@@ -185,10 +185,16 @@ TEST(Distributions, get_prob) {
 
       auto tau_splits = std::vector{0.4*tmax, 0.7*tmax, 0.9*tmax};
 
+      auto d1_dag = fop_t{0.3 * tmax, true, 1, 0, 1, w1, w1};
+      auto d2_dag = fop_t{0.6 * tmax, true, 2, 0, 2, w1, w1};
+      auto d3_dag = fop_t{0.9 * tmax, true, 3, 0, 3, w1, w1};
+
+      auto d_dag_list = std::vector{d1_dag, d2_dag, d3_dag};
+
       double tol = 1e-6;
       auto f     = [&](double tau) {
         d.tau = tau;
-        return get_prob(d, tau_splits, tmax);
+        return get_prob(d, d_dag_list, tmax);
       };
       EXPECT_NEAR(integrate(f, 0.0, tmax), 1.0, tol);
 

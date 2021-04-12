@@ -48,16 +48,28 @@ namespace inchworm::moves {
 
 	t_ratio = bl_size * bl_size / prop_prob;
 
-      } else {
+      } else { // Finite block size
 
-        auto [d_tau, prob_d_tau]         = get_close_time_and_prob(rng, d, config.split_times, params.tau_max);
-        auto [d_dag_tau, prob_d_dag_tau] = get_close_time_and_prob(rng, d_dag, config.split_times, params.tau_max);
-
-        d.tau     = d_tau;
-        d_dag.tau = d_dag_tau;
+        // We have two options, either split-point based insertion or operator-based insertion
 
         long new_nop_bl = config.size(bl) + 1;
-        t_ratio         = std::pow(double(bl_size) / new_nop_bl, 2) / prob_d_tau / prob_d_dag_tau;
+
+        if (rng(2)) { // Operator-based insertion
+                      // FIXME Should we really weigh this with 50 percent? This path probably has significantly lower acceptance rate
+          auto [d_tau, prob_d_tau]         = get_close_time_and_prob(rng, d, config.d_dag_bl_list[bl], params.tau_max);
+          auto [d_dag_tau, prob_d_dag_tau] = get_close_time_and_prob(rng, d_dag, config.d_bl_list[bl], params.tau_max);
+
+          d.tau     = d_tau;
+          d_dag.tau = d_dag_tau;
+
+          t_ratio = std::pow(double(bl_size) / new_nop_bl, 2) / prob_d_tau / prob_d_dag_tau;
+        } else { // Split-point based insertion
+          auto [d_tau, d_dag_tau, prop_prob] = get_close_smaller_and_larger_time_and_prob(rng, d, d_dag, config.split_times, params.tau_max);
+          d.tau                              = d_tau;
+          d_dag.tau                          = d_dag_tau;
+
+          t_ratio = std::pow(double(bl_size) / new_nop_bl, 2) / prop_prob;
+        }
       }
     }
 
@@ -74,7 +86,7 @@ namespace inchworm::moves {
     // Gather tau statistic during warmup
     if (gather_tau_diff_stat) {
       for (auto const &op : {last_d, last_d_dag}) {
-        double tau_diff = cyclic_difference(op, config, params.tau_max);
+        double tau_diff = cyclic_difference(op, prop_config, params.tau_max);
         if (tau_diff < params.tau_max / 2.0) // left_width
           tau_diff_stat[op.bl](op.idx, op.dag, 0) << tau_diff;
         else // right_width

@@ -43,9 +43,11 @@ namespace inchworm::moves {
 
       } else {
 
-        double prob_d_tau     = get_prob(d, config.split_times, params.tau_max);
-        double prob_d_dag_tau = get_prob(d_dag, config.split_times, params.tau_max);
-        return std::pow(double(old_nop_bl) / bl_size, 2) * prob_d_tau * prob_d_dag_tau;
+        // We have two insertion options, either split-point based insertion or operator-based insertion
+        double inverse_prop_prob = 0.5
+           * (get_prob(d, config.d_dag_bl_list[bl], params.tau_max) * get_prob(d_dag, config.d_bl_list[bl], params.tau_max)
+              + get_prob_smaller_and_larger_time(d, d_dag, config.split_times, params.tau_max));
+        return std::pow(double(old_nop_bl) / bl_size, 2) * inverse_prop_prob;
       }
     }
   }
