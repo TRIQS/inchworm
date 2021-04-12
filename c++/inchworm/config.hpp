@@ -17,8 +17,8 @@ namespace inchworm {
     int sign = 1; // The sign of the configuration
 
     // Create an empty configuration
-    config_t(frame_t const &frame, gf_struct_t const &gf_struct)
-       : imp_weight{frobenius_norm(frame)}, hyb_weight{1.0}, d_bl_list(gf_struct.size()), d_dag_bl_list(gf_struct.size()) {}
+    config_t(frame_t const &frame, gf_struct_t const &gf_struct, std::vector<double> split_times)
+       : imp_weight{frobenius_norm(frame)}, hyb_weight{1.0}, d_bl_list(gf_struct.size()), d_dag_bl_list(gf_struct.size()), split_times(split_times) {}
 
     long size() const { return d_list.size(); }
     long size(long bl) const { return d_bl_list[bl].size(); }

@@ -287,8 +287,7 @@ namespace inchworm {
     // Create frame and Monte-Carlo configuration
     auto frame =
        (mode == MODE::PROPAGATOR) ? make_bare_u_frame(ad_imp, tau_max) : make_bare_g_frame(ad_imp, u_tau, params.gf_struct, tau_split, tau_max);
-    config_t config(frame, params.gf_struct);
-    config.split_times = (mode == MODE::GREENFUNCTION) ? std::vector{0.0, tau_split} : std::vector{tau_split};
+    config_t config(frame, params.gf_struct, {0.0, tau_split});
 
     // Create Monte-Carlo params
     qmc_params_t qmc_params{tau_max, tau_split, use_bare_propagator, mode};
