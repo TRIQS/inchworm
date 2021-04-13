@@ -53,25 +53,25 @@ namespace inchworm::moves {
       } else { // Finite block size
 
         // We have two options, either split-point based insertion or operator-based insertion
-
-        long new_nop_bl = config.size(bl) + 1;
-
         if (rng(2)) { // Operator-based insertion
                       // FIXME Should we really weigh this with 50 percent? This path probably has significantly lower acceptance rate
-          auto [d_tau, prob_d_tau]         = get_close_time_and_prob(rng, d, config.d_dag_bl_list[bl], params.tau_max);
-          auto [d_dag_tau, prob_d_dag_tau] = get_close_time_and_prob(rng, d_dag, config.d_bl_list[bl], params.tau_max);
+          auto d_tau     = get_close_time(rng, d, config.d_dag_bl_list[bl], params.tau_max);
+          auto d_dag_tau = get_close_time(rng, d_dag, config.d_bl_list[bl], params.tau_max);
+          d.tau          = d_tau;
+          d_dag.tau      = d_dag_tau;
 
-          d.tau     = d_tau;
-          d_dag.tau = d_dag_tau;
-
-          t_ratio = std::pow(double(bl_size) / new_nop_bl, 2) / prob_d_tau / prob_d_dag_tau;
         } else { // Split-point based insertion
-          auto [d_tau, d_dag_tau, prop_prob] = get_close_smaller_and_larger_time_and_prob(rng, d, d_dag, config.split_times, params.tau_max);
-          d.tau                              = d_tau;
-          d_dag.tau                          = d_dag_tau;
-
-          t_ratio = std::pow(double(bl_size) / new_nop_bl, 2) / prop_prob;
+          auto [d_tau, d_dag_tau] = get_close_smaller_and_larger_time(rng, d, d_dag, config.split_times, params.tau_max);
+          d.tau                   = d_tau;
+          d_dag.tau               = d_dag_tau;
         }
+
+        double prop_prob = 0.5
+           * (get_prob(d, config.d_dag_bl_list[bl], params.tau_max) * get_prob(d_dag, config.d_bl_list[bl], params.tau_max)
+              + get_prob_smaller_and_larger_time(d, d_dag, config.split_times, params.tau_max));
+
+        long new_nop_bl = config.size(bl) + 1;
+        t_ratio         = std::pow(double(bl_size) / new_nop_bl, 2) / prop_prob;
       }
     }
 
