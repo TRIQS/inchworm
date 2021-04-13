@@ -27,26 +27,28 @@ namespace inchworm::moves {
 
       if (config.size() == 0) { // Special treatment of empty config
 
-	if (params.mode == MODE::GREENFUNCTION)
-	  TRIQS_RUNTIME_ERROR << "We need to fix the zeroth order insertion for Gf! We have have one operator close to d and another close to ddag";
+        // Make sure that we choose tau values on seperate sides of the split points at zero and tau_split
+        double dtau             = params.tau_max - params.tau_split;
+        auto [d_tau, d_dag_tau] = rng(2) ?
+           get_close_smaller_and_larger_time(rng, d, d_dag, params.tau_split, params.tau_split, dtau, params.tau_max) :
+           get_close_smaller_and_larger_time(rng, d, d_dag, 0.0, dtau, params.tau_split, params.tau_max);
 
-	// Make sure that we choose tau values on seperate sides of the split points at zero and tau_split
-	double dtau = params.tau_max - params.tau_split;
-	auto [d_tau, d_dag_tau, prop_prob] = rng(2) ?
-	   get_close_smaller_and_larger_time_and_prob(rng, d, d_dag, params.tau_split, params.tau_split, dtau, params.tau_max) :
-	   get_close_smaller_and_larger_time_and_prob(rng, d, d_dag, 0.0, dtau, params.tau_split, params.tau_max);
-	d.tau                              = d_tau;
-	d_dag.tau                          = d_dag_tau;
+        d.tau     = d_tau;
+        d_dag.tau = d_dag_tau;
 
-	t_ratio = 2.0 * bl_size * bl_size / prop_prob;
+        double prop_prob = 0.5
+           * (get_prob_smaller_and_larger_time(d, d_dag, params.tau_split, params.tau_split, dtau, params.tau_max)
+              + get_prob_smaller_and_larger_time(d, d_dag, 0.0, dtau, params.tau_split, params.tau_max));
+
+        t_ratio = bl_size * bl_size / prop_prob;
 
       } else if (config.size(bl) == 0) { // Special treatment of empty block
 
-	auto [d_tau, d_dag_tau, prop_prob] = get_close_smaller_and_larger_time_and_prob(rng, d, d_dag, config.split_times, params.tau_max);
-	d.tau                              = d_tau;
-	d_dag.tau                          = d_dag_tau;
+        auto [d_tau, d_dag_tau, prop_prob] = get_close_smaller_and_larger_time_and_prob(rng, d, d_dag, config.split_times, params.tau_max);
+        d.tau                              = d_tau;
+        d_dag.tau                          = d_dag_tau;
 
-	t_ratio = bl_size * bl_size / prop_prob;
+        t_ratio = bl_size * bl_size / prop_prob;
 
       } else { // Finite block size
 
