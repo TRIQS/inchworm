@@ -13,18 +13,19 @@ namespace inchworm {
   // Inverse of the cumulative distribution function associated
   // with the truncated exponential probability density
   inline double icdf(double p, double w, double tmax) {
+    EXPECTS(w > 0.0);
     // Explicitly treat small tmax / w to avoid instabilities
     if (tmax / w < 1e-8) return p * tmax;
     double exp_val = std::exp(-tmax / w);
-    if ((1.0 - p) * 1e+3 <= exp_val) return tmax;
+    if (p >= 1.0) return tmax;
     return -w * std::log(1.0 - p + p * exp_val);
   }
 
   // Probability density function on the interval [0,tmax] combining
   // two exponential probabily densities on [0,tmax/2) and [tmax/2,tmax]
   inline double double_pdf(double tau, double w1, double w2, double tmax) {
+    EXPECTS(w1 > 0.0 && w2 > 0.0);
     EXPECTS(0 <= tau && tau <= tmax);
-
     // Piecewise pdf on [0,tmax/2) and [tmax/2,tmax]
     if (tau < tmax / 2) return 0.5 * pdf(tau, w1, tmax / 2.0);
     return 0.5 * pdf(tmax - tau, w2, tmax / 2.0);
@@ -51,14 +52,14 @@ namespace inchworm {
   // Calculate the probability to draw op.tau larger than tref
   inline double get_prob_larger_time(fop_t const &op, double tref, double range, double period) {
     double diff = cyclic_difference(op.tau, tref, period);
-    if (diff < range) return pdf(diff, op.left_width, range);
+    if (diff <= range) return pdf(diff, op.left_width, range);
     return 0.0;
   }
 
   // Calculate the probability to draw op.tau smaller than tref
   inline double get_prob_smaller_time(fop_t const &op, double tref, double range, double period) {
     double diff = cyclic_difference(tref, op.tau, period);
-    if (diff < range) return pdf(diff, op.right_width, range);
+    if (diff <= range) return pdf(diff, op.right_width, range);
     return 0.0;
   }
 
