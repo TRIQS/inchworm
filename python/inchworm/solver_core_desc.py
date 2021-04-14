@@ -163,7 +163,7 @@ c.add_method("""void solve (**inchworm::solve_params_t)""",
 +-------------------------+--------------------------------------+-----------------------------------------+-----------------------------------------------------+
 | quantum_numbers         | list(Operator)                       | [Total Particle Number]                 | Quantum numbers                                     |
 +-------------------------+--------------------------------------+-----------------------------------------+-----------------------------------------------------+
-| max_prob_zeroth_order   | double                               | 1.0                                     | Maximum probability of order zero sampling          |
+| max_prob_zeroth_order   | double                               | 0.5                                     | Maximum probability of order zero sampling          |
 +-------------------------+--------------------------------------+-----------------------------------------+-----------------------------------------------------+
 | n_tau_inch_stop         | std::optional<int>                   | {}                                      | Number of inchworm steps before interruption        |
 +-------------------------+--------------------------------------+-----------------------------------------+-----------------------------------------------------+
@@ -220,7 +220,7 @@ c.add_method("""void solve_green (**inchworm::solve_params_t)""",
 +-------------------------+--------------------------------------+-----------------------------------------+-----------------------------------------------------+
 | quantum_numbers         | list(Operator)                       | [Total Particle Number]                 | Quantum numbers                                     |
 +-------------------------+--------------------------------------+-----------------------------------------+-----------------------------------------------------+
-| max_prob_zeroth_order   | double                               | 1.0                                     | Maximum probability of order zero sampling          |
+| max_prob_zeroth_order   | double                               | 0.5                                     | Maximum probability of order zero sampling          |
 +-------------------------+--------------------------------------+-----------------------------------------+-----------------------------------------------------+
 | n_tau_inch_stop         | std::optional<int>                   | {}                                      | Number of inchworm steps before interruption        |
 +-------------------------+--------------------------------------+-----------------------------------------+-----------------------------------------------------+
@@ -290,7 +290,7 @@ c.add_member(c_name = "quantum_numbers",
 
 c.add_member(c_name = "max_prob_zeroth_order",
              c_type = "double",
-             initializer = """ 1.0 """,
+             initializer = """ 0.5 """,
              doc = r"""Maximum probability of order zero sampling""")
 
 c.add_member(c_name = "n_tau_inch_stop",

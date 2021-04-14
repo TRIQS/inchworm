@@ -83,7 +83,7 @@ namespace inchworm {
     // ----------- QMC Specific -----------
 
     /// Maximum probability of order zero sampling
-    double max_prob_zeroth_order = 1.0;
+    double max_prob_zeroth_order = 0.5;
 
     /// Number of inchworm steps before interruption
     std::optional<int> n_tau_inch_stop = {};
