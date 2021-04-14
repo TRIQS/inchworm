@@ -357,12 +357,12 @@ namespace inchworm {
       long below_threshold_count = 0;
       for (auto bl : range(n_bl)) {
         for (auto &op : all_d_ops[bl]) { // FIXME join(all_d_ops[bl], all_d_dag_ops[bl])
-          if (tau_diff_stat[bl](op.idx, op.dag, 0).n_lin_bins() > 0)
+          if (mpi::all_reduce(tau_diff_stat[bl](op.idx, op.dag, 0).n_lin_bins()) > 0)
             op.left_width = mean_mpi(world, tau_diff_stat[bl](op.idx, op.dag, 0).linear_bins());
           else
             ++below_threshold_count;
 
-          if (tau_diff_stat[bl](op.idx, op.dag, 1).n_lin_bins() > 0)
+          if (mpi::all_reduce(tau_diff_stat[bl](op.idx, op.dag, 1).n_lin_bins()) > 0)
             op.right_width = mean_mpi(world, tau_diff_stat[bl](op.idx, op.dag, 1).linear_bins());
           else
             ++below_threshold_count;
@@ -370,12 +370,12 @@ namespace inchworm {
           if (params.verbosity > 0) PRINT(op);
         }
         for (auto &op : all_d_dag_ops[bl]) {
-          if (tau_diff_stat[bl](op.idx, op.dag, 0).n_lin_bins() > 0)
+          if (mpi::all_reduce(tau_diff_stat[bl](op.idx, op.dag, 0).n_lin_bins()) > 0)
             op.left_width = mean_mpi(world, tau_diff_stat[bl](op.idx, op.dag, 0).linear_bins());
           else
             ++below_threshold_count;
 
-          if (tau_diff_stat[bl](op.idx, op.dag, 1).n_lin_bins() > 0)
+          if (mpi::all_reduce(tau_diff_stat[bl](op.idx, op.dag, 1).n_lin_bins()) > 0)
             op.right_width = mean_mpi(world, tau_diff_stat[bl](op.idx, op.dag, 1).linear_bins());
           else
             ++below_threshold_count;
