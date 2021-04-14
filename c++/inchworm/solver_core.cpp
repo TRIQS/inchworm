@@ -392,7 +392,7 @@ namespace inchworm {
     size_t hist_max_idx = 0;
     if (params.verbosity > 0) {
       std::printf("     Callibrating ...\n");
-      std::printf("         %-12s| %-12s| %-12s| %-12s| %-12s| %-16s\n", "hist0", "autocorr(k)", "acc insert", "acc remove", "new coeff0",
+      std::printf("         %-12s| %-12s| %-12s| %-12s| %-12s| %-16s\n", "hist0", "autocorr", "acc insert", "acc remove", "new coeff0",
                   "new length_cycle");
     }
     for (int n = 1; status == 0; ++n) {
@@ -401,7 +401,7 @@ namespace inchworm {
       auto callibration_results = results;
       mc.add_measure(measures::average_order{params, config, callibration_results}, "measure the average perturbation order");
       mc.add_measure(measures::order_histogram{params, config, callibration_results}, "measure the perturbation order histogram");
-      mc.add_measure(measures::autocorr{params, config, callibration_results}, "measure the autocorrelation time");
+      mc.add_measure(measures::autocorr{params, config, frame, callibration_results}, "measure the autocorrelation time");
 
       status = mc.accumulate(params.n_callibration_cycles, length_cycle, triqs::utility::clock_callback(params.max_time));
       if (status != 0) break;

@@ -19,7 +19,7 @@ namespace inchworm::measures {
     if (config.size() == 0) acc_frame_0th_order += s * frame_;
 
     // Perform an autocorrelation analysis on the trace
-    acc << trace(frame_);
+    acc << frobenius_norm(frame_);
   }
 
   void frame::collect_results(mpi::communicator const &comm) {
@@ -39,7 +39,7 @@ namespace inchworm::measures {
     if (comm.rank() == 0) {
       double auto_corr_time = 0.0;
       if (errs[0] > 0) auto_corr_time = std::max(0.0, tau_estimate_from_errors(errs[int(0.7 * errs.size())], errs[0]));
-      std::printf("     autocorr(frame): %.3f\n", auto_corr_time);
+      std::printf("     autocorr: %.3f\n", auto_corr_time);
     }
   }
 

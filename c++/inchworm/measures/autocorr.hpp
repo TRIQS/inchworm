@@ -9,7 +9,7 @@ namespace inchworm::measures {
   /// Measurement of a autocorr based on the trace of the current frame
   struct autocorr {
 
-    autocorr(params_t const &, config_t const &config, qmc_results_t &results);
+    autocorr(params_t const &, config_t const &config, frame_t const &frame, qmc_results_t &results);
 
     /// Invoke a single measurement
     void accumulate(scalar_t);
@@ -23,6 +23,9 @@ namespace inchworm::measures {
 
     // The Monte-Carlo configuration and data
     config_t const &config;
+
+    // The current frame
+    frame_t const &frame;
 
     // The Result Container
     qmc_results_t &results;

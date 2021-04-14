@@ -4,10 +4,10 @@
 
 namespace inchworm::measures {
 
-  autocorr::autocorr(params_t const &params, config_t const &config, qmc_results_t &results)
-     : verbosity(params.verbosity), config(config), results(results) {}
+  autocorr::autocorr(params_t const &params, config_t const &config, frame_t const &frame, qmc_results_t &results)
+     : verbosity(params.verbosity), config(config), frame(frame), results(results) {}
 
-  void autocorr::accumulate(scalar_t sign) { acc << config.size(); }
+  void autocorr::accumulate(scalar_t sign) { acc << frobenius_norm(frame); }
 
   void autocorr::collect_results(mpi::communicator const &comm) {
 
@@ -15,7 +15,7 @@ namespace inchworm::measures {
 
     // Debug Prints
     if (comm.rank() == 0 and verbosity > 1) {
-      std::cout << "errs avg_k: [";
+      std::cout << "errs norm(frame): [";
       for (auto err : errs) std::cout << err << " ";
       std::cout << "]\n";
     }
