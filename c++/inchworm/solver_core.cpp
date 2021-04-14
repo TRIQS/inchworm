@@ -429,7 +429,7 @@ namespace inchworm {
 
       // When not reweighting, auto-deduce cycle length if not set
       if (hist[0] > 0.7 * hist[hist_max_idx] and hist[0] <= params.max_prob_zeroth_order)
-        length_cycle = params.length_cycle.value_or(1.0 + std::ceil(length_cycle * (0.3 + callibration_results.auto_corr_time)));
+        length_cycle = params.length_cycle.value_or(1.0 + std::ceil(length_cycle * std::pow(0.1 + callibration_results.auto_corr_time, 0.85)));
 
       if (params.verbosity > 0) {
         auto acc_rates = mc.get_acceptance_rates();
