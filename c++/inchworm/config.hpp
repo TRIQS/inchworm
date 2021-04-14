@@ -25,8 +25,6 @@ namespace inchworm {
 
     bool try_insert(fop_t const &ddag, fop_t const &d);
     bool try_erase(long bl, long i_dag, long i);
-    bool try_double_insert(fop_t const &d_dag1, fop_t const &d1, fop_t const &d_dag2, fop_t const &d2);
-    bool try_double_erase(long bl1, long i1_dag, long i1, long bl2, long i2_dag, long i2);
   };
 
 } // namespace inchworm
