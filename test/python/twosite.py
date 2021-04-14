@@ -33,11 +33,10 @@ from triqs.operators import *
 from triqs.utility.h5diff import h5diff
 
 def one_fermion(tau, eps, beta):
-    import math
     if (eps >= 0):
-        return -math.exp(-tau * eps) / (1. + math.exp(-beta * eps))
+        return -np.exp(-tau * eps) / (1. + np.exp(-beta * eps))
     else:
-        return -math.exp((beta - tau) * eps) / (1. + math.exp(beta * eps))
+        return -np.exp((beta - tau) * eps) / (1. + np.exp(beta * eps))
 
 class test_hubbard(unittest.TestCase):
 
@@ -62,10 +61,10 @@ class test_hubbard(unittest.TestCase):
     S = Solver(**cp)
     for bl in ["up", "dn"]:
         S.Delta_tau[bl].data[:] = 0
-        for mp in S.Delta_tau["up"].mesh:
-            for i, j, k in product(range(n_site), range(n_site), range(n_bath)):
-                S.Delta_tau[bl][mp][i, j] = S.Delta_tau[bl][mp][i, j] \
-                  + theta[i, k] * theta[j, k] * one_fermion(tau=mp.value, eps=epsilon[k], beta=cp["beta"])
+        taulst = np.array([mp.value for mp in S.Delta_tau[bl].mesh])
+        for i, j, k in product(range(n_site), range(n_site), range(n_bath)):
+            S.Delta_tau[bl][i, j].data[:] = S.Delta_tau[bl][i, j].data[:] \
+              + theta[i, k] * theta[j, k] * one_fermion(taulst, eps=epsilon[k], beta=cp["beta"])
 
     # Solve Parameters
     sp = {}
