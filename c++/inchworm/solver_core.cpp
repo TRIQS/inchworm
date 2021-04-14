@@ -319,14 +319,15 @@ namespace inchworm {
     }
 
     // Add moves
-    mc.add_move(moves::insert{config, frame, qmc_params, *this, rng, tau_diff_stat}, "insert move");
-    mc.add_move(moves::remove{config, frame, qmc_params, *this, rng}, "remove move");
+    using moves::KIND;
+    mc.add_move(moves::insert<KIND::Single>{config, frame, qmc_params, *this, rng, tau_diff_stat}, "insert move");
+    mc.add_move(moves::remove<KIND::Single>{config, frame, qmc_params, *this, rng}, "remove move");
 
     if (params.use_double_insertion) {
-      mc.add_move(moves::double_insert{config, frame, qmc_params, *this, rng, false /*equal_blocks*/}, "double insert move", 0.5);
-      mc.add_move(moves::double_remove{config, frame, qmc_params, *this, rng, false}, "double remove move", 0.5);
-      mc.add_move(moves::double_insert{config, frame, qmc_params, *this, rng, true}, "double insert move equal blocks", 0.5);
-      mc.add_move(moves::double_remove{config, frame, qmc_params, *this, rng, true}, "double remove move equal blocks", 0.5);
+      mc.add_move(moves::insert<KIND::Double>{config, frame, qmc_params, *this, rng, tau_diff_stat}, "double insert move", 0.5);
+      mc.add_move(moves::remove<KIND::Double>{config, frame, qmc_params, *this, rng}, "double remove move", 0.5);
+      mc.add_move(moves::insert<KIND::DoubleEqBl>{config, frame, qmc_params, *this, rng, tau_diff_stat}, "double insert move equal blocks", 0.5);
+      mc.add_move(moves::remove<KIND::DoubleEqBl>{config, frame, qmc_params, *this, rng}, "double remove move equal blocks", 0.5);
     }
 
     // Initialize result container
@@ -349,9 +350,9 @@ namespace inchworm {
     bool tau_diff_stat_done = false;
     auto gather_tau_diff_stat = [&]() {
       // Gather the tau-diff statistics
-      moves::insert::gather_tau_diff_stat = true;
+      moves::base_move::gather_tau_diff_stat = true;
       int status                          = mc.warmup(params.n_warmup_cycles, length_cycle, triqs::utility::clock_callback(params.max_time));
-      moves::insert::gather_tau_diff_stat = false;
+      moves::base_move::gather_tau_diff_stat = false;
 
       // Adjust the operators accordingly
       long below_threshold_count = 0;

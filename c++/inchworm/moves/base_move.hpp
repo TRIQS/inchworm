@@ -8,6 +8,8 @@
 
 namespace inchworm::moves {
 
+  enum class KIND { Single, Double, DoubleEqBl };
+
   /// A simple Monte-Carlo move
   struct base_move {
 
@@ -32,6 +34,9 @@ namespace inchworm::moves {
 
     /// The reweighting coefficients
     inline static std::vector<double> reweighting_coeffs = {};
+
+    /// Switch for enabling / disabling the tau diff statistic gathering
+    inline static bool gather_tau_diff_stat = false;
 
     protected:
     /// The function to update the configuration

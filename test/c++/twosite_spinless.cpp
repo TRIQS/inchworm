@@ -48,7 +48,7 @@ TEST(inchworm, Hubbard_2sites_spinless) { // NOLINT
 
   // Test cthyb
   auto result_cthyb = S.solve_cthyb(sp, tau_max);
-  EXPECT_LT(relative_distance(get_frame(u_tau, cp.n_tau_inch - 1), result_cthyb.frame), 0.02);
+  EXPECT_LT(relative_distance(get_frame(u_tau, cp.n_tau_inch - 1), result_cthyb.frame), 0.03);
 
   // Test selfconsistent
   auto result_sc = S.solve_self_consistently(sp, u_tau, tau_split, tau_max);
