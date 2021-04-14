@@ -1,6 +1,6 @@
 #include "./insert.hpp"
+#include "./gen_op_times.hpp"
 #include "./../torus.hpp"
-#include "./../distributions.hpp"
 
 namespace inchworm::moves {
 
@@ -13,74 +13,20 @@ namespace inchworm::moves {
     auto d     = solver.all_d_ops[bl][rng(bl_size)];
     auto d_dag = solver.all_d_dag_ops[bl][rng(bl_size)];
 
-    scalar_t t_ratio;
-    if (params.tau_split == 0.0) { // ----- CTHyb sampling with bare propagator
-
-      // Choose random times uniformly
-      d.tau     = rng(params.tau_max);
-      d_dag.tau = rng(params.tau_max);
-
-      long new_nop_bl = config.size(bl) + 1;
-      t_ratio         = std::pow(params.tau_max * bl_size / new_nop_bl, 2);
-
-    } else { // ----- Inchworm Sampling
-
-      if (config.size() == 0) { // Special treatment of empty config
-
-        // Make sure that we choose tau values on seperate sides of the split points at zero and tau_split
-        double dtau             = params.tau_max - params.tau_split;
-        auto [d_tau, d_dag_tau] = rng(2) ?
-           get_close_smaller_and_larger_time(rng, d, d_dag, params.tau_split, params.tau_split, dtau, params.tau_max) :
-           get_close_smaller_and_larger_time(rng, d, d_dag, 0.0, dtau, params.tau_split, params.tau_max);
-
-        d.tau     = d_tau;
-        d_dag.tau = d_dag_tau;
-
-        double prop_prob = 0.5
-           * (get_prob_smaller_and_larger_time(d, d_dag, params.tau_split, params.tau_split, dtau, params.tau_max)
-              + get_prob_smaller_and_larger_time(d, d_dag, 0.0, dtau, params.tau_split, params.tau_max));
-
-        t_ratio = bl_size * bl_size / prop_prob;
-
-      } else if (config.size(bl) == 0) { // Special treatment of empty block
-
-        auto [d_tau, d_dag_tau, prop_prob] = get_close_smaller_and_larger_time_and_prob(rng, d, d_dag, config.split_times, params.tau_max);
-        d.tau                              = d_tau;
-        d_dag.tau                          = d_dag_tau;
-
-        t_ratio = bl_size * bl_size / prop_prob;
-
-      } else { // Finite block size
-
-        // We have two options, either split-point based insertion or operator-based insertion
-        if (rng(2)) { // Operator-based insertion
-                      // FIXME Should we really weigh this with 50 percent? This path probably has significantly lower acceptance rate
-          auto d_tau     = get_close_time(rng, d, config.d_dag_bl_list[bl], params.tau_max);
-          auto d_dag_tau = get_close_time(rng, d_dag, config.d_bl_list[bl], params.tau_max);
-          d.tau          = d_tau;
-          d_dag.tau      = d_dag_tau;
-
-        } else { // Split-point based insertion
-          auto [d_tau, d_dag_tau] = get_close_smaller_and_larger_time(rng, d, d_dag, config.split_times, params.tau_max);
-          d.tau                   = d_tau;
-          d_dag.tau               = d_dag_tau;
-        }
-
-        double prop_prob = 0.5
-           * (get_prob(d, config.d_dag_bl_list[bl], params.tau_max) * get_prob(d_dag, config.d_bl_list[bl], params.tau_max)
-              + get_prob_smaller_and_larger_time(d, d_dag, config.split_times, params.tau_max));
-
-        long new_nop_bl = config.size(bl) + 1;
-        t_ratio         = std::pow(double(bl_size) / new_nop_bl, 2) / prop_prob;
-      }
-    }
+    auto [d_tau, d_dag_tau] = gen_op_times(rng, d, d_dag, config, params.tau_split, params.tau_max);
+    d.tau                   = d_tau;
+    d_dag.tau               = d_dag_tau;
 
     last_d     = d;
     last_d_dag = d_dag;
 
+    double prop_prob = get_time_prop_prob(d, d_dag, config, params.tau_split, params.tau_max) / bl_size / bl_size / n_bl;
+
     if (not config.try_insert(d_dag, d)) return 0.0;
 
-    return t_ratio;
+    double inv_prop_prob = 1.0 / config.size(bl) / config.size(bl) / n_bl;
+
+    return inv_prop_prob / prop_prob;
   }
 
   scalar_t insert::accept() {

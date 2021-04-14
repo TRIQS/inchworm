@@ -1,6 +1,5 @@
 #include "./remove.hpp"
-#include "./../torus.hpp"
-#include "./../distributions.hpp"
+#include "./gen_op_times.hpp"
 
 namespace inchworm::moves {
 
@@ -8,48 +7,23 @@ namespace inchworm::moves {
     long n_bl = gf_struct.size();
 
     long bl         = rng(n_bl);
-    long old_nop_bl = config.size(bl);
 
-    if (old_nop_bl == 0) return 0;
+    if (config.size(bl) == 0) return 0;
 
-    long idx     = rng(old_nop_bl);
-    long idx_dag = rng(old_nop_bl);
+    long idx     = rng(config.size(bl));
+    long idx_dag = rng(config.size(bl));
 
     fop_t d     = config.d_bl_list[bl][idx];
     fop_t d_dag = config.d_dag_bl_list[bl][idx];
 
+    double prop_prob = 1.0 / config.size(bl) / config.size(bl) / n_bl;
+
     if (not config.try_erase(bl, idx_dag, idx)) return 0;
 
     long bl_size = gf_struct[bl].second;
+    double inv_prop_prob = get_time_prop_prob(d, d_dag, config, params.tau_split, params.tau_max) / bl_size / bl_size / n_bl;
 
-    if (params.tau_split == 0.0) { // ----- CTHyb sampling with bare propagator
-
-      return std::pow(old_nop_bl / (params.tau_max * bl_size), 2);
-
-    } else { // ----- Inchworm Sampling
-
-      if (config.size() == 0) { // Account for special treatment of empty config
-
-	// Account for insertion around tau_split and zero
-	double dtau = params.tau_max - params.tau_split;
-	double inverse_prop_prob = 0.5
-	   * (get_prob_smaller_and_larger_time(d, d_dag, params.tau_split, params.tau_split, dtau, params.tau_max)
-	      + get_prob_smaller_and_larger_time(d, d_dag, 0.0, dtau, params.tau_split, params.tau_max));
-	return inverse_prop_prob / bl_size / bl_size;
-
-      } else if (config.size(bl) == 0) {
-	double inverse_prop_prob = get_prob_smaller_and_larger_time(d, d_dag, config.split_times, params.tau_max);
-	return inverse_prop_prob / bl_size / bl_size;
-
-      } else {
-
-        // We have two insertion options, either split-point based insertion or operator-based insertion
-        double inverse_prop_prob = 0.5
-           * (get_prob(d, config.d_dag_bl_list[bl], params.tau_max) * get_prob(d_dag, config.d_bl_list[bl], params.tau_max)
-              + get_prob_smaller_and_larger_time(d, d_dag, config.split_times, params.tau_max));
-        return std::pow(double(old_nop_bl) / bl_size, 2) * inverse_prop_prob;
-      }
-    }
+    return inv_prop_prob / prop_prob;
   }
 
   scalar_t double_remove::try_config_update(config_t &config) {
