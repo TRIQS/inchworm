@@ -449,7 +449,7 @@ namespace inchworm {
 
       // Iterate the callibration until the zeroth order is sampled with finite probability
       if (hist[0] > 0.7 * hist[hist_max_idx] and hist[0] <= params.max_prob_zeroth_order
-          and (params.length_cycle.has_value() or callibration_results.auto_corr_time < 1.0))
+          and (params.length_cycle.has_value() or callibration_results.auto_corr_time < 5.0))
         break;
     }
 
