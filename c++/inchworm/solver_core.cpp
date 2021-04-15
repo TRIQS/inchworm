@@ -225,6 +225,9 @@ namespace inchworm {
 
     if (solve_params.verbosity > 0) std::cout << "\nStarting Green function calculation.. \n";
 
+    // Initialize the interpolator
+    u_interpolator = interpolator_t(u_tau, constr_params.n_tau_inch);
+
     double beta = constr_params.beta;
 
     // Initialize the Green function container
