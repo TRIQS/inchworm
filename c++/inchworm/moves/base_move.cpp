@@ -91,15 +91,16 @@ namespace inchworm::moves {
     // ------ Debugging Information -------
 
 #ifdef INCHWORM_DEBUG_PRINTS
+    //if(rng.preview() >= std::min(1.0, std::abs(ratio))) return ratio;
     std::printf("\n\n====== Try %s ======\n", name().c_str());
     print_configuration(diagram);
     print(prop_frame);
     hyb_mat.print();
-    std::printf("\n\nhyb.det()=% 4.7f \n", hyb_mat.det());
-    std::printf("\n\nsign= %d  w_hyb=% 4.7f  w_imp=% 4.7e    old_w_hyb=% 4.7f  old_w_imp=% 4.7e \n", prop_config.sign, prop_config.hyb_weight,
+    std::printf("\n\nhyb.det()=% 4.7e \n", hyb_mat.det());
+    std::printf("\n\nsign= %d  w_hyb=% 4.7e  w_imp=% 4.7e    old_w_hyb=% 4.7e  old_w_imp=% 4.7e \n", prop_config.sign, prop_config.hyb_weight,
                 prop_config.imp_weight, config.hyb_weight, config.imp_weight);
-    std::printf("\n\nsign_ratio= %d  w_hyb_ratio=% 4.7f  w_imp_ratio=% 4.7f  t_ratio=% 4.7f\n", sign_ratio, w_hyb_ratio, w_imp_ratio, t_ratio);
-    std::printf("\n\nratio=% 4.7f\n", ratio);
+    std::printf("\n\nsign_ratio= %d  w_hyb_ratio=% 4.7e  w_imp_ratio=% 4.7e  t_ratio=% 4.7e\n", sign_ratio, w_hyb_ratio, w_imp_ratio, t_ratio);
+    std::printf("\n\nratio=% 4.7e\n", ratio);
     if (not params.use_bare_propagator) {
       std::printf("proper_enum w.hyb         =% 4.7f \n", diagram::proper_enum(diagram, hyb_mat));
       std::printf("inclusion_exclusion w.hyb =% 4.7f \n", diagram::inclusion_exclusion(diagram, hyb_mat));
