@@ -8,6 +8,8 @@ namespace inchworm::moves {
 
   template <KIND Kind> double insert<Kind>::insert_single_op_pair(long bl, config_t &config) {
 
+    std::cout << "=========== INSERT_OP_PAIR =============" << std::endl;
+
     long bl_size = gf_struct[bl].second;
 
     auto d     = solver.all_d_ops[bl][rng(bl_size)];
@@ -26,12 +28,21 @@ namespace inchworm::moves {
 
     double inv_prop_prob = 1.0 / config.size(bl) / config.size(bl);
 
+    PRINT(d_tau);
+    PRINT(d_dag_tau);
+    PRINT(prop_prob * bl_size * bl_size);
+    PRINT(bl_size);
+    PRINT(prop_prob);
+    PRINT(inv_prop_prob);
+
     return inv_prop_prob / prop_prob;
   }
 
   template <KIND Kind> double insert<Kind>::try_config_update(config_t &config) {
 
     long n_bl = gf_struct.size();
+
+    std::cout << "=========== TRY_INSERT =============" << std::endl;
 
     if constexpr (Kind == KIND::Single) {
 
