@@ -7,6 +7,8 @@
 
 #include <nda/array_adapter.hpp>
 
+#include <fmt/core.h>
+
 namespace inchworm {
 
   class interpolator_t {
@@ -53,7 +55,17 @@ namespace inchworm {
 
     scalar_t operator()(int bl, double tau, int i, int j) const {
       EXPECTS(0 <= tau && tau <= datx[n_tau - 1]);
-      return gsl_interp_eval(interp[bl](i, j), datx.data(), daty[bl](range(), i, j).data(), tau, acc[bl](i, j));
+      double res = gsl_interp_eval(interp[bl](i, j), datx.data(), daty[bl](range(), i, j).data(), tau, acc[bl](i, j));
+      if (interpolation_failed) { // Store data to file and abort
+        {
+          auto f = h5::file("interp_debug.h5", 'w');
+          h5::write(f, "xvals", datx);
+          h5::write(f, "yvals", daty[bl](range(), i, j));
+          h5::write(f, "tau", tau);
+        }
+        std::abort();
+      };
+      return res;
     }
 
     matrix_t operator()(int bl, double tau) const {
@@ -75,6 +87,13 @@ namespace inchworm {
 
     nda::array<nda::array<gsl_interp *, 2>, 1> interp;
     nda::array<nda::array<gsl_interp_accel *, 2>, 1> acc;
+
+    inline static bool interpolation_failed = false;
+    inline static auto custom_error_handler = [](const char *reason, const char *file, int line, int gsl_errno) {
+      fmt::print("Interpolation failed (ErrNo: {}, File: {}:{})\n", gsl_errno, file, line);
+      interpolation_failed = true;
+    };
+    inline static auto default_error_handler = gsl_set_error_handler(custom_error_handler);
   };
 
 } // namespace inchworm
