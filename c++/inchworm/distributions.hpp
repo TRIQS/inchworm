@@ -13,12 +13,13 @@ namespace inchworm {
   // Inverse of the cumulative distribution function associated
   // with the truncated exponential probability density
   inline double icdf(double p, double w, double tmax) {
-    EXPECTS(w > 0.0);
+    EXPECTS(w > 0.0 && p >= 0.0);
     // Explicitly treat small tmax / w to avoid instabilities
-    if (tmax / w < 1e-8) return p * tmax;
-    double exp_val = std::exp(-tmax / w);
     if (p >= 1.0) return tmax;
-    return -w * std::log(1.0 - p + p * exp_val);
+    if (tmax / w < 1e-8) return p * tmax;
+    double res = std::min(-w * std::log(1.0 - p + p * std::exp(-tmax / w)), tmax);
+    ASSERT(0.0 <= res);
+    return res;
   }
 
   // Probability density function on the interval [0,tmax] combining
