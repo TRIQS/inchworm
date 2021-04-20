@@ -153,8 +153,6 @@ namespace inchworm {
 
     if (solve_params.verbosity > 0) std::cout << "\nStarting inchworm calculation of the propagator.. \n";
 
-    double beta = constr_params.beta;
-
     // loop on different inchworm steps
     for (auto n : range(1, constr_params.n_tau_inch)) {
       if (solve_params.verbosity > 0) std::printf("\n ..step %ld/%d\n", n, constr_params.n_tau_inch - 1);
@@ -168,8 +166,8 @@ namespace inchworm {
       //
       // tau_split < tau_max <= beta
       //
-      double tau_split = use_cthyb ? 0.0 : beta * (n - 1) / (constr_params.n_tau_inch - 1);
-      double tau_max   = beta * n / (constr_params.n_tau_inch - 1);
+      double tau_split = use_cthyb ? 0.0 : u_tau[0].mesh().index_to_point(n - 1);
+      double tau_max   = u_tau[0].mesh().index_to_point(n);
 
       // use bare propagator (cthyb) only on the first inchworm iteration:
       bool use_bare_propagator = (n == 1) or use_cthyb;
@@ -255,7 +253,7 @@ namespace inchworm {
       //
       // 0 < tau_split < beta
       //
-      double tau_split = beta * (double)n / (double)(constr_params.n_tau_green - 1);
+      double tau_split = G_tau[0].mesh().index_to_point(n);
 
       // calculation of the Monte Carlo solution:
       auto res = qmc_step(solve_params, tau_split, beta, false, MODE::GREENFUNCTION);
