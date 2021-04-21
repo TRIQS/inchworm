@@ -89,11 +89,11 @@ namespace inchworm {
     nda::array<nda::array<gsl_interp_accel *, 2>, 1> acc;
 
     inline static bool interpolation_failed = false;
-    inline static auto custom_error_handler = [](const char *reason, const char *file, int line, int gsl_errno) {
+    inline static auto const custom_error_handler = [](const char *, const char *file, int line, int gsl_errno) {
       fmt::print("Interpolation failed (ErrNo: {}, File: {}:{})\n", gsl_errno, file, line);
       interpolation_failed = true;
     };
-    inline static auto default_error_handler = gsl_set_error_handler(custom_error_handler);
+    inline static auto const default_error_handler = gsl_set_error_handler(custom_error_handler);
   };
 
 } // namespace inchworm
