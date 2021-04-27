@@ -17,6 +17,11 @@ namespace inchworm::moves {
 
     double prop_prob = 1.0 / config.size(bl) / config.size(bl);
 
+    // Never accept removal from trivial configurations
+    if (params.tau_split > 0.0 && config.size() == 1)
+      if ((d.tau < params.tau_split && d_dag.tau < params.tau_split) ||
+          (d.tau > params.tau_split && d_dag.tau > params.tau_split)) return 0;
+
     if (not config.try_erase(bl, idx_dag, idx)) return 0;
 
     long bl_size         = gf_struct[bl].second;
