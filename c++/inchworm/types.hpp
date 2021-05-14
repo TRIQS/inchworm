@@ -93,8 +93,8 @@ namespace inchworm {
     long idx;
 
     /// The left and right width of the insertion-move tau distribution
-    double left_width  = 10.0;
-    double right_width = 10.0;
+    double left_width  = 100.0;
+    double right_width = 100.0;
 
     bool operator==(fop_t const &) const = default;
 

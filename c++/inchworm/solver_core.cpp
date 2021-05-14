@@ -327,8 +327,8 @@ namespace inchworm {
     if (params.use_double_insertion) {
       mc.add_move(moves::insert<KIND::Double>{config, frame, qmc_params, *this, rng, tau_diff_stat}, "double insert move", 0.5);
       mc.add_move(moves::remove<KIND::Double>{config, frame, qmc_params, *this, rng}, "double remove move", 0.5);
-      mc.add_move(moves::insert<KIND::DoubleEqBl>{config, frame, qmc_params, *this, rng, tau_diff_stat}, "double insert move equal blocks", 0.5);
-      mc.add_move(moves::remove<KIND::DoubleEqBl>{config, frame, qmc_params, *this, rng}, "double remove move equal blocks", 0.5);
+      //mc.add_move(moves::insert<KIND::DoubleEqBl>{config, frame, qmc_params, *this, rng, tau_diff_stat}, "double insert move equal blocks", 0.5);
+      //mc.add_move(moves::remove<KIND::DoubleEqBl>{config, frame, qmc_params, *this, rng}, "double remove move equal blocks", 0.5);
     }
 
     // Initialize result container
@@ -439,11 +439,11 @@ namespace inchworm {
                     acc_rates.at("insert move"), acc_rates.at("remove move"), moves::base_move::reweighting_coeffs[0], length_cycle);
       }
 
-      // When not reweighting, set operator tau distribution widths
-      if (hist[0] > 0.7 * hist[hist_max_idx] and hist[0] <= params.max_prob_zeroth_order and not tau_diff_stat_done) {
-	gather_tau_diff_stat();
-	continue;
-      }
+      //// When not reweighting, set operator tau distribution widths
+      //if (hist[0] > 0.7 * hist[hist_max_idx] and hist[0] <= params.max_prob_zeroth_order and not tau_diff_stat_done) {
+	//gather_tau_diff_stat();
+	//continue;
+      //}
 
       // Iterate the callibration until the zeroth order is sampled with finite probability
       if (hist[0] > 0.7 * hist[hist_max_idx] and hist[0] <= params.max_prob_zeroth_order

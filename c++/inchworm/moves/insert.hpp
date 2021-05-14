@@ -33,6 +33,7 @@ namespace inchworm::moves {
     scalar_t try_config_update(config_t &config) override;
 
     scalar_t insert_single_op_pair(long bl, config_t &config);
+    scalar_t insert_double_op_pair(long bl1, long bl2, config_t &config);
 
     scalar_t accept() override;
 
