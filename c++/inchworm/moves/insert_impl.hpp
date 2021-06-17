@@ -29,33 +29,6 @@ namespace inchworm::moves {
     return inv_prop_prob / prop_prob;
   }
 
-  template <KIND Kind> scalar_t insert<Kind>::insert_double_op_pair(long bl1, long bl2, config_t &config) {
-
-    long bl1_size = gf_struct[bl1].second;
-    long bl2_size = gf_struct[bl2].second;
-
-    auto d1     = solver.all_d_ops[bl1][rng(bl1_size)];
-    auto d1_dag = solver.all_d_dag_ops[bl1][rng(bl1_size)];
-    auto d2     = solver.all_d_ops[bl2][rng(bl2_size)];
-    auto d2_dag = solver.all_d_dag_ops[bl2][rng(bl2_size)];
-
-    d1.tau                   = rng(params.tau_max);
-    d1_dag.tau               = rng(params.tau_max);
-    d2.tau                   = rng(params.tau_max);
-    d2_dag.tau               = rng(params.tau_max);
-
-    last_d     = d2;
-    last_d_dag = d2_dag;
-
-    double prop_prob = std::pow(1.0 / params.tau_max, 4) / bl1_size / bl1_size / bl2_size / bl2_size;
-
-    if (not config.try_double_insert(d1_dag, d1, d2_dag, d2)) return 0.0;
-
-    double inv_prop_prob = 1.0 / config.size(bl1) / config.size(bl1) / config.size(bl2) / config.size(bl2);
-
-    return inv_prop_prob / prop_prob;
-  }
-
   template <KIND Kind> scalar_t insert<Kind>::try_config_update(config_t &config) {
 
     long n_bl = gf_struct.size();
@@ -68,8 +41,6 @@ namespace inchworm::moves {
 
       long bl1 = rng(n_bl);
       long bl2 = (Kind == KIND::DoubleEqBl) ? bl1 : rng(n_bl);
-
-      //return insert_double_op_pair(bl1, bl2, config);
 
       double t_ratio1 = insert_single_op_pair(bl1, config);
       if (t_ratio1 == 0.0) return 0.0;
