@@ -17,7 +17,7 @@ namespace inchworm {
     interpolator_t() = default;
 
     interpolator_t(u_tau_t const &u_tau, long n_tau)
-       : n_blocks(u_tau.size()), n_tau(n_tau), datx(n_tau), daty(n_blocks), interp(n_blocks), acc(n_blocks), u_tau(u_tau) {
+       : n_blocks(u_tau.size()), n_tau(n_tau), datx(n_tau), daty(n_blocks), interp(n_blocks), acc(n_blocks) {
       EXPECTS(n_tau >= 2);
 
       for (auto n : range(n_tau)) datx[n] = u_tau[0].mesh()[n];
@@ -54,25 +54,23 @@ namespace inchworm {
     }
 
     scalar_t operator()(int bl, double tau, int i, int j) const {
-      return u_tau[bl](tau)(i, j);
-      //EXPECTS(0 <= tau && tau <= datx[n_tau - 1]);
-      //double res = gsl_interp_eval(interp[bl](i, j), datx.data(), daty[bl](range(), i, j).data(), tau, acc[bl](i, j));
-      //if (interpolation_failed) { // Store data to file and abort
-        //{
-          //auto f = h5::file("interp_debug.h5", 'w');
-          //h5::write(f, "xvals", datx);
-          //h5::write(f, "yvals", daty[bl](range(), i, j));
-          //h5::write(f, "tau", tau);
-        //}
-        //std::abort();
-      //};
-      //return res;
+      EXPECTS(0 <= tau && tau <= datx[n_tau - 1]);
+      double res = gsl_interp_eval(interp[bl](i, j), datx.data(), daty[bl](range(), i, j).data(), tau, acc[bl](i, j));
+      if (interpolation_failed) { // Store data to file and abort
+        {
+          auto f = h5::file("interp_debug.h5", 'w');
+          h5::write(f, "xvals", datx);
+          h5::write(f, "yvals", daty[bl](range(), i, j));
+          h5::write(f, "tau", tau);
+        }
+        std::abort();
+      };
+      return res;
     }
 
     matrix_t operator()(int bl, double tau) const {
-      return u_tau[bl](tau);
-      //EXPECTS(0 <= tau && tau <= datx[n_tau - 1]);
-      //return nda::array_adapter{interp[bl].shape(), [&](int i, int j) { return (*this)(bl, tau, i, j); }};
+      EXPECTS(0 <= tau && tau <= datx[n_tau - 1]);
+      return nda::array_adapter{interp[bl].shape(), [&](int i, int j) { return (*this)(bl, tau, i, j); }};
     }
 
     frame_t operator()(double tau) const {
@@ -89,8 +87,6 @@ namespace inchworm {
 
     nda::array<nda::array<gsl_interp *, 2>, 1> interp;
     nda::array<nda::array<gsl_interp_accel *, 2>, 1> acc;
-
-    u_tau_t u_tau;
 
     inline static bool interpolation_failed = false;
     inline static auto const custom_error_handler = [](const char *, const char *file, int line, int gsl_errno) {
