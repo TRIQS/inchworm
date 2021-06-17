@@ -34,12 +34,12 @@ namespace inchworm::moves {
 
         // ------- NEW ----------
         // We have two options, either split-point based insertion or operator-based insertion
-        //if (rng(2)) { // Operator-based insertion
+        if (rng(2)) { // Operator-based insertion
                       //FIXME Should we really weigh this with 50 percent? This path probably has significantly lower acceptance rate
           return {get_close_time(rng, d, config.d_dag_bl_list[d.bl], tau_max), get_close_time(rng, d_dag, config.d_bl_list[d_dag.bl], tau_max)};
-        //} else { // Split-point based insertion
-          //return get_close_smaller_and_larger_time(rng, d, d_dag, config.split_times, tau_max);
-        //}
+        } else { // Split-point based insertion
+          return get_close_smaller_and_larger_time(rng, d, d_dag, config.split_times, tau_max);
+        }
       }
     }
   }
@@ -71,10 +71,9 @@ namespace inchworm::moves {
 
         // ------- NEW ----------
         // We have two insertion options, either split-point based insertion or operator-based insertion
-        //return 0.5
-           //* (get_prob(d, config.d_dag_bl_list[d.bl], tau_max) * get_prob(d_dag, config.d_bl_list[d_dag.bl], tau_max)
-              //+ get_prob_smaller_and_larger_time(d, d_dag, config.split_times, tau_max));
-        return get_prob(d, config.d_dag_bl_list[d.bl], tau_max) * get_prob(d_dag, config.d_bl_list[d_dag.bl], tau_max);
+        return 0.5
+           * (get_prob(d, config.d_dag_bl_list[d.bl], tau_max) * get_prob(d_dag, config.d_bl_list[d_dag.bl], tau_max)
+              + get_prob_smaller_and_larger_time(d, d_dag, config.split_times, tau_max));
       }
     }
   }
