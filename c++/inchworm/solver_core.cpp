@@ -327,8 +327,8 @@ namespace inchworm {
     if (params.use_double_insertion) {
       mc.add_move(moves::insert<KIND::Double>{config, frame, qmc_params, *this, rng, tau_diff_stat}, "double insert move", 0.5);
       mc.add_move(moves::remove<KIND::Double>{config, frame, qmc_params, *this, rng}, "double remove move", 0.5);
-      //mc.add_move(moves::insert<KIND::DoubleEqBl>{config, frame, qmc_params, *this, rng, tau_diff_stat}, "double insert move equal blocks", 0.5);
-      //mc.add_move(moves::remove<KIND::DoubleEqBl>{config, frame, qmc_params, *this, rng}, "double remove move equal blocks", 0.5);
+      mc.add_move(moves::insert<KIND::DoubleEqBl>{config, frame, qmc_params, *this, rng, tau_diff_stat}, "double insert move equal blocks", 0.5);
+      mc.add_move(moves::remove<KIND::DoubleEqBl>{config, frame, qmc_params, *this, rng}, "double remove move equal blocks", 0.5);
     }
 
     // Initialize result container
