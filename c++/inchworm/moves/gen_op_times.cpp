@@ -14,44 +14,33 @@ namespace inchworm::moves {
 
     } else { // ============ Inchworm Sampling ===============
 
-      // ------- OLD ----------
-
       if (config.size() == 0) { // ------- Empty Config -------
-        auto dtau = tau_max - tau_split;
-	double d_tau = rng(tau_split);
-	double d_dag_tau = tau_split + rng(dtau);
-        if (rng(2)) std::swap(d_tau, d_dag_tau);
-	return {d_tau, d_dag_tau};
-      } else {
-        return {rng(tau_max), rng(tau_max)};
-      }
 
-      // ------- NEW ----------
+        // Make sure that we choose tau values on seperate sides of the split points at zero and tau_split
+        double dtau             = tau_max - tau_split;
+        auto [d_tau, d_dag_tau] = rng(2) ? get_close_smaller_and_larger_time(rng, d, d_dag, tau_split, tau_split, dtau, tau_max) :
+                                           get_close_smaller_and_larger_time(rng, d, d_dag, 0.0, dtau, tau_split, tau_max);
 
-      //if (config.size() == 0) { // ------- Empty Config -------
+        return {d_tau, d_dag_tau};
 
-        //// Make sure that we choose tau values on seperate sides of the split points at zero and tau_split
-        //double dtau             = tau_max - tau_split;
-        //auto [d_tau, d_dag_tau] = rng(2) ? get_close_smaller_and_larger_time(rng, d, d_dag, tau_split, tau_split, dtau, tau_max) :
-                                           //get_close_smaller_and_larger_time(rng, d, d_dag, 0.0, dtau, tau_split, tau_max);
+      } else if (config.size(d.bl) == 0) { // ------ Empty block ------
 
-        //return {d_tau, d_dag_tau};
+        return get_close_smaller_and_larger_time(rng, d, d_dag, config.split_times, tau_max);
 
-      //} else if (config.size(d.bl) == 0) { // ------ Empty block ------
+      } else { // ------ Finite block size ------
 
-        //return get_close_smaller_and_larger_time(rng, d, d_dag, config.split_times, tau_max);
+        // ------- OLD ----------
+        //return {rng(tau_max), rng(tau_max)};
 
-      //} else { // ------ Finite block size ------
-
-        //// We have two options, either split-point based insertion or operator-based insertion
+        // ------- NEW ----------
+        // We have two options, either split-point based insertion or operator-based insertion
         //if (rng(2)) { // Operator-based insertion
-                      //// FIXME Should we really weigh this with 50 percent? This path probably has significantly lower acceptance rate
-          //return {get_close_time(rng, d, config.d_dag_bl_list[d.bl], tau_max),
-                  //get_close_time(rng, d_dag, config.d_bl_list[d_dag.bl], tau_max)};
+                      //FIXME Should we really weigh this with 50 percent? This path probably has significantly lower acceptance rate
+          return {get_close_time(rng, d, config.d_dag_bl_list[d.bl], tau_max), get_close_time(rng, d_dag, config.d_bl_list[d_dag.bl], tau_max)};
         //} else { // Split-point based insertion
           //return get_close_smaller_and_larger_time(rng, d, d_dag, config.split_times, tau_max);
         //}
-      //}
+      }
     }
   }
 
@@ -64,35 +53,29 @@ namespace inchworm::moves {
 
     } else { // ----- Inchworm Sampling
 
-      // ------- OLD ----------
+      if (config.size() == 0) { // Account for special treatment of empty config
 
-      if (config.size() == 0) { // ------- Empty Config -------
-        auto dtau = tau_max - tau_split;
-        return 1.0 / (2.0 * tau_split * dtau);
-      } else {
-        return 1.0 / tau_max / tau_max;
-      }
+        // Account for insertion around tau_split and zero
+        double dtau = tau_max - tau_split;
+        return 0.5
+           * (get_prob_smaller_and_larger_time(d, d_dag, tau_split, tau_split, dtau, tau_max)
+              + get_prob_smaller_and_larger_time(d, d_dag, 0.0, dtau, tau_split, tau_max));
 
-      // ------- NEW ----------
+      } else if (config.size(d.bl) == 0) {
+        return get_prob_smaller_and_larger_time(d, d_dag, config.split_times, tau_max);
 
-      //if (config.size() == 0) { // Account for special treatment of empty config
+      } else { // ------ Finite block size ------
 
-        //// Account for insertion around tau_split and zero
-        //double dtau = tau_max - tau_split;
-        //return 0.5
-           //* (get_prob_smaller_and_larger_time(d, d_dag, tau_split, tau_split, dtau, tau_max)
-              //+ get_prob_smaller_and_larger_time(d, d_dag, 0.0, dtau, tau_split, tau_max));
+        // ------- OLD ----------
+        //return 1.0 / tau_max / tau_max;
 
-      //} else if (config.size(d.bl) == 0) {
-        //return get_prob_smaller_and_larger_time(d, d_dag, config.split_times, tau_max);
-
-      //} else {
-
-        //// We have two insertion options, either split-point based insertion or operator-based insertion
+        // ------- NEW ----------
+        // We have two insertion options, either split-point based insertion or operator-based insertion
         //return 0.5
            //* (get_prob(d, config.d_dag_bl_list[d.bl], tau_max) * get_prob(d_dag, config.d_bl_list[d_dag.bl], tau_max)
               //+ get_prob_smaller_and_larger_time(d, d_dag, config.split_times, tau_max));
-      //}
+        return get_prob(d, config.d_dag_bl_list[d.bl], tau_max) * get_prob(d_dag, config.d_bl_list[d_dag.bl], tau_max);
+      }
     }
   }
 
