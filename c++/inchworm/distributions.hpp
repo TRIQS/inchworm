@@ -53,7 +53,7 @@ namespace inchworm {
   // Calculate the value of the joint pdf defined through split_times and the double_pdf function
   inline double get_prob(fop_t const &op, std::vector<double> const &split_times, double tmax) {
     double prob = 0.0;
-    for (auto const &tau_ref : split_times) {
+    for (double tau_ref : split_times) {
       double diff = cyclic_difference(op.tau, tau_ref, tmax);
       prob += double_pdf(diff, op.left_width, op.right_width, tmax);
     }

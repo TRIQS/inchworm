@@ -23,6 +23,7 @@ namespace inchworm {
     double min_dist = tau_max;
     double res      = tau_max;
     auto check_time_diff = [&](double tau) {
+      if (op.tau == tau) return;
       auto diff = cyclic_difference(op.tau, tau, tau_max);
       auto dist = cyclic_distance(op.tau, tau, tau_max);
       if (dist < min_dist) {
@@ -31,8 +32,7 @@ namespace inchworm {
       }
     };
 
-    auto op_list = op.dag ? config.d_bl_list[op.bl] : config.d_dag_bl_list[op.bl];
-    for (auto const &op_ref : op_list) check_time_diff(op_ref.tau);
+    for (double tau_ref : config.split_times) check_time_diff(tau_ref);
 
     return res;
   }
