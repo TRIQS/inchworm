@@ -8,20 +8,18 @@
 namespace inchworm {
 
   // Exponential probability density truncated to the interval [0,tmax)
-  inline double pdf(double tau, double w, double tmax) { return 1.0 / tmax; //std::exp(-tau / w) / (1.0 - std::exp(-tmax / w)) / w;
-  }
+  inline double pdf(double tau, double w, double tmax) { return std::exp(-tau / w) / (1.0 - std::exp(-tmax / w)) / w; }
 
   // Inverse of the cumulative distribution function associated
   // with the truncated exponential probability density
   inline double icdf(double p, double w, double tmax) {
-    return p*tmax;
-    //EXPECTS(w > 0.0 && p >= 0.0);
-    //// Explicitly treat small tmax / w to avoid instabilities
-    //if (p >= 1.0) return tmax;
-    //if (tmax / w < 1e-8) return p * tmax;
-    //double res = std::min(-w * std::log(1.0 - p + p * std::exp(-tmax / w)), tmax);
-    //ASSERT(0.0 <= res);
-    //return res;
+    EXPECTS(w > 0.0 && p >= 0.0);
+    // Explicitly treat small tmax / w to avoid instabilities
+    if (p >= 1.0) return tmax;
+    if (tmax / w < 1e-8) return p * tmax;
+    double res = std::min(-w * std::log(1.0 - p + p * std::exp(-tmax / w)), tmax);
+    ASSERT(0.0 <= res);
+    return res;
   }
 
   // Probability density function on the interval [0,tmax] combining
@@ -50,6 +48,16 @@ namespace inchworm {
       prob += double_pdf(diff, op.left_width, op.right_width, tmax);
     }
     return prob / op_list.size();
+  }
+
+  // Calculate the value of the joint pdf defined through split_times and the double_pdf function
+  inline double get_prob(fop_t const &op, std::vector<double> const &split_times, double tmax) {
+    double prob = 0.0;
+    for (auto const &tau_ref : split_times) {
+      double diff = cyclic_difference(op.tau, tau_ref, tmax);
+      prob += double_pdf(diff, op.left_width, op.right_width, tmax);
+    }
+    return prob / split_times.size();
   }
 
   // Calculate the probability to draw op.tau larger than tref
@@ -89,6 +97,12 @@ namespace inchworm {
   // Draw a random time from the joint pdf defined through split_times the double_pdf function
   inline double get_close_time(triqs::mc_tools::random_generator &rng, fop_t const &op, std::vector<fop_t> const &op_list, double tmax) {
     double tau_ref = op_list[rng(op_list.size())].tau;
+    return wrap(tau_ref + double_icdf(rng(), op.left_width, op.right_width, tmax), tmax);
+  }
+
+  // Draw a random time from the joint pdf defined through split_times the double_pdf function
+  inline double get_close_time(triqs::mc_tools::random_generator &rng, fop_t const &op, std::vector<double> const &split_times, double tmax) {
+    double tau_ref = split_times[rng(split_times.size())];
     return wrap(tau_ref + double_icdf(rng(), op.left_width, op.right_width, tmax), tmax);
   }
 
