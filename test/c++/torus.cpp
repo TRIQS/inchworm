@@ -54,25 +54,31 @@ TEST(Torus, CyclicDifferenceConfig) {
   auto d1 = fop_t{0.1, false, 0, 0};
   auto d2 = fop_t{0.8, false, 0, 0};
   auto d3 = fop_t{0.4, false, 0, 1};
+  auto d4 = fop_t{0.0, false, 0, 1};
 
-  auto d_dag1 = fop_t{0.4, true, 0, 0};
+  auto d_dag1 = fop_t{0.3, true, 0, 0};
   auto d_dag2 = fop_t{0.7, true, 0, 0};
-  auto d_dag3 = fop_t{0.8, true, 0, 1};
+  auto d_dag3 = fop_t{0.9, true, 0, 1};
+  auto d_dag4 = fop_t{0.5, true, 0, 1};
 
-  config_t config({}, {{"0", 1}, {"1", 1}}, {0.0});
-  config.d_bl_list = {{d1, d2},{d3}};
-  config.d_dag_bl_list = {{d_dag1, d_dag2},{d_dag3}};
+  config_t config({}, {{"0", 1}, {"1", 1}}, {0.0, 0.5});
 
-  EXPECT_CLOSE(cyclic_difference(d1, config, 1.0), 0.7);
-  EXPECT_CLOSE(cyclic_difference(d2, config, 1.0), 0.1);
-  EXPECT_CLOSE(cyclic_difference(d3, config, 1.0), 0.6);
+  EXPECT_CLOSE(cyclic_difference(d1, config, 1.0), 0.1);
+  EXPECT_CLOSE(cyclic_difference(d2, config, 1.0), 0.8);
+  EXPECT_CLOSE(cyclic_difference(d3, config, 1.0), 0.9);
+  EXPECT_CLOSE(cyclic_difference(d4, config, 1.0), 0.5);
 
-  EXPECT_CLOSE(cyclic_difference(d_dag1, config, 1.0), 0.3);
-  EXPECT_CLOSE(cyclic_difference(d_dag2, config, 1.0), 0.9);
-  EXPECT_CLOSE(cyclic_difference(d_dag3, config, 1.0), 0.4);
+  EXPECT_CLOSE(cyclic_difference(d_dag1, config, 1.0), 0.8);
+  EXPECT_CLOSE(cyclic_difference(d_dag2, config, 1.0), 0.2);
+  EXPECT_CLOSE(cyclic_difference(d_dag3, config, 1.0), 0.9);
+  EXPECT_CLOSE(cyclic_difference(d_dag4, config, 1.0), 0.5);
 }
 
 TEST(Torus, CyclicDistance) {
   EXPECT_CLOSE(cyclic_distance(0.1, 0.2, 1.0), 0.1);
   EXPECT_CLOSE(cyclic_distance(0.2, 0.1, 1.0), 0.1);
+  EXPECT_CLOSE(cyclic_distance(0.8, 0.4, 1.0), 0.4);
+  EXPECT_CLOSE(cyclic_distance(0.4, 0.8, 1.0), 0.4);
+  EXPECT_CLOSE(cyclic_distance(0.2, 0.8, 1.0), 0.4);
+  EXPECT_CLOSE(cyclic_distance(0.8, 0.2, 1.0), 0.4);
 }
