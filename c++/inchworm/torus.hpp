@@ -6,7 +6,7 @@
 namespace inchworm {
 
   // Find the standard representative of tau on the torus R + Z * tau_max
-  inline double wrap(double tau, double tau_max) { return (tau > 0) ? std::fmod(tau, tau_max) : tau_max - std::fmod(-tau, tau_max); }
+  inline double wrap(double tau, double tau_max) { return (tau >= 0) ? std::fmod(tau, tau_max) : tau_max - std::fmod(-tau, tau_max); }
 
   // Return the difference of the times on the torus R + Z * tau_max
   inline double cyclic_difference(double tau1, double tau2, double tau_max) { return wrap(tau1 - tau2, tau_max); }
