@@ -176,7 +176,7 @@ TEST(Distributions, icdf_inverse) {
   }
 }
 
-TEST(Distributions, get_prob) {
+TEST(Distributions, get_prob_norm) {
 
   std::vector<double> tmaxlst = {1.0, 10.0, 100.0};
   std::vector<double> wlst    = {0.1, 10.0, 1000.0, 1e+8};
@@ -184,35 +184,16 @@ TEST(Distributions, get_prob) {
   for (auto tmax : tmaxlst) {
     for (auto w1 : wlst) {
 
-      auto d     = fop_t{0.1 * tmax, false, 0, 0, 0, w1, w1};
-      auto d_dag = fop_t{0.3 * tmax, true, 0, 0, 0, w1, w1};
+      auto d     = fop_t{0.0, false, 0, 0, 0, w1, w1};
 
       auto tau_splits = std::vector{0.4 * tmax, 0.7 * tmax, 0.9 * tmax};
-
-      auto d1_dag = fop_t{0.3 * tmax, true, 1, 0, 1, w1, w1};
-      auto d2_dag = fop_t{0.6 * tmax, true, 2, 0, 2, w1, w1};
-      auto d3_dag = fop_t{0.9 * tmax, true, 3, 0, 3, w1, w1};
-
-      auto d_dag_list = std::vector{d1_dag, d2_dag, d3_dag};
 
       double tol = 1e-6;
       auto f     = [&](double tau) {
         d.tau = tau;
-        return get_prob(d, d_dag_list, tmax);
+        return get_prob(d, tau_splits, tmax);
       };
       EXPECT_NEAR(integrate(f, 0.0, tmax), 1.0, tol);
-
-      auto g = [&](double tau) {
-        d.tau = tau;
-        return get_prob_smaller_time(d, d_dag.tau, tmax / 2.0, tmax);
-      };
-      EXPECT_NEAR(integrate(g, 0.0, tmax), 1.0, tol);
-
-      auto h = [&](double tau) {
-        d.tau = tau;
-        return get_prob_larger_time(d, d_dag.tau, tmax / 2.0, tmax);
-      };
-      EXPECT_NEAR(integrate(h, 0.0, tmax), 1.0, tol);
 
       // Test 2d integration for get_prob_smaller_and_larger_time
       // Takes several minutes ..
