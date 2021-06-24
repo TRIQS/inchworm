@@ -24,7 +24,11 @@
 
 #include <nda/gtest_tools.hpp>
 
+#include <triqs/stat/histograms.hpp>
+
 #include <inchworm/distributions.hpp>
+
+#include <random>
 
 using namespace inchworm;
 
@@ -183,7 +187,7 @@ TEST(Distributions, get_prob) {
       auto d     = fop_t{0.1 * tmax, false, 0, 0, 0, w1, w1};
       auto d_dag = fop_t{0.3 * tmax, true, 0, 0, 0, w1, w1};
 
-      auto tau_splits = std::vector{0.4*tmax, 0.7*tmax, 0.9*tmax};
+      auto tau_splits = std::vector{0.4 * tmax, 0.7 * tmax, 0.9 * tmax};
 
       auto d1_dag = fop_t{0.3 * tmax, true, 1, 0, 1, w1, w1};
       auto d2_dag = fop_t{0.6 * tmax, true, 2, 0, 2, w1, w1};
@@ -213,14 +217,67 @@ TEST(Distributions, get_prob) {
       // Test 2d integration for get_prob_smaller_and_larger_time
       // Takes several minutes ..
       //auto i = [&](double tau) {
-        //auto j = [&](double tau_dag) {
-          //d.tau = tau;
-          //d_dag.tau = tau_dag;
-          //return get_prob_smaller_and_larger_time(d, d_dag, tau_splits, tmax);
-        //};
-        //return integrate(j, 0, tmax, 1e+4);
+      //auto j = [&](double tau_dag) {
+      //d.tau = tau;
+      //d_dag.tau = tau_dag;
+      //return get_prob_smaller_and_larger_time(d, d_dag, tau_splits, tmax);
+      //};
+      //return integrate(j, 0, tmax, 1e+4);
       //};
       //EXPECT_NEAR(integrate(i, 0, tmax, 1e+4), 1.0, 1e-3);
     }
   }
+}
+
+struct stdrng_t {
+  //Standard mersenne_twister_engine seeded with std::random_device
+  std::mt19937 gen{std::random_device{}()};
+
+  double operator()(double b = 1.0) { return std::uniform_real_distribution<>(0, b)(gen); }
+  double operator()(double a, double b) { return std::uniform_real_distribution<>(a, b)(gen); }
+  std::integral auto operator()(std::integral auto i) { return std::uniform_int_distribution<>(0, i - 1)(gen); }
+};
+
+TEST(Distributions, get_close_time) {
+
+  double tmax = 1.0;
+
+  std::vector<double> split_times{0.0, 0.1 * tmax, 0.4 * tmax, 0.8 * tmax};
+
+  double w1     = 0.1 * tmax * 500;
+  double w2     = 0.2 * tmax * 500;
+  auto make_fop = [&](double tau) { return fop_t{tau, false, 0, 0, 0, w1, w2}; };
+  auto d        = make_fop(0.0);
+
+  long Nsamples = 1e+7;
+  long Nbins    = 101;
+
+  auto rng = triqs::mc_tools::random_generator{}; // stdrng_t{};
+
+  auto hist = triqs::stat::histogram(0.0, tmax, Nbins);
+  for (auto i : range(Nsamples)) hist << get_close_time(rng, d, split_times, tmax); // double_icdf(rng(), w1, w2, tmax);
+
+  auto hist_norm = pdf(hist);
+  std::vector<double> dat_pdf(Nbins);
+  auto hist_norm_dat = hist_norm.data();
+  for (auto n : range(Nbins)) {
+    auto bin_width = tmax / (Nbins - 1) * ((n == 0 or n == Nbins - 1) ? 0.5 : 1);
+    double tau     = hist_norm.mesh_point(n);
+    double prob;
+    if (n == 0)
+      prob = get_prob(make_fop(tau), split_times, tmax); // double_pdf(tau, w1, w2, tmax);
+    else if (n == Nbins - 1)                             // Evaluate only for 'tmax - eps'
+      prob = get_prob(make_fop(tau - 1e-10), split_times, tmax);
+    else // Be sure to symmetrize around bin center
+      prob = 0.5 * (get_prob(make_fop(tau - 1e-10), split_times, tmax) + get_prob(make_fop(tau + 1e-10), split_times, tmax));
+    dat_pdf[n] = prob;
+    EXPECT_NEAR(hist_norm.data()[n] / bin_width, prob, 5 * std::sqrt(double(Nbins) / Nsamples));
+    hist_norm_dat[n] *= 1.0 / bin_width;
+  }
+
+  //{
+  //auto f = h5::file{"dat.h5", 'w'};
+  //h5::write(f, "pdf", dat_pdf);
+  //h5::write(f, "hist", hist_norm_dat);
+  //}
 }

@@ -109,6 +109,11 @@ namespace inchworm {
     return wrap(tau_ref + double_icdf(rng(), op.left_width, op.right_width, tmax), tmax);
   }
 
+  inline double get_close_time(auto &rng, fop_t const &op, std::vector<double> const &split_times, double tmax) {
+    double tau_ref = split_times[rng(split_times.size())];
+    return wrap(tau_ref + double_icdf(rng(), op.left_width, op.right_width, tmax), tmax);
+  }
+
   // Draw a random time larger than tref using the pdf
   inline double get_close_larger_time(triqs::mc_tools::random_generator &rng, fop_t const &op, double tref, double range, double period) {
     return wrap(tref + icdf(rng(), op.left_width, range), period);

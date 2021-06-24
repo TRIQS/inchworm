@@ -11,6 +11,7 @@
 #include <nda/clef/literals.hpp>
 
 #include <iomanip>
+#include <concepts>
 
 namespace inchworm {
 
