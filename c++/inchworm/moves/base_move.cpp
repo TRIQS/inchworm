@@ -64,9 +64,9 @@ namespace inchworm::moves {
 
       // Calculate -Tr[imp_prod(beta, tau) * c(tau) * imp_prod(tau, 0) * cdag(0)]
       // for all combinations of fundamental operator flavors
-      auto l          = impurity_product(solver.ad_imp, diagram, params.tau_max, params.tau_split, &solver.u_interpolator);
-      auto r          = impurity_product(solver.ad_imp, diagram, params.tau_split, 0, &solver.u_interpolator);
-      prop_frame      = make_g_frame_from_l_and_r(solver.ad_imp, gf_struct, l, r);
+      auto l     = impurity_product(solver.ad_imp, diagram, params.tau_max, params.tau_split, &solver.u_interpolator);
+      auto r     = impurity_product(solver.ad_imp, diagram, params.tau_split, 0, &solver.u_interpolator);
+      prop_frame = make_g_frame_from_l_and_r(solver.ad_imp, gf_struct, l, r);
 
       // Account for the sign due to the additional operator insertions
       auto const &ops = diagram.op_list;

@@ -41,8 +41,7 @@ namespace inchworm {
   enum class MODE { PROPAGATOR, GREENFUNCTION };
 
   /// Short-hand for SSO vector type
-  template <typename value_t>
-  using sso_vector = nda::vector<value_t, nda::sso<100>>;
+  template <typename value_t> using sso_vector = nda::vector<value_t, nda::sso<100>>;
 
   /// The frame of a Green function or Propagator
   using frame_t = nda::array<matrix_t, 1>;
@@ -102,10 +101,10 @@ namespace inchworm {
     friend inline bool operator<(fop_t const &o1, fop_t const &o2) { return o1.tau < o2.tau; }
   };
 
-  inline std::ostream &operator<<(std::ostream &os, fop_t const & op){
+  inline std::ostream &operator<<(std::ostream &os, fop_t const &op) {
     os << std::setprecision(4);
     os << "c";
-    if(op.dag) os << "_dag";
+    if (op.dag) os << "_dag";
     os << "[tau: " << op.tau << ", bl: " << op.bl << ", idx: " << op.idx << ", lw: " << op.left_width << ", rw: " << op.right_width << "]";
     return os;
   }

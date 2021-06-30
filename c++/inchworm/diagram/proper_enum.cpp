@@ -143,9 +143,7 @@ namespace inchworm::diagram {
       NN += 1;
       int parity = find_parity(permutation);
       value      = 1.0;
-      for (int i = 0; i < permutation.size(); i++) {
-        value *= hyb_mat.mat(i, permutation[i]);
-      }
+      for (int i = 0; i < permutation.size(); i++) { value *= hyb_mat.mat(i, permutation[i]); }
 
       if (verbose) {
         std::printf("\ndiagram #%d:  permutation (", NN);

@@ -5,8 +5,8 @@
 
 namespace inchworm {
 
-  bool has_zero_trace(atom_diag const &ad, diagram::time_diagram_t const & diagram) {
-    if(diagram.size() == 0) return false;
+  bool has_zero_trace(atom_diag const &ad, diagram::time_diagram_t const &diagram) {
+    if (diagram.size() == 0) return false;
 
     for (long initial_bl : range(ad.n_subspaces())) {
       long curr_bl = initial_bl;

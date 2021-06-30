@@ -41,4 +41,4 @@ namespace inchworm {
   // FIXME Merge with partial_trace_bath
   u_tau_t make_ED_propagator(atom_diag const &ad_tot, atom_diag const &ad_imp, atom_diag const &ad_bath, double beta, int n_tau);
 
-}
+} // namespace inchworm

@@ -20,8 +20,8 @@ namespace inchworm {
   // Return the cyclic_difference between the creation/annihilation operator
   // and the closest annihilation/creation operator of the same block of the config
   inline double cyclic_difference(auto const &op, config_t const &config, double tau_max) {
-    double min_dist = tau_max;
-    double res      = tau_max;
+    double min_dist      = tau_max;
+    double res           = tau_max;
     auto check_time_diff = [&](double tau) {
       if (op.tau == tau) return;
       auto diff = cyclic_difference(op.tau, tau, tau_max);

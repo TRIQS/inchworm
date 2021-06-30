@@ -23,7 +23,7 @@ namespace inchworm::moves {
      *         and the move probability.
      *         On failure, return 0.0
      */
-    scalar_t try_config_update(config_t & config) override;
+    scalar_t try_config_update(config_t &config) override;
 
     scalar_t remove_single_op_pair(long bl, config_t &config);
   };

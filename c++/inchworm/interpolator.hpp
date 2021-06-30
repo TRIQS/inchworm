@@ -88,7 +88,7 @@ namespace inchworm {
     nda::array<nda::array<gsl_interp *, 2>, 1> interp;
     nda::array<nda::array<gsl_interp_accel *, 2>, 1> acc;
 
-    inline static bool interpolation_failed = false;
+    inline static bool interpolation_failed       = false;
     inline static auto const custom_error_handler = [](const char *, const char *file, int line, int gsl_errno) {
       fmt::print("Interpolation failed (ErrNo: {}, File: {}:{})\n", gsl_errno, file, line);
       interpolation_failed = true;

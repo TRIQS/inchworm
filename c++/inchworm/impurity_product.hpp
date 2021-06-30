@@ -13,7 +13,7 @@ namespace inchworm {
    * @param diagram The diagram configuration
    * @return True if it is zero, else false
    */
-  bool has_zero_trace(atom_diag const &ad, diagram::time_diagram_t const & diagram);
+  bool has_zero_trace(atom_diag const &ad, diagram::time_diagram_t const &diagram);
 
   /** 
    * Calculate the operator product

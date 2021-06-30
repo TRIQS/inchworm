@@ -39,9 +39,7 @@ namespace inchworm {
   frame_t make_zero_frame(std::vector<int> const &shape_of_frame) {
     auto res = frame_t{shape_of_frame.size()};
 
-    for (auto [bl, n] : enumerate(shape_of_frame)) {
-      res[bl] = matrix_t::zeros({n, n});
-    }
+    for (auto [bl, n] : enumerate(shape_of_frame)) { res[bl] = matrix_t::zeros({n, n}); }
     return res;
   }
 
