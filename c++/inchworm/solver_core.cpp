@@ -230,6 +230,8 @@ namespace inchworm {
 
     // Initialize the Green function container
     G_tau = g_tau_t{{beta, Fermion, constr_params.n_tau_green}, constr_params.gf_struct};
+    auto G_tau_zero = G_tau;
+    G_tau_zero() = 0.;
 
     // Calculate Tr U(beta)
     scalar_t Tr_Ubeta = 0.0;
@@ -240,6 +242,11 @@ namespace inchworm {
     frame_t g_frame_nB = make_bare_g_frame(ad_imp, u_tau, constr_params.gf_struct, beta, beta) / Tr_Ubeta;
     set_frame(g_frame_n0, G_tau, 0);
     set_frame(g_frame_nB, G_tau, constr_params.n_tau_green - 1);
+    if (solve_params.measure_frame_by_order) {
+      G_tau_by_order.resize(1, G_tau_zero);
+      set_frame(g_frame_n0, G_tau_by_order[0], 0);
+      set_frame(g_frame_nB, G_tau_by_order[0], constr_params.n_tau_green - 1);
+    }
 
     // loop on different green function tau values
     // n == 0 and n == n_tau - 1 already treated
@@ -270,6 +277,12 @@ namespace inchworm {
 
       // Assign the current frame to G_tau
       set_frame(res.frame, G_tau, n);
+
+      // Assign u_frame_by_order to the propagator u_tau_by_order
+      if (solve_params.measure_frame_by_order) {
+        if (res.frame_by_order.size() > G_tau_by_order.size()) G_tau_by_order.resize(res.frame_by_order.size(), G_tau_zero);
+        for (auto k : range(res.frame_by_order.size())) set_frame(res.frame_by_order[k], G_tau_by_order[k], n);
+      }
 
       // Initialize other results
       if (solve_params.measure_order_histogram) order_histograms.push_back(res.order_histogram);

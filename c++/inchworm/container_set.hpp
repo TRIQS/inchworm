@@ -53,6 +53,9 @@ namespace inchworm {
     g_tau_t G_tau;
 
     /// Order-resolved propagator
+    std::vector<g_tau_t> G_tau_by_order;
+
+    /// Order-resolved propagator
     std::vector<u_tau_t> u_tau_by_order;
 
     /// Order histograms
