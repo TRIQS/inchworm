@@ -1,12 +1,12 @@
 # Generated automatically using the command :
-# c++2py ../../c++/inchworm/solver_core.hpp -p --members_read_only -N inchworm -a inchworm -m solver_core -o solver_core --moduledoc="The inchworm solve_core module" -C triqs -C nda_py --cxxflags="-std=c++20" --only="solver_core qmc_results_t"
+# c++2py ../../c++/inchworm/solver_core.hpp -p --members_read_only -N inchworm -a inchworm -m solver_core -o solver_core -C triqs -C nda_py --moduledoc="The inchworm solve_core module" --includes="../../c++" --includes="../../build/deps/fmt_src/include" --cxxflags="-std=c++20" --only="solver_core qmc_results_t"
 from cpp2py.wrap_generator import *
 
 # The module
 module = module_(full_name = "solver_core", doc = r"The inchworm solve_core module", app_name = "inchworm")
 
 # Imports
-module.add_imports(*['triqs.atom_diag', 'triqs.gf', 'triqs.operators', 'h5._h5py'])
+module.add_imports(*['triqs.atom_diag', 'triqs.gf', 'triqs.gf.meshes', 'triqs.operators', 'h5._h5py'])
 
 # Add here all includes
 module.add_include("inchworm/solver_core.hpp")
@@ -19,6 +19,7 @@ module.add_preamble("""
 #include <cpp2py/converters/string.hpp>
 #include <cpp2py/converters/vector.hpp>
 #include <nda_py/cpp2py_converters.hpp>
+#include <triqs/cpp2py_converters/fundamental_operator_set.hpp>
 #include <triqs/cpp2py_converters/gf.hpp>
 #include <triqs/cpp2py_converters/operators_real_complex.hpp>
 #include <triqs/cpp2py_converters/real_or_complex.hpp>
@@ -93,6 +94,11 @@ c.add_member(c_name = "G_tau",
              read_only= True,
              doc = r"""Greens function in imaginary time""")
 
+c.add_member(c_name = "G_tau_by_order",
+             c_type = "std::vector<g_tau_t>",
+             read_only= True,
+             doc = r"""Order-resolved propagator""")
+
 c.add_member(c_name = "u_tau_by_order",
              c_type = "std::vector<u_tau_t>",
              read_only= True,
@@ -128,25 +134,40 @@ c.add_member(c_name = "u_tau",
              read_only= False,
              doc = r"""The propagator in imaginary time""")
 
+c.add_member(c_name = "fops",
+             c_type = "triqs::hilbert_space::fundamental_operator_set",
+             read_only= True,
+             doc = r"""""")
+
+c.add_member(c_name = "all_d_ops",
+             c_type = "std::vector<std::vector<fop_t>>",
+             read_only= True,
+             doc = r"""The vector of all creation operators""")
+
+c.add_member(c_name = "all_d_dag_ops",
+             c_type = "std::vector<std::vector<fop_t>>",
+             read_only= True,
+             doc = r"""The vector of all annihilation operators""")
+
 c.add_constructor("""(**inchworm::constr_params_t)""", doc = r"""Construct a INCHWORM solver
 
 
 
-+----------------+-----------------------------------+---------+------------------------------------------------------+
-| Parameter Name | Type                              | Default | Documentation                                        |
-+================+===================================+=========+======================================================+
-| n_tau          | int                               | 10001   | Number of tau points for the hybridization function  |
-+----------------+-----------------------------------+---------+------------------------------------------------------+
-| n_tau_inch     | int                               | 101     | Number of tau points for the propagator              |
-+----------------+-----------------------------------+---------+------------------------------------------------------+
-| n_tau_green    | int                               | 101     | Number of tau points for the Green function          |
-+----------------+-----------------------------------+---------+------------------------------------------------------+
-| n_iw           | int                               | 5       | Number of Matsubara frequencies                      |
-+----------------+-----------------------------------+---------+------------------------------------------------------+
-| beta           | double                            | --      | Inverse temperature                                  |
-+----------------+-----------------------------------+---------+------------------------------------------------------+
-| gf_struct      | triqs::hilbert_space::gf_struct_t | --      | Block structure of the gf                            |
-+----------------+-----------------------------------+---------+------------------------------------------------------+
++----------------+-------------------------+---------+------------------------------------------------------+
+| Parameter Name | Type                    | Default | Documentation                                        |
++================+=========================+=========+======================================================+
+| n_tau          | int                     | 10001   | Number of tau points for the hybridization function  |
++----------------+-------------------------+---------+------------------------------------------------------+
+| n_tau_inch     | int                     | 101     | Number of tau points for the propagator              |
++----------------+-------------------------+---------+------------------------------------------------------+
+| n_tau_green    | int                     | 101     | Number of tau points for the Green function          |
++----------------+-------------------------+---------+------------------------------------------------------+
+| n_iw           | int                     | 5       | Number of Matsubara frequencies                      |
++----------------+-------------------------+---------+------------------------------------------------------+
+| beta           | double                  | --      | Inverse temperature                                  |
++----------------+-------------------------+---------+------------------------------------------------------+
+| gf_struct      | triqs::gfs::gf_struct_t | --      | Block structure of the gf                            |
++----------------+-------------------------+---------+------------------------------------------------------+
 """)
 
 c.add_method("""void solve (**inchworm::solve_params_t)""",
@@ -402,7 +423,7 @@ c.add_member(c_name = "beta",
              doc = r"""Inverse temperature""")
 
 c.add_member(c_name = "gf_struct",
-             c_type = "triqs::hilbert_space::gf_struct_t",
+             c_type = "triqs::gfs::gf_struct_t",
              initializer = """  """,
              doc = r"""Block structure of the gf""")
 
