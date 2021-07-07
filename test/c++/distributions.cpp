@@ -225,8 +225,8 @@ TEST(Distributions, get_close_time) {
 
   std::vector<double> split_times{0.0, 0.1 * tmax, 0.4 * tmax, 0.8 * tmax};
 
-  double w1     = 0.1 * tmax * 500;
-  double w2     = 0.2 * tmax * 500;
+  double w1     = 0.1 * tmax;
+  double w2     = 0.2 * tmax;
   auto make_fop = [&](double tau) { return fop_t{tau, false, 0, 0, 0, w1, w2}; };
   auto d        = make_fop(0.0);
 
