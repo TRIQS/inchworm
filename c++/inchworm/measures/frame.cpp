@@ -19,7 +19,7 @@ namespace inchworm::measures {
     if (config.size() == 0) acc_frame_0th_order += s * frame_;
 
     // Perform an autocorrelation analysis on the trace
-    acc << frobenius_norm(frame_);
+    acc << trace(s * frame_);
 
     // Perform an error analysis on the [0](0,0) component
     lin_acc << s * frame_[0](0,0);

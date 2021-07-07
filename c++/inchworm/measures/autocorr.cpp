@@ -7,7 +7,13 @@ namespace inchworm::measures {
   autocorr::autocorr(params_t const &params, config_t const &config, frame_t const &frame, qmc_results_t &results)
      : verbosity(params.verbosity), config(config), frame(frame), results(results) {}
 
-  void autocorr::accumulate(scalar_t sign) { acc << frobenius_norm(frame); }
+  void autocorr::accumulate(scalar_t sign) {
+    // We weight the Monte-Carlo by the frobenius norm of the current frame
+    // This importance sampling factor has to be corrected in the measurement
+    scalar_t s = sign / (config.imp_weight);
+
+    acc << trace(s * frame);
+  }
 
   void autocorr::collect_results(mpi::communicator const &comm) {
 
