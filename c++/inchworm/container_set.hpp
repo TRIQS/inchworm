@@ -30,8 +30,11 @@ namespace inchworm {
 
     frame_t frame;
     frame_t frame_0th_order;
+    scalar_t err_frame;
 
     std::vector<frame_t> frame_by_order;
+    std::vector<scalar_t> err_frame_by_order;
+
     std::vector<double> order_histogram;
 
     double average_order = 0.0;
@@ -52,11 +55,17 @@ namespace inchworm {
     /// Greens function in imaginary time
     g_tau_t G_tau;
 
+    /// Last obtained frame error
+    scalar_t err_frame;
+
     /// Order-resolved propagator
     std::vector<g_tau_t> G_tau_by_order;
 
     /// Order-resolved propagator
     std::vector<u_tau_t> u_tau_by_order;
+
+    /// Last obtained frame error order-resolved
+    std::vector<scalar_t> err_frame_by_order;
 
     /// Order histograms
     std::vector<std::vector<double>> order_histograms;

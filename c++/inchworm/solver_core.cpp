@@ -278,10 +278,14 @@ namespace inchworm {
       // Assign the current frame to G_tau
       set_frame(res.frame, G_tau, n);
 
+      // Assign the last obtained frame error
+      err_frame = res.err_frame;
+
       // Assign u_frame_by_order to the propagator u_tau_by_order
       if (solve_params.measure_frame_by_order) {
         if (res.frame_by_order.size() > G_tau_by_order.size()) G_tau_by_order.resize(res.frame_by_order.size(), G_tau_zero);
         for (auto k : range(res.frame_by_order.size())) set_frame(res.frame_by_order[k], G_tau_by_order[k], n);
+        err_frame_by_order = res.err_frame_by_order;
       }
 
       // Initialize other results

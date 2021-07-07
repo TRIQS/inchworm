@@ -4,7 +4,7 @@
 namespace inchworm::measures {
 
   frame::frame(params_t const &params, config_t const &config, frame_t const &frame, qmc_results_t &results)
-     : verbosity(params.verbosity), config(config), frame_(frame), acc_frame(results.frame), acc_frame_0th_order(results.frame_0th_order) {}
+     : verbosity(params.verbosity), config(config), frame_(frame), acc_frame(results.frame), err_frame(results.err_frame), acc_frame_0th_order(results.frame_0th_order) {}
 
   void frame::accumulate(scalar_t sign) {
 
@@ -20,11 +20,17 @@ namespace inchworm::measures {
 
     // Perform an autocorrelation analysis on the trace
     acc << frobenius_norm(frame_);
+
+    // Perform an error analysis on the [0](0,0) component
+    lin_acc << s * frame_[0](0,0);
   }
 
   void frame::collect_results(mpi::communicator const &comm) {
     acc_frame_0th_order = mpi::all_reduce(acc_frame_0th_order, comm);
     acc_frame           = mpi::all_reduce(acc_frame, comm);
+
+    // Estimate error of the frame[0](0,0) component
+    err_frame = std::get<1>(mean_and_err_mpi(comm, lin_acc.linear_bins()));
 
     auto [errs, counts] = acc.log_bin_errors_all_reduce(comm);
 
@@ -41,6 +47,10 @@ namespace inchworm::measures {
       if (errs[0] > 0) auto_corr_time = std::max(0.0, tau_estimate_from_errors(errs[int(0.7 * errs.size())], errs[0]));
       std::printf("     autocorr: %.3f\n", auto_corr_time);
     }
+
+    // Reset the accumulators
+    acc = {0.0, -1};
+    lin_acc = {0.0, 1000, -1};
   }
 
 } // namespace inchworm::measures

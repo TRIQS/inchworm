@@ -46,8 +46,18 @@ c.add_member(c_name = "frame_0th_order",
              read_only= True,
              doc = r"""""")
 
+c.add_member(c_name = "err_frame",
+             c_type = "inchworm::scalar_t",
+             read_only= True,
+             doc = r"""""")
+
 c.add_member(c_name = "frame_by_order",
              c_type = "std::vector<frame_t>",
+             read_only= True,
+             doc = r"""""")
+
+c.add_member(c_name = "err_frame_by_order",
+             c_type = "std::vector<scalar_t>",
              read_only= True,
              doc = r"""""")
 
@@ -94,6 +104,11 @@ c.add_member(c_name = "G_tau",
              read_only= True,
              doc = r"""Greens function in imaginary time""")
 
+c.add_member(c_name = "err_frame",
+             c_type = "inchworm::scalar_t",
+             read_only= True,
+             doc = r"""Last obtained frame error""")
+
 c.add_member(c_name = "G_tau_by_order",
              c_type = "std::vector<g_tau_t>",
              read_only= True,
@@ -103,6 +118,11 @@ c.add_member(c_name = "u_tau_by_order",
              c_type = "std::vector<u_tau_t>",
              read_only= True,
              doc = r"""Order-resolved propagator""")
+
+c.add_member(c_name = "err_frame_by_order",
+             c_type = "std::vector<scalar_t>",
+             read_only= True,
+             doc = r"""Last obtained frame error order-resolved""")
 
 c.add_member(c_name = "order_histograms",
              c_type = "std::vector<std::vector<double>>",

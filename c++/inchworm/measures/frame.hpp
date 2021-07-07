@@ -27,12 +27,18 @@ namespace inchworm::measures {
     // The current frame
     frame_t const &frame_;
 
+    // Error of the frame[0](0,0) component
+    scalar_t &err_frame;
+
     // References to the accumulation frames
     frame_t &acc_frame;
     frame_t &acc_frame_0th_order;
 
     // The scalar accumulator for the auto-correlation analysis
     accumulator<scalar_t> acc = {0.0, -1};
+
+    // The scalar accumulator for the error analysis
+    accumulator<scalar_t> lin_acc = {0.0, 1000, -1};
   };
 
 } // namespace inchworm::measures
