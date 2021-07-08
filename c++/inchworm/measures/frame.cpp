@@ -22,7 +22,7 @@ namespace inchworm::measures {
     acc << trace(s * frame_);
 
     // Perform an error analysis on the [0](0,0) component
-    lin_acc << s * frame_[0](0,0);
+    if (not frame_[0].empty()) lin_acc << s * frame_[0](0,0);
   }
 
   void frame::collect_results(mpi::communicator const &comm) {
