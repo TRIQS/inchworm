@@ -38,7 +38,7 @@ namespace inchworm::measures {
     accumulator<scalar_t> acc = {0.0, -1};
 
     // The scalar accumulator for the error analysis
-    accumulator<scalar_t> lin_acc = {0.0, 1000, -1};
+    accumulator<scalar_t> lin_acc = {0.0, 0, 1000};
   };
 
 } // namespace inchworm::measures
