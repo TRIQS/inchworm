@@ -184,7 +184,7 @@ TEST(Distributions, get_prob_norm) {
   for (auto tmax : tmaxlst) {
     for (auto w1 : wlst) {
 
-      auto d     = fop_t{0.0, false, 0, 0, 0, w1, w1};
+      auto d = fop_t{0.0, false, 0, 0, 0, w1, w1};
 
       auto tau_splits = std::vector{0.4 * tmax, 0.7 * tmax, 0.9 * tmax};
 

@@ -34,25 +34,25 @@ void test_function(auto &&f, double tol = 0.001) {
 
   // Setup BlockGf
   double beta = 10.0;
-  int n_tau = 101;
-  auto u_tau = u_tau_t{{beta, Fermion, n_tau}, gf_struct};
+  int n_tau   = 101;
+  auto u_tau  = u_tau_t{{beta, Fermion, n_tau}, gf_struct};
 
   // Init BlockGf & Interpolator
   u_tau[bl_][tau_](i_, j_) << f(bl_, tau_, i_, j_);
   auto u_interpolator = interpolator_t{u_tau, n_tau};
 
-  auto tau_mesh_fine = triqs::mesh::imtime{beta, Fermion, 10*n_tau};
-  auto u_tau_interp = u_tau_t{tau_mesh_fine, gf_struct};
-  auto u_tau_exact  = u_tau_t{tau_mesh_fine, gf_struct};
+  auto tau_mesh_fine = triqs::mesh::imtime{beta, Fermion, 10 * n_tau};
+  auto u_tau_interp  = u_tau_t{tau_mesh_fine, gf_struct};
+  auto u_tau_exact   = u_tau_t{tau_mesh_fine, gf_struct};
 
   // Initialize Green Functions on Finer Mesh
   // using both interpolation and the exact function
-  for(auto const & tau: tau_mesh_fine)
-    for(auto bl: range(gf_struct.size())) {
+  for (auto const &tau : tau_mesh_fine)
+    for (auto bl : range(gf_struct.size())) {
       auto n_orb = gf_struct[bl].second;
-      for(auto [i, j]: product_range(n_orb, n_orb)){
+      for (auto [i, j] : product_range(n_orb, n_orb)) {
         u_tau_interp[bl][tau](i, j) = u_interpolator(bl, tau, i, j);
-        u_tau_exact[bl][tau](i, j) = f(bl, tau, i, j);
+        u_tau_exact[bl][tau](i, j)  = f(bl, tau, i, j);
       }
     }
   EXPECT_LT(relative_distance(u_tau_interp, u_tau_exact), tol);

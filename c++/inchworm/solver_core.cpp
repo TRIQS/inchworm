@@ -229,9 +229,9 @@ namespace inchworm {
     double beta = constr_params.beta;
 
     // Initialize the Green function container
-    G_tau = g_tau_t{{beta, Fermion, constr_params.n_tau_green}, constr_params.gf_struct};
+    G_tau           = g_tau_t{{beta, Fermion, constr_params.n_tau_green}, constr_params.gf_struct};
     auto G_tau_zero = G_tau;
-    G_tau_zero() = 0.;
+    G_tau_zero()    = 0.;
 
     // Calculate Tr U(beta)
     scalar_t Tr_Ubeta = 0.0;

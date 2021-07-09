@@ -58,20 +58,19 @@ void print_vector(std::vector<double> const &v) {
 
 std::vector<double> generate_worst_case_scenario_vector(int n_tau, double first_value, double increment) {
   std::vector<double> tau(n_tau);
-  std::generate(tau.begin(), tau.end(), [n=0, first_value, increment]() mutable { return (first_value + (n++)*increment); });
+  std::generate(tau.begin(), tau.end(), [n = 0, first_value, increment]() mutable { return (first_value + (n++) * increment); });
   print_vector(tau);
   return tau;
 }
 
 int main(void) {
-  int N         = 500000;//500000;
+  int N         = 500000; //500000;
   int sp_max    = 1;
-  int order_min = 5; // order 0 is a special case that fails for now.
+  int order_min = 5;  // order 0 is a special case that fails for now.
   int order_max = 10; // order 9 and above are quite slow
   double beta   = 1.0;
 
-  for (int order = order_min; order <= order_max; order++)
-  {
+  for (int order = order_min; order <= order_max; order++) {
     std::printf("order = % d\n", order);
     for (int sp_number = 1; sp_number <= sp_max; sp_number++)
       for (int n = 0; n < N; n++) {
@@ -110,4 +109,3 @@ int main(void) {
   return 0;
 }
 */
-

@@ -25,7 +25,7 @@ namespace inchworm::measures {
     frame_t const &frame_;
 
     // Errors of the frame_[k][0](0,0) components
-    std::vector<scalar_t>& err_frame_by_order;
+    std::vector<scalar_t> &err_frame_by_order;
 
     // Reference to the accumulation vector
     std::vector<frame_t> &acc_frame_by_order;

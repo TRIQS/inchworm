@@ -28,9 +28,9 @@
 using namespace inchworm;
 
 TEST(Torus, Wrap) {
-  EXPECT_CLOSE(wrap( 2.0, 1.0), 0.0);
-  EXPECT_CLOSE(wrap( 1.3, 1.0), 0.3);
-  EXPECT_CLOSE(wrap( 1.7, 1.0), 0.7);
+  EXPECT_CLOSE(wrap(2.0, 1.0), 0.0);
+  EXPECT_CLOSE(wrap(1.3, 1.0), 0.3);
+  EXPECT_CLOSE(wrap(1.7, 1.0), 0.7);
   EXPECT_CLOSE(wrap(-1.3, 1.0), 0.7);
   EXPECT_CLOSE(wrap(-1.7, 1.0), 0.3);
 }
@@ -50,7 +50,7 @@ TEST(Torus, CyclicDifference) {
 }
 
 TEST(Torus, CyclicDifferenceConfig) {
-  // ------------ tau,   dag, i, bl 
+  // ------------ tau,   dag, i, bl
   auto d1 = fop_t{0.1, false, 0, 0};
   auto d2 = fop_t{0.8, false, 0, 0};
   auto d3 = fop_t{0.4, false, 0, 1};

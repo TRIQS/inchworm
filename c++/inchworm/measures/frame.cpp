@@ -4,7 +4,12 @@
 namespace inchworm::measures {
 
   frame::frame(params_t const &params, config_t const &config, frame_t const &frame, qmc_results_t &results)
-     : verbosity(params.verbosity), config(config), frame_(frame), acc_frame(results.frame), err_frame(results.err_frame), acc_frame_0th_order(results.frame_0th_order) {}
+     : verbosity(params.verbosity),
+       config(config),
+       frame_(frame),
+       acc_frame(results.frame),
+       err_frame(results.err_frame),
+       acc_frame_0th_order(results.frame_0th_order) {}
 
   void frame::accumulate(scalar_t sign) {
 
@@ -22,7 +27,7 @@ namespace inchworm::measures {
     acc << trace(s * frame_);
 
     // Perform an error analysis on the [0](0,0) component
-    if (not frame_[0].empty()) lin_acc << s * frame_[0](0,0);
+    if (not frame_[0].empty()) lin_acc << s * frame_[0](0, 0);
   }
 
   void frame::collect_results(mpi::communicator const &comm) {
@@ -49,7 +54,7 @@ namespace inchworm::measures {
     }
 
     // Reset the accumulators
-    acc = {0.0, -1};
+    acc     = {0.0, -1};
     lin_acc = {0.0, 1000, -1};
   }
 
