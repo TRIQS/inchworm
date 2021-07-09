@@ -26,11 +26,7 @@ namespace inchworm::moves {
 
       } else { // ------ Finite size config ------
 
-        //// ------- Failing ----------
-        //return {get_close_time(rng, d, config.split_times, tau_max), get_close_time(rng, d_dag, config.split_times, tau_max)};
-
-        // ------- Working ----------
-        return {rng(tau_max), rng(tau_max)};
+        return {get_close_time(rng, d, config.split_times, tau_max), get_close_time(rng, d_dag, config.split_times, tau_max)};
       }
     }
   }
@@ -53,11 +49,7 @@ namespace inchworm::moves {
 
       } else { // ------ Finite block size ------
 
-        //// ------- Failing ----------
-        //return get_prob(d, config.split_times, tau_max) * get_prob(d_dag, config.split_times, tau_max);
-
-        // ------- Working ----------
-        return 1.0 / tau_max / tau_max;
+        return get_prob(d, config.split_times, tau_max) * get_prob(d_dag, config.split_times, tau_max);
       }
     }
   }
