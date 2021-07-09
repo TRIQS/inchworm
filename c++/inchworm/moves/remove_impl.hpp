@@ -13,7 +13,7 @@ namespace inchworm::moves {
     long idx_dag = rng(config.size(bl));
 
     fop_t d     = config.d_bl_list[bl][idx];
-    fop_t d_dag = config.d_dag_bl_list[bl][idx];
+    fop_t d_dag = config.d_dag_bl_list[bl][idx_dag];
 
     double prop_prob = 1.0 / config.size(bl) / config.size(bl);
 
