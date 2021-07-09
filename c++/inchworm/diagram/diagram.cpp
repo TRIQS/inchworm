@@ -20,6 +20,7 @@
  *
  ******************************************************************************/
 #include "./diagram.hpp"
+#include "./proper_enum.hpp"
 
 namespace inchworm::diagram {
 
@@ -31,10 +32,7 @@ namespace inchworm::diagram {
 
   double time_diagram_t::max_tau() const { return op_list.back().tau; }
 
-  int time_diagram_t::sign() const {
-    // Note: use pos_d_dag, not pos_d as we consider <d_k ddag_k .. d_0 ddag_0> from the right
-    return (std::accumulate(pos_d_dag.begin(), pos_d_dag.end(), 0) % 2 == 0 ? 1 : -1);
-  }
+  int time_diagram_t::sign() const { return _sign; }
 
   time_diagram_t::time_diagram_t(std::vector<fop_t> const &d_list_, std::vector<fop_t> const &d_dag_list_, std::vector<double> const &split_times,
                                  int verbose)
@@ -45,21 +43,27 @@ namespace inchworm::diagram {
     if (order == 0) return;
 
     // Initialize the time-ordered list of all operators
-    for (int i = 0, j = order; i < order; i++, j++) {
-      op_list[i].tau          = d_list[i].tau;
-      op_list[i].dag          = false;
-      op_list[i].linear_index = d_list[i].linear_index;
-      op_list[i].bl           = d_list[i].bl;
-      op_list[i].idx          = d_list[i].idx;
-      op_list[i].order_index  = i;
+    for (int i = 0; i < order; i++) {
+      op_list[2 * i].tau          = d_dag_list[i].tau;
+      op_list[2 * i].dag          = true;
+      op_list[2 * i].linear_index = d_dag_list[i].linear_index;
+      op_list[2 * i].bl           = d_dag_list[i].bl;
+      op_list[2 * i].idx          = d_dag_list[i].idx;
+      op_list[2 * i].order_index  = i;
 
-      op_list[j].tau          = d_dag_list[i].tau;
-      op_list[j].dag          = true;
-      op_list[j].linear_index = d_dag_list[i].linear_index;
-      op_list[j].bl           = d_dag_list[i].bl;
-      op_list[j].idx          = d_dag_list[i].idx;
-      op_list[j].order_index  = i;
+      op_list[2 * i + 1].tau          = d_list[i].tau;
+      op_list[2 * i + 1].dag          = false;
+      op_list[2 * i + 1].linear_index = d_list[i].linear_index;
+      op_list[2 * i + 1].bl           = d_list[i].bl;
+      op_list[2 * i + 1].idx          = d_list[i].idx;
+      op_list[2 * i + 1].order_index  = i;
     }
+
+    std::vector<int> ivec(op_list.size());
+    std::iota(begin(ivec), end(ivec), 0);
+    std::sort(begin(ivec), end(ivec), [this](int i, int j) { return op_list[i] < op_list[j]; });
+    _sign = find_parity(ivec);
+
     std::sort(op_list.begin(), op_list.end(), std::less<>{});
     for (int i = 0; i < op_list.size() - 1; i++) EXPECTS(op_list[i].tau != op_list[i + 1].tau);
 

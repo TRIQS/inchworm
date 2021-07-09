@@ -66,6 +66,9 @@ namespace inchworm::diagram {
 
     time_diagram_t(config_t const &config, std::vector<double> const &split_times, int verbose = 0)
        : time_diagram_t(config.d_list, config.d_dag_list, split_times, verbose) {}
+
+    private:
+    int _sign = 1; // Order zero default
   };
 
 } // namespace inchworm::diagram
