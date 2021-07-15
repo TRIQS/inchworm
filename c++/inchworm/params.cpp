@@ -59,6 +59,7 @@ namespace inchworm {
     h5_write(grp, "use_double_insertion", sp.use_double_insertion);
     h5_write(grp, "max_time", sp.max_time);
     h5_write(grp, "verbosity", sp.verbosity);
+    h5_write(grp, "measure_average_sign", sp.measure_average_sign);
     h5_write(grp, "measure_average_order", sp.measure_average_order);
     h5_write(grp, "measure_order_histogram", sp.measure_order_histogram);
     h5_write(grp, "measure_frame_by_order", sp.measure_frame_by_order);
@@ -80,6 +81,7 @@ namespace inchworm {
     h5_read(grp, "random_name", sp.random_name);
     h5_read(grp, "use_double_insertion", sp.use_double_insertion);
     h5_read(grp, "max_time", sp.max_time);
+    h5_try_read(grp, "measure_average_sign", sp.measure_average_sign);
     h5_read(grp, "measure_average_order", sp.measure_average_order);
     h5_read(grp, "measure_order_histogram", sp.measure_order_histogram);
     h5_read(grp, "measure_frame_by_order", sp.measure_frame_by_order);

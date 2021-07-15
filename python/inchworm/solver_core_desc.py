@@ -66,6 +66,11 @@ c.add_member(c_name = "order_histogram",
              read_only= True,
              doc = r"""""")
 
+c.add_member(c_name = "average_sign",
+             c_type = "scalar_t",
+             read_only= True,
+             doc = r"""""")
+
 c.add_member(c_name = "average_order",
              c_type = "double",
              read_only= True,
@@ -228,11 +233,13 @@ c.add_method("""void solve (**inchworm::solve_params_t)""",
 +-------------------------+--------------------------------------+-----------------------------------------+-----------------------------------------------------+
 | verbosity               | int                                  | mpi::communicator().rank()==0?1:0       | Verbosity                                           |
 +-------------------------+--------------------------------------+-----------------------------------------+-----------------------------------------------------+
+| measure_average_sign    | bool                                 | true                                    | Measure the average sign                            |
++-------------------------+--------------------------------------+-----------------------------------------+-----------------------------------------------------+
 | measure_average_order   | bool                                 | true                                    | Measure the average perturbation order              |
 +-------------------------+--------------------------------------+-----------------------------------------+-----------------------------------------------------+
-| measure_order_histogram | bool                                 | false                                   | Measure the average perturbation order              |
+| measure_order_histogram | bool                                 | false                                   | Measure the perturbation order histogram            |
 +-------------------------+--------------------------------------+-----------------------------------------+-----------------------------------------------------+
-| measure_frame_by_order  | bool                                 | false                                   | Measure the average perturbation order              |
+| measure_frame_by_order  | bool                                 | false                                   | Measure the frame order-resolved                    |
 +-------------------------+--------------------------------------+-----------------------------------------+-----------------------------------------------------+
 | post_process            | bool                                 | true                                    | Perform post processing                             |
 +-------------------------+--------------------------------------+-----------------------------------------+-----------------------------------------------------+
@@ -285,11 +292,13 @@ c.add_method("""void solve_green (**inchworm::solve_params_t)""",
 +-------------------------+--------------------------------------+-----------------------------------------+-----------------------------------------------------+
 | verbosity               | int                                  | mpi::communicator().rank()==0?1:0       | Verbosity                                           |
 +-------------------------+--------------------------------------+-----------------------------------------+-----------------------------------------------------+
+| measure_average_sign    | bool                                 | true                                    | Measure the average sign                            |
++-------------------------+--------------------------------------+-----------------------------------------+-----------------------------------------------------+
 | measure_average_order   | bool                                 | true                                    | Measure the average perturbation order              |
 +-------------------------+--------------------------------------+-----------------------------------------+-----------------------------------------------------+
-| measure_order_histogram | bool                                 | false                                   | Measure the average perturbation order              |
+| measure_order_histogram | bool                                 | false                                   | Measure the perturbation order histogram            |
 +-------------------------+--------------------------------------+-----------------------------------------+-----------------------------------------------------+
-| measure_frame_by_order  | bool                                 | false                                   | Measure the average perturbation order              |
+| measure_frame_by_order  | bool                                 | false                                   | Measure the frame order-resolved                    |
 +-------------------------+--------------------------------------+-----------------------------------------+-----------------------------------------------------+
 | post_process            | bool                                 | true                                    | Perform post processing                             |
 +-------------------------+--------------------------------------+-----------------------------------------+-----------------------------------------------------+
@@ -389,6 +398,11 @@ c.add_member(c_name = "verbosity",
              initializer = """ mpi::communicator().rank()==0?1:0 """,
              doc = r"""Verbosity""")
 
+c.add_member(c_name = "measure_average_sign",
+             c_type = "bool",
+             initializer = """ true """,
+             doc = r"""Measure the average sign""")
+
 c.add_member(c_name = "measure_average_order",
              c_type = "bool",
              initializer = """ true """,
@@ -397,12 +411,12 @@ c.add_member(c_name = "measure_average_order",
 c.add_member(c_name = "measure_order_histogram",
              c_type = "bool",
              initializer = """ false """,
-             doc = r"""Measure the average perturbation order""")
+             doc = r"""Measure the perturbation order histogram""")
 
 c.add_member(c_name = "measure_frame_by_order",
              c_type = "bool",
              initializer = """ false """,
-             doc = r"""Measure the average perturbation order""")
+             doc = r"""Measure the frame order-resolved""")
 
 c.add_member(c_name = "post_process",
              c_type = "bool",

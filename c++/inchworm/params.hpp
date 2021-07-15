@@ -120,13 +120,16 @@ namespace inchworm {
 
     // ----------- Measurements -----------
 
+    /// Measure the average sign
+    bool measure_average_sign = true;
+
     /// Measure the average perturbation order
     bool measure_average_order = true;
 
-    /// Measure the average perturbation order
+    /// Measure the perturbation order histogram
     bool measure_order_histogram = false;
 
-    /// Measure the average perturbation order
+    /// Measure the frame order-resolved
     bool measure_frame_by_order = false;
 
     /// Perform post processing

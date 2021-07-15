@@ -470,6 +470,7 @@ namespace inchworm {
 
     // Register all measurements
     mc.add_measure(measures::frame{params, config, frame, results}, "measure the propagator / green function frame");
+    if (params.measure_average_sign) mc.add_measure(measures::average_sign{params, config, results}, "measure the average sign");
     if (params.measure_average_order) mc.add_measure(measures::average_order{params, config, results}, "measure the average perturbation order");
     if (params.measure_order_histogram)
       mc.add_measure(measures::order_histogram{params, config, results}, "measure the perturbation order histogram");

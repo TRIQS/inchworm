@@ -39,6 +39,7 @@ namespace inchworm {
     if (verbosity > 0) {
       std::printf("     max(abs(frame)): %.4e\n", max_element(nda::map([](matrix_t const &m) { return max_element(abs(m)); })(frame)));
       std::printf("     min(abs(frame)): %.4e\n", min_element(nda::map([](matrix_t const &m) { return min_element(abs(m)); })(frame)));
+      std::printf("     average_sign: %4f\n", average_sign);
       std::printf("     average_order: %4f\n", average_order);
       if (order_histogram.size() > 0) {
         std::printf("     order_histogram: [");

@@ -37,6 +37,7 @@ namespace inchworm {
 
     std::vector<double> order_histogram;
 
+    scalar_t average_sign;
     double average_order = 0.0;
 
     int status = 0;
