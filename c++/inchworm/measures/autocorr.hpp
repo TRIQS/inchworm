@@ -31,7 +31,7 @@ namespace inchworm::measures {
     qmc_results_t &results;
 
     // The scalar log-bin accumulator for the auto-correlation analysis
-    accumulator<scalar_t> acc = {0.0, -1};
+    accumulator<scalar_t> log_acc = {0.0, -1, 0};
   };
 
 } // namespace inchworm::measures

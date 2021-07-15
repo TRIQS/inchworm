@@ -12,12 +12,12 @@ namespace inchworm::measures {
     // This importance sampling factor has to be corrected in the measurement
     scalar_t s = sign / (config.imp_weight);
 
-    acc << trace(s * frame);
+    log_acc << trace(s * frame);
   }
 
   void autocorr::collect_results(mpi::communicator const &comm) {
 
-    auto [errs, counts] = acc.log_bin_errors_all_reduce(comm);
+    auto [errs, counts] = log_acc.log_bin_errors_all_reduce(comm);
 
     // Debug Prints
     if (comm.rank() == 0 and verbosity > 1) {
@@ -32,7 +32,7 @@ namespace inchworm::measures {
     mpi::broadcast(results.auto_corr_time, comm, 0);
 
     // Reset the accumulator
-    acc = {0.0, -1};
+    log_acc = {0.0, -1, 0};
   }
 
 } // namespace inchworm::measures

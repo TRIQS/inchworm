@@ -24,7 +24,7 @@ namespace inchworm::measures {
     if (config.size() == 0) acc_frame_0th_order += s * frame_;
 
     // Perform an autocorrelation analysis on the trace
-    acc << trace(s * frame_);
+    log_acc << trace(s * frame_);
 
     // Perform an error analysis on the [0](0,0) component
     if (not frame_[0].empty()) lin_acc << s * frame_[0](0, 0);
@@ -37,7 +37,7 @@ namespace inchworm::measures {
     // Estimate error of the frame[0](0,0) component
     err_frame = std::get<1>(mean_and_err_mpi(comm, lin_acc.linear_bins()));
 
-    auto [errs, counts] = acc.log_bin_errors_all_reduce(comm);
+    auto [errs, counts] = log_acc.log_bin_errors_all_reduce(comm);
 
     // Debug Prints
     if (comm.rank() == 0 and verbosity > 1) {
@@ -54,8 +54,8 @@ namespace inchworm::measures {
     }
 
     // Reset the accumulators
-    acc     = {0.0, -1};
-    lin_acc = {0.0, 1000, -1};
+    log_acc = {0.0, -1, 0};
+    lin_acc = {0.0, 0, 1000};
   }
 
 } // namespace inchworm::measures

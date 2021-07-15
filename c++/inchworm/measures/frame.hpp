@@ -35,7 +35,7 @@ namespace inchworm::measures {
     frame_t &acc_frame_0th_order;
 
     // The scalar accumulator for the auto-correlation analysis
-    accumulator<scalar_t> acc = {0.0, -1};
+    accumulator<scalar_t> log_acc = {0.0, -1, 0};
 
     // The scalar accumulator for the error analysis
     accumulator<scalar_t> lin_acc = {0.0, 0, 1000};
