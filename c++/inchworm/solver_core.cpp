@@ -351,7 +351,7 @@ namespace inchworm {
     // Initialize result container
     std::vector<int> shape_of_frame;
     if (mode == MODE::PROPAGATOR) {
-      for (int bl = 0; bl < ad_imp.n_subspaces(); bl++) { shape_of_frame.push_back(ad_imp.get_subspace_dim(bl)); }
+      shape_of_frame = ad_imp.get_subspace_dims();
     } else { // MODE::GREENFUNCTION
       for (auto const &[blname, blsize] : params.gf_struct) { shape_of_frame.push_back(blsize); }
     }
