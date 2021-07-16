@@ -43,9 +43,6 @@ namespace inchworm::moves {
       prop_config.hyb_weight = diagram::inclusion_exclusion(diagram, hyb_mat);
 #endif
 
-    double tol = 1e-12;
-    if (std::abs(prop_config.hyb_weight) < tol) return 0.0;
-
     // ------ Calculate the impurity frame weight -------
 
     prop_frame = frame;
