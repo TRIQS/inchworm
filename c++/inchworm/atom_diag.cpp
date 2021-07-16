@@ -150,7 +150,7 @@ namespace inchworm {
           auto [bl_imp_i, i_imp] = fs_to_bl_and_idx(fs_imp_i, ad_imp);
           auto [bl_imp_j, j_imp] = fs_to_bl_and_idx(fs_imp_j, ad_imp);
 
-          if (bl_imp_i != bl_imp_j) TRIQS_RUNTIME_ERROR << "Block structore of ad_imp incompatible with hybridization";
+          if (bl_imp_i != bl_imp_j) TRIQS_RUNTIME_ERROR << "Block structure of ad_imp incompatible with hybridization";
 
           auto [bl_bath, i_bath] = fs_to_bl_and_idx(fs_bath_i, ad_bath);
 
