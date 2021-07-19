@@ -17,7 +17,8 @@ namespace inchworm::moves {
 
     double prop_prob = 1.0 / config.size(bl) / config.size(bl);
 
-    // Never accept removal from trivial configurations
+    // Never accept removal from trivial configurations of first order
+    // Note: Special insertion rule will make sure that 1st order is non-trivial
     if (params.tau_split > 0.0 && config.size() == 1)
       if ((d.tau < params.tau_split && d_dag.tau < params.tau_split) || (d.tau > params.tau_split && d_dag.tau > params.tau_split)) return 0;
 
