@@ -20,9 +20,11 @@ namespace inchworm::moves {
         double dtau = tau_max - tau_split;
 
         if (rng(2))
-          return {rng(tau_split), tau_split + rng(dtau)};
+          return {double_icdf(rng(), d.left_width, d.right_width, tau_split),
+                  tau_split + double_icdf(rng(), d_dag.left_width, d_dag.right_width, dtau)};
         else
-          return {tau_split + rng(dtau), rng(tau_split)};
+          return {tau_split + double_icdf(rng(), d.left_width, d.right_width, dtau),
+                  double_icdf(rng(), d_dag.left_width, d_dag.right_width, tau_split)};
 
       } else { // ------ Finite size config ------
 
@@ -45,7 +47,12 @@ namespace inchworm::moves {
         // Account for insertion around tau_split and zero
         double dtau = tau_max - tau_split;
 
-        return 1.0 / dtau / tau_split / 2.0;
+        if (d.tau < tau_split)
+          return double_pdf(d.tau, d.left_width, d.right_width, tau_split)
+             * double_pdf(d_dag.tau - tau_split, d_dag.left_width, d_dag.right_width, dtau) / 2.0;
+        else
+          return double_pdf(d.tau - tau_split, d.left_width, d.right_width, dtau)
+             * double_pdf(d_dag.tau, d_dag.left_width, d_dag.right_width, tau_split) / 2.0;
 
       } else { // ------ Finite block size ------
 
