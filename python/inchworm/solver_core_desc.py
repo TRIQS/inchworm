@@ -41,7 +41,7 @@ c.add_member(c_name = "frame",
              read_only= True,
              doc = r"""""")
 
-c.add_member(c_name = "frame_0th_order",
+c.add_member(c_name = "frame_zeroth_order",
              c_type = "inchworm::frame_t",
              read_only= True,
              doc = r"""""")

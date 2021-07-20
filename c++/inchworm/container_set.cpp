@@ -26,11 +26,11 @@
 namespace inchworm {
 
   qmc_results_t::qmc_results_t(std::vector<int> const &shape_of_frame)
-     : frame{make_zero_frame(shape_of_frame)}, frame_0th_order{make_zero_frame(shape_of_frame)} {};
+     : frame{make_zero_frame(shape_of_frame)}, frame_zeroth_order{make_zero_frame(shape_of_frame)} {};
 
   void qmc_results_t::normalize(scalar_t normalization_cte) {
     frame /= normalization_cte;
-    frame_0th_order /= normalization_cte;
+    frame_zeroth_order /= normalization_cte;
     for (auto &frame_k : frame_by_order) frame_k /= normalization_cte;
   };
 

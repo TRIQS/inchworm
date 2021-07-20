@@ -29,7 +29,7 @@ namespace inchworm {
   struct qmc_results_t {
 
     frame_t frame;
-    frame_t frame_0th_order;
+    frame_t frame_zeroth_order;
     scalar_t err_frame;
 
     std::vector<frame_t> frame_by_order;

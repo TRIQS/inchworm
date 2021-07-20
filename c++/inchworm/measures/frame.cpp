@@ -9,7 +9,7 @@ namespace inchworm::measures {
        frame_(frame),
        acc_frame(results.frame),
        err_frame(results.err_frame),
-       acc_frame_0th_order(results.frame_0th_order) {}
+       acc_frame_zeroth_order(results.frame_zeroth_order) {}
 
   void frame::accumulate(scalar_t sign) {
 
@@ -21,7 +21,7 @@ namespace inchworm::measures {
       if (not frame_[bl].empty()) acc_frame[bl] += s * frame_[bl];
 
     // For normalization purpose, we sample the zeroth order separatly:
-    if (config.size() == 0) acc_frame_0th_order += s * frame_;
+    if (config.size() == 0) acc_frame_zeroth_order += s * frame_;
 
     // Perform an autocorrelation analysis on the trace
     log_acc << trace(s * frame_);
@@ -31,7 +31,7 @@ namespace inchworm::measures {
   }
 
   void frame::collect_results(mpi::communicator const &comm) {
-    acc_frame_0th_order = mpi::all_reduce(acc_frame_0th_order, comm);
+    acc_frame_zeroth_order = mpi::all_reduce(acc_frame_zeroth_order, comm);
     acc_frame           = mpi::all_reduce(acc_frame, comm);
 
     // Estimate error of the frame[0](0,0) component
