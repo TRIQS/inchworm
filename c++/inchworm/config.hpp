@@ -8,7 +8,7 @@ namespace inchworm {
   struct config_t {
 
     scalar_t imp_weight; // Impurity weight - Frobenius norm of the current (propagator or green function) frame
-    scalar_t hyb_weight; // Hybridization weight - Value of the determinant in cthyb or its equivalent for the inchworm
+    hyb_scalar_t hyb_weight; // Hybridization weight - Value of the determinant in cthyb or its equivalent for the inchworm
 
     std::vector<double> split_times;                          // list of all split times
     std::vector<fop_t> d_list, d_dag_list;                    // list of d/d_dag time ordered

@@ -84,10 +84,10 @@ namespace inchworm::diagram {
   // for a given diagram definition. We can use the function
   // "test_diagram_connection" to define if a diagram is proper or not.
   //
-  scalar_t proper_enum(time_diagram_t const &diagram, hyb_matrix_t const &hyb_mat, bool verbose = false);
+  hyb_scalar_t proper_enum(time_diagram_t const &diagram, hyb_matrix_t const &hyb_mat, bool verbose = false);
 
   // Just calculate the determinant using full enmuration
   //
-  scalar_t full_enum(time_diagram_t const &diagram, hyb_matrix_t const &hyb_mat, bool verbose = false);
+  hyb_scalar_t full_enum(time_diagram_t const &diagram, hyb_matrix_t const &hyb_mat, bool verbose = false);
 
 } // namespace inchworm::diagram

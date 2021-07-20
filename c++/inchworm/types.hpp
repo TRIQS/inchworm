@@ -27,16 +27,32 @@ namespace inchworm {
   using namespace itertools;
   using namespace nda::clef::literals;
 
-  /// The value type of the hybridisaiton function
-#ifdef HYBRIDISATION_IS_COMPLEX
-  using scalar_t     = dcomplex;
+  /// The value type of the hybridization function
+#ifdef HYBRIDIZATION_IS_COMPLEX
+  using hyb_scalar_t = dcomplex;
   using hyb_target_t = matrix_valued;
 #else
-  using scalar_t     = double;
+  using hyb_scalar_t = double;
   using hyb_target_t = matrix_real_valued;
 #endif
+
+  /// The value type of the impurity Hamiltonian
+#ifdef IMPURITY_HAMILTONIAN_IS_COMPLEX
+  using h_scalar_t = dcomplex;
+#else
+  using h_scalar_t   = double;
+#endif
+
+  /// The target type of the impurity Green function and propagator
+#if defined(HYBRIDIZATION_IS_COMPLEX) || defined(IMPURITY_HAMILTONIAN_IS_COMPLEX)
+  using target_t = matrix_valued;
+#else
+  using target_t     = matrix_real_valued;
+#endif
+
+  // Combined scalar_t: complex if either hyb or himp are complex
+  using scalar_t     = decltype(h_scalar_t{} * hyb_scalar_t{});
   using matrix_t     = nda::matrix<scalar_t>;
-  using matrix_sso_t = nda::matrix<scalar_t, nda::C_layout, nda::sso<1000>>;
 
   enum class MODE { PROPAGATOR, GREENFUNCTION };
 
@@ -53,19 +69,19 @@ namespace inchworm {
   using triqs::hilbert_space::gf_struct_t;
 
   // The many body operator type
-  using many_body_op_t = triqs::operators::many_body_operator_generic<scalar_t>;
+  using many_body_op_t = triqs::operators::many_body_operator_generic<h_scalar_t>;
 
   /// Container type of the propagator
-  using u_tau_t = block_gf<imtime, hyb_target_t>;
+  using u_tau_t = block_gf<imtime, target_t>;
 
   /// Container type of one-particle Green and Vertex functions in imaginary times
-  using h_tau_t = block_gf<imtime, hyb_target_t>;
+  using hyb_tau_t = block_gf<imtime, hyb_target_t>;
 
   /// Container type of one-particle Green and Vertex functions in imaginary times
-  using g_tau_t = block_gf<imtime, hyb_target_t>;
+  using g_tau_t = block_gf<imtime, target_t>;
 
   /// Container type of one-particle Green and Vertex functions in Matsubara frequencies
-  using g_iw_t = block_gf<imfreq, matrix_valued>;
+  using g_iw_t = block_gf<imfreq, target_t>;
 
   /// The atom diag type to use
   using atom_diag = triqs::atom_diag::atom_diag<std::is_same_v<scalar_t, dcomplex>>;

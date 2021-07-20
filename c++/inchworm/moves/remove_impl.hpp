@@ -5,7 +5,7 @@
 
 namespace inchworm::moves {
 
-  template <KIND Kind> scalar_t remove<Kind>::remove_single_op_pair(long bl, config_t &config) {
+  template <KIND Kind> double remove<Kind>::remove_single_op_pair(long bl, config_t &config) {
 
     if (config.size(bl) == 0) return 0;
 
@@ -30,7 +30,7 @@ namespace inchworm::moves {
     return inv_prop_prob / prop_prob;
   }
 
-  template <KIND Kind> scalar_t remove<Kind>::try_config_update(config_t &config) {
+  template <KIND Kind> double remove<Kind>::try_config_update(config_t &config) {
 
     long n_bl = gf_struct.size();
 

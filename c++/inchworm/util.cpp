@@ -61,7 +61,7 @@ namespace inchworm {
     std::printf("\n");
   }
 
-  void print_matrix(triqs::arrays::matrix<double> m, double factor) {
+  void print_matrix(matrix_t const &m, double factor) {
 
     for (int i = 0; i < m.shape()[0]; i++) {
       std::printf("\n [");
@@ -76,7 +76,7 @@ namespace inchworm {
     std::printf("\n");
   }
 
-  void fprint(u_tau_t u_tau, int N_tau) {
+  void fprint(u_tau_t const &u_tau, int N_tau) {
     FILE *f = fopen("u_tau.dat", "w");
     for (int i_tau = 0; i_tau < N_tau; i_tau++) {
       fprintf(f, "%d  ", i_tau);
@@ -87,7 +87,7 @@ namespace inchworm {
     return;
   }
 
-  void print(u_partial_t u_partial) {
+  void print(u_partial_t const &u_partial) {
     for (auto &[bl, mat] : u_partial) {
       std::printf("\n\nblock: %d\n", bl);
       print_matrix(mat);
@@ -96,7 +96,7 @@ namespace inchworm {
     return;
   }
 
-  void print(frame_t u_frame) {
+  void print(frame_t const &u_frame) {
     for (int bl = 0; bl < u_frame.size(); bl++) {
       std::printf("\n\nblock: %d\n", bl);
       print_matrix(u_frame[bl]);
@@ -105,13 +105,13 @@ namespace inchworm {
     return;
   }
 
-  void print(u_tau_t u_tau, double tau) {
+  void print(u_tau_t const &u_tau, double tau) {
     for (int bl = 0; bl < u_tau.size(); bl++) { print_matrix((matrix_t)u_tau[bl](tau)); }
     std::cout << "\n";
     return;
   }
 
-  void print(u_tau_t u_tau, int frame_number) {
+  void print(u_tau_t const &u_tau, int frame_number) {
     for (int bl = 0; bl < u_tau.size(); bl++) { std::cout << std::setprecision(10) << u_tau[bl][frame_number]; }
     std::cout << "\n";
     return;

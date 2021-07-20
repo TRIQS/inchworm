@@ -40,23 +40,23 @@ void compare_both_methods(std::vector<double> &tau1, std::vector<double> &tau2, 
   time_diagram_t diagram(c, cdag, split_times);
   auto hyb_mat = hyb_matrix_t(diagram);
 
-  //std::function<scalar_t(double)> hyb_function = [](double dtau) { return (1.0 / (0.1 * dtau - 0.5)); };
+  //std::function<hyb_scalar_t(double)> hyb_function = [](double dtau) { return (1.0 / (0.1 * dtau - 0.5)); };
 
-  //scalar_t value_det = determinant(diagram, hyb_function);
+  //hyb_scalar_t value_det = determinant(diagram, hyb_function);
 
   //int N_proper = find_proper_diagrams(diagram);
   //hyb_mat.print();
-  scalar_t value_proper = proper_enum(diagram, hyb_mat, false /*verbose*/);
+  hyb_scalar_t value_proper = proper_enum(diagram, hyb_mat, false /*verbose*/);
   //std::printf("c_k = % 4.6e\n", value_proper);
 
-  scalar_t value_inclus = inclusion_exclusion(diagram, hyb_mat, false /*verbose*/);
+  hyb_scalar_t value_inclus = inclusion_exclusion(diagram, hyb_mat, false /*verbose*/);
   //std::printf("c_k = % 4.6e\n\n\n", value_inclus);
 
   std::printf("proper-enum         c_k = % 4.6e\n", value_proper);
   std::printf("inclusion-exclusion c_k = % 4.6e\n\n", value_inclus);
 
-  EXPECT_NEAR(value_proper, value_inclus,
-              std::max(1e-8, std::abs(1e-8 * value_proper))); //note: according to my random tests, 1e-9 was too strick in some extreme cases
+  EXPECT_COMPLEX_NEAR(value_proper, value_inclus,
+                      std::max(1e-8, std::abs(1e-8 * value_proper))); //note: according to my random tests, 1e-9 was too strick in some extreme cases
 }
 
 std::vector<double> generate_random_vector(double beta, int n_tau) {
@@ -128,7 +128,7 @@ TEST(inchworm, inclusion_exclusion_big_order1) {
   for (auto t : tau2) cdag.push_back({t, 0});
   time_diagram_t diagram(c, cdag, split_times);
 
-  scalar_t value = inclusion_exclusion(diagram);
+  hyb_scalar_t value = inclusion_exclusion(diagram);
   std::printf("c_k = % 4.6f\n\n", value);
 
   EXPECT_NEAR(-8458508.82790539, value, 1e-7);
@@ -159,7 +159,7 @@ TEST(inchworm, inclusion_exclusion_huge_order1) {
   for (auto t : tau2) cdag.push_back({t, 0});
   time_diagram_t diagram(c, cdag, split_times);
 
-  scalar_t value = inclusion_exclusion(diagram);
+  hyb_scalar_t value = inclusion_exclusion(diagram);
   std::printf("c_k = % 4.6f\n\n", value);
 
   //EXPECT_NEAR(-8458508.82790539, value, 1e-7);

@@ -39,10 +39,10 @@ namespace inchworm::diagram {
     }
   }
 
-  hyb_matrix_t::hyb_matrix_t(time_diagram_t const &diagram, h_tau_t const &Delta)
+  hyb_matrix_t::hyb_matrix_t(time_diagram_t const &diagram, hyb_tau_t const &Delta)
      : diagram{diagram}, size{diagram.perturbation_order()}, mat{size, size} {
 
-    auto eval_Delta = [&Delta](fop_t const &cdag, fop_t const &c) {
+    auto eval_Delta = [&Delta](fop_t const &cdag, fop_t const &c) -> hyb_scalar_t {
       if (cdag.bl != c.bl) return 0.;
 
       double dtau = cdag.tau - c.tau;
@@ -77,7 +77,7 @@ namespace inchworm::diagram {
     }
   }
 
-  scalar_t hyb_matrix_t::det() const { return determinant(mat); }
+  hyb_scalar_t hyb_matrix_t::det() const { return determinant(mat); }
 
   void hyb_matrix_t::print() const {
     std::printf("\nhybridization mat: \n");

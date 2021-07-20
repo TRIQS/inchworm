@@ -43,8 +43,8 @@ namespace inchworm::diagram {
     const int size;  // The number of vertices in the segment
 
     bool calculated             = false; // Has this segment been calculated?
-    scalar_t value              = 0.;    // The full value of the segment, c.f. Eq (14) arXiv:1807.00290v1
-    scalar_t value_without_cuts = 0.;    // The value of the segment if split points are not considered // FIXME CHECK
+    hyb_scalar_t value              = 0.;    // The full value of the segment, c.f. Eq (14) arXiv:1807.00290v1
+    hyb_scalar_t value_without_cuts = 0.;    // The value of the segment if split points are not considered // FIXME CHECK
 
     segment_t(int begin_, int end_, int id_) : begin{begin_}, end{end_}, id{id_}, size{end_ - begin_} { EXPECTS(end > begin); }
   };

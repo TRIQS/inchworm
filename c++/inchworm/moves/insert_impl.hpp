@@ -6,7 +6,7 @@
 
 namespace inchworm::moves {
 
-  template <KIND Kind> scalar_t insert<Kind>::insert_single_op_pair(long bl, config_t &config) {
+  template <KIND Kind> double insert<Kind>::insert_single_op_pair(long bl, config_t &config) {
 
     long bl_size = gf_struct[bl].second;
 
@@ -29,7 +29,7 @@ namespace inchworm::moves {
     return inv_prop_prob / prop_prob;
   }
 
-  template <KIND Kind> scalar_t insert<Kind>::try_config_update(config_t &config) {
+  template <KIND Kind> double insert<Kind>::try_config_update(config_t &config) {
 
     long n_bl = gf_struct.size();
 

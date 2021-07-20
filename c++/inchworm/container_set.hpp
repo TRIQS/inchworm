@@ -46,7 +46,7 @@ namespace inchworm {
 
     qmc_results_t(std::vector<int> const &shape_of_frame);
 
-    void normalize(double normalization_cte);
+    void normalize(scalar_t normalization_cte);
     void print(int verbosity = 4);
   };
 

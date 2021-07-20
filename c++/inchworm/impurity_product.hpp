@@ -31,6 +31,6 @@ namespace inchworm {
    * @return The operator product
    */
   u_partial_t impurity_product(atom_diag const &ad, diagram::time_diagram_t const &diagram, double tau_max, double tau_min,
-                               interpolator_t const *const u_interpolator_p = nullptr);
+                               interpolator_t<scalar_t> const *const u_interpolator_p = nullptr);
 
 } // namespace inchworm

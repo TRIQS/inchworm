@@ -21,7 +21,7 @@ namespace inchworm {
   }
 
   u_partial_t impurity_product(atom_diag const &ad, diagram::time_diagram_t const &diagram, double tau_max, double tau_min,
-                               interpolator_t const *const u_interpolator_p) {
+                               interpolator_t<scalar_t> const *const u_interpolator_p) {
     EXPECTS(tau_max > tau_min);
 
     // Filter out all operators in the time-window [tau_min, tau_max]

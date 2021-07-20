@@ -39,7 +39,7 @@ void test_function(auto &&f, double tol = 0.001) {
 
   // Init BlockGf & Interpolator
   u_tau[bl_][tau_](i_, j_) << f(bl_, tau_, i_, j_);
-  auto u_interpolator = interpolator_t{u_tau, n_tau};
+  auto u_interpolator = interpolator_t<scalar_t>{u_tau, n_tau};
 
   auto tau_mesh_fine = triqs::mesh::imtime{beta, Fermion, 10 * n_tau};
   auto u_tau_interp  = u_tau_t{tau_mesh_fine, gf_struct};

@@ -28,7 +28,7 @@ namespace inchworm {
   qmc_results_t::qmc_results_t(std::vector<int> const &shape_of_frame)
      : frame{make_zero_frame(shape_of_frame)}, frame_0th_order{make_zero_frame(shape_of_frame)} {};
 
-  void qmc_results_t::normalize(double normalization_cte) {
+  void qmc_results_t::normalize(scalar_t normalization_cte) {
     frame /= normalization_cte;
     frame_0th_order /= normalization_cte;
     for (auto &frame_k : frame_by_order) frame_k /= normalization_cte;
@@ -39,7 +39,7 @@ namespace inchworm {
     if (verbosity > 0) {
       std::printf("     max(abs(frame)): %.4e\n", max_element(nda::map([](matrix_t const &m) { return max_element(abs(m)); })(frame)));
       std::printf("     min(abs(frame)): %.4e\n", min_element(nda::map([](matrix_t const &m) { return min_element(abs(m)); })(frame)));
-      std::printf("     average_sign: %4f\n", average_sign);
+      std::printf("     average_sign: %4e\n", average_sign);
       std::printf("     average_order: %4f\n", average_order);
       if (order_histogram.size() > 0) {
         std::printf("     order_histogram: [");

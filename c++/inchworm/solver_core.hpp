@@ -21,13 +21,13 @@ namespace inchworm {
     atom_diag ad_imp;
 
     // Imaginary-time Hybridization function
-    h_tau_t Delta_tau;
+    hyb_tau_t Delta_tau;
 
     /// The propagator in imaginary time
     u_tau_t u_tau;
 
     /// The interpolator on the propagator
-    interpolator_t u_interpolator;
+    interpolator_t<scalar_t> u_interpolator;
 
     // The fundamental operator set associated with constr_params.gf_struct
     fundamental_operator_set fops;

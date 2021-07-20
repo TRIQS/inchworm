@@ -40,15 +40,15 @@ void compare_proper_with_det(std::vector<double> &tau1, std::vector<double> &tau
   time_diagram_t diagram(c, cdag, {});
   auto hyb_mat = hyb_matrix_t(diagram);
 
-  scalar_t value_det = hyb_mat.det();
+  hyb_scalar_t value_det = hyb_mat.det();
   hyb_mat.print();
   //int N_proper = find_proper_diagrams(diagram);
-  scalar_t value_proper = full_enum(diagram, hyb_mat, true /*verbose*/);
+  hyb_scalar_t value_proper = full_enum(diagram, hyb_mat, true /*verbose*/);
   std::printf("full-enum c_k   = % 4.6e\n", value_proper);
   std::printf("determinant c_k = % 4.6e\n\n", value_det);
 
-  EXPECT_NEAR(value_proper, value_det,
-              std::max(1e-8, std::abs(1e-8 * value_proper))); //note: according to my random tests, 1e-9 was too strick in some extreme cases
+  EXPECT_COMPLEX_NEAR(value_proper, value_det,
+                      std::max(1e-8, std::abs(1e-8 * value_proper))); //note: according to my random tests, 1e-9 was too strick in some extreme cases
 }
 
 std::vector<double> generate_random_vector(double beta, int n_tau) {

@@ -33,6 +33,6 @@ namespace inchworm::diagram {
    * and another fully adjacent.
    * FIXME Extend documentation
    */
-  scalar_t inclusion_exclusion(time_diagram_t const &diagram, hyb_matrix_t hyb_mat, bool verbose = false);
+  hyb_scalar_t inclusion_exclusion(time_diagram_t const &diagram, hyb_matrix_t hyb_mat, bool verbose = false);
 
 } // namespace inchworm::diagram

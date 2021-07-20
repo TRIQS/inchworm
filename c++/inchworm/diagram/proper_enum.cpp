@@ -126,19 +126,18 @@ namespace inchworm::diagram {
   // for a given diagram definition. We can use the function
   // "test_diagram_connection" to define if a diagram is proper or not.
   //
-  scalar_t proper_enum(time_diagram_t const &diagram, hyb_matrix_t const &hyb_mat, bool verbose) {
+  hyb_scalar_t proper_enum(time_diagram_t const &diagram, hyb_matrix_t const &hyb_mat, bool verbose) {
 
     if (verbose) std::printf("\n\n##################\nPROPER-ENUMERATION:\n");
 
     if (diagram.size() == 0) return 1.0;
 
-    //auto hyb_mat     = hyb_matrix_t{diagram, hyb_function};
     auto permutation = std::vector<int>(diagram.perturbation_order());
 
     for (int i = 0; i < diagram.perturbation_order(); i++) permutation[i] = i;
 
     int NN = 0, N_proper = 0;
-    scalar_t total_value = 0.0, value = 1.0;
+    hyb_scalar_t total_value = 0.0, value = 1.0;
     do {
       NN += 1;
       int parity = find_parity(permutation);
@@ -169,16 +168,15 @@ namespace inchworm::diagram {
 
   // Just calculate the determinant using full enmuration
   //
-  scalar_t full_enum(time_diagram_t const &diagram, hyb_matrix_t const &hyb_mat, bool verbose) {
+  hyb_scalar_t full_enum(time_diagram_t const &diagram, hyb_matrix_t const &hyb_mat, bool verbose) {
 
     if (verbose) std::printf("\n\n##################\nFULL-ENUMERATION:\n");
-    //auto hyb_mat     = hyb_matrix_t{diagram, hyb_function};
     auto permutation = std::vector<int>(diagram.perturbation_order());
 
     for (int i = 0; i < diagram.perturbation_order(); i++) permutation[i] = i;
 
     int NN = 0, N_proper = 0;
-    scalar_t total_value = 0.0, value = 1.0;
+    hyb_scalar_t total_value = 0.0, value = 1.0;
     do {
       NN += 1;
       int parity = find_parity(permutation);

@@ -97,8 +97,8 @@ namespace inchworm::diagram {
       // FIXME Why do we have to make a distinction here between full segment and smaller? <= ?
       if ((seg.size < diagram.size()) and (set.begin < seg.begin or seg.end <= set.end)) continue;
 
-      int pos        = seg.begin;
-      scalar_t value = 1.0;
+      int pos            = seg.begin;
+      hyb_scalar_t value = 1.0;
 
       for (auto const &subseg : set.segs()) {
         ASSERT(subseg.calculated);
@@ -126,7 +126,7 @@ namespace inchworm::diagram {
 
     for (auto const &set : list_of_set_of_adjacent_segments) {
       if (seg.begin == set.begin && seg.end == set.end) {
-        scalar_t value = 1.0;
+        hyb_scalar_t value = 1.0;
         for (auto const &subseg : set.segs()) {
           ASSERT(subseg.calculated);
           value *= -subseg.value_without_cuts;
@@ -186,7 +186,7 @@ namespace inchworm::diagram {
     return seg_list;
   }
 
-  scalar_t inclusion_exclusion(time_diagram_t const &diagram, hyb_matrix_t hyb_mat, bool verbose) {
+  hyb_scalar_t inclusion_exclusion(time_diagram_t const &diagram, hyb_matrix_t hyb_mat, bool verbose) {
 
     if (diagram.size() == 0) return 1.0;
 

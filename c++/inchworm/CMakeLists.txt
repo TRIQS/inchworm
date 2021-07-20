@@ -20,8 +20,8 @@ target_compile_definitions(${PROJECT_NAME}_c PUBLIC
 				$<$<CONFIG:Debug>:TRIQS_DEBUG>
 				$<$<CONFIG:Debug>:TRIQS_ARRAYS_ENFORCE_BOUNDCHECK>
 				$<$<BOOL:${Debug_Prints}>:INCHWORM_DEBUG_PRINTS>
-				$<$<BOOL:${Hybridisation_is_complex}>:HYBRIDISATION_IS_COMPLEX>
-				$<$<BOOL:${Local_hamiltonian_is_complex}>:LOCAL_HAMILTONIAN_IS_COMPLEX>
+				$<$<BOOL:${Hybridization_is_complex}>:HYBRIDIZATION_IS_COMPLEX>
+				$<$<BOOL:${Impurity_Hamiltonian_is_complex}>:IMPURITY_HAMILTONIAN_IS_COMPLEX>
 				$<$<BOOL:${Proper_Enumeration}>:PROPER_ENUMERATION>
 			  )
 

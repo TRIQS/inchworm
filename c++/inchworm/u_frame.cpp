@@ -18,8 +18,8 @@ namespace inchworm {
   }
 
   // calculate the trace of the u_frame block diagonal matrix:
-  double trace(frame_t const &frame) {
-    double val = 0;
+  scalar_t trace(frame_t const &frame) {
+    scalar_t val = 0;
     for (auto const &B : frame) val += trace(B);
     return val;
   }
