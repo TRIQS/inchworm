@@ -27,8 +27,8 @@ namespace inchworm::measures {
     // The current frame
     frame_t const &frame_;
 
-    // Error of the frame[0](0,0) component
-    scalar_t &err_frame;
+    // Errors of the (0,0) component for each frame[bl]
+    std::vector<scalar_t> &errs_frame;
 
     // References to the accumulation frames
     frame_t &acc_frame;
@@ -38,7 +38,10 @@ namespace inchworm::measures {
     accumulator<scalar_t> log_acc = {0.0, -1, 0};
 
     // The scalar accumulator for the error analysis
-    accumulator<scalar_t> lin_acc = {0.0, 0, 1000};
+    std::vector<accumulator<scalar_t>> lin_acc;
+
+    // The number of samples
+    long long N_samples = 0;
   };
 
 } // namespace inchworm::measures

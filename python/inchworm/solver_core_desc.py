@@ -46,8 +46,8 @@ c.add_member(c_name = "frame_zeroth_order",
              read_only= True,
              doc = r"""""")
 
-c.add_member(c_name = "err_frame",
-             c_type = "inchworm::scalar_t",
+c.add_member(c_name = "errs_frame",
+             c_type = "std::vector<inchworm::scalar_t>",
              read_only= True,
              doc = r"""""")
 
@@ -109,8 +109,8 @@ c.add_member(c_name = "G_tau",
              read_only= True,
              doc = r"""Greens function in imaginary time""")
 
-c.add_member(c_name = "err_frame",
-             c_type = "inchworm::scalar_t",
+c.add_member(c_name = "errs_frame",
+             c_type = "std::vector<inchworm::scalar_t>",
              read_only= True,
              doc = r"""Last obtained frame error""")
 

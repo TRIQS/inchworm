@@ -30,7 +30,7 @@ namespace inchworm {
 
     frame_t frame;
     frame_t frame_zeroth_order;
-    scalar_t err_frame;
+    std::vector<scalar_t> errs_frame;
 
     std::vector<frame_t> frame_by_order;
     std::vector<scalar_t> err_frame_by_order;
@@ -56,8 +56,8 @@ namespace inchworm {
     /// Greens function in imaginary time
     g_tau_t G_tau;
 
-    /// Last obtained frame error
-    scalar_t err_frame;
+    /// Last obtained frame error block-resolved
+    std::vector<scalar_t> errs_frame;
 
     /// Order-resolved propagator
     std::vector<g_tau_t> G_tau_by_order;

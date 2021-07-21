@@ -26,11 +26,12 @@
 namespace inchworm {
 
   qmc_results_t::qmc_results_t(std::vector<int> const &shape_of_frame)
-     : frame{make_zero_frame(shape_of_frame)}, frame_zeroth_order{make_zero_frame(shape_of_frame)} {};
+     : frame{make_zero_frame(shape_of_frame)}, frame_zeroth_order{make_zero_frame(shape_of_frame)}, errs_frame(shape_of_frame.size(), 0.0){};
 
   void qmc_results_t::normalize(scalar_t normalization_cte) {
     frame /= normalization_cte;
     frame_zeroth_order /= normalization_cte;
+    for (auto &err_frame_bl : errs_frame) err_frame_bl /= normalization_cte;
     for (auto &frame_k : frame_by_order) frame_k /= normalization_cte;
   };
 
@@ -60,7 +61,7 @@ namespace inchworm {
   void h5_write(h5::group h5group, std::string subgroup_name, container_set const &c) {
     auto grp = h5group.create_group(subgroup_name);
     h5_write(grp, "G_tau", c.G_tau);
-    h5_write(grp, "err_frame", c.err_frame);
+    h5_write(grp, "errs_frame", c.errs_frame);
     h5_write(grp, "G_tau_by_order", c.G_tau_by_order);
     h5_write(grp, "u_tau_by_order", c.u_tau_by_order);
     h5_write(grp, "err_frame_by_order", c.err_frame_by_order);
@@ -70,7 +71,7 @@ namespace inchworm {
   void h5_read(h5::group h5group, std::string subgroup_name, container_set &c) {
     auto grp = h5group.open_group(subgroup_name);
     h5_read(grp, "G_tau", c.G_tau);
-    h5_try_read(grp, "err_frame", c.err_frame);
+    h5_try_read(grp, "errs_frame", c.errs_frame);
     h5_try_read(grp, "G_tau_by_order", c.G_tau_by_order);
     h5_try_read(grp, "u_tau_by_order", c.u_tau_by_order);
     h5_try_read(grp, "err_frame_by_order", c.err_frame_by_order);

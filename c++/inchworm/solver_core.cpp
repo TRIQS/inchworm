@@ -97,6 +97,9 @@ namespace inchworm {
       TRIQS_RUNTIME_ERROR << "Failed to calculate normalization ratio due to insufficient sampling of zeroth order propagator";
     res.normalize(normalization_cte);
 
+    // Assign the last obtained frame error
+    errs_frame = res.errs_frame;
+
     // Print results
     res.print(solve_params.verbosity);
 
@@ -125,6 +128,9 @@ namespace inchworm {
     if (normalization_cte == 0)
       TRIQS_RUNTIME_ERROR << "Failed to calculate normalization ratio due to insufficient sampling of zeroth order propagator";
     res.normalize(normalization_cte);
+
+    // Assign the last obtained frame error
+    errs_frame = res.errs_frame;
 
     // Print results
     res.print(solve_params.verbosity);
@@ -196,6 +202,9 @@ namespace inchworm {
 
       // Assign the current frame to the propagator u_tau (will be used in the next iteration)
       set_frame(res.frame, u_tau, n);
+
+      // Assign the last obtained frame error
+      errs_frame = res.errs_frame;
 
       // Assign u_frame_by_order to the propagator u_tau_by_order
       if (solve_params.measure_frame_by_order) {
@@ -279,7 +288,7 @@ namespace inchworm {
       set_frame(res.frame, G_tau, n);
 
       // Assign the last obtained frame error
-      err_frame = res.err_frame;
+      errs_frame = res.errs_frame;
 
       // Assign u_frame_by_order to the propagator u_tau_by_order
       if (solve_params.measure_frame_by_order) {
