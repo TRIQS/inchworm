@@ -42,12 +42,14 @@ namespace inchworm {
   u_tau_t make_ED_propagator(atom_diag const &ad_tot, atom_diag const &ad_imp, atom_diag const &ad_bath, double beta, int n_tau) {
 
     auto u_tau = u_tau_t{{beta, Fermion, n_tau}, ad_imp.get_subspace_dims()};
+    u_tau() = 0.0;
 
     double dtau = beta / (n_tau - 1.);
-    for (int i_tau = 0; i_tau < n_tau; i_tau++) {
+    for (int i_tau: mpi::chunk(range(n_tau))) {
       auto u_frame = partial_trace_bath(ad_tot, ad_imp, ad_bath, beta, dtau * i_tau);
       set_frame(u_frame, u_tau, i_tau);
     }
+    u_tau = mpi::all_reduce(u_tau);
 
     return u_tau;
   }
