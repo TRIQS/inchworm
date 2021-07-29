@@ -99,10 +99,9 @@ namespace inchworm {
    * for the associated atom_diag object
    */
   std::pair<int, int> fs_to_bl_and_idx(uint64_t fs, atom_diag const &ad) {
-    auto const &all_fs = ad.get_fock_states();
-    for (int bl = 0; bl < all_fs.size(); bl++) {
-      for (int idx = 0; idx < all_fs[bl].size(); idx++) {
-        if (fs == all_fs[bl][idx]) return {bl, idx};
+    for (int bl : range(ad.n_subspaces())) {
+      for (auto [idx, fs_i] : enumerate(ad.get_fock_states(bl))) {
+        if (fs == fs_i) return {bl, idx};
       }
     }
     std::printf("error: number not found in the fock states\n");
