@@ -125,8 +125,8 @@ namespace inchworm {
       // Rotate to Fockstate Basis
       auto e_H_tau_fs = e_H_tau;
       for (auto bl : range(ad.n_subspaces())) {
-        auto rot       = ad.get_eigensystems()[bl].unitary_matrix;
-        e_H_tau_fs[bl] = rot * e_H_tau[bl] * dagger(rot);
+        auto const &rot = ad.get_eigensystems()[bl].unitary_matrix;
+        e_H_tau_fs[bl]  = rot * e_H_tau[bl] * dagger(rot);
       }
       return e_H_tau_fs;
     };
@@ -136,15 +136,13 @@ namespace inchworm {
     // The result container
     frame_t utau_imp = make_zero_frame(ad_imp.get_subspace_dims());
 
-    auto const &all_fs_tot = ad_tot.get_fock_states();
-
     for (auto [bl, bl_size] : enumerate(ad_tot.get_subspace_dims())) {
 
       for (auto [i, j] : product_range(bl_size, bl_size)) {
 
         int nfops_imp              = ad_imp.get_fops().size();
-        auto [fs_imp_i, fs_bath_i] = split_fs(all_fs_tot[bl][i], nfops_imp);
-        auto [fs_imp_j, fs_bath_j] = split_fs(all_fs_tot[bl][j], nfops_imp);
+        auto [fs_imp_i, fs_bath_i] = split_fs(ad_tot.get_fock_states(bl)[i], nfops_imp);
+        auto [fs_imp_j, fs_bath_j] = split_fs(ad_tot.get_fock_states(bl)[j], nfops_imp);
 
         if (fs_bath_i == fs_bath_j) {
 
