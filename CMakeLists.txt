@@ -19,11 +19,8 @@
 #
 # ##############################################################################
 
-cmake_minimum_required(VERSION 3.9.6 FATAL_ERROR)
-cmake_policy(VERSION 3.9.6)
-if(POLICY CMP0074)
-  cmake_policy(SET CMP0074 NEW)
-endif()
+cmake_minimum_required(VERSION 3.12.4 FATAL_ERROR)
+cmake_policy(VERSION 3.12.4)
 if(POLICY CMP0077)
   cmake_policy(SET CMP0077 NEW)
 endif()
@@ -58,12 +55,11 @@ if(NOT IS_SUBPROJECT)
 endif()
 set(${PROJECT_NAME}_BINARY_DIR ${PROJECT_BINARY_DIR} CACHE STRING "Binary directory of the ${PROJECT_NAME} Project")
 
-
-# ############
-# Options
-
 # Make additional Find Modules available
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/share/cmake/Modules)
+
+# ############
+# CMake Options
 
 # Default to Release build type
 if(NOT CMAKE_BUILD_TYPE)
@@ -81,6 +77,9 @@ endif()
 
 # Documentation
 option(Build_Documentation "Build documentation" OFF)
+if(Build_Documentation AND NOT PythonSupport)
+  message(FATAL_ERROR "Build_Documentation=ON requires PythonSupport to be enabled")
+endif()
 
 # Testing
 option(Build_Tests "Build tests" ON)
@@ -88,30 +87,20 @@ if(Build_Tests)
   enable_testing()
 endif()
 
-# Options for the compilation ...
-option(Debug_Prints "Print detailed information about MC configuration and moves for debugging purposes" OFF)
-option(Hybridisation_is_complex "If ON, the hybridization Delta(tau) is complex" OFF)
-option(Local_hamiltonian_is_complex "If ON, the H_loc is complex" OFF)
-option(Proper_Enumeration "If ON, use full enumeration of proper diagrams (slow) instead of inclusion-exclusion strategy" OFF)
+# Build static libraries by default
+option(BUILD_SHARED_LIBS "Enable compilation of shared libraries" OFF)
+
+# ############
+# Global Compilation Settings
 
 # Export the list of compile-commands into compile_commands.json
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Global compiler options
-option(BUILD_SHARED_LIBS "Enable compilation of shared libraries" OFF)
+# Disable compiler extensions
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+# Provide additional debugging information for Debug builds
 add_compile_options($<$<CONFIG:Debug>:-ggdb3>)
-cmake_policy(SET CMP0069 NEW)
-include(CheckIPOSupported)
-check_ipo_supported(RESULT ipo_supported)
-if(NOT ipo_supported)
-  message(STATUS "Linktime optimizations could not be enabled!")
-else()
-  message(STATUS "Linktime optimizations enabled!")
-  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
-  if(CMAKE_SYSTEM_NAME EQUAL "Linux")
-    add_link_options($<$<CXX_COMPILER_ID:Clang>:-fuse-ld=gold>)
-  endif()
-endif()
 
 # Create an Interface target for compiler warnings
 add_library(${PROJECT_NAME}_warnings INTERFACE)
