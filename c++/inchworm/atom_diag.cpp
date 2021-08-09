@@ -159,7 +159,7 @@ namespace inchworm {
     }
 
     // Rotate to impurity eigenbasis and normalize by Z_bath
-    auto Z_bath = trace(make_bare_u_frame(ad_bath, beta));
+    auto Z_bath = partition_function(ad_bath, beta);
     for (auto bl_imp : range(ad_imp.n_subspaces())) {
       auto rot         = ad_imp.get_eigensystems()[bl_imp].unitary_matrix;
       utau_imp[bl_imp] = 1.0 / Z_bath * dagger(rot) * utau_imp[bl_imp] * rot;

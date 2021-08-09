@@ -4,6 +4,7 @@
 #include <triqs/mesh.hpp>
 #include <triqs/operators/many_body_operator.hpp>
 #include <triqs/atom_diag/atom_diag.hpp>
+#include <triqs/atom_diag/functions.hpp>
 #include <triqs/stat/accumulator.hpp>
 
 #include <nda/nda.hpp>
