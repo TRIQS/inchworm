@@ -45,11 +45,13 @@ namespace inchworm::moves {
 
     // ------ Calculate the impurity frame weight -------
 
-    prop_frame = frame;
-    if (params.mode == MODE::PROPAGATOR) {
+    if (prop_config.size() == 0) { // Use precalculated zeroth-order frame if possible
+      prop_frame = solver.frame_zeroth_order;
+
+    } else if (params.mode == MODE::PROPAGATOR) {
       if (params.use_bare_propagator) {
         prop_frame = make_frame(impurity_product(solver.ad_imp, diagram, params.tau_max, 0));
-      } else { // FIXME incorporate treatment of tau_split into impurity product
+      } else {
         prop_frame = make_frame(impurity_product(solver.ad_imp, diagram, params.tau_max, params.tau_split, &solver.u_interpolator)
                                 * impurity_product(solver.ad_imp, diagram, params.tau_split, 0, &solver.u_interpolator));
       }

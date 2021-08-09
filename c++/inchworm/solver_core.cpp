@@ -86,13 +86,15 @@ namespace inchworm {
     double tau_split         = 0.0;
     bool use_bare_propagator = true;
 
+    // Initialize the zeroth order frame
+    frame_zeroth_order = make_bare_u_frame(ad_imp, tau_max);
+
     // Execute cthyb sampling
     auto res = qmc_step(solve_params, tau_split, tau_max, use_bare_propagator, MODE::PROPAGATOR);
 
     // Finding the ratio between theoretical zeroth order and Monte Carlo sampled zeroth order.
     // Usually first value of u_frame is the most significant, due to order of eigenvalues.
-    auto u_frame_bare          = make_bare_u_frame(ad_imp, tau_max);
-    double normalization_cte   = norm(res.frame_zeroth_order) / norm(u_frame_bare);
+    double normalization_cte = norm(res.frame_zeroth_order) / norm(frame_zeroth_order);
     if (normalization_cte == 0)
       TRIQS_RUNTIME_ERROR << "Failed to calculate normalization ratio due to insufficient sampling of zeroth order propagator";
     res.normalize(normalization_cte);
@@ -119,12 +121,14 @@ namespace inchworm {
     // Initialize the interpolator
     u_interpolator = interpolator_t<scalar_t>(u_tau, u_tau[0].mesh().size());
 
+    // Initialize the zeroth order frame
+    frame_zeroth_order = u_interpolator(tau_max - tau_split) * u_interpolator(tau_split);
+
     // Execute u_tau self-consistency sampling
     auto res = qmc_step(solve_params, tau_split, tau_max, false, MODE::PROPAGATOR);
 
     // Normalize the result using the ratio between theoretical zeroth order and Monte Carlo sampled zeroth order
-    auto u_frame_zeroth_order  = frame_t{u_interpolator(tau_max - tau_split) * u_interpolator(tau_split)};
-    double normalization_cte   = norm(res.frame_zeroth_order) / norm(u_frame_zeroth_order);
+    double normalization_cte = norm(res.frame_zeroth_order) / norm(frame_zeroth_order);
     if (normalization_cte == 0)
       TRIQS_RUNTIME_ERROR << "Failed to calculate normalization ratio due to insufficient sampling of zeroth order propagator";
     res.normalize(normalization_cte);
@@ -181,18 +185,14 @@ namespace inchworm {
       // Initialize the interpolator
       if (not use_bare_propagator) { u_interpolator = interpolator_t<scalar_t>(u_tau, n); }
 
+      // Initialize the zeroth order frame
+      frame_zeroth_order = use_bare_propagator ? make_bare_u_frame(ad_imp, tau_max) : u_interpolator(tau_max - tau_split) * u_interpolator(tau_split);
+
       // calculation of the Monte Carlo solution:
       auto res = qmc_step(solve_params, tau_split, tau_max, use_bare_propagator, MODE::PROPAGATOR);
 
       // Normalize the result using the ratio between theoretical zeroth order and Monte Carlo sampled zeroth order
-      double normalization_cte;
-      if (use_bare_propagator) {
-        auto u_frame_bare = make_bare_u_frame(ad_imp, tau_max);
-        normalization_cte = norm(res.frame_zeroth_order) / norm(u_frame_bare);
-      } else {
-        auto u_frame_zeroth_order = frame_t{u_interpolator(tau_max - tau_split) * u_interpolator(tau_split)};
-        normalization_cte         = norm(res.frame_zeroth_order) / norm(u_frame_zeroth_order);
-      }
+      double normalization_cte = norm(res.frame_zeroth_order) / norm(frame_zeroth_order);
       if (normalization_cte == 0)
         TRIQS_RUNTIME_ERROR << "Failed to calculate normalization ratio due to insufficient sampling of zeroth order propagator";
       res.normalize(normalization_cte);
@@ -271,12 +271,14 @@ namespace inchworm {
       //
       double tau_split = G_tau[0].mesh().index_to_point(n);
 
+      // Initialize the zeroth order frame
+      frame_zeroth_order = make_bare_g_frame(ad_imp, u_tau, constr_params.gf_struct, tau_split, beta);
+
       // calculation of the Monte Carlo solution:
       auto res = qmc_step(solve_params, tau_split, beta, false, MODE::GREENFUNCTION);
 
       // Normalize the result using the ratio between theoretical zeroth order and Monte Carlo sampled zeroth order
-      frame_t g_frame_zeroth_order = make_bare_g_frame(ad_imp, u_tau, constr_params.gf_struct, tau_split, beta);
-      scalar_t normalization_cte   = Tr_Ubeta * norm(res.frame_zeroth_order) / norm(g_frame_zeroth_order);
+      scalar_t normalization_cte = Tr_Ubeta * norm(res.frame_zeroth_order) / norm(frame_zeroth_order);
       if (normalization_cte == scalar_t{0})
         TRIQS_RUNTIME_ERROR << "Failed to calculate normalization ratio due to insufficient sampling of zeroth order Green function";
       res.normalize(normalization_cte);
@@ -318,9 +320,8 @@ namespace inchworm {
     auto &rng = mc.get_rng();
 
     // Create frame and Monte-Carlo configuration
-    auto frame =
-       (mode == MODE::PROPAGATOR) ? make_bare_u_frame(ad_imp, tau_max) : make_bare_g_frame(ad_imp, u_tau, params.gf_struct, tau_split, tau_max);
-    config_t config(frame, params.gf_struct, {0.0, tau_split});
+    auto frame  = frame_zeroth_order;
+    auto config = config_t(frame, params.gf_struct, {0.0, tau_split});
 
     // Create Monte-Carlo params
     qmc_params_t qmc_params{tau_max, tau_split, use_bare_propagator, mode};

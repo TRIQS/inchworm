@@ -29,6 +29,9 @@ namespace inchworm {
     /// The interpolator on the propagator
     interpolator_t<scalar_t> u_interpolator;
 
+    /// The zeroth order frame of the last sampling method
+    frame_t frame_zeroth_order;
+
     // The fundamental operator set associated with constr_params.gf_struct
     fundamental_operator_set fops;
 
