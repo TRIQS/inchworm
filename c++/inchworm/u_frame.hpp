@@ -27,11 +27,11 @@ namespace inchworm {
 
   // --------------- General frame / u_partial functionality ---------------
 
-  // Calculate the Frobenius norm of the u_partial block diagonal matrix:
-  double frobenius_norm(frame_t const &frame);
+  // Calculate the absoulate value norm of the frame
+  double norm(frame_t const &frame);
 
-  // calculate the trace of the u_frame block diagonal matrix:
-  scalar_t trace(frame_t const &u_frame);
+  // Calculate the trace of the frame
+  scalar_t trace(frame_t const &frame);
 
   // calculate the relative distance of the two frames: ||l - r|| / max(||l||, ||r||)
   double relative_distance(frame_t const &l, frame_t const &r);

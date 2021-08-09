@@ -49,7 +49,7 @@ namespace inchworm {
       }
       if (frame_by_order.size() > 0) {
         std::printf("     order contribution: [");
-        for (auto &frame_k : frame_by_order) std::printf(" %.3f, ", frobenius_norm(frame_k) / frobenius_norm(frame));
+        for (auto &frame_k : frame_by_order) std::printf(" %.3f, ", norm(frame_k) / norm(frame));
         std::printf("]\n");
       }
     }

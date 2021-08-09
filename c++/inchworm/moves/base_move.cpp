@@ -71,7 +71,7 @@ namespace inchworm::moves {
       if (nop_r % 2 == 1) { prop_frame *= -1; }
     }
 
-    prop_config.imp_weight = frobenius_norm(prop_frame);
+    prop_config.imp_weight = norm(prop_frame);
 
     // Reweight perturbation orders below the reweighting_cutoff to guarantee
     // that the zeroth order is sampled properly for normalization purposes

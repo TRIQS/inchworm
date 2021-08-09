@@ -1,20 +1,14 @@
 #include "./u_frame.hpp"
 #include "./util.hpp"
 
-#include <gsl/gsl_errno.h>
-#include <gsl/gsl_spline.h>
-
 namespace inchworm {
 
   // --------------- General frame / u_partial functionality ---------------
 
-  double frobenius_norm(frame_t const &frame) {
-    double val = 0;
-    for (auto const &mat : frame) {
-      double norm = frobenius_norm(mat);
-      val += norm * norm;
-    }
-    return std::sqrt(val);
+  double norm(frame_t const &frame) {
+    double res = 0;
+    for (auto const &mat : frame) { res += sum(abs(mat)); }
+    return res;
   }
 
   // calculate the trace of the u_frame block diagonal matrix:
@@ -29,11 +23,7 @@ namespace inchworm {
     frame_t diff = l;
     for (auto bl : range(l.size())) { diff[bl] = l[bl] - r[bl]; }
 
-    auto norm_l         = frobenius_norm(l);
-    auto norm_r         = frobenius_norm(r);
-    auto norm_l_minus_r = frobenius_norm(diff);
-
-    return norm_l_minus_r / std::max(norm_l, norm_r);
+    return norm(diff) / std::max(norm(l), norm(r));
   }
 
   frame_t make_zero_frame(std::vector<int> const &shape_of_frame) {
