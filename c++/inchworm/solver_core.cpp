@@ -396,7 +396,7 @@ namespace inchworm {
           else
             ++below_threshold_count;
 
-          if (params.verbosity > 0) PRINT(op);
+          if (params.verbosity > 0) std::cout << op << "\n";
         }
         for (auto &op : all_d_dag_ops[bl]) {
           if (mpi::all_reduce(tau_diff_stat[bl](op.idx, op.dag, 0).n_lin_bins()) > 0)
@@ -409,7 +409,7 @@ namespace inchworm {
           else
             ++below_threshold_count;
 
-          if (params.verbosity > 0) PRINT(op);
+          if (params.verbosity > 0) std::cout << op << "\n";
         }
         tau_diff_stat_done = true;
       }
