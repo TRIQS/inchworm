@@ -21,20 +21,22 @@ namespace inchworm {
     interpolator_t() = default;
 
     interpolator_t(u_tau_t::real_t const &u_tau, long n_tau)
-       : n_blocks(u_tau.size()), n_tau(n_tau), datx(n_tau), daty(n_blocks), interp(n_blocks), acc(n_blocks) {
+       : n_blocks(u_tau.size()),
+         n_tau(n_tau),
+         datx(n_tau),
+         daty(n_blocks),
+         interp(n_blocks),
+         accel_ptr(gsl_interp_accel_alloc()) {
       EXPECTS(n_tau >= 2);
 
       for (auto n : range(n_tau)) datx[n] = u_tau[0].mesh()[n];
 
       for (auto bl : range(n_blocks)) {
-        daty[bl] = u_tau[bl].data()(range(n_tau), nda::ellipsis());
-
+        daty[bl]   = u_tau[bl].data()(range(n_tau), nda::ellipsis());
         interp[bl] = nda::array<gsl_interp *, 2>{u_tau[bl].target_shape()};
-        acc[bl]    = nda::array<gsl_interp_accel *, 2>{u_tau[bl].target_shape()};
 
         for (auto [i, j] : product_range(u_tau[bl].target_shape())) {
           interp[bl](i, j) = (n_tau == 2) ? gsl_interp_alloc(gsl_interp_linear, n_tau) : gsl_interp_alloc(gsl_interp_cspline, n_tau);
-          acc[bl](i, j)    = gsl_interp_accel_alloc();
           gsl_interp_init(interp[bl](i, j), datx.data(), daty[bl](range(), i, j).data(), n_tau);
         }
       }
@@ -52,14 +54,12 @@ namespace inchworm {
       for (auto bl : range(n_blocks)) {
         if (not interp.empty())
           for (auto *ptr : interp[bl]) gsl_interp_free(ptr);
-        if (not acc.empty())
-          for (auto *ptr : acc[bl]) gsl_interp_accel_free(ptr);
       }
     }
 
     double operator()(int bl, double tau, int i, int j) const {
       EXPECTS(0 <= tau && tau <= datx[n_tau - 1]);
-      double res = gsl_interp_eval(interp[bl](i, j), datx.data(), daty[bl](range(), i, j).data(), tau, acc[bl](i, j));
+      double res = gsl_interp_eval(interp[bl](i, j), datx.data(), daty[bl](range(), i, j).data(), tau, accel_ptr.get());
       if (interpolation_failed) { // Store data to file and abort
         {
           auto f = h5::file("interp_debug.h5", 'w');
@@ -90,7 +90,11 @@ namespace inchworm {
     nda::array<nda::array<double, 3, nda::F_layout>, 1> daty;
 
     nda::array<nda::array<gsl_interp *, 2>, 1> interp;
-    nda::array<nda::array<gsl_interp_accel *, 2>, 1> acc;
+
+    struct accel_deleter {
+      void operator()(auto *p) noexcept { gsl_interp_accel_free(p); };
+    };
+    std::unique_ptr<gsl_interp_accel, accel_deleter> accel_ptr = {};
 
     inline static bool interpolation_failed       = false;
     inline static auto const custom_error_handler = [](const char *, const char *file, int line, int gsl_errno) {
