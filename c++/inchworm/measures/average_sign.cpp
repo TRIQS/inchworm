@@ -2,8 +2,7 @@
 
 namespace inchworm::measures {
 
-  average_sign::average_sign(params_t const &, config_t const &config, qmc_results_t &results)
-     : config(config), average_sign_ref(results.average_sign) {
+  average_sign::average_sign(params_t const &, config_t const &, qmc_results_t &results) : average_sign_ref(results.average_sign) {
     average_sign_ref = 0.0;
   }
 

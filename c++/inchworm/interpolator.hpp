@@ -22,7 +22,6 @@ namespace inchworm {
 
     interpolator_t(u_tau_t::real_t const &u_tau, long n_tau)
        : n_blocks(u_tau.size()),
-         n_tau(n_tau),
          datx(n_tau),
          daty(n_blocks),
          interp(n_blocks),
@@ -84,7 +83,6 @@ namespace inchworm {
 
     private:
     int n_blocks = 0;
-    int n_tau    = 0;
 
     nda::array<double, 1> datx;
     nda::array<nda::array<double, 3, nda::F_layout>, 1> daty;

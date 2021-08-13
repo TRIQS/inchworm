@@ -8,8 +8,8 @@ namespace inchworm::measures {
        config(config),
        curr_frame(frame),
        acc_frame(results.frame),
-       errs_frame(results.errs_frame),
        acc_frame_zeroth_order(results.frame_zeroth_order),
+       errs_frame(results.errs_frame),
        lin_acc(frame.size(), accumulator<scalar_t>{0.0, 0, 1000}) {
     for (auto &bl : acc_frame) bl = 0.;
     for (auto &bl : acc_frame_zeroth_order) bl = 0.;

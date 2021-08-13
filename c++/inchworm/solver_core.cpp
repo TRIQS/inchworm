@@ -379,7 +379,7 @@ namespace inchworm {
     auto gather_tau_diff_stat = [&]() {
       // Gather the tau-diff statistics
       moves::base_move::gather_tau_diff_stat = true;
-      int status                             = mc.warmup(params.n_warmup_cycles, length_cycle, triqs::utility::clock_callback(params.max_time));
+      mc.warmup(params.n_warmup_cycles, length_cycle, triqs::utility::clock_callback(params.max_time));
       moves::base_move::gather_tau_diff_stat = false;
 
       // Adjust the operators accordingly

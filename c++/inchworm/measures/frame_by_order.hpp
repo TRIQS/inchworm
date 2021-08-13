@@ -24,11 +24,11 @@ namespace inchworm::measures {
     // The current frame
     frame_t const &curr_frame;
 
-    // Errors of the frame_[k][0](0,0) components
-    std::vector<scalar_t> &err_frame_by_order;
-
     // Reference to the accumulation vector
     std::vector<frame_t> &acc_frame_by_order;
+
+    // Errors of the frame_[k][0](0,0) components
+    std::vector<scalar_t> &err_frame_by_order;
 
     // A zero initialized frame
     frame_t zero_frame;

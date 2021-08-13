@@ -2,7 +2,7 @@
 
 namespace inchworm::measures {
 
-  order_histogram::order_histogram(params_t const &params, config_t const &config, qmc_results_t &results)
+  order_histogram::order_histogram(params_t const &, config_t const &config, qmc_results_t &results)
      : config(config), order_histogram_ref(results.order_histogram) {
     order_histogram_ref.clear();
   }
