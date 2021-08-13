@@ -6,7 +6,7 @@ namespace inchworm::measures {
   frame::frame(params_t const &params, config_t const &config, frame_t const &frame, qmc_results_t &results)
      : verbosity(params.verbosity),
        config(config),
-       frame_(frame),
+       curr_frame(frame),
        acc_frame(results.frame),
        errs_frame(results.errs_frame),
        acc_frame_zeroth_order(results.frame_zeroth_order),
@@ -19,19 +19,19 @@ namespace inchworm::measures {
     scalar_t s = sign / (config.imp_weight);
 
     // Perform sampling and error analysis
-    for (int bl : range(frame_.size()))
-      if (not frame_[bl].empty()) {
-        acc_frame[bl] += s * frame_[bl];
-        lin_acc[bl] << s * frame_[bl](0, 0);
+    for (int bl : range(curr_frame.size()))
+      if (not curr_frame[bl].empty()) {
+        acc_frame[bl] += s * curr_frame[bl];
+        lin_acc[bl] << s * curr_frame[bl](0, 0);
       } else {
         lin_acc[bl] << 0.0;
       }
 
     // For normalization purpose, we sample the zeroth order separatly:
-    if (config.size() == 0) acc_frame_zeroth_order += s * frame_;
+    if (config.size() == 0) acc_frame_zeroth_order += s * curr_frame;
 
     // Perform an autocorrelation analysis on the trace
-    log_acc << trace(s * frame_);
+    log_acc << trace(s * curr_frame);
 
     ++N_samples;
   }
@@ -42,7 +42,7 @@ namespace inchworm::measures {
     N_samples              = mpi::all_reduce(N_samples, comm);
 
     // Estimate error of the frame[0](0,0) component
-    for (int bl : range(frame_.size())) errs_frame[bl] = N_samples * std::get<1>(mean_and_err_mpi(comm, lin_acc[bl].linear_bins()));
+    for (int bl : range(curr_frame.size())) errs_frame[bl] = N_samples * std::get<1>(mean_and_err_mpi(comm, lin_acc[bl].linear_bins()));
 
     auto [errs, counts] = log_acc.log_bin_errors_all_reduce(comm);
 

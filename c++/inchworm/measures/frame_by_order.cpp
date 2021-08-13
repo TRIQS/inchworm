@@ -4,7 +4,7 @@ namespace inchworm::measures {
 
   frame_by_order::frame_by_order(params_t const &, config_t const &config, frame_t const &frame, qmc_results_t &results)
      : config(config),
-       frame_(frame),
+       curr_frame(frame),
        acc_frame_by_order(results.frame_by_order),
        err_frame_by_order(results.err_frame_by_order),
        zero_frame(results.frame) {
@@ -14,18 +14,18 @@ namespace inchworm::measures {
   void frame_by_order::accumulate(scalar_t sign) {
 
     // Resize the vector as necessary
-    size_t pert_order = config.size();
-    if (pert_order >= acc_frame_by_order.size()) {
-      size_t new_size = std::max(2 * acc_frame_by_order.size(), pert_order + 1);
+    size_t k = config.size();
+    if (k >= acc_frame_by_order.size()) {
+      size_t new_size = std::max(2 * acc_frame_by_order.size(), k + 1);
       acc_frame_by_order.resize(new_size, zero_frame);
       lin_acc_by_order.resize(new_size, empty_lin_acc);
     }
 
     scalar_t s = sign / (config.imp_weight);
-    for (int bl : range(frame_.size())) {
-      if (not frame_[bl].empty()) { acc_frame_by_order[pert_order][bl] += s * frame_[bl]; }
+    for (int bl : range(curr_frame.size())) {
+      if (not curr_frame[bl].empty()) { acc_frame_by_order[k][bl] += s * curr_frame[bl]; }
     }
-    if (not frame_[0].empty()) lin_acc_by_order[pert_order] << s * frame_[0](0, 0);
+    if (not curr_frame[0].empty()) lin_acc_by_order[k] << s * curr_frame[0](0, 0);
   }
 
   void frame_by_order::collect_results(mpi::communicator const &comm) {

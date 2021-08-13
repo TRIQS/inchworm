@@ -25,7 +25,7 @@ namespace inchworm::measures {
     config_t const &config;
 
     // The current frame
-    frame_t const &frame;
+    frame_t const &curr_frame;
 
     // The Result Container
     qmc_results_t &results;

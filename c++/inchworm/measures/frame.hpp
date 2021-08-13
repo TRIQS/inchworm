@@ -25,7 +25,7 @@ namespace inchworm::measures {
     config_t const &config;
 
     // The current frame
-    frame_t const &frame_;
+    frame_t const &curr_frame;
 
     // Errors of the (0,0) component for each frame[bl]
     std::vector<scalar_t> &errs_frame;

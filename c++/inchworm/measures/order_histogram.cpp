@@ -4,12 +4,12 @@ namespace inchworm::measures {
 
   order_histogram::order_histogram(params_t const &params, config_t const &config, qmc_results_t &results)
      : config(config), order_histogram_ref(results.order_histogram) {
-    order_histogram_ref = std::vector<double>(1 + params.max_order.value_or(10), 0.0);
+    order_histogram_ref.clear();
   }
 
   void order_histogram::accumulate(scalar_t) {
-    int k = config.size();
-    while (k >= order_histogram_ref.size()) order_histogram_ref.resize(2 * order_histogram_ref.size());
+    size_t k = config.size();
+    if (k >= order_histogram_ref.size()) order_histogram_ref.resize(std::max(2 * order_histogram_ref.size(), k + 1), 0.0);
     order_histogram_ref[k] += 1.;
     ++N;
   }
