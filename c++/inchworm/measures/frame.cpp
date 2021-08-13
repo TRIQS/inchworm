@@ -65,7 +65,7 @@ namespace inchworm::measures {
 
     // Reset the accumulators
     log_acc = {0.0, -1, 0};
-    lin_acc = {curr_frame.size(), accumulator<scalar_t>{0.0, 0, 1000}};
+    lin_acc = {size_t(curr_frame.size()), accumulator<scalar_t>{0.0, 0, 1000}};
   }
 
 } // namespace inchworm::measures
