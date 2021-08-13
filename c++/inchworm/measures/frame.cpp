@@ -10,7 +10,10 @@ namespace inchworm::measures {
        acc_frame(results.frame),
        errs_frame(results.errs_frame),
        acc_frame_zeroth_order(results.frame_zeroth_order),
-       lin_acc(frame.size(), accumulator<scalar_t>{0.0, 0, 1000}) {}
+       lin_acc(frame.size(), accumulator<scalar_t>{0.0, 0, 1000}) {
+    for (auto &bl : acc_frame) bl = 0.;
+    for (auto &bl : acc_frame_zeroth_order) bl = 0.;
+  }
 
   void frame::accumulate(scalar_t sign) {
 
@@ -62,7 +65,7 @@ namespace inchworm::measures {
 
     // Reset the accumulators
     log_acc = {0.0, -1, 0};
-    lin_acc = {0.0, 0, 1000};
+    lin_acc = {curr_frame.size(), accumulator<scalar_t>{0.0, 0, 1000}};
   }
 
 } // namespace inchworm::measures

@@ -8,6 +8,7 @@ namespace inchworm::measures {
        acc_frame_by_order(results.frame_by_order),
        err_frame_by_order(results.err_frame_by_order),
        zero_frame(results.frame) {
+    acc_frame_by_order.clear();
     for (auto &bl : zero_frame) bl = 0.;
   }
 
