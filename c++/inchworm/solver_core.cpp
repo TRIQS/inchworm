@@ -492,7 +492,8 @@ namespace inchworm {
       if (params.verbosity > 0) std::printf("     Accumulating ...\n");
       results.status = mc.accumulate(params.n_cycles, length_cycle, triqs::utility::clock_callback(params.max_time));
       mc.collect_results(world);
-      if (params.max_order && params.measure_order_histogram && results.order_histogram[*params.max_order] > 0.0)
+      if (params.max_order && params.measure_order_histogram && results.order_histogram.size() > *params.max_order
+          && results.order_histogram[*params.max_order] > 0.0)
         if (world.rank() == 0)
           std::cout << "WARNING: Maximum perturbation order was sampled with a finite probability of " << results.order_histogram[*params.max_order]
                     << ". Check convergence w.r.t. max_order!\n";
