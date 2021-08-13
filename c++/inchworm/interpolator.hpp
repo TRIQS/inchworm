@@ -57,7 +57,7 @@ namespace inchworm {
     }
 
     double operator()(int bl, double tau, int i, int j) const {
-      EXPECTS(0 <= tau && tau <= datx[n_tau - 1]);
+      EXPECTS(0 <= tau && tau <= datx[datx.size() - 1]);
       double res = gsl_interp_eval(interp[bl](i, j), datx.data(), daty[bl](range(), i, j).data(), tau, accel_ptr.get());
       if (interpolation_failed) { // Store data to file and abort
         {
@@ -72,12 +72,12 @@ namespace inchworm {
     }
 
     nda::matrix<double> operator()(int bl, double tau) const {
-      EXPECTS(0 <= tau && tau <= datx[n_tau - 1]);
+      EXPECTS(0 <= tau && tau <= datx[datx.size() - 1]);
       return nda::array_adapter{interp[bl].shape(), [&](int i, int j) { return (*this)(bl, tau, i, j); }};
     }
 
     nda::array<nda::matrix<double>, 1> operator()(double tau) const {
-      EXPECTS(0 <= tau && tau <= datx[n_tau - 1]);
+      EXPECTS(0 <= tau && tau <= datx[datx.size() - 1]);
       return nda::array_adapter{std::array{n_blocks}, [&](int bl) { return (*this)(bl, tau); }};
     }
 
