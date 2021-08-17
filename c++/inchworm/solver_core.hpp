@@ -23,6 +23,17 @@ namespace inchworm {
     // Imaginary-time Hybridization function
     hyb_tau_t Delta_tau;
 
+    // Imaginary-time Hybridization function of the discrete bath approximation
+    std::optional<hyb_tau_t> Delta_tau_ED;
+
+    // Adjusted imaginary-time Hybridization function used for the MC sampling process
+    // If Delta_tau_ED.has_value() -> Delta_tau - Delta_tau_ED.value()
+    // else -> Delta_tau
+    hyb_tau_t Delta_tau_tilde;
+
+    // Impurity Hamiltonian including the discrete bath approximation
+    many_body_op_t h_bath_ED = {};
+
     /// The propagator in imaginary time
     u_tau_t u_tau;
 
@@ -33,15 +44,18 @@ namespace inchworm {
     frame_t frame_zeroth_order;
 
     // The fundamental operator set associated with constr_params.gf_struct
-    fundamental_operator_set fops;
+    fundamental_operator_set fops = {};
 
     /// The vector of all creation operators
-    std::vector<std::vector<fop_t>> all_d_ops;
+    std::vector<std::vector<fop_t>> all_d_ops = {};
 
     /// The vector of all annihilation operators
-    std::vector<std::vector<fop_t>> all_d_dag_ops;
+    std::vector<std::vector<fop_t>> all_d_dag_ops = {};
 
     private:
+    /// Block structure of the local problem, including discrete bath sites to approximate Delta
+    gf_struct_t gf_struct_ED;
+
     // Mpi Communicator
     mpi::communicator world;
 

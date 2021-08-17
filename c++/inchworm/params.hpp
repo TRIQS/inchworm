@@ -69,7 +69,7 @@ namespace inchworm {
     // ----------- System Specific -----------
 
     /// Impurity Hamiltonian
-    many_body_operator h_imp;
+    many_body_op_t h_imp;
 
     /// Partition method
     /// type: str
@@ -79,6 +79,9 @@ namespace inchworm {
     /// type: list(Operator)
     /// default: [Total Particle Number]
     std::vector<many_body_op_t> quantum_numbers = {};
+
+    /// Discrete number of sites per block in Delta_tau used to approximate the bath
+    int n_bath_sites_ED = 0;
 
     // ----------- QMC Specific -----------
 

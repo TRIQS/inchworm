@@ -48,6 +48,7 @@ namespace inchworm {
     h5_write(grp, "h_imp", sp.h_imp);
     h5_write(grp, "partition_method", sp.partition_method);
     h5_write(grp, "quantum_numbers", sp.quantum_numbers);
+    h5_write(grp, "n_bath_sites_ED", sp.n_bath_sites_ED);
     h5_write(grp, "max_prob_zeroth_order", sp.max_prob_zeroth_order);
     h5_write(grp, "n_cycles", sp.n_cycles);
     h5_write(grp, "length_cycle", sp.length_cycle);
@@ -72,6 +73,7 @@ namespace inchworm {
     h5_read(grp, "h_imp", sp.h_imp);
     h5_read(grp, "partition_method", sp.partition_method);
     h5_read(grp, "quantum_numbers", sp.quantum_numbers);
+    h5_try_read(grp, "n_bath_sites_ED", sp.n_bath_sites_ED);
     h5_try_read(grp, "max_prob_zeroth_order", sp.max_prob_zeroth_order);
     h5_read(grp, "n_cycles", sp.n_cycles);
     h5_read(grp, "length_cycle", sp.length_cycle);

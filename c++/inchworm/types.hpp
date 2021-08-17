@@ -70,7 +70,7 @@ namespace inchworm {
   using triqs::hilbert_space::gf_struct_t;
 
   // The many body operator type
-  using many_body_op_t = triqs::operators::many_body_operator_generic<h_scalar_t>;
+  using many_body_op_t = triqs::operators::many_body_operator_generic<scalar_t>;
 
   /// Container type of the propagator
   using u_tau_t = block_gf<imtime, target_t>;

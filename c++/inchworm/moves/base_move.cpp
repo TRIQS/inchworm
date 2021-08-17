@@ -31,7 +31,7 @@ namespace inchworm::moves {
 
     // ------ Calculate the hybridization weight -------
 
-    auto hyb_mat     = diagram::hyb_matrix_t(diagram, solver.Delta_tau);
+    auto hyb_mat     = diagram::hyb_matrix_t(diagram, solver.Delta_tau_tilde);
     prop_config.sign = diagram.sign();
 
     if (params.use_bare_propagator)

@@ -20,21 +20,10 @@ namespace inchworm {
     // Initialize the hybridization function
     Delta_tau = hyb_tau_t{{cp.beta, Fermion, cp.n_tau}, cp.gf_struct};
 
-    // Determine basis of operators to use
-    fops = fundamental_operator_set{cp.gf_struct};
-
-    // Initialize containers containing all d and d_dag operators by block
-    long n_bl = cp.gf_struct.size();
+    // Partially initialize containers containing all d and d_dag operators by block
+    long n_bl = constr_params.gf_struct.size();
     all_d_ops.resize(n_bl, {});
     all_d_dag_ops.resize(n_bl, {});
-
-    for (auto bl : range(n_bl)) {
-      auto [bl_name, bl_size] = cp.gf_struct[bl];
-      for (auto idx : range(bl_size)) {
-        all_d_ops[bl].push_back({0.0, false, fops[{bl_name, idx}], bl, idx});
-        all_d_dag_ops[bl].push_back({0.0, true, fops[{bl_name, idx}], bl, idx});
-      }
-    }
   }
 
   // -------------------------------------------------------------------------------
@@ -64,11 +53,34 @@ namespace inchworm {
     // Store solve_params
     last_solve_params = sp;
 
+    // Initialize Delta_tilde
+    if (Delta_tau_ED.has_value())
+      Delta_tau_tilde = Delta_tau - Delta_tau_ED.value();
+    else
+      Delta_tau_tilde = Delta_tau;
+
+    /// Construct the block structure of the local problem, including discrete bath sites
+    gf_struct_ED = constr_params.gf_struct;
+    for (auto &[bl_name, bl_size] : gf_struct_ED) { bl_size += sp.n_bath_sites_ED; }
+
+    // Determine basis of operators to use
+    fops = fundamental_operator_set{gf_struct_ED};
+
+    for (auto [bl, bl_pair] : enumerate(constr_params.gf_struct)) {
+      auto [bl_name, bl_size] = bl_pair;
+      all_d_ops[bl].clear();
+      all_d_dag_ops[bl].clear();
+      for (auto idx : range(bl_size)) {
+        all_d_ops[bl].push_back({0.0, false, fops[{bl_name, idx}], bl, idx});
+        all_d_dag_ops[bl].push_back({0.0, true, fops[{bl_name, idx}], bl, idx});
+      }
+    }
+
     if (sp.partition_method == "automatic") {
       ASSERT(sp.quantum_numbers.empty());
-      ad_imp = {sp.h_imp, create_effective_hyb(constr_params.gf_struct), fops}; // FIXME Change order of arguments?
+      ad_imp = {sp.h_imp + h_bath_ED, create_effective_hyb(constr_params.gf_struct), fops}; // FIXME Change order of arguments?
     } else if (sp.partition_method == "quantum_numbers") {
-      ad_imp = {sp.h_imp, fops, sp.quantum_numbers};
+      ad_imp = {sp.h_imp + h_bath_ED, fops, sp.quantum_numbers};
     } else {
       TRIQS_RUNTIME_ERROR
          << "Unknown partition method! Please choose 'automatic' or 'quantum_number' and set solve_params.quantum_numbers accordingly";
@@ -539,6 +551,9 @@ namespace inchworm {
     h5_write(grp, "last_solve_params", s.last_solve_params);
     h5_write(grp, "ad_imp", s.ad_imp);
     h5_write(grp, "Delta_tau", s.Delta_tau);
+    h5_write(grp, "Delta_tau_ED", s.Delta_tau_ED);
+    h5_write(grp, "Delta_tau_tilde", s.Delta_tau_tilde);
+    h5_write(grp, "h_bath_ED", s.h_bath_ED);
     h5_write(grp, "u_tau", s.u_tau);
   }
 
@@ -550,6 +565,9 @@ namespace inchworm {
     h5_read(grp, "last_solve_params", s.last_solve_params);
     h5_read(grp, "ad_imp", s.ad_imp);
     h5_read(grp, "Delta_tau", s.Delta_tau);
+    h5_try_read(grp, "Delta_tau_ED", s.Delta_tau_ED);
+    h5_try_read(grp, "Delta_tau_tilde", s.Delta_tau_tilde);
+    h5_try_read(grp, "h_bath_ED", s.h_bath_ED);
     h5_read(grp, "u_tau", s.u_tau);
     return s;
   }
