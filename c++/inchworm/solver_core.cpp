@@ -115,6 +115,17 @@ namespace inchworm {
     // Initialize solver
     this->init(solve_params);
 
+    // Check that u_tau_ is compatible with ad_imp
+    if (u_tau_.size() != ad_imp.n_subspaces())
+      throw std::runtime_error{
+         fmt::format("u_tau and ad_imp have mismatching number of blocks: {} vs {}", u_tau_.size(), ad_imp.n_subspaces()).c_str()};
+    for (auto bl : range(ad_imp.n_subspaces())) {
+      auto bl_size_u  = u_tau_[bl].target_shape()[0];
+      auto bl_size_ad = ad_imp.get_subspace_dim(bl);
+      if (bl_size_u != bl_size_ad)
+        throw std::runtime_error{fmt::format("Propagator block-size for bl={} does not match atomdiag: {} vs {}", bl, bl_size_u, bl_size_ad).c_str()};
+    }
+
     // precalculated propagator:
     u_tau = u_tau_;
 
