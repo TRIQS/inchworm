@@ -29,7 +29,7 @@ namespace inchworm {
   struct qmc_results_t {
 
     frame_t frame;
-    frame_t frame_zeroth_order;
+    scalar_t weight_zeroth_order = 0.0;
     std::vector<scalar_t> errs_frame;
 
     std::vector<frame_t> frame_by_order;
@@ -47,6 +47,7 @@ namespace inchworm {
     qmc_results_t(std::vector<int> const &shape_of_frame);
 
     void normalize(scalar_t normalization_cte);
+
     void print(int verbosity = 4);
   };
 

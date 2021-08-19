@@ -8,11 +8,11 @@ namespace inchworm::measures {
        config(config),
        curr_frame(frame),
        acc_frame(results.frame),
-       acc_frame_zeroth_order(results.frame_zeroth_order),
+       weight_zeroth_order(results.weight_zeroth_order),
        errs_frame(results.errs_frame),
        lin_acc(frame.size(), accumulator<scalar_t>{0.0, 0, 1000}) {
     for (auto &bl : acc_frame) bl = 0.;
-    for (auto &bl : acc_frame_zeroth_order) bl = 0.;
+    weight_zeroth_order = 0.;
   }
 
   void frame::accumulate(scalar_t sign) {
@@ -31,7 +31,7 @@ namespace inchworm::measures {
       }
 
     // For normalization purpose, we sample the zeroth order separatly:
-    if (config.size() == 0) acc_frame_zeroth_order += s * curr_frame;
+    if (config.size() == 0) weight_zeroth_order += s;
 
     // Perform an autocorrelation analysis on the trace
     log_acc << trace(s * curr_frame);
@@ -40,9 +40,9 @@ namespace inchworm::measures {
   }
 
   void frame::collect_results(mpi::communicator const &comm) {
-    acc_frame_zeroth_order = mpi::all_reduce(acc_frame_zeroth_order, comm);
-    acc_frame              = mpi::all_reduce(acc_frame, comm);
-    N_samples              = mpi::all_reduce(N_samples, comm);
+    acc_frame           = mpi::all_reduce(acc_frame, comm);
+    weight_zeroth_order = mpi::all_reduce(weight_zeroth_order, comm);
+    N_samples           = mpi::all_reduce(N_samples, comm);
 
     // Estimate error of the frame[0](0,0) component
     for (int bl : range(curr_frame.size())) errs_frame[bl] = N_samples * std::get<1>(mean_and_err_mpi(comm, lin_acc[bl].linear_bins()));

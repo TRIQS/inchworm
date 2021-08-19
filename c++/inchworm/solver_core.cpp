@@ -104,13 +104,6 @@ namespace inchworm {
     // Execute cthyb sampling
     auto res = qmc_step(solve_params, tau_split, tau_max, use_bare_propagator, MODE::PROPAGATOR);
 
-    // Finding the ratio between theoretical zeroth order and Monte Carlo sampled zeroth order.
-    // Usually first value of u_frame is the most significant, due to order of eigenvalues.
-    double normalization_cte = norm(res.frame_zeroth_order) / norm(frame_zeroth_order);
-    if (normalization_cte == 0)
-      TRIQS_RUNTIME_ERROR << "Failed to calculate normalization ratio due to insufficient sampling of zeroth order propagator";
-    res.normalize(normalization_cte);
-
     // Assign the last obtained frame error
     errs_frame = res.errs_frame;
 
@@ -149,12 +142,6 @@ namespace inchworm {
 
     // Execute u_tau self-consistency sampling
     auto res = qmc_step(solve_params, tau_split, tau_max, false, MODE::PROPAGATOR);
-
-    // Normalize the result using the ratio between theoretical zeroth order and Monte Carlo sampled zeroth order
-    double normalization_cte = norm(res.frame_zeroth_order) / norm(frame_zeroth_order);
-    if (normalization_cte == 0)
-      TRIQS_RUNTIME_ERROR << "Failed to calculate normalization ratio due to insufficient sampling of zeroth order propagator";
-    res.normalize(normalization_cte);
 
     // Assign the last obtained frame error
     errs_frame = res.errs_frame;
@@ -213,12 +200,6 @@ namespace inchworm {
 
       // calculation of the Monte Carlo solution:
       auto res = qmc_step(solve_params, tau_split, tau_max, use_bare_propagator, MODE::PROPAGATOR);
-
-      // Normalize the result using the ratio between theoretical zeroth order and Monte Carlo sampled zeroth order
-      double normalization_cte = norm(res.frame_zeroth_order) / norm(frame_zeroth_order);
-      if (normalization_cte == 0)
-        TRIQS_RUNTIME_ERROR << "Failed to calculate normalization ratio due to insufficient sampling of zeroth order propagator";
-      res.normalize(normalization_cte);
 
       // Print results
       res.print(solve_params.verbosity);
@@ -300,11 +281,8 @@ namespace inchworm {
       // calculation of the Monte Carlo solution:
       auto res = qmc_step(solve_params, tau_split, beta, false, MODE::GREENFUNCTION);
 
-      // Normalize the result using the ratio between theoretical zeroth order and Monte Carlo sampled zeroth order
-      scalar_t normalization_cte = Tr_Ubeta * norm(res.frame_zeroth_order) / norm(frame_zeroth_order);
-      if (normalization_cte == scalar_t{0})
-        TRIQS_RUNTIME_ERROR << "Failed to calculate normalization ratio due to insufficient sampling of zeroth order Green function";
-      res.normalize(normalization_cte);
+      // Green function results need to be normalized by Tr_Ubeta
+      res.normalize(Tr_Ubeta);
 
       // Print results
       res.print(solve_params.verbosity);
@@ -526,6 +504,9 @@ namespace inchworm {
     //if (params.post_process) { post_process(params); }
 
     if (results.status == 2) std::cerr << "Warning: Inchworm was interrupted by signal\n";
+
+    // Normalize final result by the sampling weight of the zeroth order
+    results.normalize(results.weight_zeroth_order);
 
     return results;
   }

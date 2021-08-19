@@ -29,7 +29,7 @@ namespace inchworm::measures {
 
     // References to the accumulation frames
     frame_t &acc_frame;
-    frame_t &acc_frame_zeroth_order;
+    scalar_t &weight_zeroth_order;
 
     // Errors of the (0,0) component for each frame[bl]
     std::vector<scalar_t> &errs_frame;

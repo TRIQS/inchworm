@@ -26,11 +26,12 @@
 namespace inchworm {
 
   qmc_results_t::qmc_results_t(std::vector<int> const &shape_of_frame)
-     : frame{make_zero_frame(shape_of_frame)}, frame_zeroth_order{make_zero_frame(shape_of_frame)}, errs_frame(shape_of_frame.size(), 0.0){};
+     : frame{make_zero_frame(shape_of_frame)}, errs_frame(shape_of_frame.size(), 0.0){};
 
   void qmc_results_t::normalize(scalar_t normalization_cte) {
+    if (normalization_cte == scalar_t{0.}) TRIQS_RUNTIME_ERROR << "Error in result normalization: Division by zero.";
     frame /= normalization_cte;
-    frame_zeroth_order /= normalization_cte;
+    weight_zeroth_order /= normalization_cte;
     for (auto &err_frame_bl : errs_frame) err_frame_bl /= normalization_cte;
     for (auto &frame_k : frame_by_order) frame_k /= normalization_cte;
   };
