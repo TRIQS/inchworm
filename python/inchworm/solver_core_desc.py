@@ -163,7 +163,7 @@ c.add_member(c_name = "Delta_tau_tilde",
              read_only= True,
              doc = r"""""")
 
-c.add_member(c_name = "h_bath_ED",
+c.add_member(c_name = "h_hyb_ED",
              c_type = "inchworm::many_body_op_t",
              read_only= False,
              doc = r"""""")

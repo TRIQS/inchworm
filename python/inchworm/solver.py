@@ -60,7 +60,7 @@ class Solver(SolverCore):
 
     def fit_bath(self, n_bath_sites_ED):
         if n_bath_sites_ED == 0:
-            self.h_bath_ED = Operator()
+            self.h_hyb_ED = Operator()
             self.Delta_ED = None
             return
 
@@ -74,7 +74,7 @@ class Solver(SolverCore):
         c_dag_vec = { b: numpy.matrix([[c_dag(b,o) for o in range(bl_sizes[b] + n_bath_sites_ED)]]) for b in bl_names }
         c_vec =     { b: numpy.matrix([[c(b,o)] for o in range(bl_sizes[b] + n_bath_sites_ED)]) for b in bl_names }
 
-        self.h_bath_ED = sum(c_dag_vec[b] * numpy.block([[numpy.zeros((bl_sizes[b], bl_sizes[b])), V_mats[n]], [V_mats[n].conj().T, numpy.diag(eps_lst[n])]]) * c_vec[b] for n, b in enumerate(bl_names))[0,0]
+        self.h_hyb_ED = sum(c_dag_vec[b] * numpy.block([[numpy.zeros((bl_sizes[b], bl_sizes[b])), V_mats[n]], [V_mats[n].conj().T, numpy.diag(eps_lst[n])]]) * c_vec[b] for n, b in enumerate(bl_names))[0,0]
         mpi_print("", flush=True)
 
     def solve(self, **kwargs):

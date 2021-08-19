@@ -78,9 +78,9 @@ namespace inchworm {
 
     if (sp.partition_method == "automatic") {
       ASSERT(sp.quantum_numbers.empty());
-      ad_imp = {sp.h_imp + h_bath_ED, create_effective_hyb(constr_params.gf_struct), fops}; // FIXME Change order of arguments?
+      ad_imp = {sp.h_imp + h_hyb_ED, create_effective_hyb(constr_params.gf_struct), fops}; // FIXME Change order of arguments?
     } else if (sp.partition_method == "quantum_numbers") {
-      ad_imp = {sp.h_imp + h_bath_ED, fops, sp.quantum_numbers};
+      ad_imp = {sp.h_imp + h_hyb_ED, fops, sp.quantum_numbers};
     } else {
       TRIQS_RUNTIME_ERROR
          << "Unknown partition method! Please choose 'automatic' or 'quantum_number' and set solve_params.quantum_numbers accordingly";
@@ -534,7 +534,7 @@ namespace inchworm {
     h5_write(grp, "Delta_tau", s.Delta_tau);
     h5_write(grp, "Delta_tau_ED", s.Delta_tau_ED);
     h5_write(grp, "Delta_tau_tilde", s.Delta_tau_tilde);
-    h5_write(grp, "h_bath_ED", s.h_bath_ED);
+    h5_write(grp, "h_hyb_ED", s.h_hyb_ED);
     h5_write(grp, "u_tau", s.u_tau);
   }
 
@@ -548,7 +548,7 @@ namespace inchworm {
     h5_read(grp, "Delta_tau", s.Delta_tau);
     h5_try_read(grp, "Delta_tau_ED", s.Delta_tau_ED);
     h5_try_read(grp, "Delta_tau_tilde", s.Delta_tau_tilde);
-    h5_try_read(grp, "h_bath_ED", s.h_bath_ED);
+    h5_try_read(grp, "h_hyb_ED", s.h_hyb_ED);
     h5_read(grp, "u_tau", s.u_tau);
     return s;
   }

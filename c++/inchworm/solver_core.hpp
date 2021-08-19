@@ -31,8 +31,8 @@ namespace inchworm {
     // else -> Delta_tau
     hyb_tau_t Delta_tau_tilde;
 
-    // Impurity Hamiltonian including the discrete bath approximation
-    many_body_op_t h_bath_ED = {};
+    // Hamiltonian respresenting the discretized bath
+    many_body_op_t h_hyb_ED = {};
 
     /// The propagator in imaginary time
     u_tau_t u_tau;
