@@ -97,13 +97,13 @@ class Solver(SolverCore):
         # Call the core solver's solve routine
         return SolverCore.solve(self, **kwargs)
 
-    def solve_self_consistently(self, **kwargs):
-        self.fit_bath(kwargs.get("n_bath_sites_ED",0))
-        return SolverCore.solve_self_consistently(self, **kwargs)
+    def solve_self_consistently(self, solve_params, *args):
+        self.fit_bath(solve_params.get("n_bath_sites_ED",0))
+        return SolverCore.solve_self_consistently(self, solve_params, *args)
 
-    def solve_inchworm(self, **kwargs):
-        self.fit_bath(kwargs.get("n_bath_sites_ED",0))
-        return SolverCore.solve_inchworm(self, kwargs)
+    def solve_inchworm(self, solve_params, *args):
+        self.fit_bath(solve_params.get("n_bath_sites_ED",0))
+        return SolverCore.solve_inchworm(self, solve_params, *args)
 
     def solve_green(self, **kwargs):
         self.fit_bath(kwargs.get("n_bath_sites_ED",0))
