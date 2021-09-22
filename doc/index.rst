@@ -1,12 +1,18 @@
 .. _welcome:
 
 inchworm
-=========
+*********
 
-.. sidebar:: inchworm 2.2.0
+.. sidebar:: inchworm 3.0.0
 
-   This is the homepage of inchworm v2.2.0.
+   This is the homepage of inchworm v3.0.0.
    For changes see the :ref:`changelog page <changelog>`.
+      
+      .. image:: _static/logo_github.png
+         :width: 75%
+         :align: center
+         :target: https://github.com/triqs/inchworm
+
 
 An example application using cpp2py and :ref:`TRIQS <triqslibs:welcome>`.
 
@@ -15,5 +21,13 @@ and the comments in the sources and headers.
 
 Learn how to use inchworm in the :ref:`documentation`.
 
+    
 .. toctree::
    :maxdepth: 2
+   :hidden:
+
+   install
+   documentation
+   issues
+   ChangeLog.md
+   about
