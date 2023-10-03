@@ -72,10 +72,10 @@ namespace inchworm {
   void h5_read(h5::group h5group, std::string subgroup_name, container_set &c) {
     auto grp = h5group.open_group(subgroup_name);
     h5_read(grp, "G_tau", c.G_tau);
-    h5_try_read(grp, "errs_frame", c.errs_frame);
-    h5_try_read(grp, "G_tau_by_order", c.G_tau_by_order);
-    h5_try_read(grp, "u_tau_by_order", c.u_tau_by_order);
-    h5_try_read(grp, "err_frame_by_order", c.err_frame_by_order);
+    h5::try_read(grp, "errs_frame", c.errs_frame);
+    h5::try_read(grp, "G_tau_by_order", c.G_tau_by_order);
+    h5::try_read(grp, "u_tau_by_order", c.u_tau_by_order);
+    h5::try_read(grp, "err_frame_by_order", c.err_frame_by_order);
     h5_read(grp, "order_histograms", c.order_histograms);
   }
 

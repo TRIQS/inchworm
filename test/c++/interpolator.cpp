@@ -47,7 +47,7 @@ void test_function(auto &&f, double tol = 0.001) {
 
   // Initialize Green Functions on Finer Mesh
   // using both interpolation and the exact function
-  for (auto const &tau : tau_mesh_fine)
+  for (auto tau : tau_mesh_fine)
     for (auto bl : range(gf_struct.size())) {
       auto n_orb = gf_struct[bl].second;
       for (auto [i, j] : product_range(n_orb, n_orb)) {

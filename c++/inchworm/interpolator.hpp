@@ -36,7 +36,7 @@ namespace inchworm {
 
         for (auto [i, j] : product_range(u_tau[bl].target_shape())) {
           interp[bl](i, j) = (n_tau == 2) ? gsl_interp_alloc(gsl_interp_linear, n_tau) : gsl_interp_alloc(gsl_interp_cspline, n_tau);
-          gsl_interp_init(interp[bl](i, j), datx.data(), daty[bl](range(), i, j).data(), n_tau);
+          gsl_interp_init(interp[bl](i, j), datx.data(), daty[bl](range::all, i, j).data(), n_tau);
         }
       }
     }
@@ -58,12 +58,12 @@ namespace inchworm {
 
     double operator()(int bl, double tau, int i, int j) const {
       EXPECTS(0 <= tau && tau <= datx[datx.size() - 1]);
-      double res = gsl_interp_eval(interp[bl](i, j), datx.data(), daty[bl](range(), i, j).data(), tau, accel_ptr.get());
+      double res = gsl_interp_eval(interp[bl](i, j), datx.data(), daty[bl](range::all, i, j).data(), tau, accel_ptr.get());
       if (interpolation_failed) { // Store data to file and abort
         {
           auto f = h5::file("interp_debug.h5", 'w');
           h5::write(f, "xvals", datx);
-          h5::write(f, "yvals", daty[bl](range(), i, j));
+          h5::write(f, "yvals", daty[bl](range::all, i, j));
           h5::write(f, "tau", tau);
         }
         std::abort();

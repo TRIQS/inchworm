@@ -33,8 +33,8 @@
 #include <triqs/test_tools/gfs.hpp>
 
 using namespace inchworm;
-using mat_t = triqs::arrays::matrix<double>;
-using vec_t = triqs::arrays::array<double, 1>;
+using mat_t = nda::matrix<double>;
+using vec_t = nda::array<double, 1>;
 
 // Prepare fundamental operator set
 inline std::pair<fundamental_operator_set, std::vector<many_body_op_t>> make_fops(int n_site, int n_bath, int bath_offset, int n_spin) {
@@ -137,7 +137,7 @@ inline std::tuple<solver_core, solve_params_t, u_tau_t, g_tau_t> test_setup(int 
   sp.n_cycles = 50000;
 
   // create hybridization:
-  for (auto const &tau : S.Delta_tau[0].mesh()) {
+  for (auto tau : S.Delta_tau[0].mesh()) {
     for (int block = 0; block < cp.gf_struct.size(); block++) {
       S.Delta_tau[block][tau] = 0.0;
       for (auto [i, j, n] : product_range(n_site, n_site, n_bath)) {

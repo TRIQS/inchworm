@@ -546,9 +546,9 @@ namespace inchworm {
     h5_read(grp, "last_solve_params", s.last_solve_params);
     h5_read(grp, "ad_imp", s.ad_imp);
     h5_read(grp, "Delta_tau", s.Delta_tau);
-    h5_try_read(grp, "Delta_tau_ED", s.Delta_tau_ED);
-    h5_try_read(grp, "Delta_tau_tilde", s.Delta_tau_tilde);
-    h5_try_read(grp, "h_hyb_ED", s.h_hyb_ED);
+    h5::try_read(grp, "Delta_tau_ED", s.Delta_tau_ED);
+    h5::try_read(grp, "Delta_tau_tilde", s.Delta_tau_tilde);
+    h5::try_read(grp, "h_hyb_ED", s.h_hyb_ED);
     h5_read(grp, "u_tau", s.u_tau);
     return s;
   }

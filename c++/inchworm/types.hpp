@@ -19,7 +19,7 @@ namespace inchworm {
   using namespace std::complex_literals; // Complex Unity 1i
   using namespace triqs::gfs;
   using namespace triqs::mesh;
-  using namespace triqs::arrays;
+  using namespace nda;
   using namespace triqs::operators;
   using namespace triqs::hilbert_space;
   using namespace triqs::utility;
