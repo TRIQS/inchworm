@@ -118,7 +118,7 @@ inline std::tuple<solver_core, solve_params_t, u_tau_t, g_tau_t> test_setup(int 
   // === Define the 3 different atom_diag objects (ED calculation with Triqs)
 
   auto ad_tot  = inchworm::atom_diag(h_imp + h_bath + h_hyb, fops_tot);
-  auto ad_imp  = inchworm::atom_diag(h_imp, create_effective_hyb(cp.gf_struct), fops_imp);
+  auto ad_imp  = inchworm::atom_diag(h_imp, fops_imp, create_effective_hyb(cp.gf_struct));
   auto ad_bath = inchworm::atom_diag(h_bath, fops_bath);
 
   // Calculate exact propagator

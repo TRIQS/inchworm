@@ -78,7 +78,7 @@ namespace inchworm {
 
     if (sp.partition_method == "automatic") {
       ASSERT(sp.quantum_numbers.empty());
-      ad_imp = {sp.h_imp + h_hyb_ED, create_effective_hyb(constr_params.gf_struct), fops}; // FIXME Change order of arguments?
+      ad_imp = {sp.h_imp + h_hyb_ED, fops, create_effective_hyb(constr_params.gf_struct)};
     } else if (sp.partition_method == "quantum_numbers") {
       ad_imp = {sp.h_imp + h_hyb_ED, fops, sp.quantum_numbers};
     } else {
@@ -186,8 +186,8 @@ namespace inchworm {
       //
       // tau_split < tau_max <= beta
       //
-      double tau_split = use_cthyb ? 0.0 : u_tau[0].mesh().index_to_point(n - 1);
-      double tau_max   = u_tau[0].mesh().index_to_point(n);
+      double tau_split = use_cthyb ? 0.0 : u_tau[0].mesh()(n - 1);
+      double tau_max   = u_tau[0].mesh()(n);
 
       // use bare propagator (cthyb) only on the first inchworm iteration:
       bool use_bare_propagator = (n == 1) or use_cthyb;
@@ -273,7 +273,7 @@ namespace inchworm {
       //
       // 0 < tau_split < beta
       //
-      double tau_split = G_tau[0].mesh().index_to_point(n);
+      double tau_split = G_tau[0].mesh()(n);
 
       // Initialize the zeroth order frame
       frame_zeroth_order = make_bare_g_frame(ad_imp, u_tau, constr_params.gf_struct, tau_split, beta);

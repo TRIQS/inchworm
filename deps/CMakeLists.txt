@@ -65,12 +65,3 @@ external_dependency(GTest
   BUILD_ALWAYS
   EXCLUDE_FROM_ALL
 )
-
-# -- FMT --
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-external_dependency(fmt
-  GIT_REPO https://github.com/fmtlib/fmt
-  GIT_TAG master
-  BUILD_ALWAYS
-  EXCLUDE_FROM_ALL
-)

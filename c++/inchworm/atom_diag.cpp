@@ -39,7 +39,7 @@ namespace inchworm {
     return u_frame;
   }
 
-  u_tau_t make_ED_propagator(atom_diag const &ad_tot, atom_diag const &ad_imp, atom_diag const &ad_bath, double beta, int n_tau) {
+  u_tau_t make_ED_propagator(atom_diag const &ad_tot, atom_diag const &ad_imp, atom_diag const &ad_bath, double beta, long n_tau) {
 
     auto u_tau = u_tau_t{{beta, Fermion, n_tau}, ad_imp.get_subspace_dims()};
     u_tau() = 0.0;
@@ -65,7 +65,7 @@ namespace inchworm {
     return make_g_frame_from_l_and_r(ad_imp, gf_struct, l, r);
   }
 
-  u_partial_t get_op_block_matrix(atom_diag const &ad, std::string const &bl_name, int idx, bool op_dag) {
+  u_partial_t get_op_block_matrix(atom_diag const &ad, std::string const &bl_name, long idx, bool op_dag) {
     auto res = u_partial_t(ad.n_subspaces());
 
     auto lidx = ad.get_fops()[{bl_name, idx}];

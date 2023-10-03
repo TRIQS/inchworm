@@ -3,7 +3,7 @@ add_library(${PROJECT_NAME}_c ${sources})
 add_library(${PROJECT_NAME}::${PROJECT_NAME}_c ALIAS ${PROJECT_NAME}_c)
 
 # Link against triqs and enable warnings
-target_link_libraries(${PROJECT_NAME}_c PUBLIC triqs fmt PRIVATE $<BUILD_INTERFACE:${PROJECT_NAME}_warnings>)
+target_link_libraries(${PROJECT_NAME}_c PUBLIC triqs fmt::fmt PRIVATE $<BUILD_INTERFACE:${PROJECT_NAME}_warnings>)
 
 # Configure target and compilation
 set_target_properties(${PROJECT_NAME}_c PROPERTIES
@@ -12,13 +12,12 @@ set_target_properties(${PROJECT_NAME}_c PROPERTIES
 )
 target_include_directories(${PROJECT_NAME}_c PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++>)
 target_include_directories(${PROJECT_NAME}_c SYSTEM INTERFACE $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>)
-target_compile_options(${PROJECT_NAME}_c PUBLIC $<$<CXX_COMPILER_ID:GNU>:-fcoroutines>)
 target_compile_definitions(${PROJECT_NAME}_c PUBLIC
 				INCHWORM_GIT_HASH=${PROJECT_GIT_HASH}
 				TRIQS_GIT_HASH=${TRIQS_GIT_HASH}
-				$<$<CONFIG:Debug>:INCHWORM_DEBUG>
-				$<$<CONFIG:Debug>:TRIQS_DEBUG>
-				$<$<CONFIG:Debug>:TRIQS_ARRAYS_ENFORCE_BOUNDCHECK>
+				$<$<CONFIG:Debug,RelWithDebInfo>:INCHWORM_DEBUG>
+				$<$<CONFIG:Debug,RelWithDebInfo>:TRIQS_DEBUG>
+				$<$<CONFIG:Debug,RelWithDebInfo>:TRIQS_ARRAYS_ENFORCE_BOUNDCHECK>
 				$<$<BOOL:${Debug_Prints}>:INCHWORM_DEBUG_PRINTS>
 				$<$<BOOL:${Hybridization_is_complex}>:HYBRIDIZATION_IS_COMPLEX>
 				$<$<BOOL:${Impurity_Hamiltonian_is_complex}>:IMPURITY_HAMILTONIAN_IS_COMPLEX>
@@ -26,9 +25,8 @@ target_compile_definitions(${PROJECT_NAME}_c PUBLIC
 			  )
 
 # Install library and headers
-install(TARGETS ${PROJECT_NAME}_c fmt EXPORT ${PROJECT_NAME}-targets DESTINATION lib)
+install(TARGETS ${PROJECT_NAME}_c EXPORT ${PROJECT_NAME}-targets DESTINATION lib)
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} DESTINATION include FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h")
-
 
 # ========= GSL ==========
 
@@ -59,7 +57,7 @@ if(ANALYZE_SOURCES)
 	TARGET ${PROJECT_NAME}_c
 	COMMAND ${CPPCHECK_EXECUTABLE}
 	  --enable=warning,style,performance,portability
-	  --std=c++20
+	  --std=c++23
 	  --template=gcc
 	  --verbose
 	  --force
@@ -74,31 +72,36 @@ if(ANALYZE_SOURCES)
 
 endif()
 
-
 # ========= Dynamic Analyzer Checks ==========
 
 option(ASAN OFF "Compile library and executables with LLVM Address Sanitizer")
-option(UBSAN OFF "Compile library and executables with LLVM Undefined Behavior Sanitizer")
-option(MSAN OFF "Compile library and executables with LLVM Memory Sanitizer")
-
 if(ASAN)
   if(NOT TARGET asan)
-    find_package(sanitizer REQUIRED "asan")
+    find_package(sanitizer REQUIRED COMPONENTS asan)
   endif()
   target_link_libraries(${PROJECT_NAME}_c PUBLIC $<BUILD_INTERFACE:asan>)
 endif()
+
+option(UBSAN OFF "Compile library and executables with LLVM Undefined Behavior Sanitizer")
 if(UBSAN)
   if(NOT TARGET ubsan)
-    find_package(sanitizer REQUIRED "ubsan")
+    find_package(sanitizer REQUIRED COMPONENTS ubsan)
   endif()
   target_link_libraries(${PROJECT_NAME}_c PUBLIC $<BUILD_INTERFACE:ubsan>)
 endif()
 
+option(MSAN OFF "Compile library and executables with LLVM Memory Sanitizer")
 if(MSAN)
   if(NOT TARGET msan)
-    add_library(msan INTERFACE)
-    target_compile_options(msan INTERFACE -fsanitize=memory -fno-omit-frame-pointer -fsanitize-recover=all -fsanitize-memory-track-origins=2 -O1 -ggdb3)
-    target_link_libraries(msan INTERFACE "-fsanitize=memory -fno-omit-frame-pointer -fsanitize-recover=all -fsanitize-memory-track-origins=2")
+    find_package(sanitizer REQUIRED COMPONENTS msan)
   endif()
-  target_link_libraries(inchworm_c PUBLIC $<BUILD_INTERFACE:msan>)
+  target_link_libraries(${PROJECT_NAME}_c PUBLIC $<BUILD_INTERFACE:msan>)
+endif()
+
+option(TSAN OFF "Compile library and executables with LLVM Thread Sanitizer")
+if(TSAN)
+  if(NOT TARGET tsan)
+    find_package(sanitizer REQUIRED COMPONENTS tsan)
+  endif()
+  target_link_libraries(${PROJECT_NAME}_c PUBLIC $<BUILD_INTERFACE:tsan>)
 endif()

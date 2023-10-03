@@ -46,14 +46,14 @@ namespace inchworm::diagram {
     for (int i = 0; i < order; i++) {
       op_list[2 * i].tau          = d_dag_list[i].tau;
       op_list[2 * i].dag          = true;
-      op_list[2 * i].data_index   = d_dag_list[i].data_index;
+      op_list[2 * i].linear_index = d_dag_list[i].linear_index;
       op_list[2 * i].bl           = d_dag_list[i].bl;
       op_list[2 * i].idx          = d_dag_list[i].idx;
       op_list[2 * i].order_index  = i;
 
       op_list[2 * i + 1].tau          = d_list[i].tau;
       op_list[2 * i + 1].dag          = false;
-      op_list[2 * i + 1].data_index   = d_list[i].data_index;
+      op_list[2 * i + 1].linear_index = d_list[i].linear_index;
       op_list[2 * i + 1].bl           = d_list[i].bl;
       op_list[2 * i + 1].idx          = d_list[i].idx;
       op_list[2 * i + 1].order_index  = i;

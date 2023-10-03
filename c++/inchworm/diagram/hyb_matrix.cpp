@@ -49,7 +49,7 @@ namespace inchworm::diagram {
       if (dtau >= 0.) {
         return Delta[c.bl](dtau)(cdag.idx, c.idx);
       } else {
-        return -Delta[c.bl](Delta[c.bl].beta() + dtau)(cdag.idx, c.idx);
+        return -Delta[c.bl](Delta[c.bl].mesh().beta() + dtau)(cdag.idx, c.idx);
       }
     };
 

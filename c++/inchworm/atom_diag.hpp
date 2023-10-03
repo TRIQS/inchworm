@@ -9,7 +9,7 @@ namespace inchworm {
   many_body_operator create_effective_hyb(gf_struct_t const &gf_struct);
 
   // Given an atom_diag object and the fundamental operator information, retrieve its block matrix representation
-  u_partial_t get_op_block_matrix(atom_diag const &ad, std::string const &bl_name, int idx, bool op_dag);
+  u_partial_t get_op_block_matrix(atom_diag const &ad, std::string const &bl_name, long idx, bool op_dag);
 
   // Given the left and right propagator segment insert all operator
   // flavors and take the trace to get the Green function at a given time
@@ -38,6 +38,6 @@ namespace inchworm {
   frame_t partial_trace_bath(atom_diag const &ad_tot, atom_diag const &ad_target, atom_diag const &ad_bath, double beta, double tau);
 
   // Make an exact diagonalization propagator U = Trace_B [exp(-H_bath *(beta-tau)) exp(-H_tot*tau)  ]  /  Trace_B [ exp(-H_bath*beta) ]
-  u_tau_t make_ED_propagator(atom_diag const &ad_tot, atom_diag const &ad_imp, atom_diag const &ad_bath, double beta, int n_tau);
+  u_tau_t make_ED_propagator(atom_diag const &ad_tot, atom_diag const &ad_imp, atom_diag const &ad_bath, double beta, long n_tau);
 
 } // namespace inchworm

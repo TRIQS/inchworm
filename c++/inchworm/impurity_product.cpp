@@ -11,7 +11,7 @@ namespace inchworm {
     for (long initial_bl : range(ad.n_subspaces())) {
       long curr_bl = initial_bl;
       for (auto const &op : diagram.op_list) {
-        curr_bl = (op.dag ? ad.cdag_connection(op.data_index, curr_bl) : ad.c_connection(op.data_index, curr_bl));
+        curr_bl = (op.dag ? ad.cdag_connection(op.linear_index, curr_bl) : ad.c_connection(op.linear_index, curr_bl));
         if (curr_bl == -1) break;
       }
       // Any non-void block gives us a finite trace contribution
@@ -55,7 +55,7 @@ namespace inchworm {
       // Short-circuit if the product contains a void block, i.e. -1
       long curr_bl = initial_bl;
       for (auto const &op : op_lst) {
-        curr_bl = (op.dag ? ad.cdag_connection(op.data_index, curr_bl) : ad.c_connection(op.data_index, curr_bl));
+        curr_bl = (op.dag ? ad.cdag_connection(op.linear_index, curr_bl) : ad.c_connection(op.linear_index, curr_bl));
         if (curr_bl == -1) break;
       }
       if (curr_bl == -1) {
@@ -68,8 +68,8 @@ namespace inchworm {
       auto mat_bl = u_tau(initial_bl, op_lst.front().tau - tau_min);
       curr_bl     = initial_bl;
       for (auto [i, op] : enumerate(op_lst)) {
-        mat_bl  = (op.dag ? ad.cdag_matrix(op.data_index, curr_bl) : ad.c_matrix(op.data_index, curr_bl)) * mat_bl;
-        curr_bl = (op.dag ? ad.cdag_connection(op.data_index, curr_bl) : ad.c_connection(op.data_index, curr_bl));
+        mat_bl  = (op.dag ? ad.cdag_matrix(op.linear_index, curr_bl) : ad.c_matrix(op.linear_index, curr_bl)) * mat_bl;
+        curr_bl = (op.dag ? ad.cdag_connection(op.linear_index, curr_bl) : ad.c_connection(op.linear_index, curr_bl));
 
         if (i == op_lst.size() - 1)
           mat_bl = u_tau(curr_bl, tau_max - op.tau) * mat_bl;
