@@ -1,6 +1,7 @@
 # ##############################################################################
 #
-# inchworm_tci
+# inchworm - An example application using triqs and cpp2py
+#
 # Copyright (C) ...
 #
 # inchworm is free software: you can redistribute it and/or modify it under the
@@ -30,9 +31,6 @@ get_directory_property(IS_SUBPROJECT PARENT_DIRECTORY)
 # Load TRIQS and CPP2PY
 find_package(TRIQS 3.2 REQUIRED)
 
-# Load xfac
-find_package(xfac REQUIRED)
-
 # Get the git hash & print status
 triqs_get_git_hash_of_source_dir(PROJECT_GIT_HASH)
 message(STATUS "${PROJECT_NAME} version : ${PROJECT_VERSION}")
@@ -55,7 +53,7 @@ endif()
 set(${PROJECT_NAME}_BINARY_DIR ${PROJECT_BINARY_DIR} CACHE STRING "Binary directory of the ${PROJECT_NAME} Project")
 
 # Make additional Find Modules available
-# list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/share/cmake/Modules)
+list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/share/cmake/Modules)
 
 # ############
 # CMake Options
@@ -68,26 +66,26 @@ if(NOT IS_SUBPROJECT)
   message(STATUS "-------- BUILD-TYPE: ${CMAKE_BUILD_TYPE} --------")
 endif()
 
-# # Python Support
-# option(PythonSupport "Build with Python support" ON)
-# if(PythonSupport AND NOT TRIQS_WITH_PYTHON_SUPPORT)
-#   message(FATAL_ERROR "TRIQS was installed without Python support. Cannot build the Python Interface. Disable the build with -DPythonSupport=OFF")
-# endif()
+# Python Support
+option(PythonSupport "Build with Python support" ON)
+if(PythonSupport AND NOT TRIQS_WITH_PYTHON_SUPPORT)
+  message(FATAL_ERROR "TRIQS was installed without Python support. Cannot build the Python Interface. Disable the build with -DPythonSupport=OFF")
+endif()
 
-# # Documentation
-# option(Build_Documentation "Build documentation" OFF)
-# if(NOT IS_SUBPROJECT AND (Build_Documentation AND NOT PythonSupport))
-#   message(FATAL_ERROR "Build_Documentation=ON requires PythonSupport to be enabled")
-# endif()
+# Documentation
+option(Build_Documentation "Build documentation" OFF)
+if(NOT IS_SUBPROJECT AND (Build_Documentation AND NOT PythonSupport))
+  message(FATAL_ERROR "Build_Documentation=ON requires PythonSupport to be enabled")
+endif()
 
-# # Testing
-# option(Build_Tests "Build tests" ON)
-# if(Build_Tests)
-#   enable_testing()
-# endif()
+# Testing
+option(Build_Tests "Build tests" ON)
+if(Build_Tests)
+  enable_testing()
+endif()
 
 # Build static libraries by default
-# option(BUILD_SHARED_LIBS "Enable compilation of shared libraries" OFF)
+option(BUILD_SHARED_LIBS "Enable compilation of shared libraries" OFF)
 
 # ############
 # Global Compilation Settings
@@ -132,45 +130,42 @@ add_subdirectory(deps)
 # Build and install the library
 add_subdirectory(c++/${PROJECT_NAME})
 
-# Build the application
-add_subdirectory(apps)
+# Tests
+if(Build_Tests)
+  add_subdirectory(test)
+endif()
 
-# # Tests
-# if(Build_Tests)
-#   add_subdirectory(test)
-# endif()
+# Python
+if(PythonSupport)
+  add_subdirectory(python/${PROJECT_NAME})
+endif()
 
-# # Python
-# if(PythonSupport)
-#   add_subdirectory(python/${PROJECT_NAME})
-# endif()
+# Docs
+if(NOT IS_SUBPROJECT AND Build_Documentation)
+  add_subdirectory(doc)
+endif()
 
-# # Docs
-# if(NOT IS_SUBPROJECT AND Build_Documentation)
-#   add_subdirectory(doc)
-# endif()
+# Additional configuration files
+add_subdirectory(share)
 
-# # Additional configuration files
-# add_subdirectory(share)
-
-# # add packaging for automatic Versioning
-# add_subdirectory(packaging)
+# add packaging for automatic Versioning
+add_subdirectory(packaging)
 
 # #############
 # Debian Package
 
-# option(BUILD_DEBIAN_PACKAGE "Build a deb package" OFF)
-# if(BUILD_DEBIAN_PACKAGE AND NOT IS_SUBPROJECT)
-#   if(NOT CMAKE_INSTALL_PREFIX STREQUAL "/usr")
-#     message(FATAL_ERROR "CMAKE_INSTALL_PREFIX must be /usr for packaging")
-#   endif()
-#   set(CPACK_PACKAGE_NAME ${PROJECT_NAME})
-#   set(CPACK_GENERATOR "DEB")
-#   set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
-#   set(CPACK_PACKAGE_CONTACT "https://github.com/TRIQS/${PROJECT_NAME}")
-#   execute_process(COMMAND dpkg --print-architecture OUTPUT_VARIABLE CMAKE_DEBIAN_PACKAGE_ARCHITECTURE OUTPUT_STRIP_TRAILING_WHITESPACE)
-#   set(CPACK_DEBIAN_PACKAGE_DEPENDS "triqs (>= 3.2)")
-#   set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
-#   set(CPACK_DEBIAN_PACKAGE_GENERATE_SHLIBS ON)
-#   include(CPack)
-# endif()
+option(BUILD_DEBIAN_PACKAGE "Build a deb package" OFF)
+if(BUILD_DEBIAN_PACKAGE AND NOT IS_SUBPROJECT)
+  if(NOT CMAKE_INSTALL_PREFIX STREQUAL "/usr")
+    message(FATAL_ERROR "CMAKE_INSTALL_PREFIX must be /usr for packaging")
+  endif()
+  set(CPACK_PACKAGE_NAME ${PROJECT_NAME})
+  set(CPACK_GENERATOR "DEB")
+  set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
+  set(CPACK_PACKAGE_CONTACT "https://github.com/TRIQS/${PROJECT_NAME}")
+  execute_process(COMMAND dpkg --print-architecture OUTPUT_VARIABLE CMAKE_DEBIAN_PACKAGE_ARCHITECTURE OUTPUT_STRIP_TRAILING_WHITESPACE)
+  set(CPACK_DEBIAN_PACKAGE_DEPENDS "triqs (>= 3.2)")
+  set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+  set(CPACK_DEBIAN_PACKAGE_GENERATE_SHLIBS ON)
+  include(CPack)
+endif()

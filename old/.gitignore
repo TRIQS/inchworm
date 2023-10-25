@@ -7,7 +7,6 @@ build_*
 ./quickvim.sh
 *.swp
 .clangd
-.vscode
 
 doc/notes/inchworm_notes.aux
 doc/notes/inchworm_notes.log
