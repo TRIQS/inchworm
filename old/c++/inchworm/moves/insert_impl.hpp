@@ -44,7 +44,7 @@ namespace inchworm::moves {
 
       double t_ratio1 = insert_single_op_pair(bl1, config);
       if (t_ratio1 == 0.0) return 0.0;
-
+  
       double t_ratio2 = insert_single_op_pair(bl2, config);
 
       return t_ratio1 * t_ratio2;
