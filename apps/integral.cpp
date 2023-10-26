@@ -46,11 +46,12 @@ std::pair<int, int> find_index(const std::vector<int> &block_shape, int iota) {
 
 class BuildConfig {
   public:
-  BuildConfig(frame_t const &frame_zeroth_order, double tau_split, double tau_max, std::vector<std::vector<fop_t>> const &all_d_ops,
+  BuildConfig(frame_t frame_zeroth_order, double tau_split, double tau_max, std::vector<std::vector<fop_t>> const &all_d_ops,
               std::vector<std::vector<fop_t>> const &all_d_dag_ops, std::vector<int> const &block_shape, constr_params_t const &cp,
               hyb_tau_t const &Delta_tau, atom_diag const &ad_imp, interpolator_t<scalar_t> const &u_interpolator)
-     : frame_zeroth_order(frame_zeroth_order),
-       tau_split(tau_split),
+     : 
+     frame_zeroth_order(frame_zeroth_order),
+     tau_split(tau_split),
        tau_max(tau_max),
        all_d_ops(all_d_ops),
        all_d_dag_ops(all_d_dag_ops),
@@ -60,7 +61,7 @@ class BuildConfig {
        ad_imp(ad_imp),
        u_interpolator(u_interpolator) {}
 
-  config_t operator()(auto const &tau_d_list, auto const &tau_d_dag_list, auto const &iota_d_list, auto const &iota_d_dag_list) {
+  std::pair<config_t, frame_t> operator()(auto const &tau_d_list, auto const &tau_d_dag_list, auto const &iota_d_list, auto const &iota_d_dag_list) {
     auto config = config_t(frame_zeroth_order, cp.gf_struct, {0.0, tau_split});
     for (auto i : range(tau_d_list.size())) {
       auto [bl, subspace_index]         = find_index(block_shape, iota_d_list[i]);
@@ -85,11 +86,11 @@ class BuildConfig {
                                  * impurity_product(ad_imp, diagram, tau_split, 0, &u_interpolator));
     auto imp_weight = norm(frame);
     std::cout << "imp_weight: " << imp_weight << std::endl;
-    return config;
+    return {config, frame * hyb_wight};
   }
 
   private:
-  frame_t const &frame_zeroth_order;
+  frame_t frame_zeroth_order;
   double tau_split;
   double tau_max;
   std::vector<std::vector<fop_t>> const &all_d_ops;
@@ -123,7 +124,7 @@ int main() {
   auto [Delta_tau, ad_imp, u_tau, G_tau] = test_setup(n_site, n_bath, n_spin, U, mu, t, cp, theta, epsilon);
 
   double tau_max   = cp.beta;
-  double tau_split = cp.beta * 0.8;
+  double tau_split = cp.beta * 0.5;
   std::cout << "Delta_tau shape:" << std::endl;
   print_block_shape(Delta_tau);
   std::cout << "G_tau shape:" << std::endl;
@@ -157,7 +158,7 @@ int main() {
 
   auto d     = all_d_ops[0][0];
   auto d_dag = all_d_dag_ops[0][0];
-  d.tau      = tau_max * 0.5;
+  d.tau      = tau_max * 0.3;
   d_dag.tau  = tau_max * 0.9;
   config.try_insert(d_dag, d);
   d.tau     = tau_max * 0.2;
@@ -185,13 +186,16 @@ int main() {
   auto tau_d_dag_list  = std::vector<double>(order, 0.0);
   auto iota_d_list     = std::vector<int>(order, 0);
   auto iota_d_dag_list = std::vector<int>(order, 0);
-  tau_d_list           = {tau_max * 0.2, tau_max * 0.5};
-  tau_d_dag_list       = {tau_max * 0.9, tau_max * 0.95};
-  iota_d_list          = {0, 0};
-  iota_d_dag_list      = {0, 0};
+  tau_d_list           = {tau_max * 0.2, tau_max * 0.4, tau_max*0.98};
+  tau_d_dag_list       = {tau_max*0.1, tau_max * 0.8, tau_max * 0.95};
+  iota_d_list          = {2,0, 1};
+  iota_d_dag_list      = {1,3, 1};
 
-  auto build_config =
-     BuildConfig(frame_zeroth_order, tau_split, tau_max, all_d_ops, all_d_dag_ops, block_shape, cp, Delta_tau, ad_imp, u_interpolator);
-  auto config_new = build_config(tau_d_list, tau_d_dag_list, iota_d_list, iota_d_dag_list);
+  auto build_config = BuildConfig(frame_zeroth_order, tau_split, tau_max, all_d_ops, all_d_dag_ops, block_shape, cp, Delta_tau, ad_imp, u_interpolator);
+  auto [config_new,u_tau_max]   = build_config(tau_d_list, tau_d_dag_list, iota_d_list, iota_d_dag_list);
+  for(auto mat : u_tau_max){
+    std::cout << "mat size: " << mat.size() << std::endl;
+    print_matrix(mat,1.0);
+  }
   return 0;
 }
