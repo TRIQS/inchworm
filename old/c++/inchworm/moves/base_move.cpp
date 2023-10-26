@@ -104,7 +104,7 @@ namespace inchworm::moves {
       std::printf("proper_enum w.hyb         =% 4.7f \n", diagram::proper_enum(diagram, hyb_mat));
       std::printf("inclusion_exclusion w.hyb =% 4.7f \n", diagram::inclusion_exclusion(diagram, hyb_mat));
     }
-    getchar();
+    getchar();  
 #endif
 
     return ratio;
