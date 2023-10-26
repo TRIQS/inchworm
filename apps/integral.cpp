@@ -1,5 +1,6 @@
 #include <iostream>
 #include <vector>
+#include <algorithm>
 
 #include <xfac/grid.h>
 #include <xfac/tensor/tensor_ci.h>
@@ -15,8 +16,69 @@
 #include <inchworm/interpolator.hpp>
 #include "./hubbard.hpp"
 
-using namespace xfac;
 using namespace inchworm;
+
+template <typename T> void print_vector(const std::vector<T> &vec) {
+  for (auto v : vec) std::cout << v << ' ';
+  std::cout << std::endl;
+}
+
+std::vector<std::pair<std::vector<int>, std::vector<int>>> get_all_order(std::vector<int> const &order_list) {
+  std::vector<std::pair<std::vector<int>, std::vector<int>>> res{};
+  int order = order_list.size() / 2;
+  std::vector<int> indicator(2 * order);
+  std::fill(indicator.begin(), indicator.begin() + order, 0);
+  std::fill(indicator.begin() + order, indicator.end(), 1);
+  do {
+    std::vector<int> order_d_ls     = {};
+    std::vector<int> order_d_dag_ls = {};
+    for (int i = 0; i < 2 * order; ++i) {
+      if (indicator[i] == 0) {
+        order_d_ls.push_back(order_list[i]);
+      } else {
+        order_d_dag_ls.push_back(order_list[i]);
+      }
+    }
+    // std::cout << "tau_d_ls size: " << tau_d_ls.size() << std::endl;
+    // std::cout << "tau_d_dag_ls size: " << tau_d_dag_ls.size() << std::endl;
+    // Display the generated sub-vectors
+    std::cerr << "First: " << std::endl;
+    print_vector(order_d_ls);
+    std::cerr << "Second: " << std::endl;
+    print_vector(order_d_dag_ls);
+    std::cerr << "---\n";
+    res.push_back(std::make_pair(order_d_ls, order_d_dag_ls));
+  } while (std::next_permutation(indicator.begin(), indicator.end()));
+  return res;
+}
+
+template <typename T> std::vector<T> getElements(const std::vector<int> &indices, const std::vector<T> &values) {
+  std::vector<T> result;
+  for (int index : indices) {
+    if (index >= 0 && index < values.size()) {
+      result.push_back(values[index]);
+    } else {
+      // Handle out-of-range indices according to your requirements
+      // For now, simply skipping them
+    }
+  }
+  return result;
+}
+
+std::vector<double> changeVariable(const std::vector<double> &nus, double tau_max) {
+  std::vector<double> taus(nus.size());
+  taus[0] = nus[0] * tau_max;
+
+  for (size_t it = 1; it < taus.size(); ++it) { taus[it] = taus[it - 1] + nus[it] * (tau_max - taus[it - 1]); }
+
+  return taus;
+}
+
+double jacobian(const std::vector<double> &taus, double tau_max) {
+  double prod = tau_max;
+  for (size_t j = 1; j < taus.size(); ++j) { prod *= (tau_max - taus[j - 1]); }
+  return std::abs(prod);
+}
 
 template <typename T> void print_block_shape(block_gf<imtime, T> const &x_tau) {
   std::cout << "number of taus: " << x_tau[0].mesh().size() << std::endl;
@@ -77,17 +139,30 @@ class BuildConfig {
       config.split_times.push_back(d.tau);
       config.split_times.push_back(d_dag.tau);
     }
-    auto diagram = diagram::time_diagram_t{config, {tau_split}};
-    auto hyb_mat = diagram::hyb_matrix_t(diagram, Delta_tau);
-    sign = diagram.sign();
-    hyb_weight   = inclusion_exclusion(diagram, hyb_mat);
-    u_products   = make_frame(impurity_product(ad_imp, diagram, tau_max, tau_split, &u_interpolator)
-                              * impurity_product(ad_imp, diagram, tau_split, 0, &u_interpolator));
+    // auto diagram = diagram::time_diagram_t{config, {tau_split}};
+    // auto hyb_mat = diagram::hyb_matrix_t(diagram, Delta_tau);
+    // sign = diagram.sign();
+    // hyb_weight   = inclusion_exclusion(diagram, hyb_mat);
+    // u_products   = make_frame(impurity_product(ad_imp, diagram, tau_max, tau_split, &u_interpolator)
+    //                           * impurity_product(ad_imp, diagram, tau_split, 0, &u_interpolator));
     // for (auto u_products_bl : u_products) { print_matrix(u_products_bl); }
     // auto imp_weight = norm(u_products);
     // print_configuration(diagram);
     // std::cout << "hyb_weight: " << hyb_weight << std::endl;
     // std::cout << "imp_weight: " << imp_weight << std::endl;
+  }
+
+  void evaluate_hyb_weight() {
+    auto diagram = diagram::time_diagram_t{config, {tau_split}};
+    auto hyb_mat = diagram::hyb_matrix_t(diagram, Delta_tau);
+    sign         = diagram.sign();
+    hyb_weight   = inclusion_exclusion(diagram, hyb_mat);
+  }
+
+  void evaluate_u_products() {
+    auto diagram = diagram::time_diagram_t{config, {tau_split}};
+    u_products   = make_frame(impurity_product(ad_imp, diagram, tau_max, tau_split, &u_interpolator)
+                              * impurity_product(ad_imp, diagram, tau_split, 0, &u_interpolator));
   }
 
   public:
@@ -115,25 +190,25 @@ int main() {
 
   constr_params_t cp;
   cp.beta        = 2.0;
-  cp.gf_struct   = {{"up", 2}, {"dn", 2}};
+  cp.gf_struct   = {{"up", 1}};
   cp.n_tau_green = 5;
   cp.n_tau_inch  = 21;
   cp.n_tau       = 10001;
 
-  mat_t theta   = {{0.1, 0.3, 0.4}, {0.1, 0.2, 0.4}};
-  vec_t epsilon = {1.0, -1.0, 1.2};
+  mat_t theta   = {{1.0}};
+  vec_t epsilon = {1.0};
 
-  int n_site = 2;
+  int n_site = 1;
   int n_bath = epsilon.size();
   int n_spin = cp.gf_struct.size();
-  double U   = 1.0;
-  double mu  = 1.0;
-  double t   = 1.0;
+  double U   = 0.0;
+  double mu  = 0.0;
+  double t   = 0.0;
 
   auto [Delta_tau, ad_imp, u_tau, G_tau] = test_setup(n_site, n_bath, n_spin, U, mu, t, cp, theta, epsilon);
 
   double tau_max   = cp.beta;
-  double tau_split = cp.beta * 0.5;
+  double tau_split = cp.beta * 0.855;
   std::cout << "Delta_tau shape:" << std::endl;
   print_block_shape(Delta_tau);
   std::cout << "G_tau shape:" << std::endl;
@@ -187,35 +262,80 @@ int main() {
   // auto imp_weight = norm(frame);
   // std::cout << "imp_weight: " << imp_weight << std::endl;
 
-  //test  generate configuration
+  //generate configuration from function
   std::vector<int> block_shape = {};
   for (auto [bl, bl_pair] : enumerate(cp.gf_struct)) {
     auto [bl_name, bl_size] = bl_pair;
     block_shape.push_back(bl_size);
   }
-  std::vector<double> tau_d_list     = {tau_max * 0.2, tau_max * 0.4, tau_max * 0.98};
-  std::vector<double> tau_d_dag_list = {tau_max * 0.1, tau_max * 0.3, tau_max * 0.95};
-  std::vector<int> iota_d_list       = {3, 0, 1};
-  std::vector<int> iota_d_dag_list   = {1, 0, 2};
+  std::vector<int> iota_d_list       = {0,0,0};
+  std::vector<int> iota_d_dag_list   = {0,0,0};
 
   auto build_config =
      BuildConfig(frame_zeroth_order, tau_split, tau_max, all_d_ops, all_d_dag_ops, block_shape, cp, Delta_tau, ad_imp, u_interpolator);
 
   auto get_hyb_weight_sign = [&build_config, &iota_d_list, &iota_d_dag_list](auto const &tau_d_list, auto const &tau_d_dag_list) {
     build_config(tau_d_list, tau_d_dag_list, iota_d_list, iota_d_dag_list);
-    return build_config.hyb_weight* build_config.sign;
+    build_config.evaluate_hyb_weight();
+    return build_config.hyb_weight * build_config.sign;
   };
 
-  auto get_u_tmax_00 = [&build_config, &iota_d_list, &iota_d_dag_list](auto const &tau_d_list, auto const &tau_d_dag_list) {
-    build_config(tau_d_list, tau_d_dag_list, iota_d_list, iota_d_dag_list);
-    if (build_config.u_products[0].size() == 0) return 0.0;
-    return build_config.u_products[0](0, 0) * build_config.hyb_weight* build_config.sign;
+  auto get_u_tau_max_00 = [&build_config, &iota_d_list, &iota_d_dag_list](auto const &tau_d_list, auto const &tau_d_dag_list) {
+    auto my_config = build_config;
+    my_config(tau_d_list, tau_d_dag_list, iota_d_list, iota_d_dag_list);
+    my_config.evaluate_hyb_weight();
+    my_config.evaluate_u_products();
+    if (my_config.u_products[0].size() == 0) return 0.0;
+    return trace(my_config.u_products)* my_config.hyb_weight * my_config.sign;
   };
-
-  auto hyb_weight_sign = get_hyb_weight_sign(tau_d_list, tau_d_dag_list);
-  std::cout << "hyb_weight_sign: " << hyb_weight_sign << std::endl;
-  auto u_products_00 = get_u_tmax_00(tau_d_list, tau_d_dag_list);
-  std::cout << "u_products_00: " << u_products_00 << std::endl;
+  // test decomposition of u_products_00
+  auto [nui, wi]          = xfac::grid::QuadratureGK15(0, 1);
+  int bondDim             = 40;
+  int sweepBound          = 10;
+  int n                   = 6;
+  double integral         = 0.0;
+  std::vector<int> pivot1 = {0,0,0, 14, 14,14};
+  
+  std::vector<double> nu1;
+  for (int i = 0; i < pivot1.size(); i++) { nu1.push_back(nui[pivot1[i]]); }
+  std::cout << "nu1: ";
+  print_vector(nu1);
+  std::vector<int> range(n);
+  std::iota(range.begin(), range.end(), 0);
+  auto order_list_pair = get_all_order(range);
+  long count           = 0;
+  auto f               = [&get_u_tau_max_00, &tau_max, &count, &order_list_pair](std::vector<double> nus) {
+    auto taus  = changeVariable(nus, tau_max);
+    double sum = 0.0;
+    for (auto [order_c_list, order_c_dag_list] : order_list_pair) {
+      sum += get_u_tau_max_00(getElements(order_c_list, taus), getElements(order_c_dag_list, taus));
+    }
+    count++;
+    double j = jacobian(taus, tau_max);
+    // std::cerr << "end taus:" << std::endl;
+    // print_vector(taus);
+    // std::cerr <<std::endl;
+    return sum * j;
+  };
+  std::cout << std::setprecision(17) << "f(nu1): " << f(nu1) << std::endl;
+  std::cout << "tci1" << std::endl;
+  auto ci1 = xfac::CTensorCI<double, double>(f, std::vector(n, nui), {.pivot1 = pivot1});
+  for (int i = 0; i < sweepBound; i++) {
+    ci1.iterate();
+    integral = ci1.sumWeighted(std::vector(n, wi));
+    std::cout << i << " " << count << " " << ci1.pivotError[ci1.pivotError.size() - 1] << " " << integral << std::endl;
+  }
+  // std::cout << "tci2" << std::endl;
+  // auto ci2 = xfac::CTensorCI2<double, double>(f, std::vector(n, nui), {.bond_dim = bondDim, .pivot1 = pivot1});
+  // for (int i = 0; i < sweepBound; i++) {
+  //   ci2.iterate();
+  //   if (i == sweepBound - 1) { ci2.makeCanonical(); }
+  //   integral = ci2.tt.sum(std::vector(n, wi));
+  //   std::cout << i << " " << count << " " << ci2.pivotError[ci2.pivotError.size() - 1] << " " << integral << std::endl;
+  // }
+  std::cout << "frame_order_zeroth 00: "<< frame_zeroth_order[0](0,0) << std::endl;
+  std::cout << "zero_order + first order "<< frame_zeroth_order[0](0,0) + integral<< std::endl;
+  std::cout << "u_tau_max_00: "<< u_interpolator(tau_max)[0](0,0) << std::endl;
 
   return 0;
 }
