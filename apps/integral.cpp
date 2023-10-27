@@ -16,6 +16,25 @@
 #include <inchworm/interpolator.hpp>
 #include "./hubbard.hpp"
 
+#include <boost/math/quadrature/gauss_kronrod.hpp>
+
+template <int n> inline auto QuadratureGK(double a = 0, double b = 1) {
+  // can be obtained at boost::math::quadrature::gauss_kronrod<double, 15>
+  //static const vector<double> abscissa={0, 0.2077849550078985, 0.4058451513773972, 0.5860872354676911, 0.7415311855993945, 0.8648644233597691, 0.9491079123427585, 0.9914553711208126};
+  //static const vector<double> weights={0.2094821410847278, 0.2044329400752989, 0.1903505780647854, 0.1690047266392679, 0.1406532597155259, 0.1047900103222502, 0.06309209262997856, 0.02293532201052922};
+  static const auto abscissa = boost::math::quadrature::gauss_kronrod<double, n>::abscissa();
+  static const auto weights  = boost::math::quadrature::gauss_kronrod<double, n>::weights();
+  int nq                     = 2 * abscissa.size() - 1;
+  std::vector<double> xi(nq), weight(nq);
+  double factor = 0.5 * (b - a);
+  for (uint i = 0; i < abscissa.size(); i++) {
+    xi[nq / 2 + i]     = factor * (abscissa[i] + 1) + a;
+    weight[nq / 2 + i] = weight[nq / 2 - i] = weights[i] * factor;
+    xi[nq / 2 - i]                          = factor * (-abscissa[i] + 1) + a;
+  }
+  return make_pair(xi, weight);
+}
+
 using namespace inchworm;
 
 template <typename T> void print_vector(const std::vector<T> &vec) {
@@ -42,11 +61,11 @@ std::vector<std::pair<std::vector<int>, std::vector<int>>> get_all_order(std::ve
     // std::cout << "tau_d_ls size: " << tau_d_ls.size() << std::endl;
     // std::cout << "tau_d_dag_ls size: " << tau_d_dag_ls.size() << std::endl;
     // Display the generated sub-vectors
-    std::cerr << "First: " << std::endl;
-    print_vector(order_d_ls);
-    std::cerr << "Second: " << std::endl;
-    print_vector(order_d_dag_ls);
-    std::cerr << "---\n";
+    // std::cerr << "First: " << std::endl;
+    // print_vector(order_d_ls);
+    // std::cerr << "Second: " << std::endl;
+    // print_vector(order_d_dag_ls);
+    // std::cerr << "---\n";
     res.push_back(std::make_pair(order_d_ls, order_d_dag_ls));
   } while (std::next_permutation(indicator.begin(), indicator.end()));
   return res;
@@ -108,7 +127,7 @@ std::pair<int, int> find_index(const std::vector<int> &block_shape, int iota) {
 
 class BuildConfig {
   public:
-  BuildConfig(frame_t frame_zeroth_order, double tau_split, double tau_max, std::vector<std::vector<fop_t>> const &all_d_ops,
+  BuildConfig(frame_t &frame_zeroth_order, double tau_split, double tau_max, std::vector<std::vector<fop_t>> const &all_d_ops,
               std::vector<std::vector<fop_t>> const &all_d_dag_ops, std::vector<int> const &block_shape, constr_params_t const &cp,
               hyb_tau_t const &Delta_tau, atom_diag const &ad_imp, interpolator_t<scalar_t> const &u_interpolator)
      : frame_zeroth_order(frame_zeroth_order),
@@ -168,9 +187,8 @@ class BuildConfig {
   public:
   hyb_scalar_t hyb_weight;
   frame_t u_products;
-  double sign;
+  int sign;
 
-  private:
   config_t config;
   frame_t frame_zeroth_order;
   double tau_split;
@@ -192,7 +210,7 @@ int main() {
   cp.beta        = 2.0;
   cp.gf_struct   = {{"up", 1}};
   cp.n_tau_green = 5;
-  cp.n_tau_inch  = 21;
+  cp.n_tau_inch  = 10001;
   cp.n_tau       = 10001;
 
   mat_t theta   = {{1.0}};
@@ -208,7 +226,7 @@ int main() {
   auto [Delta_tau, ad_imp, u_tau, G_tau] = test_setup(n_site, n_bath, n_spin, U, mu, t, cp, theta, epsilon);
 
   double tau_max   = cp.beta;
-  double tau_split = cp.beta * 0.855;
+  double tau_split = cp.beta * 0.555;
   std::cout << "Delta_tau shape:" << std::endl;
   print_block_shape(Delta_tau);
   std::cout << "G_tau shape:" << std::endl;
@@ -216,6 +234,7 @@ int main() {
   std::cout << "u_tau shape:" << std::endl;
   print_block_shape(u_tau);
   std::cout << "ad_imp.n_subspaces(): " << ad_imp.n_subspaces() << std::endl;
+  std::cout << std::setprecision(17) << std::endl;
   auto u_interpolator        = interpolator_t<scalar_t>(u_tau, u_tau[0].mesh().size());
   frame_t frame_zeroth_order = u_interpolator(tau_max - tau_split) * u_interpolator(tau_split);
 
@@ -268,8 +287,8 @@ int main() {
     auto [bl_name, bl_size] = bl_pair;
     block_shape.push_back(bl_size);
   }
-  std::vector<int> iota_d_list       = {0,0,0};
-  std::vector<int> iota_d_dag_list   = {0,0,0};
+  std::vector<int> iota_d_list     = {0};
+  std::vector<int> iota_d_dag_list = {0};
 
   auto build_config =
      BuildConfig(frame_zeroth_order, tau_split, tau_max, all_d_ops, all_d_dag_ops, block_shape, cp, Delta_tau, ad_imp, u_interpolator);
@@ -285,17 +304,25 @@ int main() {
     my_config(tau_d_list, tau_d_dag_list, iota_d_list, iota_d_dag_list);
     my_config.evaluate_hyb_weight();
     my_config.evaluate_u_products();
-    if (my_config.u_products[0].size() == 0) return 0.0;
-    return trace(my_config.u_products)* my_config.hyb_weight * my_config.sign;
+    // std::cout << std::endl;
+    // std::cout << "split_times: " << std::endl;
+    // print_vector(my_config.config.split_times);
+    // std::cout << "sign: " << my_config.sign << std::endl;
+    // std::cout << "hyb_weight: " << my_config.hyb_weight << std::endl;
+    // std::cout << "u_products: " << std::endl;
+    // for (auto u_products_bl : my_config.u_products) { print_matrix(u_products_bl); }
+    // if (my_config.u_products[0].size() == 0) return 0.0;
+    return trace(my_config.u_products) * my_config.hyb_weight * my_config.sign;
   };
   // test decomposition of u_products_00
-  auto [nui, wi]          = xfac::grid::QuadratureGK15(0, 1);
-  int bondDim             = 40;
-  int sweepBound          = 10;
-  int n                   = 6;
+  constexpr int n_GK                = 300;
+  auto [nui, wi]          = QuadratureGK<n_GK>(0, 1);
+  int bondDim             = 150;
+  int sweepBound          = 30;
+  int n                   = 2;
   double integral         = 0.0;
-  std::vector<int> pivot1 = {0,0,0, 14, 14,14};
-  
+  std::vector<int> pivot1 = {0, n_GK  - 3};
+
   std::vector<double> nu1;
   for (int i = 0; i < pivot1.size(); i++) { nu1.push_back(nui[pivot1[i]]); }
   std::cout << "nu1: ";
@@ -305,37 +332,38 @@ int main() {
   auto order_list_pair = get_all_order(range);
   long count           = 0;
   auto f               = [&get_u_tau_max_00, &tau_max, &count, &order_list_pair](std::vector<double> nus) {
-    auto taus  = changeVariable(nus, tau_max);
-    double sum = 0.0;
+    auto taus    = changeVariable(nus, tau_max);
+    double sum   = 0.0;
+    double value = 0.0;
     for (auto [order_c_list, order_c_dag_list] : order_list_pair) {
-      sum += get_u_tau_max_00(getElements(order_c_list, taus), getElements(order_c_dag_list, taus));
+      value = get_u_tau_max_00(getElements(order_c_list, taus), getElements(order_c_dag_list, taus));
+      sum += value;
     }
     count++;
     double j = jacobian(taus, tau_max);
-    // std::cerr << "end taus:" << std::endl;
-    // print_vector(taus);
-    // std::cerr <<std::endl;
+    // std::cout << "trace: " << sum << std::endl;
     return sum * j;
   };
-  std::cout << std::setprecision(17) << "f(nu1): " << f(nu1) << std::endl;
-  std::cout << "tci1" << std::endl;
-  auto ci1 = xfac::CTensorCI<double, double>(f, std::vector(n, nui), {.pivot1 = pivot1});
-  for (int i = 0; i < sweepBound; i++) {
-    ci1.iterate();
-    integral = ci1.sumWeighted(std::vector(n, wi));
-    std::cout << i << " " << count << " " << ci1.pivotError[ci1.pivotError.size() - 1] << " " << integral << std::endl;
-  }
-  // std::cout << "tci2" << std::endl;
-  // auto ci2 = xfac::CTensorCI2<double, double>(f, std::vector(n, nui), {.bond_dim = bondDim, .pivot1 = pivot1});
+  auto f_nu1 = f(nu1);
+  std::cout << std::setprecision(17) << "f(nu1): " << f_nu1 << std::endl;
+  // std::cout << "tci1" << std::endl;
+  // auto ci1 = xfac::CTensorCI<double, double>(f, std::vector(n, nui), {.pivot1 = pivot1});
   // for (int i = 0; i < sweepBound; i++) {
-  //   ci2.iterate();
-  //   if (i == sweepBound - 1) { ci2.makeCanonical(); }
-  //   integral = ci2.tt.sum(std::vector(n, wi));
-  //   std::cout << i << " " << count << " " << ci2.pivotError[ci2.pivotError.size() - 1] << " " << integral << std::endl;
+  //   ci1.iterate();
+  //   integral = ci1.sumWeighted(std::vector(n, wi));
+  //   std::cout << i << " " << count << " " << ci1.pivotError[ci1.pivotError.size() - 1] << " " << integral << std::endl;
   // }
-  std::cout << "frame_order_zeroth 00: "<< frame_zeroth_order[0](0,0) << std::endl;
-  std::cout << "zero_order + first order "<< frame_zeroth_order[0](0,0) + integral<< std::endl;
-  std::cout << "u_tau_max_00: "<< u_interpolator(tau_max)[0](0,0) << std::endl;
+  std::cout << "tci2" << std::endl;
+  auto ci2 = xfac::CTensorCI2<double, double>(f, std::vector(n, nui), {.bond_dim = bondDim, .pivot1 = pivot1});
+  for (int i = 0; i < sweepBound; i++) {
+    ci2.iterate();
+    if (i == sweepBound - 1) { ci2.makeCanonical(); }
+    integral = ci2.tt.sum(std::vector(n, wi));
+    std::cout << i << " " << count << " " << ci2.pivotError[ci2.pivotError.size() - 1] << " " << integral << std::endl;
+  }
+  std::cout << "u_tau_max_00 exact: " << trace(u_interpolator(tau_max)) << std::endl;
+  std::cout << "order 0: " << trace(frame_zeroth_order) << std::endl;
+  std::cout << "order 1: " << integral << std::endl;
 
   return 0;
 }
