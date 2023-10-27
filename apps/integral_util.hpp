@@ -61,17 +61,17 @@ template <typename T> std::vector<T> getElements(const std::vector<int> &indices
   return result;
 }
 
-inline std::vector<double> changeVariable(const std::vector<double> &nus, double tau_max) {
+inline std::vector<double> changeVariable(const std::vector<double> &nus, double tau_max, double tau_min=0.0) {
   std::vector<double> taus(nus.size());
-  taus[0] = nus[0] * tau_max;
+  taus[0] = nus[0] * (tau_max-tau_min) + tau_min;
 
   for (size_t it = 1; it < taus.size(); ++it) { taus[it] = taus[it - 1] + nus[it] * (tau_max - taus[it - 1]); }
 
   return taus;
 }
 
-inline double jacobian(const std::vector<double> &taus, double tau_max) {
-  double prod = tau_max;
+inline double jacobian(const std::vector<double> &taus, double tau_max, double tau_min=0.0) {
+  double prod = tau_max-tau_min;
   for (size_t j = 1; j < taus.size(); ++j) { prod *= (tau_max - taus[j - 1]); }
   return std::abs(prod);
 }

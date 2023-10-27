@@ -77,63 +77,139 @@ int main() {
   std::cout << std::setprecision(17) << std::endl;
 
   // test decomposition of u_products_00
-  //// fix orbital indices temporarily
-  std::vector<int> iota_d_list     = {0};
-  std::vector<int> iota_d_dag_list = {0};
-  double integral         = 0.0;
-  int n                   = 2; // number of operators
-  std::vector<int> pivot1 = {0, n_GK - 2};
+  bool do_naive               = false;
+  bool do_split               = true;
+  std::vector<int> order_list = {1, 2};
+  std::vector<double> integral_list;
+  if (do_naive) {
+    for (int order : order_list) {
+      int n = 2 * order;                      // number of tau's
+      std::vector<int> iota_d_list(order, 0); // fix orbital indices temporarily
+      std::vector<int> iota_d_dag_list(order, 0);
+      double integral = 0.0;
+      std::vector<int> pivot1(order, 0);
+      pivot1.insert(pivot1.end(), order, n_GK - 2);
 
-  std::vector<int> range(n);
-  std::iota(range.begin(), range.end(), 0);
-  auto order_list_pair = get_all_order(range);
-  long count           = 0;
-  auto get_u_tau_max_00 = [&frame_zeroth_order, &tau_split, &tau_max, &all_d_ops, &all_d_dag_ops, &block_shape, &cp, &Delta_tau = Delta_tau, &ad_imp = ad_imp, &u_interpolator, &count, &order_list_pair, &iota_d_list, &iota_d_dag_list](std::vector<double> nus) {
-    auto config  = BuildConfig(frame_zeroth_order, tau_split, tau_max, all_d_ops, all_d_dag_ops, block_shape, cp, Delta_tau, ad_imp, u_interpolator);
-    auto taus    = changeVariable(nus, tau_max);
-    double sum   = 0.0;
-    double value = 0.0;
-    for (auto [order_c_list, order_c_dag_list] : order_list_pair) {
-      config(getElements(order_c_list, taus), getElements(order_c_dag_list, taus), iota_d_list, iota_d_dag_list);
-      config.evaluate_hyb_weight();
-      config.evaluate_u_products();
-      if (config.u_products[0].size() == 0) {
-        value = 0.0;
-      } else {
-        value = config.u_products[0](0, 0) * config.hyb_weight * config.sign;
+      std::vector<int> range(n);
+      std::iota(range.begin(), range.end(), 0);
+      auto order_list_pair  = get_all_order(range); //gives all possible phi
+      long count            = 0;
+      auto get_u_tau_max_00 = [&frame_zeroth_order, &tau_split, &tau_max, &all_d_ops, &all_d_dag_ops, &block_shape, &cp, &Delta_tau = Delta_tau,
+                               &ad_imp = ad_imp, &u_interpolator, &count, &order_list_pair, &iota_d_list, &iota_d_dag_list](std::vector<double> nus) {
+        auto config =
+           BuildConfig(frame_zeroth_order, tau_split, tau_max, all_d_ops, all_d_dag_ops, block_shape, cp, Delta_tau, ad_imp, u_interpolator);
+        auto taus    = changeVariable(nus, tau_max);
+        double sum   = 0.0;
+        double value = 0.0;
+        for (auto [order_c_list, order_c_dag_list] : order_list_pair) {
+          config(getElements(order_c_list, taus), getElements(order_c_dag_list, taus), iota_d_list, iota_d_dag_list);
+          config.evaluate_hyb_weight();
+          config.evaluate_u_products();
+          if (config.u_products[0].size() == 0) {
+            value = 0.0;
+          } else {
+            value = config.u_products[0](0, 0) * config.hyb_weight * config.sign;
+          }
+          sum += value;
+        }
+        count++;
+        double j = jacobian(taus, tau_max);
+        return sum * j;
+      };
+      std::vector<double> nu1;
+      for (int i = 0; i < pivot1.size(); i++) { nu1.push_back(nui[pivot1[i]]); }
+      std::cout << "nu1: ";
+      print_vector(nu1);
+      auto u_tau_max_00_nu1 = get_u_tau_max_00(nu1);
+      std::cout << "get_u_tau_max_00(nu1): " << u_tau_max_00_nu1 << std::endl;
+
+      /// do TCI
+      // std::cout << "tci1" << std::endl;
+      // auto ci1 = xfac::CTensorCI<double, double>(get_u_tau_max_00, std::vector(n, nui), {.pivot1 = pivot1});
+      // for (int i = 0; i < sweepBound; i++) {
+      //   ci1.iterate();
+      //   integral = ci1.sumWeighted(std::vector(n, wi));
+      //   std::cout << i << " " << count << " " << ci1.pivotError[ci1.pivotError.size() - 1] << " " << integral << std::endl;
+      // }
+      std::cout << "tci2" << std::endl;
+      auto ci2 = xfac::CTensorCI2<double, double>(get_u_tau_max_00, std::vector(n, nui), {.bond_dim = bondDim, .pivot1 = pivot1});
+      for (int i = 0; i < sweepBound; i++) {
+        ci2.iterate();
+        if (i == sweepBound - 1) { ci2.makeCanonical(); }
+        integral = ci2.tt.sum(std::vector(n, wi));
+        std::cout << i << " " << count << " " << ci2.pivotError[ci2.pivotError.size() - 1] << " " << integral << std::endl;
       }
-      sum += value;
+      integral_list.push_back(integral);
     }
-    count++;
-    double j = jacobian(taus, tau_max);
-    return sum * j;
-  };
-  std::vector<double> nu1;
-  for (int i = 0; i < pivot1.size(); i++) { nu1.push_back(nui[pivot1[i]]); }
-  std::cout << "nu1: ";
-  print_vector(nu1);
-  auto u_tau_max_00_nu1 = get_u_tau_max_00(nu1);
-  std::cout << "get_u_tau_max_00(nu1): " << u_tau_max_00_nu1 << std::endl;
-
-  /// do TCI
-  // std::cout << "tci1" << std::endl;
-  // auto ci1 = xfac::CTensorCI<double, double>(get_u_tau_max_00, std::vector(n, nui), {.pivot1 = pivot1});
-  // for (int i = 0; i < sweepBound; i++) {
-  //   ci1.iterate();
-  //   integral = ci1.sumWeighted(std::vector(n, wi));
-  //   std::cout << i << " " << count << " " << ci1.pivotError[ci1.pivotError.size() - 1] << " " << integral << std::endl;
-  // }
-  std::cout << "tci2" << std::endl;
-  auto ci2 = xfac::CTensorCI2<double, double>(get_u_tau_max_00, std::vector(n, nui), {.bond_dim = bondDim, .pivot1 = pivot1});
-  for (int i = 0; i < sweepBound; i++) {
-    ci2.iterate();
-    if (i == sweepBound - 1) { ci2.makeCanonical(); }
-    integral = ci2.tt.sum(std::vector(n, wi));
-    std::cout << i << " " << count << " " << ci2.pivotError[ci2.pivotError.size() - 1] << " " << integral << std::endl;
+    std::cout << "u_tau_max_00 exact: " << u_interpolator(tau_max)[0](0, 0) << std::endl;
+    std::cout << "order 0: " << frame_zeroth_order[0](0, 0) << std::endl;
+    for (int i = 0; i < order_list.size(); i++) { std::cout << "order " << order_list[i] << ": " << integral_list[i] << std::endl; }
   }
-  std::cout << "u_tau_max_00 exact: " << u_interpolator(tau_max)[0](0, 0) << std::endl;
-  std::cout << "order 0: " << frame_zeroth_order[0](0, 0) << std::endl;
-  std::cout << "order 1: " << integral << std::endl;
+
+  if (do_split) {
+    for (int order : order_list) {
+      int n = 2 * order;                      // number of tau's
+      std::vector<int> iota_d_list(order, 0); // fix orbital indices temporarily
+      std::vector<int> iota_d_dag_list(order, 0);
+      double integral = 0.0;
+      std::vector<int> pivot1(order, 0);
+      pivot1.insert(pivot1.end(), order, n_GK - 2);
+
+      std::vector<int> range(n);
+      std::iota(range.begin(), range.end(), 0);
+      auto order_list_pair  = get_all_order(range); //gives all possible phi
+      long count            = 0;
+      auto get_u_tau_max_00 = [&frame_zeroth_order, &tau_split, &tau_max, &all_d_ops, &all_d_dag_ops, &block_shape, &cp, &Delta_tau = Delta_tau,
+                               &ad_imp = ad_imp, &u_interpolator, &count, &order_list_pair, &iota_d_list, &iota_d_dag_list](std::vector<double> nus) {
+        auto config =
+           BuildConfig(frame_zeroth_order, tau_split, tau_max, all_d_ops, all_d_dag_ops, block_shape, cp, Delta_tau, ad_imp, u_interpolator);
+        auto taus    = changeVariable(nus, tau_max);
+        double sum   = 0.0;
+        double value = 0.0;
+        for (auto [order_c_list, order_c_dag_list] : order_list_pair) {
+          config(getElements(order_c_list, taus), getElements(order_c_dag_list, taus), iota_d_list, iota_d_dag_list);
+          config.evaluate_hyb_weight();
+          config.evaluate_u_products();
+          if (config.u_products[0].size() == 0) {
+            value = 0.0;
+          } else {
+            value = config.u_products[0](0, 0) * config.hyb_weight * config.sign;
+          }
+          sum += value;
+        }
+        count++;
+        double j = jacobian(taus, tau_max);
+        return sum * j;
+      };
+      std::vector<double> nu1;
+      for (int i = 0; i < pivot1.size(); i++) { nu1.push_back(nui[pivot1[i]]); }
+      std::cout << "nu1: ";
+      print_vector(nu1);
+      auto u_tau_max_00_nu1 = get_u_tau_max_00(nu1);
+      std::cout << "get_u_tau_max_00(nu1): " << u_tau_max_00_nu1 << std::endl;
+
+      /// do TCI
+      // std::cout << "tci1" << std::endl;
+      // auto ci1 = xfac::CTensorCI<double, double>(get_u_tau_max_00, std::vector(n, nui), {.pivot1 = pivot1});
+      // for (int i = 0; i < sweepBound; i++) {
+      //   ci1.iterate();
+      //   integral = ci1.sumWeighted(std::vector(n, wi));
+      //   std::cout << i << " " << count << " " << ci1.pivotError[ci1.pivotError.size() - 1] << " " << integral << std::endl;
+      // }
+      std::cout << "tci2" << std::endl;
+      auto ci2 = xfac::CTensorCI2<double, double>(get_u_tau_max_00, std::vector(n, nui), {.bond_dim = bondDim, .pivot1 = pivot1});
+      for (int i = 0; i < sweepBound; i++) {
+        ci2.iterate();
+        if (i == sweepBound - 1) { ci2.makeCanonical(); }
+        integral = ci2.tt.sum(std::vector(n, wi));
+        std::cout << i << " " << count << " " << ci2.pivotError[ci2.pivotError.size() - 1] << " " << integral << std::endl;
+      }
+      integral_list.push_back(integral);
+    }
+    std::cout << "u_tau_max_00 exact: " << u_interpolator(tau_max)[0](0, 0) << std::endl;
+    std::cout << "order 0: " << frame_zeroth_order[0](0, 0) << std::endl;
+    for (int i = 0; i < order_list.size(); i++) { std::cout << "order " << order_list[i] << ": " << integral_list[i] << std::endl; }
+  }
 
   return 0;
 }
