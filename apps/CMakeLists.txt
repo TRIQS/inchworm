@@ -1,3 +1,8 @@
+add_executable(test_json test_json.cpp)
 add_executable(integral integral.cpp)
+add_executable(integral_naive integral_naive.cpp)
 target_link_libraries(integral xfac::xfac)
 target_link_libraries(integral ${PROJECT_NAME}_c)
+target_link_libraries(integral_naive xfac::xfac)
+target_link_libraries(integral_naive ${PROJECT_NAME}_c)
+target_link_libraries(test_json ${PROJECT_NAME}_c)

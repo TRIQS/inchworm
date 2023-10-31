@@ -65,3 +65,10 @@ external_dependency(GTest
   BUILD_ALWAYS
   EXCLUDE_FROM_ALL
 )
+
+# external_dependency(json
+#   GIT_REPO https://github.com/nlohmann/json.git
+#   GIT_TAG v3.10.5
+#   BUILD_ALWAYS
+#   EXCLUDE_FROM_ALL
+# )

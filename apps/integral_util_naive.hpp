@@ -1,7 +1,4 @@
 #include <boost/math/quadrature/gauss_kronrod.hpp>
-#include <fstream>
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/json_parser.hpp>
 
 template <int n> inline auto QuadratureGK(double a = 0, double b = 1) {
   static const auto abscissa = boost::math::quadrature::gauss_kronrod<double, n>::abscissa();
@@ -9,24 +6,12 @@ template <int n> inline auto QuadratureGK(double a = 0, double b = 1) {
   int nq                     = 2 * abscissa.size() - 1;
   std::vector<double> xi(nq), weight(nq);
   double factor = 0.5 * (b - a);
-  for (unsigned int i = 0; i < abscissa.size(); i++) {
+  for (uint i = 0; i < abscissa.size(); i++) {
     xi[nq / 2 + i]     = factor * (abscissa[i] + 1) + a;
     weight[nq / 2 + i] = weight[nq / 2 - i] = weights[i] * factor;
     xi[nq / 2 - i]                          = factor * (-abscissa[i] + 1) + a;
   }
   return make_pair(xi, weight);
-}
-
-inline auto select_quadrature_GK(int n, double a = 0, double b = 1) {
-  switch (n) {
-    case 15: return QuadratureGK<15>(a, b);
-    case 30: return QuadratureGK<30>(a, b);
-    case 45: return QuadratureGK<45>(a, b);
-    default: {
-      std::cout << "Not supported\n";
-      return QuadratureGK<15>(a, b);
-    };
-  }
 }
 
 template <typename T> void print_vector(const std::vector<T> &vec) {
@@ -224,58 +209,55 @@ double evaluate_u_tau_max_00(frame_t &frame_zeroth_order, double tau_split, doub
   }
 }
 
-inline void read_json_parameters(const std::string &filepath, constr_params_t &cp, int &n_site, vec_t &epsilon,
-                                 mat_t &theta, int &n_bath, int &n_spin, double &U, double &mu, double &t, double &tau_max, double &tau_split,
-                                 int &n_GK, int &bondDim, int &sweepBound) {
-  namespace pt = boost::property_tree;
-  pt::ptree root;
-  pt::read_json(filepath, root);
+// // manually calculate the weight
+// auto config = config_t(frame_zeroth_order, cp.gf_struct, {0.0, tau_split});
+// auto d      = all_d_ops[1][0];
+// auto d_dag  = all_d_dag_ops[1][1];
+// d.tau       = tau_max * 0.2;
+// d_dag.tau   = tau_max * 0.95;
+// config.try_insert(d_dag, d);
+// d     = all_d_ops[0][0];
+// d_dag = all_d_dag_ops[0][1];
+// d.tau      = tau_max * 0.4;
+// d_dag.tau  = tau_max * 0.8;
+// config.try_insert(d_dag, d);
+// d     = all_d_ops[0][1];
+// d_dag = all_d_dag_ops[0][1];
+// d.tau      = tau_max * 0.98;
+// d_dag.tau  = tau_max * 0.1;
+// config.try_insert(d_dag, d);
 
-  // Read simple values
-  n_site     = root.get<int>("n_site");
-  cp.beta       = root.get<double>("cp.beta");
-  cp.n_tau_green       = root.get<int>("cp.n_tau_green");
-  cp.n_tau_inch       = root.get<int>("cp.n_tau_inch");
-  cp.n_tau       = root.get<int>("cp.n_tau");
-  n_bath     = root.get<int>("n_bath");
-  n_spin     = root.get<int>("n_spin");
-  U          = root.get<double>("U");
-  mu         = root.get<double>("mu");
-  t          = root.get<double>("t");
-  tau_max    = root.get<double>("tau_max");
-  tau_split  = root.get<double>("tau_split");
-  n_GK       = root.get<int>("n_GK");
-  bondDim    = root.get<int>("bondDim");
-  sweepBound = root.get<int>("sweepBound");
+// auto diagram = diagram::time_diagram_t{config, {tau_split}};
+// print_configuration(diagram);
+// auto hyb_mat   = diagram::hyb_matrix_t(diagram, Delta_tau);
+// auto hyb_wight = inclusion_exclusion(diagram, hyb_mat);
+// std::cout << "hyb_wight: " << hyb_wight << std::endl;
+// auto frame      = make_frame(impurity_product(ad_imp, diagram, tau_max, tau_split, &u_interpolator)
+//                              * impurity_product(ad_imp, diagram, tau_split, 0, &u_interpolator));
+// auto imp_weight = norm(frame);
+// std::cout << "imp_weight: " << imp_weight << std::endl;
 
+//  auto build_config =
+//      BuildConfig(frame_zeroth_order, tau_split, tau_max, all_d_ops, all_d_dag_ops, block_shape, cp, Delta_tau, ad_imp, u_interpolator);
 
-  // Read gf_struct
-  for (pt::ptree::value_type &g_s : root.get_child("cp.gf_struct")) {
-    std::string name = g_s.first;
-    int size         = g_s.second.get_value<int>();
-    cp.gf_struct.emplace_back(std::make_pair(name, size));
-  }
+//   auto get_hyb_weight_sign = [&build_config, &iota_d_list, &iota_d_dag_list](auto const &tau_d_list, auto const &tau_d_dag_list) {
+//     build_config(tau_d_list, tau_d_dag_list, iota_d_list, iota_d_dag_list);
+//     build_config.evaluate_hyb_weight();
+//     return build_config.hyb_weight * build_config.sign;
+//   };
 
-  // Read epsilon
-  int size = root.get_child("epsilon").size();
-  epsilon.resize(size);
-  int i = 0;
-  for (pt::ptree::value_type &ep : root.get_child("epsilon")) {
-    epsilon[i] = ep.second.get_value<double>();
-    i++;
-  }
-
-  // Read theta
-  int sizex = root.get_child("theta").size();
-  int sizey = root.get_child("theta").begin()->second.size();
-  theta.resize(sizex, sizey);
-  i = 0;
-  for (pt::ptree::value_type &th : root.get_child("theta")) {
-    int j = 0;
-    for (pt::ptree::value_type &th_i : th.second) {
-      theta(i, j) = th_i.second.get_value<double>();
-      j++;
-    }
-    i++;
-  }
-}
+//   auto get_u_tau_max_00 = [&build_config, &iota_d_list, &iota_d_dag_list](auto const &tau_d_list, auto const &tau_d_dag_list) {
+//     auto my_config = build_config;
+//     my_config(tau_d_list, tau_d_dag_list, iota_d_list, iota_d_dag_list);
+//     my_config.evaluate_hyb_weight();
+//     my_config.evaluate_u_products();
+// std::cout << std::endl;
+// std::cout << "split_times: " << std::endl;
+// print_vector(my_config.config.split_times);
+// std::cout << "sign: " << my_config.sign << std::endl;
+// std::cout << "hyb_weight: " << my_config.hyb_weight << std::endl;
+// std::cout << "u_products: " << std::endl;
+// for (auto u_products_bl : my_config.u_products) { print_matrix(u_products_bl); }
+//     if (my_config.u_products[0].size() == 0) return 0.0;
+//     return my_config.u_products[0](0, 0) * my_config.hyb_weight * my_config.sign;
+//   };

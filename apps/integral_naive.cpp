@@ -17,33 +17,34 @@
 #include <inchworm/util.hpp>
 #include <inchworm/interpolator.hpp>
 #include "./hubbard.hpp"
-#include "./integral_util.hpp"
+#include "./integral_util_naive.hpp"
 using namespace inchworm;
 
 int main() {
 
-  constr_params_t cp{};
-  mat_t theta;
-  vec_t epsilon;
-  int n_site{};
-  int n_bath{};
-  int n_spin{};
-  int n_GK{};
-  int bondDim{};
-  int sweepBound{};
-  double U{};
-  double mu{};
-  double t{};
-  double tau_max{};
-  double tau_split{};
-
-  read_json_parameters("/Users/yangyu/src/inchworm/apps/parameters.json", cp, n_site, epsilon, theta, n_bath, n_spin, U, mu, t, tau_max,
-                       tau_split, n_GK, bondDim, sweepBound);
+  //parameters for the model
+  constr_params_t cp;
+  cp.beta          = 2.0;
+  cp.gf_struct     = {{"up", 1}};
+  cp.n_tau_green   = 5;
+  cp.n_tau_inch    = 10001;
+  cp.n_tau         = 10001;
+  mat_t theta      = {{1.0}};
+  vec_t epsilon    = {1.0};
+  int n_site       = 1;
+  int n_bath       = epsilon.size();
+  int n_spin       = cp.gf_struct.size();
+  double U         = 0.0;
+  double mu        = 0.0;
+  double t         = 0.0;
+  double tau_max   = cp.beta;
+  double tau_split = cp.beta * 0.555;
 
   //parameters for TCI
-
-  auto [vi, wi] = select_quadrature_GK(n_GK, 0, 1);
-
+  constexpr int n_GK = 15;
+  auto [vi, wi]      = QuadratureGK<n_GK>(0, 1);
+  int bondDim        = 10;
+  int sweepBound     = 30;
 
   // prepare input
   auto [Delta_tau, ad_imp, u_tau, G_tau] = test_setup(n_site, n_bath, n_spin, U, mu, t, cp, theta, epsilon);
@@ -181,9 +182,7 @@ int main() {
           double value = 0.0;
           for (auto [order_c_list, order_c_dag_list] : order_list_pair) {
             // config(getElements(order_c_list, taus), getElements(order_c_dag_list, taus), iota_d_list, iota_d_dag_list);
-            double value = evaluate_u_tau_max_00(frame_zeroth_order, tau_split, tau_max, all_d_ops, all_d_dag_ops, block_shape, cp, Delta_tau, ad_imp,
-                                                 u_interpolator, getElements(order_c_list, taus), getElements(order_c_dag_list, taus), iota_d_list,
-                                                 iota_d_dag_list);
+            double value = evaluate_u_tau_max_00(frame_zeroth_order, tau_split, tau_max, all_d_ops, all_d_dag_ops, block_shape, cp, Delta_tau, ad_imp, u_interpolator, getElements(order_c_list, taus), getElements(order_c_dag_list, taus), iota_d_list, iota_d_dag_list);
             // config.evaluate_u_products();
             // if (config.u_products[0].size() == 0) {
             //   value = 0.0;

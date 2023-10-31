@@ -1,0 +1,26 @@
+{
+    "cp": {
+        "beta": 2.0,
+        "gf_struct": {
+            "up": 1
+        },
+        "n_tau_green": 5,
+        "n_tau_inch": 10001,
+        "n_tau": 10001
+    },
+    "theta": [
+        [1.0]
+    ],
+    "epsilon": [1.0],
+    "n_site": 1,
+    "n_bath": 1,
+    "n_spin": 1,
+    "U": 0.0,
+    "mu": 0.0,
+    "t": 0.0,
+    "tau_max": 2.0,
+    "tau_split": 1.11,
+    "n_GK": 15,
+    "bondDim": 10,
+    "sweepBound": 30
+}
