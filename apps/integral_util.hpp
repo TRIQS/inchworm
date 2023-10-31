@@ -1,5 +1,7 @@
 #include <boost/math/quadrature/gauss_kronrod.hpp>
 #include <fstream>
+#include <algorithm>
+#include <numeric>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 
@@ -40,9 +42,9 @@ template <typename T> void print_vector(const std::vector<T> &vec) {
   std::cout << std::endl;
 }
 
-inline std::vector<std::pair<std::vector<int>, std::vector<int>>> get_all_order(std::vector<int> const &order_list) {
+inline std::vector<std::pair<std::vector<int>, std::vector<int>>> get_all_phi(std::vector<int> const &range) {
   std::vector<std::pair<std::vector<int>, std::vector<int>>> res{};
-  int order = order_list.size() / 2;
+  int order = range.size() / 2;
   std::vector<int> indicator(2 * order);
   std::fill(indicator.begin(), indicator.begin() + order, 0);
   std::fill(indicator.begin() + order, indicator.end(), 1);
@@ -51,9 +53,9 @@ inline std::vector<std::pair<std::vector<int>, std::vector<int>>> get_all_order(
     std::vector<int> order_d_dag_ls = {};
     for (int i = 0; i < 2 * order; ++i) {
       if (indicator[i] == 0) {
-        order_d_ls.push_back(order_list[i]);
+        order_d_ls.push_back(range[i]);
       } else {
-        order_d_dag_ls.push_back(order_list[i]);
+        order_d_dag_ls.push_back(range[i]);
       }
     }
     // std::cout << "tau_d_ls size: " << tau_d_ls.size() << std::endl;
@@ -66,6 +68,55 @@ inline std::vector<std::pair<std::vector<int>, std::vector<int>>> get_all_order(
     // std::cerr << "---\n";
     res.push_back(std::make_pair(order_d_ls, order_d_dag_ls));
   } while (std::next_permutation(indicator.begin(), indicator.end()));
+  return res;
+}
+
+inline void generate_combinations(const std::vector<int> &A, std::vector<int> &B, int idx, std::vector<std::vector<int>> &all_combinations) {
+  if (idx == B.size()) {
+    all_combinations.push_back(B);
+    return;
+  }
+
+  for (int i = 0; i < A.size(); ++i) {
+    B[idx] = A[i];
+    generate_combinations(A, B, idx + 1, all_combinations);
+  }
+}
+
+inline std::vector<int> generate_number_in_block(const std::vector<int> &block_shape, const std::vector<int> &iota_d_list) {
+  std::vector<int> res(block_shape.size(), 0);
+  for (auto iota : iota_d_list) {
+    for (int bl = 0; bl < block_shape.size(); ++bl) {
+      if (iota < block_shape[bl]) {
+        res[bl] += 1;
+        break;
+      } else {
+        iota -= block_shape[bl];
+      }
+    }
+  }
+  return res;
+}
+
+inline std::vector<std::pair<std::vector<int>, std::vector<int>>> get_all_iota(const std::vector<int> &block_shape, int order) {
+  std::vector<std::pair<std::vector<int>, std::vector<int>>> res{};
+  int n_phi = std::accumulate(block_shape.begin(), block_shape.end(), 0);
+  std::vector<std::vector<int>> all_iota{};
+  std::vector<int> iota(order, 0);
+  std::vector<int> range(n_phi);
+  std::iota(range.begin(), range.end(), 0);
+  generate_combinations(range, iota, 0, all_iota);
+  std::vector<std::vector<int>> all_number_in_block{};
+  for (auto iota_d_list : all_iota) { all_number_in_block.push_back(generate_number_in_block(block_shape, iota_d_list)); }
+  size_t i = 0;
+  for (auto iota_d_list : all_iota) {
+    size_t j = 0;
+    for (auto iota_d_dag_list : all_iota) {
+      if (all_number_in_block[i] == all_number_in_block[j]) { res.push_back(std::make_pair(iota_d_list, iota_d_dag_list)); }
+      j++;
+    }
+    i++;
+  }
   return res;
 }
 
@@ -142,8 +193,8 @@ double evaluate_u_tau_max(frame_t &frame_zeroth_order, double tau_split, double 
                           auto const &tau_d_dag_list, auto const &iota_d_list, auto const &iota_d_dag_list, int bl_indx, int subspace_indx) {
   auto config = config_t(frame_zeroth_order, cp.gf_struct, {0.0, tau_split});
   for (auto i : range(tau_d_list.size())) {
-    auto [bl, subspace_index]         = find_index(block_shape, iota_d_list[i]);
-    auto d                            = all_d_ops[bl][subspace_index];
+    auto [bl, subspace_d_index]       = find_index(block_shape, iota_d_list[i]);
+    auto d                            = all_d_ops[bl][subspace_d_index];
     d.tau                             = tau_d_list[i];
     auto [bl_dag, subspace_index_dag] = find_index(block_shape, iota_d_dag_list[i]);
     auto d_dag                        = all_d_dag_ops[bl_dag][subspace_index_dag];
@@ -164,17 +215,18 @@ double evaluate_u_tau_max(frame_t &frame_zeroth_order, double tau_split, double 
     auto hyb_mat = diagram::hyb_matrix_t(diagram, Delta_tau);
     sign         = diagram.sign();
     hyb_weight   = inclusion_exclusion(diagram, hyb_mat);
-    int i        = subspace_indx / u_products[bl_indx].size();
-    int j        = subspace_indx % u_products[bl_indx].size();
+    int bl_size  = std::sqrt(u_products[bl_indx].size());
+    int i        = subspace_indx / bl_size;
+    int j        = subspace_indx % bl_size;
     return u_products[bl_indx](i, j) * hyb_weight * sign;
   } else {
     return 0.0;
   }
 }
 
-inline void read_json_parameters(const std::string &filepath, bool &debug, constr_params_t &cp, int &n_site, vec_t &epsilon, mat_t &theta, int &n_bath,
-                                 int &n_spin, double &U, double &mu, double &t, double &tau_max, double &tau_split, int &n_GK, int &bond_dim,
-                                 int &sweep_bound, std::vector<int> &order_list, bool &tci_prrlu, double &error_bound) {
+inline void read_json_parameters(const std::string &filepath, bool &debug, constr_params_t &cp, int &n_site, vec_t &epsilon, mat_t &theta,
+                                 int &n_bath, int &n_spin, double &U, double &mu, double &t, double &tau_max, double &tau_split, int &n_GK,
+                                 int &bond_dim, int &sweep_bound, std::vector<int> &order_list, bool &tci_prrlu, double &error_bound) {
   namespace pt = boost::property_tree;
   pt::ptree root;
   pt::read_json(filepath, root);
