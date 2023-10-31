@@ -1,4 +1,5 @@
 {
+    "debug": true,
     "cp": {
         "beta": 2.0,
         "gf_struct": {
@@ -19,8 +20,11 @@
     "mu": 0.0,
     "t": 0.0,
     "tau_max": 2.0,
-    "tau_split": 1.11,
+    "tau_split_ratio": 0.5555555555,
     "n_GK": 15,
-    "bondDim": 10,
-    "sweepBound": 30
+    "bond_dim": 30,
+    "sweep_bound": 20,
+    "order_list": [1,2,3,4,5],
+    "tci_prrlu": true,
+    "error_bound": 1e-8
 }

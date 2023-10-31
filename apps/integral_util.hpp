@@ -3,6 +3,12 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 
+unsigned long long factorial(int n) {
+  unsigned long long result = 1;
+  for (int i = 1; i <= n; ++i) { result *= i; }
+  return result;
+}
+
 template <int n> inline auto QuadratureGK(double a = 0, double b = 1) {
   static const auto abscissa = boost::math::quadrature::gauss_kronrod<double, n>::abscissa();
   static const auto weights  = boost::math::quadrature::gauss_kronrod<double, n>::weights();
@@ -76,6 +82,19 @@ template <typename T> std::vector<T> getElements(const std::vector<int> &indices
   return result;
 }
 
+// inline std::vector<double> changeVariable(const std::vector<double> &nus, double tau_max, double tau_min = 0.0) {
+//   std::vector<double> taus(nus.size());
+//   taus[nus.size() - 1] = tau_min + (tau_max - tau_min) * std::pow(nus[nus.size() - 1], (1.0 / nus.size()));
+//   for(int i = nus.size() - 2; i >= 0; --i) {
+//     taus[i] = tau_min + (taus[i+1]- tau_min) * std::pow(nus[i], (1.0 /(i + 1)));
+//   }
+//   return taus;
+// }
+
+// inline double jacobian(const std::vector<double> &taus, double tau_max, double tau_min = 0.0) {
+//    return std::pow(tau_max - tau_min, taus.size())/factorial(taus.size());
+// }
+
 inline std::vector<double> changeVariable(const std::vector<double> &nus, double tau_max, double tau_min = 0.0) {
   std::vector<double> taus(nus.size());
   taus[0] = nus[0] * (tau_max - tau_min) + tau_min;
@@ -117,83 +136,10 @@ inline std::pair<int, int> find_index(const std::vector<int> &block_shape, int i
   return std::make_pair(-1, -1); // Return a pair of -1s if not found
 }
 
-class BuildConfig {
-  public:
-  BuildConfig(frame_t &frame_zeroth_order, double tau_split, double tau_max, std::vector<std::vector<fop_t>> const &all_d_ops,
-              std::vector<std::vector<fop_t>> const &all_d_dag_ops, std::vector<int> const &block_shape, constr_params_t const &cp,
-              hyb_tau_t const &Delta_tau, atom_diag const &ad_imp, interpolator_t<scalar_t> const &u_interpolator)
-     : frame_zeroth_order(frame_zeroth_order),
-       tau_split(tau_split),
-       tau_max(tau_max),
-       all_d_ops(all_d_ops),
-       all_d_dag_ops(all_d_dag_ops),
-       block_shape(block_shape),
-       cp(cp),
-       Delta_tau(Delta_tau),
-       ad_imp(ad_imp),
-       u_interpolator(u_interpolator),
-       config(config_t(frame_zeroth_order, cp.gf_struct, {0.0, tau_split})) {}
-
-  void operator()(auto const &tau_d_list, auto const &tau_d_dag_list, auto const &iota_d_list, auto const &iota_d_dag_list) {
-    clear_config();
-    for (auto i : range(tau_d_list.size())) {
-      auto [bl, subspace_index]         = find_index(block_shape, iota_d_list[i]);
-      auto d                            = all_d_ops[bl][subspace_index];
-      d.tau                             = tau_d_list[i];
-      auto [bl_dag, subspace_index_dag] = find_index(block_shape, iota_d_dag_list[i]);
-      auto d_dag                        = all_d_dag_ops[bl_dag][subspace_index_dag];
-      d_dag.tau                         = tau_d_dag_list[i];
-      config.d_bl_list[bl].push_back(d);
-      config.d_dag_bl_list[bl_dag].push_back(d_dag);
-      config.d_list.push_back(d);
-      config.d_dag_list.push_back(d_dag);
-      config.split_times.push_back(d.tau);
-      config.split_times.push_back(d_dag.tau);
-    }
-  }
-
-  void evaluate_hyb_weight() {
-    auto diagram = diagram::time_diagram_t{config, {tau_split}}; //FIXME: calculate diagram twice, diagram does not has default constructor
-    auto hyb_mat = diagram::hyb_matrix_t(diagram, Delta_tau);
-    sign         = diagram.sign();
-    hyb_weight   = inclusion_exclusion(diagram, hyb_mat);
-  }
-
-  void evaluate_u_products() {
-    auto diagram = diagram::time_diagram_t{config, {tau_split}};
-    u_products   = make_frame(impurity_product(ad_imp, diagram, tau_max, tau_split, &u_interpolator)
-                              * impurity_product(ad_imp, diagram, tau_split, 0, &u_interpolator));
-    if (u_products[0].size() != 0) {
-      auto hyb_mat = diagram::hyb_matrix_t(diagram, Delta_tau);
-      sign         = diagram.sign();
-      hyb_weight   = inclusion_exclusion(diagram, hyb_mat);
-    }
-  }
-
-  public:
-  hyb_scalar_t hyb_weight;
-  frame_t u_products;
-  int sign;
-
-  config_t config;
-  frame_t &frame_zeroth_order;
-  double tau_split;
-  double tau_max;
-  std::vector<std::vector<fop_t>> const &all_d_ops;
-  std::vector<std::vector<fop_t>> const &all_d_dag_ops;
-  std::vector<int> const &block_shape;
-  constr_params_t const &cp;
-  hyb_tau_t const &Delta_tau;
-  atom_diag const &ad_imp;
-  interpolator_t<scalar_t> const &u_interpolator;
-
-  void clear_config() { config = config_t(frame_zeroth_order, cp.gf_struct, {0.0, tau_split}); }
-};
-
-double evaluate_u_tau_max_00(frame_t &frame_zeroth_order, double tau_split, double tau_max, std::vector<std::vector<fop_t>> const &all_d_ops,
-                             std::vector<std::vector<fop_t>> const &all_d_dag_ops, std::vector<int> const &block_shape, constr_params_t const &cp,
-                             hyb_tau_t const &Delta_tau, atom_diag const &ad_imp, interpolator_t<scalar_t> const &u_interpolator,
-                             auto const &tau_d_list, auto const &tau_d_dag_list, auto const &iota_d_list, auto const &iota_d_dag_list) {
+double evaluate_u_tau_max(frame_t &frame_zeroth_order, double tau_split, double tau_max, std::vector<std::vector<fop_t>> const &all_d_ops,
+                          std::vector<std::vector<fop_t>> const &all_d_dag_ops, std::vector<int> const &block_shape, constr_params_t const &cp,
+                          hyb_tau_t const &Delta_tau, atom_diag const &ad_imp, interpolator_t<scalar_t> const &u_interpolator, auto const &tau_d_list,
+                          auto const &tau_d_dag_list, auto const &iota_d_list, auto const &iota_d_dag_list, int bl_indx, int subspace_indx) {
   auto config = config_t(frame_zeroth_order, cp.gf_struct, {0.0, tau_split});
   for (auto i : range(tau_d_list.size())) {
     auto [bl, subspace_index]         = find_index(block_shape, iota_d_list[i]);
@@ -214,49 +160,52 @@ double evaluate_u_tau_max_00(frame_t &frame_zeroth_order, double tau_split, doub
                                  * impurity_product(ad_imp, diagram, tau_split, 0, &u_interpolator));
   int sign          = 0;
   double hyb_weight = 0.0;
-  if (u_products[0].size() != 0) {
+  if (u_products[bl_indx].size() != 0) {
     auto hyb_mat = diagram::hyb_matrix_t(diagram, Delta_tau);
     sign         = diagram.sign();
     hyb_weight   = inclusion_exclusion(diagram, hyb_mat);
-    return u_products[0](0, 0) * hyb_weight * sign;
+    int i        = subspace_indx / u_products[bl_indx].size();
+    int j        = subspace_indx % u_products[bl_indx].size();
+    return u_products[bl_indx](i, j) * hyb_weight * sign;
   } else {
     return 0.0;
   }
 }
 
-inline void read_json_parameters(const std::string &filepath, constr_params_t &cp, int &n_site, vec_t &epsilon,
-                                 mat_t &theta, int &n_bath, int &n_spin, double &U, double &mu, double &t, double &tau_max, double &tau_split,
-                                 int &n_GK, int &bondDim, int &sweepBound) {
+inline void read_json_parameters(const std::string &filepath, bool &debug, constr_params_t &cp, int &n_site, vec_t &epsilon, mat_t &theta, int &n_bath,
+                                 int &n_spin, double &U, double &mu, double &t, double &tau_max, double &tau_split, int &n_GK, int &bond_dim,
+                                 int &sweep_bound, std::vector<int> &order_list, bool &tci_prrlu, double &error_bound) {
   namespace pt = boost::property_tree;
   pt::ptree root;
   pt::read_json(filepath, root);
 
   // Read simple values
-  n_site     = root.get<int>("n_site");
-  cp.beta       = root.get<double>("cp.beta");
+  debug                = root.get<bool>("debug");
+  cp.beta              = root.get<double>("cp.beta");
   cp.n_tau_green       = root.get<int>("cp.n_tau_green");
-  cp.n_tau_inch       = root.get<int>("cp.n_tau_inch");
-  cp.n_tau       = root.get<int>("cp.n_tau");
-  n_bath     = root.get<int>("n_bath");
-  n_spin     = root.get<int>("n_spin");
-  U          = root.get<double>("U");
-  mu         = root.get<double>("mu");
-  t          = root.get<double>("t");
-  tau_max    = root.get<double>("tau_max");
-  tau_split  = root.get<double>("tau_split");
-  n_GK       = root.get<int>("n_GK");
-  bondDim    = root.get<int>("bondDim");
-  sweepBound = root.get<int>("sweepBound");
+  cp.n_tau_inch        = root.get<int>("cp.n_tau_inch");
+  cp.n_tau             = root.get<int>("cp.n_tau");
+  n_site               = root.get<int>("n_site");
+  n_bath               = root.get<int>("n_bath");
+  n_spin               = root.get<int>("n_spin");
+  U                    = root.get<double>("U");
+  mu                   = root.get<double>("mu");
+  t                    = root.get<double>("t");
+  tau_max              = root.get<double>("tau_max");
+  auto tau_split_ratio = root.get<double>("tau_split_ratio");
+  tau_split            = tau_max * tau_split_ratio;
+  n_GK                 = root.get<int>("n_GK");
+  bond_dim             = root.get<int>("bond_dim");
+  sweep_bound          = root.get<int>("sweep_bound");
+  tci_prrlu            = root.get<bool>("tci_prrlu");
+  error_bound          = root.get<double>("error_bound");
 
-
-  // Read gf_struct
   for (pt::ptree::value_type &g_s : root.get_child("cp.gf_struct")) {
     std::string name = g_s.first;
     int size         = g_s.second.get_value<int>();
     cp.gf_struct.emplace_back(std::make_pair(name, size));
   }
 
-  // Read epsilon
   int size = root.get_child("epsilon").size();
   epsilon.resize(size);
   int i = 0;
@@ -265,7 +214,6 @@ inline void read_json_parameters(const std::string &filepath, constr_params_t &c
     i++;
   }
 
-  // Read theta
   int sizex = root.get_child("theta").size();
   int sizey = root.get_child("theta").begin()->second.size();
   theta.resize(sizex, sizey);
@@ -276,6 +224,14 @@ inline void read_json_parameters(const std::string &filepath, constr_params_t &c
       theta(i, j) = th_i.second.get_value<double>();
       j++;
     }
+    i++;
+  }
+
+  size = root.get_child("order_list").size();
+  order_list.resize(size);
+  i = 0;
+  for (pt::ptree::value_type &order : root.get_child("order_list")) {
+    order_list[i] = order.second.get_value<int>();
     i++;
   }
 }

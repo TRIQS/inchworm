@@ -24,7 +24,7 @@ int main() {
 
   //parameters for the model
   constr_params_t cp;
-  cp.beta          = 2.0;
+  cp.beta          = 50.0;
   cp.gf_struct     = {{"up", 1}};
   cp.n_tau_green   = 5;
   cp.n_tau_inch    = 10001;
@@ -41,10 +41,10 @@ int main() {
   double tau_split = cp.beta * 0.555;
 
   //parameters for TCI
-  constexpr int n_GK = 15;
+  constexpr int n_GK = 45;
   auto [vi, wi]      = QuadratureGK<n_GK>(0, 1);
-  int bondDim        = 10;
-  int sweepBound     = 30;
+  int bond_dim        = 50;
+  int sweep_bound     = 50;
 
   // prepare input
   auto [Delta_tau, ad_imp, u_tau, G_tau] = test_setup(n_site, n_bath, n_spin, U, mu, t, cp, theta, epsilon);
@@ -81,7 +81,7 @@ int main() {
   // test decomposition of u_products_00
   bool do_naive               = false;
   bool do_split               = true;
-  std::vector<int> order_list = {1, 2, 3, 4};
+  std::vector<int> order_list = {1, 2, 3};
   std::vector<double> integral_list;
   if (do_naive) {
     for (int order : order_list) {
@@ -128,16 +128,16 @@ int main() {
       /// do TCI
       // std::cout << "tci1" << std::endl;
       // auto ci1 = xfac::CTensorCI<double, double>(get_u_tau_max_00, std::vector(n, vi), {.pivot1 = pivot1});
-      // for (int i = 0; i < sweepBound; i++) {
+      // for (int i = 0; i < sweep_bound; i++) {
       //   ci1.iterate();
       //   integral = ci1.sumWeighted(std::vector(n, wi));
       //   std::cout << i << " " << count << " " << ci1.pivotError[ci1.pivotError.size() - 1] << " " << integral << std::endl;
       // }
       std::cout << "tci2" << std::endl;
-      auto ci2 = xfac::CTensorCI2<double, double>(get_u_tau_max_00, std::vector(n, vi), {.bond_dim = bondDim, .pivot1 = pivot1});
-      for (int i = 0; i < sweepBound; i++) {
+      auto ci2 = xfac::CTensorCI2<double, double>(get_u_tau_max_00, std::vector(n, vi), {.bond_dim = bond_dim, .pivot1 = pivot1});
+      for (int i = 0; i < sweep_bound; i++) {
         ci2.iterate();
-        if (i == sweepBound - 1) { ci2.makeCanonical(); }
+        if (i == sweep_bound - 1) { ci2.makeCanonical(); }
         integral = ci2.tt.sum(std::vector(n, wi));
         std::cout << i << " " << count << " " << ci2.pivotError[ci2.pivotError.size() - 1] << " " << integral << std::endl;
       }
@@ -208,7 +208,7 @@ int main() {
         // auto ci1 = xfac::CTensorCI<double, double>(get_u_tau_max_00, std::vector(n, vi), {.pivot1 = pivot1});
         // double current_integral{0};
         // double previous_integral{0};
-        // for (int i = 0; i < sweepBound; i++) {
+        // for (int i = 0; i < sweep_bound; i++) {
         //   ci1.iterate();
         //   current_integral = ci1.sumWeighted(std::vector(n, wi));
         //   std::cout << i << " " << count << " " << ci1.pivotError[ci1.pivotError.size() - 1] << " " << current_integral << std::endl;
@@ -216,13 +216,13 @@ int main() {
         //   previous_integral = current_integral;
         // }
         std::cout << "tci2" << std::endl;
-        auto ci2 = xfac::CTensorCI2<double, double>(get_u_tau_max_00, std::vector(n, vi), {.bond_dim = bondDim, .pivot1 = pivot1});
+        auto ci2 = xfac::CTensorCI2<double, double>(get_u_tau_max_00, std::vector(n, vi), {.bond_dim = bond_dim, .pivot1 = pivot1});
         double current_integral{0};
         double previous_integral{0};
         std::cout << "rank nEval LastSweepPivotError integral\n";
-        for (int i = 0; i < sweepBound; i++) {
+        for (int i = 0; i < sweep_bound; i++) {
           ci2.iterate();
-          if (i == sweepBound - 1) { ci2.makeCanonical(); }
+          if (i == sweep_bound - 1) { ci2.makeCanonical(); }
           current_integral = ci2.tt.sum(std::vector(n, wi));
           std::cout << i << " " << count << " " << ci2.pivotError[ci2.pivotError.size() - 1] << " " << current_integral << std::endl;
           if (std::abs(current_integral - previous_integral) < 1e-8 && i > 1) { break; }
