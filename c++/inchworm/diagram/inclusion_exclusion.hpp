@@ -34,5 +34,6 @@ namespace inchworm::diagram {
    * FIXME Extend documentation
    */
   hyb_scalar_t inclusion_exclusion(time_diagram_t const &diagram, hyb_matrix_t hyb_mat, bool verbose = false);
+  // hyb_scalar_t inclusion_exclusion(time_diagram_t const &diagram, hyb_matrix_t hyb_mat, std::vector<segment_t>& segment_list,  std::vector<set_of_segments_t> &list_of_set_of_disjoint_segments, std::vector<set_of_segments_t> &list_of_set_of_adjacent_segments, bool verbose = false);
 
 } // namespace inchworm::diagram

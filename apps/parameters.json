@@ -17,7 +17,7 @@
     "n_site": 2,
     "n_bath": 1,
     "n_spin": 2,
-    "U": 0.0,
+    "U": 10.0,
     "mu": 0.0,
     "t": 0.0,
     "tau_max": 0.5,
@@ -25,7 +25,7 @@
     "n_GK": 15,
     "bond_dim": 30,
     "sweep_bound": 20,
-    "order_list": [1,2],
+    "order_list": [5],
     "tci_prrlu": true,
     "error_bound": 1e-8
 }

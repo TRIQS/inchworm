@@ -78,30 +78,24 @@ int main() {
   std::cout << std::setprecision(17) << std::endl;
 
   // TCI
-  int bl_index                              = 4;
-  int subspace_index                        = 6;
+  int bl_index                              = 0;
+  int subspace_index                        = 0;
   std::vector<double> integral_order_list   = {};
   std::vector<double> calculation_time_list = {};
   for (int order : order_list) {
     auto start_time = std::chrono::high_resolution_clock::now();
     int n           = 2 * order; // number of tau's
     std::vector<int> pivot1(n, 0);
-    double integral_sum_iota = 0.0;
-    std::vector<int> iota_d_list(order, 0); // fix orbital indices temporarily
-    std::vector<int> iota_d_dag_list(order, 0);
-    auto iota_pair_list = get_all_iota(block_shape, order);
-    for (auto [iota_d_list, iota_d_dag_list] : iota_pair_list) {
-      // std::cout << "iota_d_list: ";
-      // print_vector(iota_d_list);
-      // std::cout << "iota_d_dag_list: ";
-      // print_vector(iota_d_dag_list);
-      std::vector<int> range(n);
-      std::iota(range.begin(), range.end(), 0);
-      auto phi_pair_list      = get_all_phi(range); //gives all possible phi
-      double integral_sum_phi = 0.0;
-      for (auto [phi_d_list, phi_d_dag_list] : phi_pair_list) {
-        double integral_sum_n_left = 0.0;
-        for (int n_left = 1; n_left < n; n_left++) {
+    std::vector<int> range(n);
+    std::iota(range.begin(), range.end(), 0);
+    auto phi_pair_list      = get_all_phi(range);               //gives all possible phi
+    auto iota_pair_list     = get_all_iota(block_shape, order); //gives all possible iota
+    double integral_sum_phi = 0.0;
+    for (auto [phi_d_list, phi_d_dag_list] : phi_pair_list) {
+      double integral_sum_n_left = 0.0;
+      for (int n_left = 1; n_left < n; n_left++) {
+        double integral_sum_iota = 0.0;
+        for (auto [iota_d_list, iota_d_dag_list] : iota_pair_list) {
           long count            = 0;
           auto get_u_tau_max_00 = [&u_tau_max_zeroth_order, &tau_split, &tau_max, &all_d_ops, &all_d_dag_ops, &block_shape, &cp,
                                    &Delta_tau = Delta_tau, &ad_imp = ad_imp, &u_interpolator, &count, &phi_d_list = phi_d_list,
@@ -133,7 +127,7 @@ int main() {
             std::cout << "taus: ";
             print_vector(taus);
             u_tau_max_00_vs1 = get_u_tau_max_00(vs1);
-            std::cout << "get_u_tau_max_00(pivot1): " << u_tau_max_00_vs1 << "\n" << std::endl;
+            std::cout << "get_u_tau_max(pivot1): " << u_tau_max_00_vs1 << "\n" << std::endl;
           } else {
             u_tau_max_00_vs1 = get_u_tau_max_00(vs1);
           }
@@ -163,17 +157,17 @@ int main() {
             }
           }
           if (debug) { std::cout << std::endl; }
-          integral_sum_n_left += current_integral;
+          integral_sum_iota += current_integral;
         }
-        integral_sum_phi += integral_sum_n_left;
+        integral_sum_n_left += integral_sum_iota;
       }
-      integral_sum_iota += integral_sum_phi;
+      integral_sum_phi += integral_sum_n_left;
     }
     auto end_time            = std::chrono::high_resolution_clock::now();
     auto duration            = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count();
     auto duration_in_seconds = static_cast<double>(duration) / 1e6;
     calculation_time_list.push_back(duration_in_seconds);
-    integral_order_list.push_back(integral_sum_iota);
+    integral_order_list.push_back(integral_sum_phi);
   }
 
   // print results
