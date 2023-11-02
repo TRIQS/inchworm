@@ -1,31 +1,30 @@
 {
     "debug": true,
     "cp": {
-        "beta": 0.5,
+        "beta": 2,
         "gf_struct": {
-            "up": 2,
-            "dn": 2
+            "up": 2
         },
         "n_tau_green": 5,
         "n_tau_inch": 10001,
         "n_tau": 10001
     },
     "theta": [
-        [1.0],[1.0]
+        [2,2,2,2,2,2,2,2,2,2],[1.0,-0.5,0.5,-0.5,0.5,-1,-0.3,-0.3,1.0,1]
     ],
-    "epsilon": [1.0,1.0],
+    "epsilon": [1.0,0.5,-0.5,1.0,-0.2,0.4,0.33,0.2,0.1,-0.111],
     "n_site": 2,
     "n_bath": 1,
-    "n_spin": 2,
+    "n_spin": 1,
     "U": 10.0,
     "mu": 0.0,
-    "t": 0.0,
-    "tau_max": 0.5,
-    "tau_split_ratio": 0.5555555555,
+    "t": 2.0,
+    "tau_max": 2,
+    "tau_split_ratio": 0.9,
     "n_GK": 15,
-    "bond_dim": 30,
-    "sweep_bound": 20,
-    "order_list": [5],
+    "bond_dim": 10,
+    "sweep_bound": 30,
+    "order_list": [1,2],
     "tci_prrlu": true,
-    "error_bound": 1e-8
+    "error_bound": 1e-10
 }

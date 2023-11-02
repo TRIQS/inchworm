@@ -206,7 +206,7 @@ namespace inchworm::diagram {
     auto end_time            = std::chrono::high_resolution_clock::now();
     auto duration            = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count();
     auto duration_in_seconds = static_cast<double>(duration) / 1e6;
-    std::cerr << "build segment list time: " << duration_in_seconds << " seconds" << std::endl;
+    // std::cerr << "build segment list time: " << duration_in_seconds << " seconds" << std::endl;
 
     start_time = std::chrono::high_resolution_clock::now();
     for (auto const &seg : segment_list) { // segment_list is sorted w.r.t. segment size
@@ -215,7 +215,7 @@ namespace inchworm::diagram {
     end_time            = std::chrono::high_resolution_clock::now();
     duration            = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count();
     duration_in_seconds = static_cast<double>(duration) / 1e6;
-    std::cerr << "calculate segment time: " << duration_in_seconds << " seconds" << std::endl;
+    // std::cerr << "calculate segment time: " << duration_in_seconds << " seconds" << std::endl;
 
     // ------------ Debug Prints ------------
     if (verbose) {

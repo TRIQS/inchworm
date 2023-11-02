@@ -71,6 +71,28 @@ inline std::vector<std::pair<std::vector<int>, std::vector<int>>> get_all_phi(st
   return res;
 }
 
+inline std::vector<std::pair<std::vector<int>, std::vector<int>>> get_all_phi_crossing(std::vector<int> const &range) {
+  std::vector<std::pair<std::vector<int>, std::vector<int>>> res{};
+  int order                       = range.size() / 2;
+  std::vector<int> order_d_ls     = {};
+  std::vector<int> order_d_dag_ls = {};
+  for (int i = 0; i < 2 * order; i = i + 2) {
+    order_d_ls.push_back(range[i]);
+    order_d_dag_ls.push_back(range[i + 1]);
+  }
+  std::cout << "tau_d_ls size: " << order_d_ls.size() << std::endl;
+  std::cout << "tau_d_dag_ls size: " << order_d_dag_ls.size() << std::endl;
+  res.push_back(std::make_pair(order_d_ls, order_d_dag_ls));
+  order_d_ls.clear();
+  order_d_dag_ls.clear();
+  for (int i = 0; i < 2 * order; i = i + 2) {
+    order_d_ls.push_back(range[i + 1]);
+    order_d_dag_ls.push_back(range[i]);
+  }
+  res.push_back(std::make_pair(order_d_ls, order_d_dag_ls));
+  return res;
+}
+
 inline void generate_combinations(const std::vector<int> &A, std::vector<int> &B, int idx, std::vector<std::vector<int>> &all_combinations) {
   if (idx == B.size()) {
     all_combinations.push_back(B);
@@ -211,7 +233,12 @@ double evaluate_u_tau_max(frame_t &frame_zeroth_order, double tau_split, double 
                                  * impurity_product(ad_imp, diagram, tau_split, 0, &u_interpolator));
   int sign          = 0;
   double hyb_weight = 0.0;
-  if (u_products[bl_indx].size() != 0) {
+  if (bl_indx == -1) { //-1 is for returning the norm
+    auto hyb_mat = diagram::hyb_matrix_t(diagram, Delta_tau);
+    sign         = diagram.sign();
+    hyb_weight   = inclusion_exclusion(diagram, hyb_mat);
+    return hyb_weight * sign * norm(u_products);
+  } else if (u_products[bl_indx].size() != 0) {
     auto hyb_mat = diagram::hyb_matrix_t(diagram, Delta_tau);
     sign         = diagram.sign();
     hyb_weight   = inclusion_exclusion(diagram, hyb_mat);
