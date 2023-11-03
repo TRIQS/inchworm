@@ -80,8 +80,8 @@ inline std::vector<std::pair<std::vector<int>, std::vector<int>>> get_all_phi_cr
     order_d_ls.push_back(range[i]);
     order_d_dag_ls.push_back(range[i + 1]);
   }
-  std::cout << "tau_d_ls size: " << order_d_ls.size() << std::endl;
-  std::cout << "tau_d_dag_ls size: " << order_d_dag_ls.size() << std::endl;
+  // std::cout << "tau_d_ls size: " << order_d_ls.size() << std::endl;
+  // std::cout << "tau_d_dag_ls size: " << order_d_dag_ls.size() << std::endl;
   res.push_back(std::make_pair(order_d_ls, order_d_dag_ls));
   order_d_ls.clear();
   order_d_dag_ls.clear();
@@ -93,6 +93,7 @@ inline std::vector<std::pair<std::vector<int>, std::vector<int>>> get_all_phi_cr
   return res;
 }
 
+// geneerate all samples of B.size() from A and store them in all_combinations; each element of B can take any value from A
 inline void generate_combinations(const std::vector<int> &A, std::vector<int> &B, int idx, std::vector<std::vector<int>> &all_combinations) {
   if (idx == B.size()) {
     all_combinations.push_back(B);
@@ -129,7 +130,9 @@ inline std::vector<std::pair<std::vector<int>, std::vector<int>>> get_all_iota(c
   std::iota(range.begin(), range.end(), 0);
   generate_combinations(range, iota, 0, all_iota);
   std::vector<std::vector<int>> all_number_in_block{};
+
   for (auto iota_d_list : all_iota) { all_number_in_block.push_back(generate_number_in_block(block_shape, iota_d_list)); }
+
   size_t i = 0;
   for (auto iota_d_list : all_iota) {
     size_t j = 0;
@@ -237,7 +240,7 @@ double evaluate_u_tau_max(frame_t &frame_zeroth_order, double tau_split, double 
     auto hyb_mat = diagram::hyb_matrix_t(diagram, Delta_tau);
     sign         = diagram.sign();
     hyb_weight   = inclusion_exclusion(diagram, hyb_mat);
-    return hyb_weight * sign * norm(u_products);
+    return hyb_weight * sign * trace(u_products);
   } else if (u_products[bl_indx].size() != 0) {
     auto hyb_mat = diagram::hyb_matrix_t(diagram, Delta_tau);
     sign         = diagram.sign();
@@ -253,7 +256,7 @@ double evaluate_u_tau_max(frame_t &frame_zeroth_order, double tau_split, double 
 
 inline void read_json_parameters(const std::string &filepath, bool &debug, constr_params_t &cp, int &n_site, vec_t &epsilon, mat_t &theta,
                                  int &n_bath, int &n_spin, double &U, double &mu, double &t, double &tau_max, double &tau_split, int &n_GK,
-                                 int &bond_dim, int &sweep_bound, std::vector<int> &order_list, bool &tci_prrlu, double &error_bound) {
+                                 int &bond_dim, int &sweep_bound, std::vector<int> &order_list, bool &tci_prrlu, double &error_bound, int &bl_index, int &subspace_index) {
   namespace pt = boost::property_tree;
   pt::ptree root;
   pt::read_json(filepath, root);
@@ -278,6 +281,8 @@ inline void read_json_parameters(const std::string &filepath, bool &debug, const
   sweep_bound          = root.get<int>("sweep_bound");
   tci_prrlu            = root.get<bool>("tci_prrlu");
   error_bound          = root.get<double>("error_bound");
+  bl_index             = root.get<int>("bl_index");
+  subspace_index       = root.get<int>("subspace_index");
 
   for (pt::ptree::value_type &g_s : root.get_child("cp.gf_struct")) {
     std::string name = g_s.first;
@@ -313,4 +318,15 @@ inline void read_json_parameters(const std::string &filepath, bool &debug, const
     order_list[i] = order.second.get_value<int>();
     i++;
   }
+}
+
+template <typename T>
+inline void print_rank(xfac::TensorTrain<T> tt)
+{
+    int len = tt.M.size();
+    std::vector<int> rs(len-1);
+    for(auto i=0u; i< len-1; i++) rs[i]=tt.M[i].n_slices;
+    std::cout<<"rank: ";
+    print_vector(rs);
+    std::cout<<std::endl;
 }

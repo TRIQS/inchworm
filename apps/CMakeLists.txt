@@ -3,6 +3,14 @@ add_executable(integral integral.cpp)
 target_link_libraries(integral xfac::xfac)
 target_link_libraries(integral ${PROJECT_NAME}_c)
 
+add_executable(integral_single_element integral_single_element.cpp)
+target_link_libraries(integral_single_element xfac::xfac)
+target_link_libraries(integral_single_element ${PROJECT_NAME}_c)
+
+add_executable(integral_single_element_so integral_single_element_so.cpp)
+target_link_libraries(integral_single_element_so xfac::xfac)
+target_link_libraries(integral_single_element_so ${PROJECT_NAME}_c)
+
 add_executable(test_decompose_so test_decompose_so.cpp)
 target_link_libraries(test_decompose_so xfac::xfac)
 target_link_libraries(test_decompose_so ${PROJECT_NAME}_c)
