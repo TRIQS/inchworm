@@ -111,14 +111,27 @@ int main() {
                                       &Delta_tau = Delta_tau, &ad_imp = ad_imp, &u_interpolator, &count, &phi_d_list = phi_d_list,
                                       &phi_d_dag_list = phi_d_dag_list, &n_left, &bl_index, &subspace_index,
                                       &debug](const std::vector<double> &v_iota_s) {
-          int mid = v_iota_s.size() / 2;
-          std::vector<double> vs(v_iota_s.begin(), v_iota_s.begin() + mid);
-          std::vector<double> iotas(v_iota_s.begin() + mid, v_iota_s.end());
-          int mid_iota = iotas.size() / 2;
+          std::vector<double> vs{};
+          std::vector<double> iotas{};
+          vs.reserve(v_iota_s.size() / 2);
+          iotas.reserve(v_iota_s.size() / 2);
+          for (int i = 0; i < v_iota_s.size(); i++) {
+            if (i % 2 == 0) {
+              vs.push_back(v_iota_s[i]);
+            } else {
+              iotas.push_back(v_iota_s[i]);
+            }
+          }
           // std::cout << "vs: ";
           // print_vector(vs);
           // std::cout << "iotas: ";
           // print_vector(iotas);
+          int mid_iota = iotas.size() / 2;
+          // for(int i = 0 ; i < iotas.size(); i++){
+          //   if(iotas[i]!=0){
+          //     std::cout << "iota is not zero" << std::endl;
+          //   }
+          // }
           std::vector<double> iota_d_list(iotas.begin(), iotas.begin() + mid_iota);
           std::vector<double> iota_d_dag_list(iotas.begin() + mid_iota, iotas.end());
           std::vector<double> vs_left(vs.begin(), vs.begin() + n_left);
@@ -142,8 +155,12 @@ int main() {
         // set pivot for iota
         int iota_pivot_index = 0;
         for (auto iota_pivot1 : all_iota_pivots) {
-          auto v_iota_s1_temp = v_iota_s1;
-          for (int i = 0; i < iota_pivot1.size(); i++) { v_iota_s1_temp.push_back(iotai[iota_pivot1[i]]); }
+          std::vector<double> v_iota_s1_temp{};
+          v_iota_s1_temp.reserve(v_iota_s1.size() + iota_pivot1.size());
+          for (int i = 0; i < iota_pivot1.size(); i++) {
+            v_iota_s1_temp.push_back(v_iota_s1[i]);
+            v_iota_s1_temp.push_back(iota_pivot1[i]);
+          }
           u_tau_max_element_vs1 = get_u_tau_max_element(v_iota_s1_temp);
           if (u_tau_max_element_vs1 != 0) {
             v_iota_s1 = v_iota_s1_temp;
@@ -153,19 +170,30 @@ int main() {
         }
         if (iota_pivot_index == all_iota_pivots.size()) { continue; }
 
-        auto pivot1           = v_pivot1;
+        std::vector<int> pivot1{};
         auto pivot1_to_append = all_iota_pivots[iota_pivot_index];
-        pivot1.insert(pivot1.end(), pivot1_to_append.begin(), pivot1_to_append.end());
-
+        pivot1.reserve(v_pivot1.size() + pivot1_to_append.size());
+        for (int i = 0; i < pivot1_to_append.size(); i++) {
+          pivot1.push_back(v_pivot1[i]);
+          pivot1.push_back(pivot1_to_append[i]);
+        }
         std::cout << "pivot1: ";
         print_vector(pivot1);
         std::cout << "v_iota_s1: ";
         print_vector(v_iota_s1);
 
         if (debug) {
-          int mid1 = v_iota_s1.size() / 2;
-          std::vector<double> vs1(v_iota_s1.begin(), v_iota_s1.begin() + mid1);
-          std::vector<double> iotas1(v_iota_s1.begin() + mid1, v_iota_s1.end());
+          std::vector<double> vs1{};
+          std::vector<double> iotas1{};
+          vs1.reserve(v_iota_s1.size() / 2);
+          iotas1.reserve(v_iota_s1.size() / 2);
+          for (int i = 0; i < v_iota_s1.size(); i++) {
+            if (i % 2 == 0) {
+              vs1.push_back(v_iota_s1[i]);
+            } else {
+              iotas1.push_back(v_iota_s1[i]);
+            }
+          }
           int mid_iota1 = iotas1.size() / 2;
           std::vector<double> iota_d_list1(iotas1.begin(), iotas1.begin() + mid_iota1);
           std::vector<double> iota_d_dag_list1(iotas1.begin() + mid_iota1, iotas1.end());
@@ -191,12 +219,18 @@ int main() {
         double previous_integral{0};
         double integral_element{0};
         if (debug) { std::cout << "iteration nEval LastSweepPivotError integral\n"; }
-        auto input           = std::vector(n, vi);
-        auto input_to_append = std::vector(n, iotai);
-        input.insert(input.end(), input_to_append.begin(), input_to_append.end());
-        auto weight           = std::vector(n, wi_v);
-        auto weight_to_append = std::vector(n, wi_iota);
-        weight.insert(weight.end(), weight_to_append.begin(), weight_to_append.end());
+        std::vector<std::vector<double>> input{};
+        input.reserve(2 * n);
+        for (int i = 0; i < n; i++) {
+          input.push_back(vi);
+          input.push_back(iotai);
+        }
+        std::vector<std::vector<double>> weight{};
+        weight.reserve(2 * n);
+        for (int i = 0; i < n; i++) {
+          weight.push_back(wi_v);
+          weight.push_back(wi_iota);
+        }
         // std::cout << "input: " << std::endl;
         // for (auto v : input) { print_vector(v); }
         // std::cout << "weight: " << std::endl;
@@ -205,7 +239,7 @@ int main() {
           auto ci = xfac::CTensorCI2<double, double>(get_u_tau_max_element, input, {.bond_dim = bond_dim, .pivot1 = pivot1});
           for (int i = 0; i < sweep_bound; i++) {
             ci.iterate();
-            ci.makeCanonical();
+            // ci.makeCanonical();
             current_integral = ci.tt.sum(weight);
             if (debug) { std::cout << i << " " << count << " " << ci.pivotError[ci.pivotError.size() - 1] << " " << current_integral << std::endl; }
             if (std::abs(current_integral - previous_integral) < error_bound && i > 1) { break; }
@@ -219,7 +253,7 @@ int main() {
             ci.iterate();
             current_integral = ci.sumWeighted(weight);
             if (debug) { std::cout << i << " " << count << " " << ci.pivotError[ci.pivotError.size() - 1] << " " << current_integral << std::endl; }
-            if (std::abs(current_integral - previous_integral) < error_bound && i > 1) { break; }
+            if (std::abs(current_integral - previous_integral) < error_bound && i > 5) { break; }
             previous_integral = current_integral;
           }
           integral_element = current_integral;

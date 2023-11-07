@@ -219,7 +219,7 @@ int main() {
         auto ci2 = xfac::CTensorCI2<double, double>(get_u_tau_max_00, std::vector(n, vi), {.bond_dim = bond_dim, .pivot1 = pivot1});
         double current_integral{0};
         double previous_integral{0};
-        std::cout << "rank nEval LastSweepPivotError integral\n";
+        std::cout << "iteration nEval LastSweepPivotError integral\n";
         for (int i = 0; i < sweep_bound; i++) {
           ci2.iterate();
           if (i == sweep_bound - 1) { ci2.makeCanonical(); }

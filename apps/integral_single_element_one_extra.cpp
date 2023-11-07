@@ -83,23 +83,14 @@ int main() {
   std::vector<double> calculation_time_list = {};
   auto [vi, wi_v]                           = select_quadrature_GK(n_GK, 0, 1);
   int n_phi                                 = std::accumulate(block_shape.begin(), block_shape.end(), 0);
-  std::vector<double> iotai(n_phi);
-  std::iota(iotai.begin(), iotai.end(), 0);
-  auto wi_iota = std::vector(n_phi, 1.0);
   for (int order : order_list) {
     auto start_time = std::chrono::high_resolution_clock::now();
     int n           = 2 * order;     // number of tau's
     std::vector<int> v_pivot1(n, 0); // for tau only; pivots for iota are set later
     std::vector<int> range(n);
     std::iota(range.begin(), range.end(), 0);
-    auto phi_pair_list = get_all_phi(range); //gives all possible phi
-
-    std::vector<int> iota_pivots(n, 0);
-    std::vector<int> iota_pivots_range(n_phi);
-    std::iota(iota_pivots_range.begin(), iota_pivots_range.end(), 0);
-    std::vector<std::vector<int>> all_iota_pivots{};
-    generate_combinations(iota_pivots_range, iota_pivots, 0, all_iota_pivots);
-    // auto iota_pair_list     = get_all_iota(block_shape, order); //gives all possible iota
+    auto phi_pair_list      = get_all_phi(range);               //gives all possible phi
+    auto iota_pair_list     = get_all_iota(block_shape, order); //gives all possible iota
     double integral_sum_phi = 0.0;
     for (auto [phi_d_list, phi_d_dag_list] : phi_pair_list) {
       double integral_sum_n_left = 0.0;
@@ -109,18 +100,10 @@ int main() {
         long count                 = 0;
         auto get_u_tau_max_element = [&u_tau_max_zeroth_order, &tau_split, &tau_max, &all_d_ops, &all_d_dag_ops, &block_shape, &cp,
                                       &Delta_tau = Delta_tau, &ad_imp = ad_imp, &u_interpolator, &count, &phi_d_list = phi_d_list,
-                                      &phi_d_dag_list = phi_d_dag_list, &n_left, &bl_index, &subspace_index,
-                                      &debug](const std::vector<double> &v_iota_s) {
-          int mid = v_iota_s.size() / 2;
-          std::vector<double> vs(v_iota_s.begin(), v_iota_s.begin() + mid);
-          std::vector<double> iotas(v_iota_s.begin() + mid, v_iota_s.end());
-          int mid_iota = iotas.size() / 2;
-          // std::cout << "vs: ";
-          // print_vector(vs);
-          // std::cout << "iotas: ";
-          // print_vector(iotas);
-          std::vector<double> iota_d_list(iotas.begin(), iotas.begin() + mid_iota);
-          std::vector<double> iota_d_dag_list(iotas.begin() + mid_iota, iotas.end());
+                                      &phi_d_dag_list = phi_d_dag_list, &n_left, &bl_index, &subspace_index, &debug,
+                                      &iota_pair_list](const std::vector<double> &v_iota_s) {
+          std::vector<double> vs(v_iota_s.begin() + 1, v_iota_s.end());
+          auto [iota_d_list, iota_d_dag_list] = iota_pair_list[static_cast<int>(v_iota_s[0])];
           std::vector<double> vs_left(vs.begin(), vs.begin() + n_left);
           std::vector<double> vs_right(vs.begin() + n_left, vs.end());
           std::vector<double> taus_left  = changeVariable(vs_left, tau_split, 0.0);
@@ -140,22 +123,19 @@ int main() {
         double u_tau_max_element_vs1 = 0;
 
         // set pivot for iota
-        int iota_pivot_index = 0;
-        for (auto iota_pivot1 : all_iota_pivots) {
+        std::vector<double> iota_pivot_list_valid = {};
+        for (int iota_pivot1 = 0; iota_pivot1 < iota_pair_list.size(); iota_pivot1++) {
           auto v_iota_s1_temp = v_iota_s1;
-          for (int i = 0; i < iota_pivot1.size(); i++) { v_iota_s1_temp.push_back(iotai[iota_pivot1[i]]); }
+          v_iota_s1_temp.insert(v_iota_s1_temp.begin(), iota_pivot1);
           u_tau_max_element_vs1 = get_u_tau_max_element(v_iota_s1_temp);
-          if (u_tau_max_element_vs1 != 0) {
-            v_iota_s1 = v_iota_s1_temp;
-            break;
-          }
-          iota_pivot_index++;
+          if (u_tau_max_element_vs1 != 0) { iota_pivot_list_valid.push_back(iota_pivot1); }
         }
-        if (iota_pivot_index == all_iota_pivots.size()) { continue; }
+        if (iota_pivot_list_valid.size() == 0) { continue; }
+        else{ std::cout << "iota_pivot_list_valid size: " << iota_pivot_list_valid.size() << std::endl;}
+        v_iota_s1.insert(v_iota_s1.begin(), iota_pivot_list_valid[0]);
 
-        auto pivot1           = v_pivot1;
-        auto pivot1_to_append = all_iota_pivots[iota_pivot_index];
-        pivot1.insert(pivot1.end(), pivot1_to_append.begin(), pivot1_to_append.end());
+        auto pivot1 = v_pivot1;
+        pivot1.insert(pivot1.begin(), 0);
 
         std::cout << "pivot1: ";
         print_vector(pivot1);
@@ -163,12 +143,8 @@ int main() {
         print_vector(v_iota_s1);
 
         if (debug) {
-          int mid1 = v_iota_s1.size() / 2;
-          std::vector<double> vs1(v_iota_s1.begin(), v_iota_s1.begin() + mid1);
-          std::vector<double> iotas1(v_iota_s1.begin() + mid1, v_iota_s1.end());
-          int mid_iota1 = iotas1.size() / 2;
-          std::vector<double> iota_d_list1(iotas1.begin(), iotas1.begin() + mid_iota1);
-          std::vector<double> iota_d_dag_list1(iotas1.begin() + mid_iota1, iotas1.end());
+          std::vector<double> vs1(v_iota_s1.begin() + 1, v_iota_s1.end());
+          auto [iota_d_list1, iota_d_dag_list1] = iota_pair_list[iota_pivot_list_valid[static_cast<int>(v_iota_s1[0])]];
           std::vector<double> vs1_left(vs1.begin(), vs1.begin() + n_left);
           std::vector<double> vs1_right(vs1.begin() + n_left, vs1.end());
           std::vector<double> taus1_left  = changeVariable(vs1_left, tau_split, 0.0);
@@ -183,6 +159,7 @@ int main() {
           print_vector(getElements(phi_d_list, taus));
           std::cout << "tau_d_dag_list: ";
           print_vector(getElements(phi_d_dag_list, taus));
+          auto u_tau_max_element_vs1 = get_u_tau_max_element(v_iota_s1);
           std::cout << "get_u_tau_max_element(pivot1): " << u_tau_max_element_vs1 << "\n" << std::endl;
         }
         if (u_tau_max_element_vs1 == 0) { continue; }
@@ -190,12 +167,16 @@ int main() {
         double current_integral{0};
         double previous_integral{0};
         double integral_element{0};
+
+        std::vector<double> iotai = iota_pivot_list_valid;
+        auto wi_iota = std::vector(iota_pivot_list_valid.size(), 1.0);
+
         if (debug) { std::cout << "iteration nEval LastSweepPivotError integral\n"; }
-        auto input           = std::vector(n, vi);
-        auto input_to_append = std::vector(n, iotai);
+        auto input_to_append = std::vector(n, vi);
+        auto input           = std::vector(1, iotai);
         input.insert(input.end(), input_to_append.begin(), input_to_append.end());
-        auto weight           = std::vector(n, wi_v);
-        auto weight_to_append = std::vector(n, wi_iota);
+        auto weight_to_append = std::vector(n, wi_v);
+        auto weight           = std::vector(1, wi_iota);
         weight.insert(weight.end(), weight_to_append.begin(), weight_to_append.end());
         // std::cout << "input: " << std::endl;
         // for (auto v : input) { print_vector(v); }

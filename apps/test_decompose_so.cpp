@@ -176,7 +176,7 @@ int main() {
 
     double current_integral{0};
     double previous_integral{0};
-    if (debug) { std::cout << "rank nEval LastSweepPivotError integral\n"; }
+    if (debug) { std::cout << "iteration nEval LastSweepPivotError integral\n"; }
     wi = std::vector(n_phi, 1.0);
     std::vector<int> iotai(n_phi);
     std::iota(iotai.begin(), iotai.end(), 0);
