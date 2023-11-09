@@ -133,11 +133,14 @@ int main() {
           //     std::cout << "iota is not zero" << std::endl;
           //   }
           // }
-          std::vector<double> iota_d_list(iotas.begin(), iotas.begin() + mid_iota);
-          std::vector<double> iota_d_dag_list(iotas.begin() + mid_iota, iotas.end());
+          // int mid_iota = iotas.size() / 2;
+          // std::vector<double> iota_d_list(iotas.begin(), iotas.begin() + mid_iota);
+          // std::vector<double> iota_d_dag_list(iotas.begin() + mid_iota, iotas.end());
+          std::vector<double> iota_d_list     = getElements(phi_d_list, iotas);
+          std::vector<double> iota_d_dag_list = getElements(phi_d_dag_list, iotas);
           std::vector<int> iota_d_list_int(iota_d_list.begin(), iota_d_list.end());
           std::vector<int> iota_d_dag_list_int(iota_d_dag_list.begin(), iota_d_dag_list.end());
-          std::vector<int> number_in_block_d = generate_number_in_block(block_shape, iota_d_list_int);
+          std::vector<int> number_in_block_d     = generate_number_in_block(block_shape, iota_d_list_int);
           std::vector<int> number_in_block_d_dag = generate_number_in_block(block_shape, iota_d_dag_list_int);
           if (number_in_block_d != number_in_block_d_dag) { return 0.0; }
 
@@ -178,9 +181,7 @@ int main() {
         std::vector<int> pivot1{};
         auto pivot1_to_append = all_iota_pivots[iota_pivot_index];
         pivot1.reserve(n);
-        for (int i = 0; i < pivot1_to_append.size(); i++) {
-          pivot1.push_back(v_pivot1[i]+pivot1_to_append[i]);
-        }
+        for (int i = 0; i < pivot1_to_append.size(); i++) { pivot1.push_back(v_pivot1[i] + pivot1_to_append[i]); }
         std::cout << "pivot1: ";
         print_vector(pivot1);
         std::cout << "v_iota_s1: ";
@@ -190,7 +191,7 @@ int main() {
           std::vector<double> vs1{};
           std::vector<double> iotas1{};
           vs1.reserve(v_iota_s1.size());
-          iotas1.reserve(v_iota_s1.size() );
+          iotas1.reserve(v_iota_s1.size());
           for (int i = 0; i < v_iota_s1.size(); i++) {
             double intPart;
             double fracPart;
@@ -225,14 +226,14 @@ int main() {
         if (debug) { std::cout << "iteration nEval LastSweepPivotError integral\n"; }
         std::vector<double> v_iota_i;
         std::vector<double> weight_i;
-        for(int i =0 ; i < n_phi; i++){
-          for (int j =0; j < vi.size(); j++){
-            v_iota_i.push_back(i+vi[j]);
+        for (int i = 0; i < n_phi; i++) {
+          for (int j = 0; j < vi.size(); j++) {
+            v_iota_i.push_back(i + vi[j]);
             weight_i.push_back(wi_v[j]);
           }
         }
 
-        std::vector<std::vector<double>> input = std::vector(n, v_iota_i);
+        std::vector<std::vector<double>> input  = std::vector(n, v_iota_i);
         std::vector<std::vector<double>> weight = std::vector(n, weight_i);
         // std::cout << "input: " << std::endl;
         // for (auto v : input) { print_vector(v); }

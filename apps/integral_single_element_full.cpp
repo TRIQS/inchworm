@@ -117,23 +117,25 @@ int main() {
           iotas.reserve(v_iota_s.size() / 2);
           for (int i = 0; i < v_iota_s.size(); i++) {
             if (i % 2 == 0) {
-              vs.push_back(v_iota_s[i]);
-            } else {
               iotas.push_back(v_iota_s[i]);
+            } else {
+              vs.push_back(v_iota_s[i]);
             }
           }
           // std::cout << "vs: ";
           // print_vector(vs);
           // std::cout << "iotas: ";
           // print_vector(iotas);
-          int mid_iota = iotas.size() / 2;
           // for(int i = 0 ; i < iotas.size(); i++){
           //   if(iotas[i]!=0){
           //     std::cout << "iota is not zero" << std::endl;
           //   }
           // }
-          std::vector<double> iota_d_list(iotas.begin(), iotas.begin() + mid_iota);
-          std::vector<double> iota_d_dag_list(iotas.begin() + mid_iota, iotas.end());
+          // int mid_iota = iotas.size() / 2;
+          // std::vector<double> iota_d_list(iotas.begin(), iotas.begin() + mid_iota);
+          // std::vector<double> iota_d_dag_list(iotas.begin() + mid_iota, iotas.end());
+          std::vector<double> iota_d_list     = getElements(phi_d_list, iotas);
+          std::vector<double> iota_d_dag_list = getElements(phi_d_dag_list, iotas);
           std::vector<double> vs_left(vs.begin(), vs.begin() + n_left);
           std::vector<double> vs_right(vs.begin() + n_left, vs.end());
           std::vector<double> taus_left  = changeVariable(vs_left, tau_split, 0.0);
@@ -158,8 +160,8 @@ int main() {
           std::vector<double> v_iota_s1_temp{};
           v_iota_s1_temp.reserve(v_iota_s1.size() + iota_pivot1.size());
           for (int i = 0; i < iota_pivot1.size(); i++) {
-            v_iota_s1_temp.push_back(v_iota_s1[i]);
             v_iota_s1_temp.push_back(iota_pivot1[i]);
+            v_iota_s1_temp.push_back(v_iota_s1[i]);
           }
           u_tau_max_element_vs1 = get_u_tau_max_element(v_iota_s1_temp);
           if (u_tau_max_element_vs1 != 0) {
@@ -174,8 +176,8 @@ int main() {
         auto pivot1_to_append = all_iota_pivots[iota_pivot_index];
         pivot1.reserve(v_pivot1.size() + pivot1_to_append.size());
         for (int i = 0; i < pivot1_to_append.size(); i++) {
-          pivot1.push_back(v_pivot1[i]);
           pivot1.push_back(pivot1_to_append[i]);
+          pivot1.push_back(v_pivot1[i]);
         }
         std::cout << "pivot1: ";
         print_vector(pivot1);
@@ -189,9 +191,9 @@ int main() {
           iotas1.reserve(v_iota_s1.size() / 2);
           for (int i = 0; i < v_iota_s1.size(); i++) {
             if (i % 2 == 0) {
-              vs1.push_back(v_iota_s1[i]);
-            } else {
               iotas1.push_back(v_iota_s1[i]);
+            } else {
+              vs1.push_back(v_iota_s1[i]);
             }
           }
           int mid_iota1 = iotas1.size() / 2;
@@ -222,14 +224,14 @@ int main() {
         std::vector<std::vector<double>> input{};
         input.reserve(2 * n);
         for (int i = 0; i < n; i++) {
-          input.push_back(vi);
           input.push_back(iotai);
+          input.push_back(vi);
         }
         std::vector<std::vector<double>> weight{};
         weight.reserve(2 * n);
         for (int i = 0; i < n; i++) {
-          weight.push_back(wi_v);
           weight.push_back(wi_iota);
+          weight.push_back(wi_v);
         }
         // std::cout << "input: " << std::endl;
         // for (auto v : input) { print_vector(v); }

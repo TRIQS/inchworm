@@ -90,7 +90,7 @@ int main() {
     std::vector<int> range(n);
     std::iota(range.begin(), range.end(), 0);
     auto phi_pair_list      = get_all_phi(range);               //gives all possible phi
-    auto iota_pair_list     = get_all_iota(block_shape, order); //gives all possible iota
+    auto iota_pair_list     = std::move(get_all_iota(block_shape, order)); //gives all possible iota
     double integral_sum_phi = 0.0;
     for (auto [phi_d_list, phi_d_dag_list] : phi_pair_list) {
       double integral_sum_n_left = 0.0;
@@ -121,7 +121,6 @@ int main() {
         std::vector<double> v_iota_s1;
         for (int i = 0; i < v_pivot1.size(); i++) { v_iota_s1.push_back(vi[v_pivot1[i]]); }
         double u_tau_max_element_vs1 = 0;
-
         // set pivot for iota
         std::vector<double> iota_pivot_list_valid = {};
         for (int iota_pivot1 = 0; iota_pivot1 < iota_pair_list.size(); iota_pivot1++) {
@@ -130,8 +129,10 @@ int main() {
           u_tau_max_element_vs1 = get_u_tau_max_element(v_iota_s1_temp);
           if (u_tau_max_element_vs1 != 0) { iota_pivot_list_valid.push_back(iota_pivot1); }
         }
-        if (iota_pivot_list_valid.size() == 0) { continue; }
-        else{ std::cout << "iota_pivot_list_valid size: " << iota_pivot_list_valid.size() << std::endl;}
+        if (iota_pivot_list_valid.size() == 0) {         std::cerr << "no valid iota found" << std::endl; continue; }
+        else{ std::cout << "iota_pivot_list_valid size: " << iota_pivot_list_valid.size() << std::endl;
+        std::cout << "iota_pair_list size: " << iota_pair_list.size() << std::endl;
+        }
         v_iota_s1.insert(v_iota_s1.begin(), iota_pivot_list_valid[0]);
 
         auto pivot1 = v_pivot1;
