@@ -12,7 +12,7 @@ inline unsigned long long factorial(int n) {
   return result;
 }
 
-template <int n> inline auto QuadratureGK(double a = 0, double b = 1) {
+template <int n> inline auto quadrature_GK(double a = 0, double b = 1) {
   static const auto abscissa = boost::math::quadrature::gauss_kronrod<double, n>::abscissa();
   static const auto weights  = boost::math::quadrature::gauss_kronrod<double, n>::weights();
   int nq                     = 2 * abscissa.size() - 1;
@@ -26,24 +26,24 @@ template <int n> inline auto QuadratureGK(double a = 0, double b = 1) {
   return make_pair(xi, weight);
 }
 
-inline auto selectQuadratureGK(int n, double a = 0, double b = 1) {
+inline auto select_quadrature_GK(int n, double a = 0, double b = 1) {
   switch (n) {
-    case 15: return QuadratureGK<15>(a, b);
-    case 30: return QuadratureGK<30>(a, b);
-    case 45: return QuadratureGK<45>(a, b);
+    case 15: return quadrature_GK<15>(a, b);
+    case 30: return quadrature_GK<30>(a, b);
+    case 45: return quadrature_GK<45>(a, b);
     default: {
       std::cout << "Not supported\n";
-      return QuadratureGK<15>(a, b);
+      return quadrature_GK<15>(a, b);
     };
   }
 }
 
-template <typename T> void printVector(const std::vector<T> &vec) {
+template <typename T> void print_vector(const std::vector<T> &vec) {
   for (auto v : vec) std::cout << v << ' ';
   std::cout << std::endl;
 }
 
-inline std::vector<std::pair<std::vector<int>, std::vector<int>>> getAllPhi(std::vector<int> const &range) {
+inline std::vector<std::pair<std::vector<int>, std::vector<int>>> get_all_phi(std::vector<int> const &range) {
   std::vector<std::pair<std::vector<int>, std::vector<int>>> res{};
   int order = range.size() / 2;
   std::vector<int> indicator(2 * order);
@@ -63,16 +63,16 @@ inline std::vector<std::pair<std::vector<int>, std::vector<int>>> getAllPhi(std:
     // std::cout << "tau_d_dag_ls size: " << tau_d_dag_ls.size() << std::endl;
     // Display the generated sub-vectors
     // std::cerr << "First: " << std::endl;
-    // printVector(order_d_ls);
+    // print_vector(order_d_ls);
     // std::cerr << "Second: " << std::endl;
-    // printVector(order_d_dag_ls);
+    // print_vector(order_d_dag_ls);
     // std::cerr << "---\n";
     res.push_back(std::make_pair(order_d_ls, order_d_dag_ls));
   } while (std::next_permutation(indicator.begin(), indicator.end()));
   return res;
 }
 
-inline std::vector<std::pair<std::vector<int>, std::vector<int>>> getAllPhiCrossing(std::vector<int> const &range) {
+inline std::vector<std::pair<std::vector<int>, std::vector<int>>> get_all_phi_crossing(std::vector<int> const &range) {
   std::vector<std::pair<std::vector<int>, std::vector<int>>> res{};
   int order                       = range.size() / 2;
   std::vector<int> order_d_ls     = {};
@@ -96,7 +96,7 @@ inline std::vector<std::pair<std::vector<int>, std::vector<int>>> getAllPhiCross
 
 // geneerate all samples of B.size() from A and store them in all_combinations; each element of B can take any value from A
 template <typename T>
-void generateCombinations(const std::vector<T> &A, std::vector<T> &B, int idx, std::vector<std::vector<T>> &all_combinations) {
+void generate_combinations(const std::vector<T> &A, std::vector<T> &B, int idx, std::vector<std::vector<T>> &all_combinations) {
   if (idx == B.size()) {
     all_combinations.push_back(B);
     return;
@@ -104,11 +104,11 @@ void generateCombinations(const std::vector<T> &A, std::vector<T> &B, int idx, s
 
   for (int i = 0; i < A.size(); ++i) {
     B[idx] = A[i];
-    generateCombinations(A, B, idx + 1, all_combinations);
+    generate_combinations(A, B, idx + 1, all_combinations);
   }
 }
 
-inline std::vector<int> generateNumberInBlock(const std::vector<int> &block_shape, const std::vector<int> &iota_d_list) {
+inline std::vector<int> generate_number_in_block(const std::vector<int> &block_shape, const std::vector<int> &iota_d_list) {
   std::vector<int> res(block_shape.size(), 0);
   for (auto iota : iota_d_list) {
     for (int bl = 0; bl < block_shape.size(); ++bl) {
@@ -123,17 +123,17 @@ inline std::vector<int> generateNumberInBlock(const std::vector<int> &block_shap
   return res;
 }
 
-inline std::vector<std::pair<std::vector<int>, std::vector<int>>> getAllIota(const std::vector<int> &block_shape, int order) {
+inline std::vector<std::pair<std::vector<int>, std::vector<int>>> get_all_iota(const std::vector<int> &block_shape, int order) {
   std::vector<std::pair<std::vector<int>, std::vector<int>>> res{};
   int n_phi = std::accumulate(block_shape.begin(), block_shape.end(), 0);
   std::vector<std::vector<int>> all_iota{};
   std::vector<int> iota(order, 0);
   std::vector<int> range(n_phi);
   std::iota(range.begin(), range.end(), 0);
-  generateCombinations(range, iota, 0, all_iota);
+  generate_combinations(range, iota, 0, all_iota);
   std::vector<std::vector<int>> all_number_in_block{};
 
-  for (auto iota_d_list : all_iota) { all_number_in_block.push_back(generateNumberInBlock(block_shape, iota_d_list)); }
+  for (auto iota_d_list : all_iota) { all_number_in_block.push_back(generate_number_in_block(block_shape, iota_d_list)); }
 
   size_t i = 0;
   for (auto iota_d_list : all_iota) {
@@ -147,7 +147,7 @@ inline std::vector<std::pair<std::vector<int>, std::vector<int>>> getAllIota(con
   return res;
 }
 
-template <typename T> std::vector<T> getElements(const std::vector<int> &indices, const std::vector<T> &values) {
+template <typename T> std::vector<T> get_elements(const std::vector<int> &indices, const std::vector<T> &values) {
   std::vector<T> result;
   for (int index : indices) {
     if (index >= 0 && index < values.size()) {
@@ -160,7 +160,7 @@ template <typename T> std::vector<T> getElements(const std::vector<int> &indices
   return result;
 }
 
-// inline std::vector<double> changeVariable(const std::vector<double> &nus, double tau_max, double tau_min = 0.0) {
+// inline std::vector<double> change_variable(const std::vector<double> &nus, double tau_max, double tau_min = 0.0) {
 //   std::vector<double> taus(nus.size());
 //   taus[nus.size() - 1] = tau_min + (tau_max - tau_min) * std::pow(nus[nus.size() - 1], (1.0 / nus.size()));
 //   for(int i = nus.size() - 2; i >= 0; --i) {
@@ -173,7 +173,7 @@ template <typename T> std::vector<T> getElements(const std::vector<int> &indices
 //    return std::pow(tau_max - tau_min, taus.size())/factorial(taus.size());
 // }
 
-inline std::vector<double> changeVariable(const std::vector<double> &nus, double tau_max, double tau_min = 0.0) {
+inline std::vector<double> change_variable(const std::vector<double> &nus, double tau_max, double tau_min = 0.0) {
   std::vector<double> taus(nus.size());
   taus[0] = nus[0] * (tau_max - tau_min) + tau_min;
 
@@ -188,7 +188,7 @@ inline double jacobian(const std::vector<double> &taus, double tau_max, double t
   return std::abs(prod);
 }
 
-template <typename T> void printBlockShape(block_gf<imtime, T> const &x_tau) {
+template <typename T> void print_block_shape(block_gf<imtime, T> const &x_tau) {
   std::cout << "number of taus: " << x_tau[0].mesh().size() << std::endl;
   std::cout << "number of block: " << x_tau.size() << std::endl;
   for (int bl = 0; bl < x_tau.size(); ++bl) { std::cout << "block: " << bl << " shape: " << x_tau[bl].target_shape() << std::endl; }
@@ -214,7 +214,7 @@ inline std::pair<int, int> findIndex(const std::vector<int> &block_shape, int io
   return std::make_pair(-1, -1); // Return a pair of -1s if not found
 }
 
-double evaluateUTauMax(frame_t &frame_zeroth_order, double tau_split, double tau_max, std::vector<std::vector<fop_t>> const &all_d_ops,
+double evaluate_u_tau_max(frame_t &frame_zeroth_order, double tau_split, double tau_max, std::vector<std::vector<fop_t>> const &all_d_ops,
                           std::vector<std::vector<fop_t>> const &all_d_dag_ops, std::vector<int> const &block_shape, constr_params_t const &cp,
                           hyb_tau_t const &Delta_tau, atom_diag const &ad_imp, interpolator_t<scalar_t> const &u_interpolator, auto const &tau_d_list,
                           auto const &tau_d_dag_list, auto const &iota_d_list, auto const &iota_d_dag_list, int bl_indx, int subspace_indx) {
@@ -256,7 +256,7 @@ double evaluateUTauMax(frame_t &frame_zeroth_order, double tau_split, double tau
   }
 }
 
-inline void readJsonParameters(const std::string &filepath, bool &debug, constr_params_t &cp, int &n_site, vec_t &epsilon, mat_t &theta,
+inline void read_json_parameters(const std::string &filepath, bool &debug, constr_params_t &cp, int &n_site, vec_t &epsilon, mat_t &theta,
                                  int &n_bath, int &n_spin, double &U, double &mu, double &t, double &tau_max, double &tau_split, int &n_GK,
                                  int &bond_dim, int &sweep_bound, std::vector<int> &order_list, bool &tci_prrlu, double &error_bound, int &bl_index,
                                  int &subspace_index) {
@@ -324,7 +324,7 @@ inline void readJsonParameters(const std::string &filepath, bool &debug, constr_
 }
 
 
-inline void readJsonParameters(const std::string &filepath, bool &debug, constr_params_t &cp, int &n_site, vec_t &epsilon, mat_t &theta,
+inline void read_json_parameters(const std::string &filepath, bool &debug, constr_params_t &cp, int &n_site, vec_t &epsilon, mat_t &theta,
                                  int &n_bath, int &n_spin, double &U, double &mu, double &t, double &tau_max, double &tau_split, int &n_GK,
                                  int &bond_dim, int &sweep_bound, std::vector<int> &order_list, bool &tci_prrlu, double &error_bound, int &bl_index,
                                  int &subspace_index, bool &debug_iota, bool &tci_prrlu_iota, int &bond_dim_iota, int &sweep_bound_iota,
@@ -397,11 +397,11 @@ inline void readJsonParameters(const std::string &filepath, bool &debug, constr_
   }
 }
 
-template <typename T> inline void printRank(xfac::TensorTrain<T> tt) {
+template <typename T> inline void print_rank(xfac::TensorTrain<T> tt) {
   int len = tt.M.size();
   std::vector<int> rs(len - 1);
   for (auto i = 0u; i < len - 1; i++) rs[i] = tt.M[i].n_slices;
   std::cout << "rank: ";
-  printVector(rs);
+  print_vector(rs);
   std::cout << std::endl;
 }

@@ -20,48 +20,17 @@
 #include "../hubbard.hpp"
 #include "../utility.hpp"
 
-class BaseMode {
+class base_mode {
   public:
-  BaseMode() {}
-  virtual void init(std::string jsonFilePath) {
-    readJsonParameters(jsonFilePath, debug, cp, n_site, epsilon, theta, n_bath, n_spin, U, mu, t, tau_max, tau_split, n_GK, bond_dim, sweep_bound,
+  base_mode() {}
+  virtual void init(std::string json_file_path) {
+    read_json_parameters(json_file_path, debug, cp, n_site, epsilon, theta, n_bath, n_spin, U, mu, t, tau_max, tau_split, n_GK, bond_dim, sweep_bound,
                        order_list, tci_prrlu, error_bound, bl_index, subspace_index);
   }
-  void constructHubbard() {
-    // prepare input
-    std::tie(vi, wi) = selectQuadratureGK(n_GK, 0, 1);
-    std::tie(Delta_tau, ad_imp, u_tau, G_tau) = test_setup(n_site, n_bath, n_spin, U, mu, t, cp, theta, epsilon);
-    u_interpolator                            = interpolator_t<scalar_t>(u_tau, u_tau[0].mesh().size());
-    u_tau_max_zeroth_order                    = u_interpolator(tau_max - tau_split) * u_interpolator(tau_split); //oder 0 result
-    n_bl                                      = cp.gf_struct.size();
-    all_d_ops.resize(n_bl, {});
-    all_d_dag_ops.resize(n_bl, {});
-    for (auto [bl, bl_pair] : enumerate(cp.gf_struct)) {
-      auto [bl_name, bl_size] = bl_pair;
-      block_shape.push_back(bl_size);
-    }
-    fops = fundamental_operator_set{cp.gf_struct};
-    for (auto [bl, bl_pair] : enumerate(cp.gf_struct)) {
-      auto [bl_name, bl_size] = bl_pair;
-      all_d_ops[bl].clear();
-      all_d_dag_ops[bl].clear();
-      for (auto idx : range(bl_size)) {
-        all_d_ops[bl].emplace_back(0.0, false, fops[{bl_name, idx}], bl, idx);
-        all_d_dag_ops[bl].emplace_back(0.0, true, fops[{bl_name, idx}], bl, idx);
-      }
-    }
-    if (debug) {
-      std::cout << "Delta_tau shape:" << std::endl;
-      printBlockShape(Delta_tau);
-      std::cout << "G_tau shape:" << std::endl;
-      printBlockShape(G_tau);
-      std::cout << "u_tau shape:" << std::endl;
-      printBlockShape(u_tau);
-    }
-  }
-
-  virtual void runSingleElement() = 0;
-  virtual ~BaseMode() {}
+  void construct_Hubbard();
+  void print_summary();
+  virtual void run_single_element() = 0;
+  virtual ~base_mode() {}
 
   protected:
   // input parameters
@@ -99,37 +68,40 @@ class BaseMode {
   std::vector<std::vector<fop_t>> all_d_dag_ops{};
   long n_bl{};
   fundamental_operator_set fops{};
+  //results
+  std::vector<double> integral_order_list   = {};
+  std::vector<double> calculation_time_list = {};
 };
 
-class ModeExplicitSum : public BaseMode {
+class ModeExplicitSum : public base_mode {
   public:
-  ModeExplicitSum() : BaseMode() {}
-  void runSingleElement() override;
+  ModeExplicitSum() : base_mode() {}
+  void run_single_element() override;
 };
 
-class ModeUseNormPivots : public BaseMode {
+class ModeUseNormPivots : public base_mode {
   public:
-  ModeUseNormPivots() : BaseMode() {}
-  void runSingleElement() override;
+  ModeUseNormPivots() : base_mode() {}
+  void run_single_element() override;
 };
 
-class ModeFullFactorization : public BaseMode {
+class ModeFullFactorization : public base_mode {
   public:
-  ModeFullFactorization() : BaseMode() {}
-  void runSingleElement() override;
+  ModeFullFactorization() : base_mode() {}
+  void run_single_element() override;
 };
 
-class ModeVertexFactorization : public BaseMode {
+class ModeVertexFactorization : public base_mode {
   public:
-  ModeVertexFactorization() : BaseMode() {}
-  void runSingleElement() override;
+  ModeVertexFactorization() : base_mode() {}
+  void run_single_element() override;
 };
 
-class ModeNestedTCI : public BaseMode {
+class ModeNestedTCI : public base_mode {
   public:
-  ModeNestedTCI() : BaseMode() {}
-  void runSingleElement() override;
-  void init(std::string jsonFilePath) override;
+  ModeNestedTCI() : base_mode() {}
+  void run_single_element() override;
+  void init(std::string json_file_path) override;
 
   private:
   // parameters for nested TCI only
@@ -140,20 +112,20 @@ class ModeNestedTCI : public BaseMode {
   double error_bound_iota{};
 };
 
-class ModeReusePivots : public BaseMode {
+class ModeReusePivots : public base_mode {
   public:
-  ModeReusePivots() : BaseMode() {}
-  void runSingleElement() override;
+  ModeReusePivots() : base_mode() {}
+  void run_single_element() override;
 };
 
-class ModePartitionFactorization : public BaseMode {
+class ModePartitionFactorization : public base_mode {
   public:
-  ModePartitionFactorization() : BaseMode() {}
-  void runSingleElement() override;
+  ModePartitionFactorization() : base_mode() {}
+  void run_single_element() override;
 };
 
-class ModeCombineFactorization : public BaseMode {
+class ModeCombineFactorization : public base_mode {
   public:
-  ModeCombineFactorization() : BaseMode() {}
-  void runSingleElement() override;
+  ModeCombineFactorization() : base_mode() {}
+  void run_single_element() override;
 };

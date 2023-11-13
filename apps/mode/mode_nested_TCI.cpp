@@ -7,18 +7,16 @@
 
 using namespace inchworm;
 
-void ModeNestedTCI::init(std::string jsonFilePath){
-    readJsonParameters(jsonFilePath, debug, cp, n_site, epsilon, theta, n_bath, n_spin, U, mu, t, tau_max,
+void ModeNestedTCI::init(std::string json_file_path){
+    read_json_parameters(json_file_path, debug, cp, n_site, epsilon, theta, n_bath, n_spin, U, mu, t, tau_max,
                        tau_split, n_GK, bond_dim, sweep_bound, order_list, tci_prrlu, error_bound, bl_index, subspace_index, debug_iota,
                        tci_prrlu_iota, bond_dim_iota, sweep_bound_iota, error_bound_iota);
 }
 
-void ModeNestedTCI::runSingleElement() {
+void ModeNestedTCI::run_single_element() {
 
   // TCI
-  std::vector<double> integral_order_list   = {};
-  std::vector<double> calculation_time_list = {};
-  auto [vi, wi_v]                           = selectQuadratureGK(n_GK, 0, 1);
+  auto [vi, wi_v]                           = select_quadrature_GK(n_GK, 0, 1);
   int n_phi                                 = std::accumulate(block_shape.begin(), block_shape.end(), 0);
   std::vector<int> iotai(n_phi);
   std::iota(iotai.begin(), iotai.end(), 0);
@@ -29,12 +27,12 @@ void ModeNestedTCI::runSingleElement() {
     std::vector<int> pivot1(n, 0);
     std::vector<int> range(n);
     std::iota(range.begin(), range.end(), 0);
-    auto phi_pair_list = getAllPhi(range); //gives all possible phi
+    auto phi_pair_list = get_all_phi(range); //gives all possible phi
     std::vector<int> iota_pivots(n, 0);
     std::vector<int> iota_pivots_range(n_phi);
     std::iota(iota_pivots_range.begin(), iota_pivots_range.end(), 0);
     std::vector<std::vector<int>> all_iota_pivots{};
-    generateCombinations(iota_pivots_range, iota_pivots, 0, all_iota_pivots); //gives all possible iota pivots
+    generate_combinations(iota_pivots_range, iota_pivots, 0, all_iota_pivots); //gives all possible iota pivots
     double integral_sum_phi = 0.0;
     for (auto [phi_d_list, phi_d_dag_list] : phi_pair_list) {
       double integral_sum_n_left = 0.0;
@@ -43,19 +41,19 @@ void ModeNestedTCI::runSingleElement() {
         long count_iota            = 0;
         auto get_u_tau_max_element_iota = [this,&count_iota, &phi_d_list = phi_d_list,
                                       &phi_d_dag_list = phi_d_dag_list, &n_left,  &pivot1, &vi=vi, &wi_v=wi_v, &n](const std::vector<int> &iotas) {
-          std::vector<int> iota_d_list     = getElements(phi_d_list, iotas);
-          std::vector<int> iota_d_dag_list = getElements(phi_d_dag_list, iotas);
+          std::vector<int> iota_d_list     = get_elements(phi_d_list, iotas);
+          std::vector<int> iota_d_dag_list = get_elements(phi_d_dag_list, iotas);
           long count                          = 0;
           auto get_u_tau_max_element          = [this, &count, &phi_d_list = phi_d_list,
                                         &phi_d_dag_list = phi_d_dag_list, &iota_d_list = iota_d_list, &iota_d_dag_list = iota_d_dag_list, &n_left](const std::vector<double> &vs) {
             std::vector<double> vs_left(vs.begin(), vs.begin() + n_left);
             std::vector<double> vs_right(vs.begin() + n_left, vs.end());
-            std::vector<double> taus_left  = changeVariable(vs_left, tau_split, 0.0);
-            std::vector<double> taus_right = changeVariable(vs_right, tau_max, tau_split);
+            std::vector<double> taus_left  = change_variable(vs_left, tau_split, 0.0);
+            std::vector<double> taus_right = change_variable(vs_right, tau_max, tau_split);
             auto taus(taus_left);
             taus.insert(taus.end(), taus_right.begin(), taus_right.end());
-            double integrand = evaluateUTauMax(u_tau_max_zeroth_order, tau_split, tau_max, all_d_ops, all_d_dag_ops, block_shape, cp, Delta_tau,
-                                                           ad_imp, u_interpolator, getElements(phi_d_list, taus), getElements(phi_d_dag_list, taus),
+            double integrand = evaluate_u_tau_max(u_tau_max_zeroth_order, tau_split, tau_max, all_d_ops, all_d_dag_ops, block_shape, cp, Delta_tau,
+                                                           ad_imp, u_interpolator, get_elements(phi_d_list, taus), get_elements(phi_d_dag_list, taus),
                                                            iota_d_list, iota_d_dag_list, bl_index, subspace_index);
             count++;
             double j = jacobian(taus_left, tau_split, 0.0) * jacobian(taus_right, tau_max, tau_split);
@@ -67,18 +65,18 @@ void ModeNestedTCI::runSingleElement() {
           if (debug) {
             std::vector<double> vs1_left(vs1.begin(), vs1.begin() + n_left);
             std::vector<double> vs1_right(vs1.begin() + n_left, vs1.end());
-            std::vector<double> taus1_left  = changeVariable(vs1_left, tau_split, 0.0);
-            std::vector<double> taus1_right = changeVariable(vs1_right, tau_max, tau_split);
+            std::vector<double> taus1_left  = change_variable(vs1_left, tau_split, 0.0);
+            std::vector<double> taus1_right = change_variable(vs1_right, tau_max, tau_split);
             auto taus(taus1_left);
             taus.insert(taus.end(), taus1_right.begin(), taus1_right.end());
             std::cout << "iota_d_list: ";
-            printVector(iota_d_list);
+            print_vector(iota_d_list);
             std::cout << "iota_d_dag_list: ";
-            printVector(iota_d_dag_list);
+            print_vector(iota_d_dag_list);
             std::cout << "tau_d_list: ";
-            printVector(getElements(phi_d_list, taus));
+            print_vector(get_elements(phi_d_list, taus));
             std::cout << "tau_d_dag_list: ";
-            printVector(getElements(phi_d_dag_list, taus));
+            print_vector(get_elements(phi_d_dag_list, taus));
             u_tau_max_element_vs1 = get_u_tau_max_element(vs1);
             std::cout << "get_u_tau_max_element(pivot1): " << u_tau_max_element_vs1 << "\n" << std::endl;
           } else {
@@ -100,7 +98,7 @@ void ModeNestedTCI::runSingleElement() {
               previous_integral = current_integral;
             }
             integral_element = current_integral;
-            if (debug) { printRank(ci.tt); }
+            if (debug) { print_rank(ci.tt); }
           } else {
             auto ci = xfac::CTensorCI<double, double>(get_u_tau_max_element, std::vector(n, vi), {.pivot1 = pivot1});
             for (int i = 0; i < sweep_bound; i++) {
@@ -147,7 +145,7 @@ void ModeNestedTCI::runSingleElement() {
             previous_integral = current_integral;
           }
           integral_element = current_integral;
-          if (debug_iota) { printRank(ci.tt); }
+          if (debug_iota) { print_rank(ci.tt); }
         } else {
           auto ci = xfac::CTensorCI<double, int>(get_u_tau_max_element_iota, std::vector(n, iotai), {.pivot1 = pivot1_iota});
           for (int i = 0; i < sweep_bound; i++) {
@@ -174,16 +172,5 @@ void ModeNestedTCI::runSingleElement() {
     integral_order_list.push_back(integral_sum_phi);
   }
 
-  // print results
-  int i = subspace_index / u_tau[bl_index].target_shape()[0];
-  int j = subspace_index % u_tau[bl_index].target_shape()[0];
-  std::cout << "u_tau_max exact: " << std::setw(10) << u_interpolator(tau_max)[bl_index](i, j) << std::endl;
-  std::cout << std::left << std::setw(10) << "order" << std::setw(30) << "value" << std::setw(30) << "time(s)" << std::endl;
-  std::cout << std::setw(10) << "0" << std::setw(30) << u_tau_max_zeroth_order[bl_index](i, j) << std::endl;
-  for (int i = 0; i < order_list.size(); i++) {
-    std::cout << std::setw(10) << order_list[i] << std::setw(30) << integral_order_list[i] << std::setw(30) << calculation_time_list[i] << std::endl;
-  }
-  double sum_value = u_tau_max_zeroth_order[bl_index](i, j) + std::accumulate(integral_order_list.begin(), integral_order_list.end(), 0.0);
-  double sum_time  = std::accumulate(calculation_time_list.begin(), calculation_time_list.end(), 0.0);
-  std::cout << std::setw(10) << "sum:" << std::setw(30) << sum_value << std::setw(10) << sum_time << std::endl;
+
 }

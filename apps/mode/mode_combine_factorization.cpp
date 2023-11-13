@@ -7,12 +7,10 @@
 
 using namespace inchworm;
 
-void ModeCombineFactorization::runSingleElement() {
+void ModeCombineFactorization::run_single_element() {
 
   // TCI
-  std::vector<double> integral_order_list   = {};
-  std::vector<double> calculation_time_list = {};
-  auto [vi, wi_v]                           = selectQuadratureGK(n_GK, 0, 1);
+  auto [vi, wi_v]                           = select_quadrature_GK(n_GK, 0, 1);
   int n_phi                                 = std::accumulate(block_shape.begin(), block_shape.end(), 0);
   for (int order : order_list) {
     auto start_time = std::chrono::high_resolution_clock::now();
@@ -20,8 +18,8 @@ void ModeCombineFactorization::runSingleElement() {
     std::vector<int> v_pivot1(n, 0); // for tau only; pivots for iota are set later
     std::vector<int> range(n);
     std::iota(range.begin(), range.end(), 0);
-    auto phi_pair_list      = getAllPhi(range);               //gives all possible phi
-    auto iota_pair_list     = std::move(getAllIota(block_shape, order)); //gives all possible iota
+    auto phi_pair_list      = get_all_phi(range);               //gives all possible phi
+    auto iota_pair_list     = std::move(get_all_iota(block_shape, order)); //gives all possible iota
     double integral_sum_phi = 0.0;
     for (auto [phi_d_list, phi_d_dag_list] : phi_pair_list) {
       double integral_sum_n_left = 0.0;
@@ -36,12 +34,12 @@ void ModeCombineFactorization::runSingleElement() {
           auto [iota_d_list, iota_d_dag_list] = iota_pair_list[static_cast<int>(v_iota_s[0])];
           std::vector<double> vs_left(vs.begin(), vs.begin() + n_left);
           std::vector<double> vs_right(vs.begin() + n_left, vs.end());
-          std::vector<double> taus_left  = changeVariable(vs_left, tau_split, 0.0);
-          std::vector<double> taus_right = changeVariable(vs_right, tau_max, tau_split);
+          std::vector<double> taus_left  = change_variable(vs_left, tau_split, 0.0);
+          std::vector<double> taus_right = change_variable(vs_right, tau_max, tau_split);
           auto taus(taus_left);
           taus.insert(taus.end(), taus_right.begin(), taus_right.end());
-          double integrand = evaluateUTauMax(u_tau_max_zeroth_order, tau_split, tau_max, all_d_ops, all_d_dag_ops, block_shape, cp, Delta_tau,
-                                                ad_imp, u_interpolator, getElements(phi_d_list, taus), getElements(phi_d_dag_list, taus), iota_d_list,
+          double integrand = evaluate_u_tau_max(u_tau_max_zeroth_order, tau_split, tau_max, all_d_ops, all_d_dag_ops, block_shape, cp, Delta_tau,
+                                                ad_imp, u_interpolator, get_elements(phi_d_list, taus), get_elements(phi_d_dag_list, taus), iota_d_list,
                                                 iota_d_dag_list, bl_index, subspace_index);
           count++;
           double j = jacobian(taus_left, tau_split, 0.0) * jacobian(taus_right, tau_max, tau_split);
@@ -69,27 +67,27 @@ void ModeCombineFactorization::runSingleElement() {
         pivot1.insert(pivot1.begin(), 0);
 
         std::cout << "pivot1: ";
-        printVector(pivot1);
+        print_vector(pivot1);
         std::cout << "v_iota_s1: ";
-        printVector(v_iota_s1);
+        print_vector(v_iota_s1);
 
         if (debug) {
           std::vector<double> vs1(v_iota_s1.begin() + 1, v_iota_s1.end());
           auto [iota_d_list1, iota_d_dag_list1] = iota_pair_list[iota_pivot_list_valid[static_cast<int>(v_iota_s1[0])]];
           std::vector<double> vs1_left(vs1.begin(), vs1.begin() + n_left);
           std::vector<double> vs1_right(vs1.begin() + n_left, vs1.end());
-          std::vector<double> taus1_left  = changeVariable(vs1_left, tau_split, 0.0);
-          std::vector<double> taus1_right = changeVariable(vs1_right, tau_max, tau_split);
+          std::vector<double> taus1_left  = change_variable(vs1_left, tau_split, 0.0);
+          std::vector<double> taus1_right = change_variable(vs1_right, tau_max, tau_split);
           auto taus(taus1_left);
           taus.insert(taus.end(), taus1_right.begin(), taus1_right.end());
           std::cout << "iota_d_list: ";
-          printVector(iota_d_list1);
+          print_vector(iota_d_list1);
           std::cout << "iota_d_dag_list: ";
-          printVector(iota_d_dag_list1);
+          print_vector(iota_d_dag_list1);
           std::cout << "tau_d_list: ";
-          printVector(getElements(phi_d_list, taus));
+          print_vector(get_elements(phi_d_list, taus));
           std::cout << "tau_d_dag_list: ";
-          printVector(getElements(phi_d_dag_list, taus));
+          print_vector(get_elements(phi_d_dag_list, taus));
           auto u_tau_max_element_vs1 = get_u_tau_max_element(v_iota_s1);
           std::cout << "get_u_tau_max_element(pivot1): " << u_tau_max_element_vs1 << "\n" << std::endl;
         }
@@ -110,9 +108,9 @@ void ModeCombineFactorization::runSingleElement() {
         auto weight           = std::vector(1, wi_iota);
         weight.insert(weight.end(), weight_to_append.begin(), weight_to_append.end());
         // std::cout << "input: " << std::endl;
-        // for (auto v : input) { printVector(v); }
+        // for (auto v : input) { print_vector(v); }
         // std::cout << "weight: " << std::endl;
-        // for (auto v : weight) { printVector(v); }
+        // for (auto v : weight) { print_vector(v); }
         if (tci_prrlu) {
           auto ci = xfac::CTensorCI2<double, double>(get_u_tau_max_element, input, {.bond_dim = bond_dim, .pivot1 = pivot1});
           for (int i = 0; i < sweep_bound; i++) {
@@ -124,7 +122,7 @@ void ModeCombineFactorization::runSingleElement() {
             previous_integral = current_integral;
           }
           integral_element = current_integral;
-          if (debug) { printRank(ci.tt); }
+          if (debug) { print_rank(ci.tt); }
         } else {
           auto ci = xfac::CTensorCI<double, double>(get_u_tau_max_element, input, {.pivot1 = pivot1});
           for (int i = 0; i < sweep_bound; i++) {
@@ -137,7 +135,7 @@ void ModeCombineFactorization::runSingleElement() {
           integral_element = current_integral;
           if (debug) {
             std::cout << "rank:" << std::endl;
-            printVector(ci.rank());
+            print_vector(ci.rank());
           }
         }
         if (debug) { std::cout << std::endl; }
@@ -154,16 +152,5 @@ void ModeCombineFactorization::runSingleElement() {
     integral_order_list.push_back(integral_sum_phi);
   }
 
-  // print results
-  int i = subspace_index / u_tau[bl_index].target_shape()[0];
-  int j = subspace_index % u_tau[bl_index].target_shape()[0];
-  std::cout << "u_tau_max exact: " << std::setw(10) << u_interpolator(tau_max)[bl_index](i, j) << std::endl;
-  std::cout << std::left << std::setw(10) << "order" << std::setw(30) << "value" << std::setw(30) << "time(s)" << std::endl;
-  std::cout << std::setw(10) << "0" << std::setw(30) << u_tau_max_zeroth_order[bl_index](i, j) << std::endl;
-  for (int i = 0; i < order_list.size(); i++) {
-    std::cout << std::setw(10) << order_list[i] << std::setw(30) << integral_order_list[i] << std::setw(30) << calculation_time_list[i] << std::endl;
-  }
-  double sum_value = u_tau_max_zeroth_order[bl_index](i, j) + std::accumulate(integral_order_list.begin(), integral_order_list.end(), 0.0);
-  double sum_time  = std::accumulate(calculation_time_list.begin(), calculation_time_list.end(), 0.0);
-  std::cout << std::setw(10) << "sum:" << std::setw(30) << sum_value << std::setw(10) << sum_time << std::endl;
+
 }

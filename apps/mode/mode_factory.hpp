@@ -1,13 +1,13 @@
 #include "./mode.hpp"
 
-inline BaseMode* createMode(const std::string& modeName) {
-    if (modeName == "use_norm_pivots") return new ModeUseNormPivots();
-    if (modeName == "full_factorization") return new ModeFullFactorization();
-    if (modeName == "vertex_factorization") return new ModeVertexFactorization();
-    if (modeName == "nested_tci") return new ModeNestedTCI();
-    if (modeName == "reuse_pivots") return new ModeReusePivots();
-    if (modeName == "partition_factorization") return new ModePartitionFactorization();
-    if (modeName == "combine_factorization") return new ModeCombineFactorization();
-    if (modeName == "explicit_sum") return new ModeExplicitSum();
+inline base_mode* create_mode(const std::string& mode_name) {
+    if (mode_name == "use_norm_pivots") return new ModeUseNormPivots();
+    if (mode_name == "full_factorization") return new ModeFullFactorization();
+    if (mode_name == "vertex_factorization") return new ModeVertexFactorization();
+    if (mode_name == "nested_tci") return new ModeNestedTCI();
+    if (mode_name == "reuse_pivots") return new ModeReusePivots();
+    if (mode_name == "partition_factorization") return new ModePartitionFactorization();
+    if (mode_name == "combine_factorization") return new ModeCombineFactorization();
+    if (mode_name == "explicit_sum") return new ModeExplicitSum();
     return nullptr;
 }

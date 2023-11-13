@@ -3,28 +3,29 @@
 #include "mode/mode_factory.hpp"
 
 int main(int argc, char *argv[]) {
-  std::string modeName {};
-  std::string jsonFilePath {};
+  std::string mode_name {};
+  std::string json_file_path {};
 
   // Check if mode and file path are provided
   if (argc > 2) {
-    modeName     = argv[1];
-    jsonFilePath = argv[2];
+    mode_name     = argv[1];
+    json_file_path = argv[2];
   } else if (argc > 1) {
-    modeName     = argv[1];
-    jsonFilePath = "../../apps/parameters.json";
+    mode_name     = argv[1];
+    json_file_path = "../../apps/parameters.json";
   } else {
     std::cout << "Please provide mode (and file path)" << std::endl;
     std::cout << "Supported modes: use_norm_pivots, full_factorization, vertex_factorization, nested_tci, reuse_pivots, partition_factorization, combine_factorization, explicit_sum" << std::endl;
     return 0;
   }
 
-  BaseMode *mode = createMode(modeName);
+  base_mode *mode = create_mode(mode_name);
   if (mode) {
     std::cout << std::setprecision(18) << "##### Tensor Train Based Hybridyzation Expansion Inchworm Algorithm #####" << std::endl;
-    mode->init(jsonFilePath);
-    mode->constructHubbard();
-    mode->runSingleElement();
+    mode->init(json_file_path);
+    mode->construct_Hubbard();
+    mode->run_single_element();
+    mode->print_summary();
     delete mode;
   } else {
     std::cout << "Invalid mode specified" << std::endl;
