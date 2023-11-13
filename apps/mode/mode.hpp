@@ -23,12 +23,13 @@
 class BaseMode {
   public:
   BaseMode() {}
-  void init(std::string jsonFilePath) {
+  virtual void init(std::string jsonFilePath) {
     readJsonParameters(jsonFilePath, debug, cp, n_site, epsilon, theta, n_bath, n_spin, U, mu, t, tau_max, tau_split, n_GK, bond_dim, sweep_bound,
                        order_list, tci_prrlu, error_bound, bl_index, subspace_index);
   }
   void prepareInput() {
     // prepare input
+    std::tie(vi, wi) = select_quadrature_GK(n_GK, 0, 1);
     std::tie(Delta_tau, ad_imp, u_tau, G_tau) = test_setup(n_site, n_bath, n_spin, U, mu, t, cp, theta, epsilon);
     u_interpolator                            = interpolator_t<scalar_t>(u_tau, u_tau[0].mesh().size());
     u_tau_max_zeroth_order                    = u_interpolator(tau_max - tau_split) * u_interpolator(tau_split); //oder 0 result
@@ -85,6 +86,8 @@ class BaseMode {
   int bl_index{};
   int subspace_index{};
   // constructed initial data
+  std::vector<double> vi{};
+  std::vector<double> wi{};
   hyb_tau_t Delta_tau{};
   atom_diag ad_imp{};
   u_tau_t u_tau{};
@@ -98,8 +101,59 @@ class BaseMode {
   fundamental_operator_set fops{};
 };
 
+class ModeExplicitSum : public BaseMode {
+  public:
+  ModeExplicitSum() : BaseMode() {}
+  void runSingleElement() override;
+};
+
 class ModeUseNormPivots : public BaseMode {
   public:
   ModeUseNormPivots() : BaseMode() {}
+  void runSingleElement() override;
+};
+
+class ModeFullFactorization : public BaseMode {
+  public:
+  ModeFullFactorization() : BaseMode() {}
+  void runSingleElement() override;
+};
+
+class ModeVertexFactorization : public BaseMode {
+  public:
+  ModeVertexFactorization() : BaseMode() {}
+  void runSingleElement() override;
+};
+
+class ModeNestedTCI : public BaseMode {
+  public:
+  ModeNestedTCI() : BaseMode() {}
+  void runSingleElement() override;
+  void init(std::string jsonFilePath) override;
+
+  private:
+  // parameters for nested TCI only
+  bool debug_iota{};
+  bool tci_prrlu_iota{};
+  int bond_dim_iota{};
+  int sweep_bound_iota{};
+  double error_bound_iota{};
+};
+
+class ModeReusePivots : public BaseMode {
+  public:
+  ModeReusePivots() : BaseMode() {}
+  void runSingleElement() override;
+};
+
+class ModePartitionFactorization : public BaseMode {
+  public:
+  ModePartitionFactorization() : BaseMode() {}
+  void runSingleElement() override;
+};
+
+class ModeCombineFactorization : public BaseMode {
+  public:
+  ModeCombineFactorization() : BaseMode() {}
   void runSingleElement() override;
 };
