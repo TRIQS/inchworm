@@ -135,6 +135,7 @@ add_subdirectory(c++/${PROJECT_NAME})
 # Build the application
 add_subdirectory(apps)
 
+find_package(HDF5)
 # # Tests
 # if(Build_Tests)
 #   add_subdirectory(test)
