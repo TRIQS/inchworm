@@ -43,7 +43,7 @@ int main() {
   double error_bound{};
   int bl_index{0};
   int subspace_index{0};
-  read_json_parameters("/Users/yangyu/src/inchworm/apps/parameters.json", debug, cp, n_site, epsilon, theta, n_bath, n_spin, U, mu, t, tau_max,
+  read_json_parameters("../../apps/parameters.json", debug, cp, n_site, epsilon, theta, n_bath, n_spin, U, mu, t, tau_max,
                        tau_split, n_GK, bond_dim, sweep_bound, order_list, tci_prrlu, error_bound, bl_index, subspace_index);
   auto [vi, wi] = select_quadrature_GK(n_GK, 0, 1);
 

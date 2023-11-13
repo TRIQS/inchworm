@@ -43,7 +43,7 @@ int main() {
   double error_bound{};
   int bl_index {};
   int subspace_index  {};
-  read_json_parameters("/Users/yangyu/src/inchworm/apps/parameters.json", debug, cp, n_site, epsilon, theta, n_bath, n_spin, U, mu, t, tau_max,
+  read_json_parameters("../../apps/parameters.json", debug, cp, n_site, epsilon, theta, n_bath, n_spin, U, mu, t, tau_max,
                        tau_split, n_GK, bond_dim, sweep_bound, order_list, tci_prrlu, error_bound, bl_index, subspace_index);
   auto [vi, wi] = select_quadrature_GK(n_GK, 0, 1);
 
@@ -180,7 +180,7 @@ int main() {
             auto u_tau_max_element_vs1 = get_u_tau_max_element(vs1);
             if (u_tau_max_element_vs1 != 0) {
               auto ci_element = xfac::CTensorCI2<double, double>(get_u_tau_max_element, std::vector(n, vi), {.pivot1 = pivot1});
-              for (auto b = 0u; b < ci.len() - 1; b++) {
+              for (auto b = 0u; b < ci.len()-1; b++) {
                 auto pivots = ci.getPivotsAt(b);
                 ci_element.addPivotsAt(pivots, b);
               }

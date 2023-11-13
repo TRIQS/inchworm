@@ -94,7 +94,8 @@ int main() {
     for (auto [phi_d_list, phi_d_dag_list] : phi_pair_list) {
       double integral_sum_n_left = 0.0;
       for (int n_left = 1; n_left < n; n_left++) {
-        double integral_sum_iota = 0.0;
+        double integral_sum_iota                                   = 0.0;
+        std::vector<std::vector<std::vector<int>>> previous_pivots = {};
         for (auto [iota_d_list, iota_d_dag_list] : iota_pair_list) {
           long count                 = 0;
           auto get_u_tau_max_element = [&u_tau_max_zeroth_order, &tau_split, &tau_max, &all_d_ops, &all_d_dag_ops, &block_shape, &cp,
@@ -146,17 +147,45 @@ int main() {
           if (debug) { std::cout << "iteration nEval LastSweepPivotError integral\n"; }
           if (tci_prrlu) {
             auto ci = xfac::CTensorCI2<double, double>(get_u_tau_max_element, std::vector(n, vi), {.bond_dim = bond_dim, .pivot1 = pivot1});
-            for (int i = 0; i < sweep_bound; i++) {
-              ci.iterate();
-              ci.makeCanonical();
-              current_integral = ci.tt.sum(std::vector(n, wi));
-              if (debug) { std::cout << i << " " << count << " " << ci.pivotError[ci.pivotError.size() - 1] << " " << current_integral << std::endl; }
-              if (std::abs(current_integral - previous_integral) < error_bound && i > 1) { break; }
-              previous_integral = current_integral;
+            if (previous_pivots.size() > 0) {
+              std::cout << "reuse pivots" << std::endl;
+              for (auto b = 0u; b < ci.len() - 1; b++) {
+                auto pivots = previous_pivots[b];
+                ci.addPivotsAt(pivots, b);
+              }
+              // integral_element = ci.tt.sum(std::vector(n, wi));
+               int temp_bound = 1;
+              for (int i = 0; i < temp_bound; i++) {
+                // ci.iterate();
+                ci.makeCanonical();
+                current_integral = ci.tt.sum(std::vector(n, wi));
+                if (debug) {
+                  std::cout << i << " " << count << " " << ci.pivotError[ci.pivotError.size() - 1] << " " << current_integral << std::endl;
+                }
+                if (std::abs(current_integral - previous_integral) < error_bound && i > 0) { break; }
+                previous_integral = current_integral;
+              }
+              integral_element = current_integral;
+            } else {
+              for (int i = 0; i < sweep_bound; i++) {
+                ci.iterate();
+                ci.makeCanonical();
+                current_integral = ci.tt.sum(std::vector(n, wi));
+                if (debug) {
+                  std::cout << i << " " << count << " " << ci.pivotError[ci.pivotError.size() - 1] << " " << current_integral << std::endl;
+                }
+                if (std::abs(current_integral - previous_integral) < error_bound && i > 0) { break; }
+                previous_integral = current_integral;
+              }
+              integral_element = current_integral;
             }
-            integral_element = current_integral;
-            if (debug) {
-              print_rank(ci.tt);
+            if (debug) { print_rank(ci.tt); }
+            if (previous_pivots.size() == 0) {
+            previous_pivots.clear();
+            for (auto b = 0u; b < ci.len() - 1; b++) {
+              auto pivots = ci.getPivotsAt(b);
+              previous_pivots.push_back(pivots);
+            }
             }
           } else {
             auto ci = xfac::CTensorCI<double, double>(get_u_tau_max_element, std::vector(n, vi), {.pivot1 = pivot1});

@@ -3,6 +3,15 @@ add_executable(integral integral.cpp)
 target_link_libraries(integral xfac::xfac)
 target_link_libraries(integral ${PROJECT_NAME}_c)
 
+add_executable(reuse_pivots reuse_pivots.cpp)
+target_link_libraries(reuse_pivots xfac::xfac)
+target_link_libraries(reuse_pivots ${PROJECT_NAME}_c)
+
+add_executable(nested_TCI nested_TCI.cpp)
+target_link_libraries(nested_TCI xfac::xfac)
+target_link_libraries(nested_TCI ${PROJECT_NAME}_c)
+
+
 add_executable(integral_single_element integral_single_element.cpp)
 target_link_libraries(integral_single_element xfac::xfac)
 target_link_libraries(integral_single_element ${PROJECT_NAME}_c)
