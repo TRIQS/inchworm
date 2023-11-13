@@ -9,7 +9,7 @@ using namespace inchworm;
 
 void ModeReusePivots::runSingleElement() {
 
- // TCI
+  // TCI
   std::vector<double> integral_order_list   = {};
   std::vector<double> calculation_time_list = {};
   for (int order : order_list) {
@@ -28,8 +28,8 @@ void ModeReusePivots::runSingleElement() {
         std::vector<std::vector<std::vector<int>>> previous_pivots = {};
         for (auto [iota_d_list, iota_d_dag_list] : iota_pair_list) {
           long count                 = 0;
-          auto get_u_tau_max_element = [this, &count, &phi_d_list = phi_d_list,
-                                        &phi_d_dag_list = phi_d_dag_list, &iota_d_list = iota_d_list, &iota_d_dag_list = iota_d_dag_list, &n_left](const std::vector<double> &vs) {
+          auto get_u_tau_max_element = [this, &count, &phi_d_list = phi_d_list, &phi_d_dag_list = phi_d_dag_list, &iota_d_list = iota_d_list,
+                                        &iota_d_dag_list = iota_d_dag_list, &n_left](const std::vector<double> &vs) {
             std::vector<double> vs_left(vs.begin(), vs.begin() + n_left);
             std::vector<double> vs_right(vs.begin() + n_left, vs.end());
             std::vector<double> taus_left  = changeVariable(vs_left, tau_split, 0.0);
@@ -37,8 +37,8 @@ void ModeReusePivots::runSingleElement() {
             auto taus(taus_left);
             taus.insert(taus.end(), taus_right.begin(), taus_right.end());
             double integrand = evaluateUTauMax(u_tau_max_zeroth_order, tau_split, tau_max, all_d_ops, all_d_dag_ops, block_shape, cp, Delta_tau,
-                                                  ad_imp, u_interpolator, getElements(phi_d_list, taus), getElements(phi_d_dag_list, taus),
-                                                  iota_d_list, iota_d_dag_list, bl_index, subspace_index);
+                                               ad_imp, u_interpolator, getElements(phi_d_list, taus), getElements(phi_d_dag_list, taus), iota_d_list,
+                                               iota_d_dag_list, bl_index, subspace_index);
             count++;
             double j = jacobian(taus_left, tau_split, 0.0) * jacobian(taus_right, tau_max, tau_split);
             return integrand * j;
@@ -82,14 +82,16 @@ void ModeReusePivots::runSingleElement() {
                 ci.addPivotsAt(pivots, b);
               }
               // integral_element = ci.tt.sum(std::vector(n, wi));
-               int temp_bound = 1;
+              int temp_bound = 1;
               for (int i = 0; i < temp_bound; i++) {
-                // ci.iterate();
-                ci.makeCanonical();
-                current_integral = ci.tt.sum(std::vector(n, wi));
-                if (debug) {
-                  std::cout << i << " " << count << " " << ci.pivotError[ci.pivotError.size() - 1] << " " << current_integral << std::endl;
+                auto lastPivotError = ci.pivotError[ci.pivotError.size() - 1];
+                if (lastPivotError > error_bound) {
+                  ci.iterate();
+                  ci.makeCanonical();
                 }
+                lastPivotError = ci.pivotError[ci.pivotError.size() - 1];
+                current_integral    = ci.tt.sum(std::vector(n, wi));
+                if (debug) { std::cout << i << " " << count << " " << lastPivotError << " " << current_integral << std::endl; }
                 if (std::abs(current_integral - previous_integral) < error_bound && i > 0) { break; }
                 previous_integral = current_integral;
               }
@@ -108,10 +110,10 @@ void ModeReusePivots::runSingleElement() {
               integral_element = current_integral;
             }
             if (debug) { printRank(ci.tt); }
-            if (previous_pivots.size() == 0) {
+            if(previous_pivots.size() ==0){
             previous_pivots.clear();
             for (auto b = 0u; b < ci.len() - 1; b++) {
-              auto pivots = ci.getPivotsAt(b);
+              auto pivots        = ci.getPivotsAt(b);
               previous_pivots.push_back(pivots);
             }
             }
@@ -152,5 +154,4 @@ void ModeReusePivots::runSingleElement() {
   double sum_value = u_tau_max_zeroth_order[bl_index](i, j) + std::accumulate(integral_order_list.begin(), integral_order_list.end(), 0.0);
   double sum_time  = std::accumulate(calculation_time_list.begin(), calculation_time_list.end(), 0.0);
   std::cout << std::setw(10) << "sum:" << std::setw(30) << sum_value << std::setw(10) << sum_time << std::endl;
-
 }
