@@ -3,8 +3,8 @@
 #include "mode/mode_factory.hpp"
 
 int main(int argc, char *argv[]) {
-  std::string modeName;
-  std::string jsonFilePath;
+  std::string modeName {};
+  std::string jsonFilePath {};
 
   // Check if mode and file path are provided
   if (argc > 2) {
@@ -23,7 +23,7 @@ int main(int argc, char *argv[]) {
   if (mode) {
     std::cout << std::setprecision(18) << "##### Tensor Train Based Hybridyzation Expansion Inchworm Algorithm #####" << std::endl;
     mode->init(jsonFilePath);
-    mode->prepareInput();
+    mode->constructHubbard();
     mode->runSingleElement();
     delete mode;
   } else {

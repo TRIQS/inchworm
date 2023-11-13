@@ -18,7 +18,7 @@ void ModeNestedTCI::runSingleElement() {
   // TCI
   std::vector<double> integral_order_list   = {};
   std::vector<double> calculation_time_list = {};
-  auto [vi, wi_v]                           = select_quadrature_GK(n_GK, 0, 1);
+  auto [vi, wi_v]                           = selectQuadratureGK(n_GK, 0, 1);
   int n_phi                                 = std::accumulate(block_shape.begin(), block_shape.end(), 0);
   std::vector<int> iotai(n_phi);
   std::iota(iotai.begin(), iotai.end(), 0);
@@ -29,12 +29,12 @@ void ModeNestedTCI::runSingleElement() {
     std::vector<int> pivot1(n, 0);
     std::vector<int> range(n);
     std::iota(range.begin(), range.end(), 0);
-    auto phi_pair_list = get_all_phi(range); //gives all possible phi
+    auto phi_pair_list = getAllPhi(range); //gives all possible phi
     std::vector<int> iota_pivots(n, 0);
     std::vector<int> iota_pivots_range(n_phi);
     std::iota(iota_pivots_range.begin(), iota_pivots_range.end(), 0);
     std::vector<std::vector<int>> all_iota_pivots{};
-    generate_combinations(iota_pivots_range, iota_pivots, 0, all_iota_pivots); //gives all possible iota pivots
+    generateCombinations(iota_pivots_range, iota_pivots, 0, all_iota_pivots); //gives all possible iota pivots
     double integral_sum_phi = 0.0;
     for (auto [phi_d_list, phi_d_dag_list] : phi_pair_list) {
       double integral_sum_n_left = 0.0;
@@ -54,7 +54,7 @@ void ModeNestedTCI::runSingleElement() {
             std::vector<double> taus_right = changeVariable(vs_right, tau_max, tau_split);
             auto taus(taus_left);
             taus.insert(taus.end(), taus_right.begin(), taus_right.end());
-            double integrand = evaluate_u_tau_max(u_tau_max_zeroth_order, tau_split, tau_max, all_d_ops, all_d_dag_ops, block_shape, cp, Delta_tau,
+            double integrand = evaluateUTauMax(u_tau_max_zeroth_order, tau_split, tau_max, all_d_ops, all_d_dag_ops, block_shape, cp, Delta_tau,
                                                            ad_imp, u_interpolator, getElements(phi_d_list, taus), getElements(phi_d_dag_list, taus),
                                                            iota_d_list, iota_d_dag_list, bl_index, subspace_index);
             count++;
@@ -72,13 +72,13 @@ void ModeNestedTCI::runSingleElement() {
             auto taus(taus1_left);
             taus.insert(taus.end(), taus1_right.begin(), taus1_right.end());
             std::cout << "iota_d_list: ";
-            print_vector(iota_d_list);
+            printVector(iota_d_list);
             std::cout << "iota_d_dag_list: ";
-            print_vector(iota_d_dag_list);
+            printVector(iota_d_dag_list);
             std::cout << "tau_d_list: ";
-            print_vector(getElements(phi_d_list, taus));
+            printVector(getElements(phi_d_list, taus));
             std::cout << "tau_d_dag_list: ";
-            print_vector(getElements(phi_d_dag_list, taus));
+            printVector(getElements(phi_d_dag_list, taus));
             u_tau_max_element_vs1 = get_u_tau_max_element(vs1);
             std::cout << "get_u_tau_max_element(pivot1): " << u_tau_max_element_vs1 << "\n" << std::endl;
           } else {
@@ -100,7 +100,7 @@ void ModeNestedTCI::runSingleElement() {
               previous_integral = current_integral;
             }
             integral_element = current_integral;
-            if (debug) { print_rank(ci.tt); }
+            if (debug) { printRank(ci.tt); }
           } else {
             auto ci = xfac::CTensorCI<double, double>(get_u_tau_max_element, std::vector(n, vi), {.pivot1 = pivot1});
             for (int i = 0; i < sweep_bound; i++) {
@@ -147,7 +147,7 @@ void ModeNestedTCI::runSingleElement() {
             previous_integral = current_integral;
           }
           integral_element = current_integral;
-          if (debug_iota) { print_rank(ci.tt); }
+          if (debug_iota) { printRank(ci.tt); }
         } else {
           auto ci = xfac::CTensorCI<double, int>(get_u_tau_max_element_iota, std::vector(n, iotai), {.pivot1 = pivot1_iota});
           for (int i = 0; i < sweep_bound; i++) {

@@ -26,7 +26,7 @@ template <int n> inline auto QuadratureGK(double a = 0, double b = 1) {
   return make_pair(xi, weight);
 }
 
-inline auto select_quadrature_GK(int n, double a = 0, double b = 1) {
+inline auto selectQuadratureGK(int n, double a = 0, double b = 1) {
   switch (n) {
     case 15: return QuadratureGK<15>(a, b);
     case 30: return QuadratureGK<30>(a, b);
@@ -38,12 +38,12 @@ inline auto select_quadrature_GK(int n, double a = 0, double b = 1) {
   }
 }
 
-template <typename T> void print_vector(const std::vector<T> &vec) {
+template <typename T> void printVector(const std::vector<T> &vec) {
   for (auto v : vec) std::cout << v << ' ';
   std::cout << std::endl;
 }
 
-inline std::vector<std::pair<std::vector<int>, std::vector<int>>> get_all_phi(std::vector<int> const &range) {
+inline std::vector<std::pair<std::vector<int>, std::vector<int>>> getAllPhi(std::vector<int> const &range) {
   std::vector<std::pair<std::vector<int>, std::vector<int>>> res{};
   int order = range.size() / 2;
   std::vector<int> indicator(2 * order);
@@ -63,16 +63,16 @@ inline std::vector<std::pair<std::vector<int>, std::vector<int>>> get_all_phi(st
     // std::cout << "tau_d_dag_ls size: " << tau_d_dag_ls.size() << std::endl;
     // Display the generated sub-vectors
     // std::cerr << "First: " << std::endl;
-    // print_vector(order_d_ls);
+    // printVector(order_d_ls);
     // std::cerr << "Second: " << std::endl;
-    // print_vector(order_d_dag_ls);
+    // printVector(order_d_dag_ls);
     // std::cerr << "---\n";
     res.push_back(std::make_pair(order_d_ls, order_d_dag_ls));
   } while (std::next_permutation(indicator.begin(), indicator.end()));
   return res;
 }
 
-inline std::vector<std::pair<std::vector<int>, std::vector<int>>> get_all_phi_crossing(std::vector<int> const &range) {
+inline std::vector<std::pair<std::vector<int>, std::vector<int>>> getAllPhiCrossing(std::vector<int> const &range) {
   std::vector<std::pair<std::vector<int>, std::vector<int>>> res{};
   int order                       = range.size() / 2;
   std::vector<int> order_d_ls     = {};
@@ -96,7 +96,7 @@ inline std::vector<std::pair<std::vector<int>, std::vector<int>>> get_all_phi_cr
 
 // geneerate all samples of B.size() from A and store them in all_combinations; each element of B can take any value from A
 template <typename T>
-void generate_combinations(const std::vector<T> &A, std::vector<T> &B, int idx, std::vector<std::vector<T>> &all_combinations) {
+void generateCombinations(const std::vector<T> &A, std::vector<T> &B, int idx, std::vector<std::vector<T>> &all_combinations) {
   if (idx == B.size()) {
     all_combinations.push_back(B);
     return;
@@ -104,11 +104,11 @@ void generate_combinations(const std::vector<T> &A, std::vector<T> &B, int idx, 
 
   for (int i = 0; i < A.size(); ++i) {
     B[idx] = A[i];
-    generate_combinations(A, B, idx + 1, all_combinations);
+    generateCombinations(A, B, idx + 1, all_combinations);
   }
 }
 
-inline std::vector<int> generate_number_in_block(const std::vector<int> &block_shape, const std::vector<int> &iota_d_list) {
+inline std::vector<int> generateNumberInBlock(const std::vector<int> &block_shape, const std::vector<int> &iota_d_list) {
   std::vector<int> res(block_shape.size(), 0);
   for (auto iota : iota_d_list) {
     for (int bl = 0; bl < block_shape.size(); ++bl) {
@@ -123,17 +123,17 @@ inline std::vector<int> generate_number_in_block(const std::vector<int> &block_s
   return res;
 }
 
-inline std::vector<std::pair<std::vector<int>, std::vector<int>>> get_all_iota(const std::vector<int> &block_shape, int order) {
+inline std::vector<std::pair<std::vector<int>, std::vector<int>>> getAllIota(const std::vector<int> &block_shape, int order) {
   std::vector<std::pair<std::vector<int>, std::vector<int>>> res{};
   int n_phi = std::accumulate(block_shape.begin(), block_shape.end(), 0);
   std::vector<std::vector<int>> all_iota{};
   std::vector<int> iota(order, 0);
   std::vector<int> range(n_phi);
   std::iota(range.begin(), range.end(), 0);
-  generate_combinations(range, iota, 0, all_iota);
+  generateCombinations(range, iota, 0, all_iota);
   std::vector<std::vector<int>> all_number_in_block{};
 
-  for (auto iota_d_list : all_iota) { all_number_in_block.push_back(generate_number_in_block(block_shape, iota_d_list)); }
+  for (auto iota_d_list : all_iota) { all_number_in_block.push_back(generateNumberInBlock(block_shape, iota_d_list)); }
 
   size_t i = 0;
   for (auto iota_d_list : all_iota) {
@@ -188,13 +188,13 @@ inline double jacobian(const std::vector<double> &taus, double tau_max, double t
   return std::abs(prod);
 }
 
-template <typename T> void print_block_shape(block_gf<imtime, T> const &x_tau) {
+template <typename T> void printBlockShape(block_gf<imtime, T> const &x_tau) {
   std::cout << "number of taus: " << x_tau[0].mesh().size() << std::endl;
   std::cout << "number of block: " << x_tau.size() << std::endl;
   for (int bl = 0; bl < x_tau.size(); ++bl) { std::cout << "block: " << bl << " shape: " << x_tau[bl].target_shape() << std::endl; }
 }
 
-inline std::pair<int, int> find_index(const std::vector<int> &block_shape, int iota) {
+inline std::pair<int, int> findIndex(const std::vector<int> &block_shape, int iota) {
   int running_sum    = 0;
   int subspace_index = 0;
   int iota_p1        = iota + 1;
@@ -214,16 +214,16 @@ inline std::pair<int, int> find_index(const std::vector<int> &block_shape, int i
   return std::make_pair(-1, -1); // Return a pair of -1s if not found
 }
 
-double evaluate_u_tau_max(frame_t &frame_zeroth_order, double tau_split, double tau_max, std::vector<std::vector<fop_t>> const &all_d_ops,
+double evaluateUTauMax(frame_t &frame_zeroth_order, double tau_split, double tau_max, std::vector<std::vector<fop_t>> const &all_d_ops,
                           std::vector<std::vector<fop_t>> const &all_d_dag_ops, std::vector<int> const &block_shape, constr_params_t const &cp,
                           hyb_tau_t const &Delta_tau, atom_diag const &ad_imp, interpolator_t<scalar_t> const &u_interpolator, auto const &tau_d_list,
                           auto const &tau_d_dag_list, auto const &iota_d_list, auto const &iota_d_dag_list, int bl_indx, int subspace_indx) {
   auto config = config_t(frame_zeroth_order, cp.gf_struct, {0.0, tau_split});
   for (auto i : range(tau_d_list.size())) {
-    auto [bl, subspace_d_index]       = find_index(block_shape, iota_d_list[i]);
+    auto [bl, subspace_d_index]       = findIndex(block_shape, iota_d_list[i]);
     auto d                            = all_d_ops[bl][subspace_d_index];
     d.tau                             = tau_d_list[i];
-    auto [bl_dag, subspace_index_dag] = find_index(block_shape, iota_d_dag_list[i]);
+    auto [bl_dag, subspace_index_dag] = findIndex(block_shape, iota_d_dag_list[i]);
     auto d_dag                        = all_d_dag_ops[bl_dag][subspace_index_dag];
     d_dag.tau                         = tau_d_dag_list[i];
     config.d_bl_list[bl].push_back(d);
@@ -323,14 +323,6 @@ inline void readJsonParameters(const std::string &filepath, bool &debug, constr_
   }
 }
 
-template <typename T> inline void print_rank(xfac::TensorTrain<T> tt) {
-  int len = tt.M.size();
-  std::vector<int> rs(len - 1);
-  for (auto i = 0u; i < len - 1; i++) rs[i] = tt.M[i].n_slices;
-  std::cout << "rank: ";
-  print_vector(rs);
-  std::cout << std::endl;
-}
 
 inline void readJsonParameters(const std::string &filepath, bool &debug, constr_params_t &cp, int &n_site, vec_t &epsilon, mat_t &theta,
                                  int &n_bath, int &n_spin, double &U, double &mu, double &t, double &tau_max, double &tau_split, int &n_GK,
@@ -403,4 +395,13 @@ inline void readJsonParameters(const std::string &filepath, bool &debug, constr_
     order_list[i] = order.second.get_value<int>();
     i++;
   }
+}
+
+template <typename T> inline void printRank(xfac::TensorTrain<T> tt) {
+  int len = tt.M.size();
+  std::vector<int> rs(len - 1);
+  for (auto i = 0u; i < len - 1; i++) rs[i] = tt.M[i].n_slices;
+  std::cout << "rank: ";
+  printVector(rs);
+  std::cout << std::endl;
 }

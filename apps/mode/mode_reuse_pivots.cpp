@@ -18,8 +18,8 @@ void ModeReusePivots::runSingleElement() {
     std::vector<int> pivot1(n, 0);
     std::vector<int> range(n);
     std::iota(range.begin(), range.end(), 0);
-    auto phi_pair_list      = get_all_phi(range);               //gives all possible phi
-    auto iota_pair_list     = get_all_iota(block_shape, order); //gives all possible iota
+    auto phi_pair_list      = getAllPhi(range);               //gives all possible phi
+    auto iota_pair_list     = getAllIota(block_shape, order); //gives all possible iota
     double integral_sum_phi = 0.0;
     for (auto [phi_d_list, phi_d_dag_list] : phi_pair_list) {
       double integral_sum_n_left = 0.0;
@@ -36,7 +36,7 @@ void ModeReusePivots::runSingleElement() {
             std::vector<double> taus_right = changeVariable(vs_right, tau_max, tau_split);
             auto taus(taus_left);
             taus.insert(taus.end(), taus_right.begin(), taus_right.end());
-            double integrand = evaluate_u_tau_max(u_tau_max_zeroth_order, tau_split, tau_max, all_d_ops, all_d_dag_ops, block_shape, cp, Delta_tau,
+            double integrand = evaluateUTauMax(u_tau_max_zeroth_order, tau_split, tau_max, all_d_ops, all_d_dag_ops, block_shape, cp, Delta_tau,
                                                   ad_imp, u_interpolator, getElements(phi_d_list, taus), getElements(phi_d_dag_list, taus),
                                                   iota_d_list, iota_d_dag_list, bl_index, subspace_index);
             count++;
@@ -55,13 +55,13 @@ void ModeReusePivots::runSingleElement() {
             auto taus(taus1_left);
             taus.insert(taus.end(), taus1_right.begin(), taus1_right.end());
             std::cout << "iota_d_list: ";
-            print_vector(iota_d_list);
+            printVector(iota_d_list);
             std::cout << "iota_d_dag_list: ";
-            print_vector(iota_d_dag_list);
+            printVector(iota_d_dag_list);
             std::cout << "tau_d_list: ";
-            print_vector(getElements(phi_d_list, taus));
+            printVector(getElements(phi_d_list, taus));
             std::cout << "tau_d_dag_list: ";
-            print_vector(getElements(phi_d_dag_list, taus));
+            printVector(getElements(phi_d_dag_list, taus));
             u_tau_max_element_vs1 = get_u_tau_max_element(vs1);
             std::cout << "get_u_tau_max_element(pivot1): " << u_tau_max_element_vs1 << "\n" << std::endl;
           } else {
@@ -107,7 +107,7 @@ void ModeReusePivots::runSingleElement() {
               }
               integral_element = current_integral;
             }
-            if (debug) { print_rank(ci.tt); }
+            if (debug) { printRank(ci.tt); }
             if (previous_pivots.size() == 0) {
             previous_pivots.clear();
             for (auto b = 0u; b < ci.len() - 1; b++) {
