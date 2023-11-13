@@ -57,7 +57,7 @@ inline std::pair<fundamental_operator_set, std::vector<many_body_op_t>> make_fop
 }
 
 // Exact non-interacting Green function of a single atomic level
-double one_fermion(double tau, double eps, double beta) {
+inline double one_fermion(double tau, double eps, double beta) {
   if (eps >= 0) {
     return -std::exp(-tau * eps) / (1. + std::exp(-beta * eps));
   } else {

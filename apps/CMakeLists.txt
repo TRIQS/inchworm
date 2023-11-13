@@ -1,7 +1,11 @@
 
-add_executable(integral integral.cpp)
-target_link_libraries(integral xfac::xfac)
-target_link_libraries(integral ${PROJECT_NAME}_c)
+set(MODE_FILES 
+    mode/use_norm_pivots.cpp
+)
+
+add_executable(tci_inchworm_hyb tci_inchworm_hyb.cpp ${MODE_FILES})
+target_link_libraries(tci_inchworm_hyb xfac::xfac)
+target_link_libraries(tci_inchworm_hyb ${PROJECT_NAME}_c)
 
 add_executable(reuse_pivots reuse_pivots.cpp)
 target_link_libraries(reuse_pivots xfac::xfac)
