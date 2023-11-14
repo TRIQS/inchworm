@@ -256,146 +256,146 @@ double evaluate_u_tau_max(frame_t &frame_zeroth_order, double tau_split, double 
   }
 }
 
-inline void read_json_parameters(const std::string &filepath, bool &debug, constr_params_t &cp, int &n_site, vec_t &epsilon, mat_t &theta,
-                                 int &n_bath, int &n_spin, double &U, double &mu, double &t, double &tau_max, double &tau_split, int &n_GK,
-                                 int &bond_dim, int &sweep_bound, std::vector<int> &order_list, bool &tci_prrlu, double &error_bound, int &bl_index,
-                                 int &subspace_index) {
-  namespace pt = boost::property_tree;
-  pt::ptree root;
-  pt::read_json(filepath, root);
+// inline void read_json_parameters(const std::string &filepath, int &debug, constr_params_t &cp, int &n_site, vec_t &epsilon, mat_t &theta,
+//                                  int &n_bath, int &n_spin, double &U, double &mu, double &t, double &tau_max, double &tau_split, int &n_GK,
+//                                  int &bond_dim, int &sweep_bound, std::vector<int> &order_list, bool &tci_prrlu, double &error_bound, int &bl_index,
+//                                  int &subspace_index) {
+//   namespace pt = boost::property_tree;
+//   pt::ptree root;
+//   pt::read_json(filepath, root);
 
-  // Read simple values
-  debug                = root.get<bool>("debug");
-  cp.beta              = root.get<double>("cp.beta");
-  cp.n_tau_green       = root.get<int>("cp.n_tau_green");
-  cp.n_tau_inch        = root.get<int>("cp.n_tau_inch");
-  cp.n_tau             = root.get<int>("cp.n_tau");
-  n_site               = root.get<int>("n_site");
-  n_bath               = root.get<int>("n_bath");
-  n_spin               = root.get<int>("n_spin");
-  U                    = root.get<double>("U");
-  mu                   = root.get<double>("mu");
-  t                    = root.get<double>("t");
-  tau_max              = root.get<double>("tau_max");
-  auto tau_split_ratio = root.get<double>("tau_split_ratio");
-  tau_split            = tau_max * tau_split_ratio;
-  n_GK                 = root.get<int>("n_GK");
-  bond_dim             = root.get<int>("bond_dim");
-  sweep_bound          = root.get<int>("sweep_bound");
-  tci_prrlu            = root.get<bool>("tci_prrlu");
-  error_bound          = root.get<double>("error_bound");
-  bl_index             = root.get<int>("bl_index");
-  subspace_index       = root.get<int>("subspace_index");
+//   // Read simple values
+//   debug                = root.get<bool>("debug");
+//   cp.beta              = root.get<double>("cp.beta");
+//   cp.n_tau_green       = root.get<int>("cp.n_tau_green");
+//   cp.n_tau_inch        = root.get<int>("cp.n_tau_inch");
+//   cp.n_tau             = root.get<int>("cp.n_tau");
+//   n_site               = root.get<int>("n_site");
+//   n_bath               = root.get<int>("n_bath");
+//   n_spin               = root.get<int>("n_spin");
+//   U                    = root.get<double>("U");
+//   mu                   = root.get<double>("mu");
+//   t                    = root.get<double>("t");
+//   tau_max              = root.get<double>("tau_max");
+//   auto tau_split_ratio = root.get<double>("tau_split_ratio");
+//   tau_split            = tau_max * tau_split_ratio;
+//   n_GK                 = root.get<int>("n_GK");
+//   bond_dim             = root.get<int>("bond_dim");
+//   sweep_bound          = root.get<int>("sweep_bound");
+//   tci_prrlu            = root.get<bool>("tci_prrlu");
+//   error_bound          = root.get<double>("error_bound");
+//   bl_index             = root.get<int>("bl_index");
+//   subspace_index       = root.get<int>("subspace_index");
 
-  for (pt::ptree::value_type &g_s : root.get_child("cp.gf_struct")) {
-    std::string name = g_s.first;
-    int size         = g_s.second.get_value<int>();
-    cp.gf_struct.emplace_back(std::make_pair(name, size));
-  }
+//   for (pt::ptree::value_type &g_s : root.get_child("cp.gf_struct")) {
+//     std::string name = g_s.first;
+//     int size         = g_s.second.get_value<int>();
+//     cp.gf_struct.emplace_back(std::make_pair(name, size));
+//   }
 
-  int size = root.get_child("epsilon").size();
-  epsilon.resize(size);
-  int i = 0;
-  for (pt::ptree::value_type &ep : root.get_child("epsilon")) {
-    epsilon[i] = ep.second.get_value<double>();
-    i++;
-  }
+//   int size = root.get_child("epsilon").size();
+//   epsilon.resize(size);
+//   int i = 0;
+//   for (pt::ptree::value_type &ep : root.get_child("epsilon")) {
+//     epsilon[i] = ep.second.get_value<double>();
+//     i++;
+//   }
 
-  int sizex = root.get_child("theta").size();
-  int sizey = root.get_child("theta").begin()->second.size();
-  theta.resize(sizex, sizey);
-  i = 0;
-  for (pt::ptree::value_type &th : root.get_child("theta")) {
-    int j = 0;
-    for (pt::ptree::value_type &th_i : th.second) {
-      theta(i, j) = th_i.second.get_value<double>();
-      j++;
-    }
-    i++;
-  }
+//   int sizex = root.get_child("theta").size();
+//   int sizey = root.get_child("theta").begin()->second.size();
+//   theta.resize(sizex, sizey);
+//   i = 0;
+//   for (pt::ptree::value_type &th : root.get_child("theta")) {
+//     int j = 0;
+//     for (pt::ptree::value_type &th_i : th.second) {
+//       theta(i, j) = th_i.second.get_value<double>();
+//       j++;
+//     }
+//     i++;
+//   }
 
-  size = root.get_child("order_list").size();
-  order_list.resize(size);
-  i = 0;
-  for (pt::ptree::value_type &order : root.get_child("order_list")) {
-    order_list[i] = order.second.get_value<int>();
-    i++;
-  }
-}
+//   size = root.get_child("order_list").size();
+//   order_list.resize(size);
+//   i = 0;
+//   for (pt::ptree::value_type &order : root.get_child("order_list")) {
+//     order_list[i] = order.second.get_value<int>();
+//     i++;
+//   }
+// }
 
 
-inline void read_json_parameters(const std::string &filepath, bool &debug, constr_params_t &cp, int &n_site, vec_t &epsilon, mat_t &theta,
-                                 int &n_bath, int &n_spin, double &U, double &mu, double &t, double &tau_max, double &tau_split, int &n_GK,
-                                 int &bond_dim, int &sweep_bound, std::vector<int> &order_list, bool &tci_prrlu, double &error_bound, int &bl_index,
-                                 int &subspace_index, bool &debug_iota, bool &tci_prrlu_iota, int &bond_dim_iota, int &sweep_bound_iota,
-                                 double &error_bound_iota) {
-  namespace pt = boost::property_tree;
-  pt::ptree root;
-  pt::read_json(filepath, root);
+// inline void read_json_parameters(const std::string &filepath, int &debug, constr_params_t &cp, int &n_site, vec_t &epsilon, mat_t &theta,
+//                                  int &n_bath, int &n_spin, double &U, double &mu, double &t, double &tau_max, double &tau_split, int &n_GK,
+//                                  int &bond_dim, int &sweep_bound, std::vector<int> &order_list, bool &tci_prrlu, double &error_bound, int &bl_index,
+//                                  int &subspace_index, bool &debug_iota, bool &tci_prrlu_iota, int &bond_dim_iota, int &sweep_bound_iota,
+//                                  double &error_bound_iota) {
+//   namespace pt = boost::property_tree;
+//   pt::ptree root;
+//   pt::read_json(filepath, root);
 
-  // Read simple values
-  debug                = root.get<bool>("debug");
-  cp.beta              = root.get<double>("cp.beta");
-  cp.n_tau_green       = root.get<int>("cp.n_tau_green");
-  cp.n_tau_inch        = root.get<int>("cp.n_tau_inch");
-  cp.n_tau             = root.get<int>("cp.n_tau");
-  n_site               = root.get<int>("n_site");
-  n_bath               = root.get<int>("n_bath");
-  n_spin               = root.get<int>("n_spin");
-  U                    = root.get<double>("U");
-  mu                   = root.get<double>("mu");
-  t                    = root.get<double>("t");
-  tau_max              = root.get<double>("tau_max");
-  auto tau_split_ratio = root.get<double>("tau_split_ratio");
-  tau_split            = tau_max * tau_split_ratio;
-  n_GK                 = root.get<int>("n_GK");
-  bond_dim             = root.get<int>("bond_dim");
-  sweep_bound          = root.get<int>("sweep_bound");
-  tci_prrlu            = root.get<bool>("tci_prrlu");
-  error_bound          = root.get<double>("error_bound");
-  bl_index             = root.get<int>("bl_index");
-  subspace_index       = root.get<int>("subspace_index");
-  debug_iota           = root.get<bool>("debug_iota");
-  tci_prrlu_iota       = root.get<bool>("tci_prrlu_iota");
-  bond_dim_iota        = root.get<int>("bond_dim_iota");
-  sweep_bound_iota     = root.get<int>("sweep_bound_iota");
-  error_bound_iota     = root.get<double>("error_bound_iota");
+//   // Read simple values
+//   debug                = root.get<int>("debug");
+//   cp.beta              = root.get<double>("cp.beta");
+//   cp.n_tau_green       = root.get<int>("cp.n_tau_green");
+//   cp.n_tau_inch        = root.get<int>("cp.n_tau_inch");
+//   cp.n_tau             = root.get<int>("cp.n_tau");
+//   n_site               = root.get<int>("n_site");
+//   n_bath               = root.get<int>("n_bath");
+//   n_spin               = root.get<int>("n_spin");
+//   U                    = root.get<double>("U");
+//   mu                   = root.get<double>("mu");
+//   t                    = root.get<double>("t");
+//   tau_max              = root.get<double>("tau_max");
+//   auto tau_split_ratio = root.get<double>("tau_split_ratio");
+//   tau_split            = tau_max * tau_split_ratio;
+//   n_GK                 = root.get<int>("n_GK");
+//   bond_dim             = root.get<int>("bond_dim");
+//   sweep_bound          = root.get<int>("sweep_bound");
+//   tci_prrlu            = root.get<bool>("tci_prrlu");
+//   error_bound          = root.get<double>("error_bound");
+//   bl_index             = root.get<int>("bl_index");
+//   subspace_index       = root.get<int>("subspace_index");
+//   debug_iota           = root.get<bool>("debug_iota");
+//   tci_prrlu_iota       = root.get<bool>("tci_prrlu_iota");
+//   bond_dim_iota        = root.get<int>("bond_dim_iota");
+//   sweep_bound_iota     = root.get<int>("sweep_bound_iota");
+//   error_bound_iota     = root.get<double>("error_bound_iota");
 
-  for (pt::ptree::value_type &g_s : root.get_child("cp.gf_struct")) {
-    std::string name = g_s.first;
-    int size         = g_s.second.get_value<int>();
-    cp.gf_struct.emplace_back(std::make_pair(name, size));
-  }
+//   for (pt::ptree::value_type &g_s : root.get_child("cp.gf_struct")) {
+//     std::string name = g_s.first;
+//     int size         = g_s.second.get_value<int>();
+//     cp.gf_struct.emplace_back(std::make_pair(name, size));
+//   }
 
-  int size = root.get_child("epsilon").size();
-  epsilon.resize(size);
-  int i = 0;
-  for (pt::ptree::value_type &ep : root.get_child("epsilon")) {
-    epsilon[i] = ep.second.get_value<double>();
-    i++;
-  }
+//   int size = root.get_child("epsilon").size();
+//   epsilon.resize(size);
+//   int i = 0;
+//   for (pt::ptree::value_type &ep : root.get_child("epsilon")) {
+//     epsilon[i] = ep.second.get_value<double>();
+//     i++;
+//   }
 
-  int sizex = root.get_child("theta").size();
-  int sizey = root.get_child("theta").begin()->second.size();
-  theta.resize(sizex, sizey);
-  i = 0;
-  for (pt::ptree::value_type &th : root.get_child("theta")) {
-    int j = 0;
-    for (pt::ptree::value_type &th_i : th.second) {
-      theta(i, j) = th_i.second.get_value<double>();
-      j++;
-    }
-    i++;
-  }
+//   int sizex = root.get_child("theta").size();
+//   int sizey = root.get_child("theta").begin()->second.size();
+//   theta.resize(sizex, sizey);
+//   i = 0;
+//   for (pt::ptree::value_type &th : root.get_child("theta")) {
+//     int j = 0;
+//     for (pt::ptree::value_type &th_i : th.second) {
+//       theta(i, j) = th_i.second.get_value<double>();
+//       j++;
+//     }
+//     i++;
+//   }
 
-  size = root.get_child("order_list").size();
-  order_list.resize(size);
-  i = 0;
-  for (pt::ptree::value_type &order : root.get_child("order_list")) {
-    order_list[i] = order.second.get_value<int>();
-    i++;
-  }
-}
+//   size = root.get_child("order_list").size();
+//   order_list.resize(size);
+//   i = 0;
+//   for (pt::ptree::value_type &order : root.get_child("order_list")) {
+//     order_list[i] = order.second.get_value<int>();
+//     i++;
+//   }
+// }
 
 template <typename T> inline void print_rank(xfac::TensorTrain<T> tt) {
   int len = tt.M.size();
@@ -405,3 +405,6 @@ template <typename T> inline void print_rank(xfac::TensorTrain<T> tt) {
   print_vector(rs);
   std::cout << std::endl;
 }
+
+
+

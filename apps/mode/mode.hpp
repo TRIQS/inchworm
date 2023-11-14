@@ -20,64 +20,76 @@
 #include "../hubbard.hpp"
 #include "../utility.hpp"
 
-enum debug_level{
+enum debug_t {
   none, //0, no debug
-  low, //1, only important information is printed
-  high //2, all information is printed
+  low,  //1, only important information is printed
+  high  //2, all information is printed
 };
 
-
-class base_mode {
-  public:
-  base_mode() {}
-  virtual void init(std::string json_file_path) {
-    read_json_parameters(json_file_path, debug, cp, n_site, epsilon, theta, n_bath, n_spin, U, mu, t, tau_max, tau_split, n_GK, bond_dim, sweep_bound,
-                       order_list, tci_prrlu, error_bound, bl_index, subspace_index);
-  }
-  void prepare_input();
-  void print_summary();
-  virtual void run_single_element() = 0;
-  virtual ~base_mode() {}
-
-  protected:
-  // input parameters
-  bool debug{};
-  constr_params_t cp{};
-  mat_t theta;
-  vec_t epsilon;
+struct model_params_t {
   int n_site{};
   int n_bath{};
   int n_spin{};
-  int n_GK{};
-  int bond_dim{};
-  int sweep_bound{};
   double U{};
   double mu{};
   double t{};
-  double tau_max{};
-  double tau_split{};
-  std::vector<int> order_list = {};
-  bool tci_prrlu{};
-  double error_bound{};
-  int bl_index{};
-  int subspace_index{};
-  // constructed initial data
-  std::vector<double> vi{};
-  std::vector<double> wi_v{};
+  mat_t theta{};
+  vec_t epsilon{};
+  // the following are derived
   hyb_tau_t Delta_tau{};
   atom_diag ad_imp{};
-  u_tau_t u_tau{};
-  g_tau_t G_tau{};
-  interpolator_t<scalar_t> u_interpolator{};
-  frame_t u_tau_max_zeroth_order{};
-  std::vector<int> block_shape{};
+  std::vector<int> gf_block_shape{};
   std::vector<std::vector<fop_t>> all_d_ops{};
   std::vector<std::vector<fop_t>> all_d_dag_ops{};
   long n_bl{};
   fundamental_operator_set fops{};
-  //results
+};
+
+struct tci_params_t {
+  int n_GK{};
+  bool tci_prrlu{};
+  int bond_dim{};
+  int sweep_bound{};
+  double error_bound{};
+  std::vector<double> vi{};
+  std::vector<double> wi_v{};
+};
+
+struct simulation_params_t {
+  debug_t debug{};
+  double tau_max{};
+  double tau_split{};
+  std::vector<int> order_list = {};
+  int bl_index{};
+  int subspace_index{};
+};
+
+struct simulation_results_t {
+  u_tau_t u_tau{};
+  g_tau_t G_tau{};
+  interpolator_t<scalar_t> u_interpolator{};
+  frame_t u_tau_max_zeroth_order{};
   std::vector<double> integral_order_list   = {};
   std::vector<double> calculation_time_list = {};
+};
+
+class base_mode {
+  public:
+  base_mode() {}
+  virtual void init(std::string json_file_path) { base_mode::read_json_parameters(json_file_path); }
+  void prepare_input();
+  void print_summary();
+  virtual void run_single_element() = 0;
+  virtual void read_json_parameters(std::string json_file_path);
+  virtual ~base_mode() {}
+
+  protected:
+  // parameters for all modes
+  constr_params_t cp{};
+  model_params_t mp{};
+  tci_params_t tp{};
+  simulation_params_t sp{};
+  simulation_results_t sr{};
 };
 
 class ModeExplicitSum : public base_mode {
@@ -98,21 +110,6 @@ class ModeVertexFactorization : public base_mode {
   void run_single_element() override;
 };
 
-class ModeNestedTCI : public base_mode {
-  public:
-  ModeNestedTCI() : base_mode() {}
-  void run_single_element() override;
-  void init(std::string json_file_path) override;
-
-  private:
-  // parameters for nested TCI only
-  bool debug_iota{};
-  bool tci_prrlu_iota{};
-  int bond_dim_iota{};
-  int sweep_bound_iota{};
-  double error_bound_iota{};
-};
-
 class ModeReusePivots : public base_mode {
   public:
   ModeReusePivots() : base_mode() {}
@@ -129,4 +126,16 @@ class ModeCombineFactorization : public base_mode {
   public:
   ModeCombineFactorization() : base_mode() {}
   void run_single_element() override;
+};
+
+class ModeNestedTCI : public base_mode {
+  public:
+  ModeNestedTCI() : base_mode() {}
+  void run_single_element() override;
+  void init(std::string json_file_path) override;
+  void read_json_parameters(std::string json_file_path) override;
+
+  private:
+  // parameters for nested TCI only
+  tci_params_t tp_iota{};
 };
