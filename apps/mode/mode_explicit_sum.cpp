@@ -11,11 +11,11 @@ void ModeExplicitSum::run_single_element() {
 
   for (int order : sp.order_list) {
     auto start_time = std::chrono::high_resolution_clock::now();
-    int n           = 2 * order; // number of tau's
+    int n           = 2 * order; //the number of tau's, i.e., the number of operators
     std::vector<int> pivot1(n, 0);
-    std::vector<int> range(n);
-    std::iota(range.begin(), range.end(), 0);
-    auto phi_pair_list      = get_all_phi(range);               //gives all possible phi
+    std::vector<int> index_range(n);
+    std::iota(index_range.begin(), index_range.end(), 0); //index_range is now 0,1,2 ... n-1
+    auto phi_pair_list      = get_all_phi(index_range);               //gives all possible phi, which means after we generate taus and iotas, we need to use this to set the corresponding d or d^{\dagger}
     auto iota_pair_list     = get_all_iota(mp.gf_block_shape, order); //gives all possible iota
     double integral_sum_phi = 0.0;
     for (auto [phi_d_list, phi_d_dag_list] : phi_pair_list) {

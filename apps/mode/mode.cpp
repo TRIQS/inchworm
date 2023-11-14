@@ -2,14 +2,45 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 
+template <typename T_output, typename T_input>
+T_output base_mode::do_TCI(std::function<T_output(T_input)> func, int dim, std::vector<T_input> & xi, std::vector<double> & wi, std::vector<int> & pivot1,
+                  int sweep_bound, int bond_dim, double error_bound, bool tci_prrlu, bool debug, int& count) {
+  double current_integral{0};
+  double previous_integral{0};
+  double last_pivot_error{0};
+  if (ttci_prrlu) {
+    auto ci = xfac::CTensorCI2<T_output, T_input>(func, std::vector(dim, xi), {.bond_dim = bond_dim, .pivot1 = pivot1});
+    for (int i = 1; i <= sweep_bound; i++) {
+      ci.iterate();
+      ci.makeCanonical();
+      current_integral = ci.tt.sum(std::vector(dim, wi));
+      last_pivot_error = ci.pivotError[ci.pivotError.size() - 1];
+      if (debug) { std::cout << i << " " << count << " " << last_pivot_error << " " << current_integral << std::endl; }
+      if (std::abs(current_integral - previous_integral) < error_bound && i > 1) { break; }
+      previous_integral = current_integral;
+    }
+    integral_element = current_integral;
+    if (debug) { print_rank(ci.tt); }
+  } else {
+    auto ci = xfac::CTensorCI<T_output, T_input>(func, std::vector(dim, xi), {.bond_dim = bond_dim, .pivot1 = pivot1});
+    for (int i = 1; i <= sweep_bound; i++) {
+      ci.iterate();
+      current_integral = ci.sumWeighted(std::vector(dim, wi));
+      last_pivot_error = ci.pivotError[ci.pivotError.size() - 1];
+      if (debug) { std::cout << i << " " << count << " " << last_pivot_error << " " << current_integral << std::endl; }
+      if (std::abs(current_integral - previous_integral) < error_bound && i > 1) { break; }
+      previous_integral = current_integral;
+    }
+  }
+}
+
 void base_mode::prepare_input() {
-  std::tie(tp.vi, tp.wi_v)                        = select_quadrature_GK(tp.n_GK, 0, 1);
+  std::tie(tp.vi, tp.wi_v)                              = select_quadrature_GK(tp.n_GK, 0, 1);
   std::tie(mp.Delta_tau, mp.ad_imp, sr.u_tau, sr.G_tau) = test_setup(mp.n_site, mp.n_bath, mp.n_spin, mp.U, mp.mu, mp.t, cp, mp.theta, mp.epsilon);
-  sr.u_interpolator                            = interpolator_t<scalar_t>(sr.u_tau, sr.u_tau[0].mesh().size());
-  sr.u_tau_max_zeroth_order                    = sr.u_interpolator(sp.tau_max - sp.tau_split) * sr.u_interpolator(sp.tau_split); //oder 0 result
+  sr.u_interpolator                                     = interpolator_t<scalar_t>(sr.u_tau, sr.u_tau[0].mesh().size());
+  sr.u_tau_max_zeroth_order = sr.u_interpolator(sp.tau_max - sp.tau_split) * sr.u_interpolator(sp.tau_split); //oder 0 result
 
-
-  int n_bl                                     = cp.gf_struct.size();
+  int n_bl = cp.gf_struct.size();
   mp.all_d_ops.resize(n_bl, {});
   mp.all_d_dag_ops.resize(n_bl, {});
   for (auto [bl, bl_pair] : enumerate(cp.gf_struct)) {
@@ -26,7 +57,7 @@ void base_mode::prepare_input() {
       mp.all_d_dag_ops[bl].emplace_back(0.0, true, mp.fops[{bl_name, idx}], bl, idx);
     }
   }
-  if (sp.debug>1) {
+  if (sp.debug > 1) {
     std::cout << "Delta_tau shape:" << std::endl;
     print_block_shape(mp.Delta_tau);
     std::cout << "G_tau shape:" << std::endl;
@@ -44,10 +75,12 @@ void base_mode::print_summary() {
   std::cout << std::left << std::setw(10) << "order" << std::setw(30) << "value" << std::setw(30) << "time(s)" << std::endl;
   std::cout << std::setw(10) << "0" << std::setw(30) << sr.u_tau_max_zeroth_order[sp.bl_index](i, j) << std::endl;
   for (int i = 0; i < sp.order_list.size(); i++) {
-    std::cout << std::setw(10) << sp.order_list[i] << std::setw(30) << sr.integral_order_list[i] << std::setw(30) << sr.calculation_time_list[i] << std::endl;
+    std::cout << std::setw(10) << sp.order_list[i] << std::setw(30) << sr.integral_order_list[i] << std::setw(30) << sr.calculation_time_list[i]
+              << std::endl;
   }
-  double sum_value = sr.u_tau_max_zeroth_order[sp.bl_index](i, j) + std::accumulate(sr.integral_order_list.begin(), sr.integral_order_list.end(), 0.0);
-  double sum_time  = std::accumulate(sr.calculation_time_list.begin(), sr.calculation_time_list.end(), 0.0);
+  double sum_value =
+     sr.u_tau_max_zeroth_order[sp.bl_index](i, j) + std::accumulate(sr.integral_order_list.begin(), sr.integral_order_list.end(), 0.0);
+  double sum_time = std::accumulate(sr.calculation_time_list.begin(), sr.calculation_time_list.end(), 0.0);
   std::cout << std::setw(10) << "sum:" << std::setw(30) << sum_value << std::setw(10) << sum_time << std::endl;
 }
 
@@ -103,7 +136,7 @@ void base_mode::read_json_parameters(std::string json_file_path) {
   sp.bl_index       = root.get<int>("sp.bl_index");
   sp.subspace_index = root.get<int>("sp.subspace_index");
 
-  int debug_level   = root.get<int>("sp.debug");
+  int debug_level = root.get<int>("sp.debug");
   if (debug_level == 0) {
     sp.debug = debug_t::none;
   } else if (debug_level == 1) {

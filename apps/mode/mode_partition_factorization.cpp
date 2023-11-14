@@ -18,9 +18,9 @@ void ModePartitionFactorization::run_single_element() {
     auto start_time = std::chrono::high_resolution_clock::now();
     int n           = 2 * order;     // number of tau's
     std::vector<int> v_pivot1(n, 0); // for tau only; pivots for iota are set later
-    std::vector<int> range(n);
-    std::iota(range.begin(), range.end(), 0);
-    auto phi_pair_list = get_all_phi(range); //gives all possible phi
+    std::vector<int> index_range(n);
+    std::iota(index_range.begin(), index_range.end(), 0);
+    auto phi_pair_list = get_all_phi(index_range); //gives all possible phi
 
     std::vector<int> iota_pivots(n, 0);
     std::vector<int> iota_pivots_range(n_phi);

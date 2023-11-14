@@ -90,6 +90,10 @@ class base_mode {
   tci_params_t tp{};
   simulation_params_t sp{};
   simulation_results_t sr{};
+  // auxiliary functions for simulation
+  template <typename T_output, typename T_input>
+  T_output do_TCI(std::function<T_output(T_input)> func, int dim, std::vector<T_input> & xi, std::vector<double> & wi, std::vector<int> & pivot1,
+                  int sweep_bound, int bond_dim, double error_bound, bool tci_prrlu, bool debug, int& count);
 };
 
 class ModeExplicitSum : public base_mode {
