@@ -1,7 +1,6 @@
 #include "./mode.hpp"
 
 inline base_mode* create_mode(const std::string& mode_name) {
-    if (mode_name == "use_norm_pivots") return new ModeUseNormPivots();
     if (mode_name == "full_factorization") return new ModeFullFactorization();
     if (mode_name == "vertex_factorization") return new ModeVertexFactorization();
     if (mode_name == "nested_tci") return new ModeNestedTCI();

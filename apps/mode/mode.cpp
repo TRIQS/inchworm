@@ -1,8 +1,7 @@
 #include "./mode.hpp"
 
-void base_mode::construct_Hubbard() {
-  // prepare input
-  std::tie(vi, wi)                          = select_quadrature_GK(n_GK, 0, 1);
+void base_mode::prepare_input() {
+  std::tie(vi, wi_v)                          = select_quadrature_GK(n_GK, 0, 1);
   std::tie(Delta_tau, ad_imp, u_tau, G_tau) = test_setup(n_site, n_bath, n_spin, U, mu, t, cp, theta, epsilon);
   u_interpolator                            = interpolator_t<scalar_t>(u_tau, u_tau[0].mesh().size());
   u_tau_max_zeroth_order                    = u_interpolator(tau_max - tau_split) * u_interpolator(tau_split); //oder 0 result

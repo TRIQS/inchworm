@@ -23,7 +23,7 @@ int main(int argc, char *argv[]) {
   if (mode) {
     std::cout << std::setprecision(18) << "##### Tensor Train Based Hybridyzation Expansion Inchworm Algorithm #####" << std::endl;
     mode->init(json_file_path);
-    mode->construct_Hubbard();
+    mode->prepare_input();
     mode->run_single_element();
     mode->print_summary();
     delete mode;

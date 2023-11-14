@@ -94,7 +94,7 @@ void ModeUseNormPivots::run_single_element() {
             for (int i = 0; i < sweep_bound; i++) {
               ci.iterate();
               ci.makeCanonical();
-              current_integral = ci.tt.sum(std::vector(n, wi));
+              current_integral = ci.tt.sum(std::vector(n, wi_v));
               if (debug) { std::cout << i << " " << count << " " << ci.pivotError[ci.pivotError.size() - 1] << " " << current_integral << std::endl; }
               if (std::abs(current_integral - previous_integral) < error_bound && i > 1) { break; }
               previous_integral = current_integral;
@@ -107,7 +107,7 @@ void ModeUseNormPivots::run_single_element() {
                 auto pivots = ci.getPivotsAt(b);
                 ci_element.addPivotsAt(pivots, b);
               }
-              integral_element = ci_element.tt.sum(std::vector(n, wi));
+              integral_element = ci_element.tt.sum(std::vector(n, wi_v));
             } else {
               integral_element = 0;
             }
@@ -115,7 +115,7 @@ void ModeUseNormPivots::run_single_element() {
             auto ci = xfac::CTensorCI<double, double>(get_u_tau_max_norm, std::vector(n, vi), {.pivot1 = pivot1});
             for (int i = 0; i < sweep_bound; i++) {
               ci.iterate();
-              current_integral = ci.sumWeighted(std::vector(n, wi));
+              current_integral = ci.sumWeighted(std::vector(n, wi_v));
               if (debug) { std::cout << i << " " << count << " " << ci.pivotError[ci.pivotError.size() - 1] << " " << current_integral << std::endl; }
               if (std::abs(current_integral - previous_integral) < error_bound && i > 1) { break; }
               previous_integral = current_integral;

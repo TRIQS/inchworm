@@ -20,6 +20,13 @@
 #include "../hubbard.hpp"
 #include "../utility.hpp"
 
+enum debug_level{
+  none, //0, no debug
+  low, //1, only important information is printed
+  high //2, all information is printed
+};
+
+
 class base_mode {
   public:
   base_mode() {}
@@ -27,7 +34,7 @@ class base_mode {
     read_json_parameters(json_file_path, debug, cp, n_site, epsilon, theta, n_bath, n_spin, U, mu, t, tau_max, tau_split, n_GK, bond_dim, sweep_bound,
                        order_list, tci_prrlu, error_bound, bl_index, subspace_index);
   }
-  void construct_Hubbard();
+  void prepare_input();
   void print_summary();
   virtual void run_single_element() = 0;
   virtual ~base_mode() {}
@@ -56,7 +63,7 @@ class base_mode {
   int subspace_index{};
   // constructed initial data
   std::vector<double> vi{};
-  std::vector<double> wi{};
+  std::vector<double> wi_v{};
   hyb_tau_t Delta_tau{};
   atom_diag ad_imp{};
   u_tau_t u_tau{};
@@ -76,12 +83,6 @@ class base_mode {
 class ModeExplicitSum : public base_mode {
   public:
   ModeExplicitSum() : base_mode() {}
-  void run_single_element() override;
-};
-
-class ModeUseNormPivots : public base_mode {
-  public:
-  ModeUseNormPivots() : base_mode() {}
   void run_single_element() override;
 };
 
