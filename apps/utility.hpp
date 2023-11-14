@@ -275,19 +275,19 @@ inline double evaluate_u_tau_max(frame_t &frame_zeroth_order, double tau_split, 
 }
 
 template <typename T_output, typename T_input>
-T_output do_TCI(std::function<T_output(std::vector<T_input>)> func, int dim, std::vector<T_input> &xi, std::vector<double> &wi,
-                std::vector<int> &pivot1, int sweep_bound, int bond_dim, double integral_error_bound, double pivot_error_bound, bool tci_prrlu,
-                debug_t debug, long &count) {
+T_output do_TCI(std::function<T_output(std::vector<T_input>)> func, std::vector<std::vector<T_input>> &input,
+                std::vector<std::vector<double>> &weight, std::vector<int> &pivot1, int sweep_bound, int bond_dim, double integral_error_bound,
+                double pivot_error_bound, bool tci_prrlu, debug_t debug, long &count) {
   double current_integral{0};
   double previous_integral{0};
   double last_pivot_error{0};
   if (debug > 1) { std::cout << "iteration nEval LastSweepPivotError integral\n"; }
   if (tci_prrlu) {
-    auto ci = xfac::CTensorCI2<T_output, T_input>(func, std::vector(dim, xi), {.bond_dim = bond_dim, .pivot1 = pivot1});
+    auto ci = xfac::CTensorCI2<T_output, T_input>(func, input, {.bond_dim = bond_dim, .pivot1 = pivot1});
     for (int i = 1; i <= sweep_bound; i++) {
       ci.iterate();
       ci.makeCanonical();
-      current_integral = ci.tt.sum(std::vector(dim, wi));
+      current_integral = ci.tt.sum(weight);
       last_pivot_error = ci.pivotError[ci.pivotError.size() - 1];
       if (debug > 1) { std::cout << i << " " << count << " " << last_pivot_error << " " << current_integral << std::endl; }
       if (std::abs(current_integral - previous_integral) < integral_error_bound || last_pivot_error < pivot_error_bound) { break; }
@@ -295,10 +295,10 @@ T_output do_TCI(std::function<T_output(std::vector<T_input>)> func, int dim, std
     }
     if (debug > 1) { print_rank(ci.tt); }
   } else {
-    auto ci = xfac::CTensorCI<T_output, T_input>(func, std::vector(dim, xi), {.pivot1 = pivot1});
+    auto ci = xfac::CTensorCI<T_output, T_input>(func, input, {.pivot1 = pivot1});
     for (int i = 1; i <= sweep_bound; i++) {
       ci.iterate();
-      current_integral = ci.sumWeighted(std::vector(dim, wi));
+      current_integral = ci.sumWeighted(weight);
       last_pivot_error = ci.pivotError[ci.pivotError.size() - 1];
       if (debug > 1) { std::cout << i << " " << count << " " << last_pivot_error << " " << current_integral << std::endl; }
       if (std::abs(current_integral - previous_integral) < integral_error_bound || last_pivot_error < pivot_error_bound) { break; }
@@ -314,15 +314,16 @@ T_output do_TCI(std::function<T_output(std::vector<T_input>)> func, int dim, std
 }
 
 template <typename T_output, typename T_input>
-T_output do_TCI_reuse_pivots(std::function<T_output(std::vector<T_input>)> func, int dim, std::vector<T_input> &xi, std::vector<double> &wi,
-                             std::vector<int> &pivot1, int sweep_bound, int bond_dim, double integral_error_bound, double pivot_error_bound,
-                             bool tci_prrlu, debug_t debug, long &count, std::vector<std::vector<std::vector<int>>> &previous_pivots) {
+T_output do_TCI_reuse_pivots(std::function<T_output(std::vector<T_input>)> func, std::vector<std::vector<T_input>> &input,
+                             std::vector<std::vector<double>> &weight, std::vector<int> &pivot1, int sweep_bound, int bond_dim,
+                             double integral_error_bound, double pivot_error_bound, bool tci_prrlu, debug_t debug, long &count,
+                             std::vector<std::vector<std::vector<int>>> &previous_pivots) {
   double current_integral{0};
   double previous_integral{0};
   double last_pivot_error{0};
   if (debug > 1) { std::cout << "iteration nEval LastSweepPivotError integral\n"; }
   if (tci_prrlu) {
-    auto ci = xfac::CTensorCI2<T_output, T_input>(func, std::vector(dim, xi), {.bond_dim = bond_dim, .pivot1 = pivot1});
+    auto ci = xfac::CTensorCI2<T_output, T_input>(func, input, {.bond_dim = bond_dim, .pivot1 = pivot1});
     //only supported in prrlu
     if (!previous_pivots.empty()) {
       if (debug > 1) { std::cout << "reuse pivots" << std::endl; }
@@ -333,14 +334,14 @@ T_output do_TCI_reuse_pivots(std::function<T_output(std::vector<T_input>)> func,
       }
       // ci.makeCanonical();
       // last_pivot_error = ci.pivotError[ci.pivotError.size() - 1];
-      current_integral = ci.tt.sum(std::vector(dim, wi));
+      current_integral = ci.tt.sum(weight);
       // if (std::abs(current_integral - previous_integral) > integral_error_bound) {
       //   previous_integral = current_integral;
       //   for (int i = 1; i <= sweep_bound; i++) {
       //     ci.iterate();
       //     ci.makeCanonical();
       //     last_pivot_error = ci.pivotError[ci.pivotError.size() - 1];
-      //     current_integral = ci.tt.sum(std::vector(dim, wi));
+      //     current_integral = ci.tt.sum(weight);
       //     if (debug > 1) { std::cout << i << " " << count << " " << last_pivot_error << " " << current_integral << std::endl; }
       //     if (std::abs(current_integral - previous_integral) < integral_error_bound || last_pivot_error < pivot_error_bound) { break; }
       //     previous_integral = current_integral;
@@ -350,7 +351,7 @@ T_output do_TCI_reuse_pivots(std::function<T_output(std::vector<T_input>)> func,
       for (int i = 1; i <= sweep_bound; i++) {
         ci.iterate();
         ci.makeCanonical();
-        current_integral = ci.tt.sum(std::vector(dim, wi));
+        current_integral = ci.tt.sum(weight);
         last_pivot_error = ci.pivotError[ci.pivotError.size() - 1];
         if (debug > 1) { std::cout << i << " " << count << " " << last_pivot_error << " " << current_integral << std::endl; }
         if (std::abs(current_integral - previous_integral) < integral_error_bound || last_pivot_error < pivot_error_bound) { break; }
@@ -366,10 +367,10 @@ T_output do_TCI_reuse_pivots(std::function<T_output(std::vector<T_input>)> func,
       }
     }
   } else {
-    auto ci = xfac::CTensorCI<T_output, T_input>(func, std::vector(dim, xi), {.pivot1 = pivot1});
+    auto ci = xfac::CTensorCI<T_output, T_input>(func, input, {.pivot1 = pivot1});
     for (int i = 1; i <= sweep_bound; i++) {
       ci.iterate();
-      current_integral = ci.sumWeighted(std::vector(dim, wi));
+      current_integral = ci.sumWeighted(weight);
       last_pivot_error = ci.pivotError[ci.pivotError.size() - 1];
       if (debug > 1) { std::cout << i << " " << count << " " << last_pivot_error << " " << current_integral << std::endl; }
       if (std::abs(current_integral - previous_integral) < integral_error_bound || last_pivot_error < pivot_error_bound) { break; }

@@ -45,9 +45,8 @@ void ModeCombineFactorization::run_single_element() {
 
         std::vector<double> v_iota_s1;
         for (int i = 0; i < v_pivot1.size(); i++) { v_iota_s1.push_back(tp.vi[v_pivot1[i]]); }
-        double u_tau_max_element_vs1 = 0;
-        // set pivot for iota
-        std::vector<double> iota_pivot_list_valid = {};
+        double u_tau_max_element_vs1              = 0;
+        std::vector<double> iota_pivot_list_valid = {}; // all the valid iota pivot
         for (int iota_pivot1 = 0; iota_pivot1 < iota_pair_list.size(); iota_pivot1++) {
           auto v_iota_s1_temp = v_iota_s1;
           v_iota_s1_temp.insert(v_iota_s1_temp.begin(), iota_pivot1);
@@ -55,94 +54,43 @@ void ModeCombineFactorization::run_single_element() {
           if (u_tau_max_element_vs1 != 0) { iota_pivot_list_valid.push_back(iota_pivot1); }
         }
         if (iota_pivot_list_valid.size() == 0) {
-          std::cerr << "no valid iota found" << std::endl;
+          if (sp.debug > 1) { std::cerr << "no valid iota found" << std::endl; }
           continue;
         } else {
-          std::cout << "iota_pivot_list_valid size: " << iota_pivot_list_valid.size() << std::endl;
-          std::cout << "iota_pair_list size: " << iota_pair_list.size() << std::endl;
+          if (sp.debug > 1) {
+            std::cout << "iota_pivot_list_valid size: " << iota_pivot_list_valid.size() << std::endl;
+            std::cout << "iota_pair_list size: " << iota_pair_list.size() << std::endl;
+          }
         }
         v_iota_s1.insert(v_iota_s1.begin(), iota_pivot_list_valid[0]);
-
         auto pivot1 = v_pivot1;
-        pivot1.insert(pivot1.begin(), 0);
+        pivot1.insert(pivot1.begin(), 0); // 0 refers to the first element of iota_pivot_list_valid
 
-        std::cout << "pivot1: ";
-        print_vector(pivot1);
-        std::cout << "v_iota_s1: ";
-        print_vector(v_iota_s1);
-
+        u_tau_max_element_vs1 = get_u_tau_max_element(v_iota_s1);
         if (sp.debug > 1) {
-          std::vector<double> vs1(v_iota_s1.begin() + 1, v_iota_s1.end());
           auto [iota_d_list1, iota_d_dag_list1] = iota_pair_list[iota_pivot_list_valid[static_cast<int>(v_iota_s1[0])]];
+          std::vector<double> vs1(v_iota_s1.begin() + 1, v_iota_s1.end());
           std::vector<double> vs1_left(vs1.begin(), vs1.begin() + n_left);
           std::vector<double> vs1_right(vs1.begin() + n_left, vs1.end());
           std::vector<double> taus1_left  = change_variable(vs1_left, sp.tau_split, 0.0);
           std::vector<double> taus1_right = change_variable(vs1_right, sp.tau_max, sp.tau_split);
           auto taus(taus1_left);
           taus.insert(taus.end(), taus1_right.begin(), taus1_right.end());
-          std::cout << "iota_d_list: ";
-          print_vector(iota_d_list1);
-          std::cout << "iota_d_dag_list: ";
-          print_vector(iota_d_dag_list1);
-          std::cout << "tau_d_list: ";
-          print_vector(get_elements(phi_d_list, taus));
-          std::cout << "tau_d_dag_list: ";
-          print_vector(get_elements(phi_d_dag_list, taus));
-          auto u_tau_max_element_vs1 = get_u_tau_max_element(v_iota_s1);
-          std::cout << "get_u_tau_max_element(pivot1): " << u_tau_max_element_vs1 << "\n" << std::endl;
+          print_pivot1(iota_d_list1, iota_d_dag_list1, get_elements(phi_d_list, taus), get_elements(phi_d_dag_list, taus), u_tau_max_element_vs1);
         }
         if (u_tau_max_element_vs1 == 0) { continue; }
 
-        double current_integral{0};
-        double previous_integral{0};
-        double integral_element{0};
-
         std::vector<double> iotai = iota_pivot_list_valid;
         auto wi_iota              = std::vector(iota_pivot_list_valid.size(), 1.0);
-
-        if (sp.debug > 1) { std::cout << "iteration nEval LastSweepPivotError integral\n"; }
-        auto input_to_append = std::vector(n, tp.vi);
-        auto input           = std::vector(1, iotai);
+        auto input_to_append      = std::vector(n, tp.vi);
+        auto input                = std::vector(1, iotai);
         input.insert(input.end(), input_to_append.begin(), input_to_append.end());
         auto weight_to_append = std::vector(n, tp.wi_v);
         auto weight           = std::vector(1, wi_iota);
         weight.insert(weight.end(), weight_to_append.begin(), weight_to_append.end());
-        // std::cout << "input: " << std::endl;
-        // for (auto v : input) { print_vector(v); }
-        // std::cout << "weight: " << std::endl;
-        // for (auto v : weight) { print_vector(v); }
-        if (tp.tci_prrlu) {
-          auto ci = xfac::CTensorCI2<double, double>(get_u_tau_max_element, input, {.bond_dim = tp.bond_dim, .pivot1 = pivot1});
-          for (int i = 0; i < tp.sweep_bound; i++) {
-            ci.iterate();
-            ci.makeCanonical();
-            current_integral = ci.tt.sum(weight);
-            if (sp.debug > 1) {
-              std::cout << i << " " << count << " " << ci.pivotError[ci.pivotError.size() - 1] << " " << current_integral << std::endl;
-            }
-            if (std::abs(current_integral - previous_integral) < tp.integral_error_bound && i > 1) { break; }
-            previous_integral = current_integral;
-          }
-          integral_element = current_integral;
-          if (sp.debug > 1) { print_rank(ci.tt); }
-        } else {
-          auto ci = xfac::CTensorCI<double, double>(get_u_tau_max_element, input, {.pivot1 = pivot1});
-          for (int i = 0; i < tp.sweep_bound; i++) {
-            ci.iterate();
-            current_integral = ci.sumWeighted(weight);
-            if (sp.debug > 1) {
-              std::cout << i << " " << count << " " << ci.pivotError[ci.pivotError.size() - 1] << " " << current_integral << std::endl;
-            }
-            if (std::abs(current_integral - previous_integral) < tp.integral_error_bound && i > 1) { break; }
-            previous_integral = current_integral;
-          }
-          integral_element = current_integral;
-          if (sp.debug > 1) {
-            std::cout << "rank:" << std::endl;
-            print_vector(ci.rank());
-          }
-        }
-        if (sp.debug > 1) { std::cout << std::endl; }
+
+        double integral_element = do_TCI<double, double>(get_u_tau_max_element, input, weight, pivot1, tp.sweep_bound, tp.bond_dim,
+                                                         tp.integral_error_bound, tp.pivot_error_bound, tp.tci_prrlu, sp.debug, count);
         integral_sum_iota += integral_element;
         integral_sum_n_left += integral_sum_iota;
       }

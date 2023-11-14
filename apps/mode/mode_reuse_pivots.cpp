@@ -56,7 +56,9 @@ void ModeReusePivots::run_single_element() {
           }
           if (u_tau_max_element_vs1 == 0) { continue; }
 
-          double integral_element = do_TCI_reuse_pivots<double, double>(get_u_tau_max_element, n, tp.vi, tp.wi_v, pivot1, tp.sweep_bound, tp.bond_dim,
+          auto input = std::vector(n, tp.vi);
+          auto weight = std::vector(n, tp.wi_v);
+          double integral_element = do_TCI_reuse_pivots<double, double>(get_u_tau_max_element, input, weight, pivot1, tp.sweep_bound, tp.bond_dim,
                                                            tp.integral_error_bound, tp.pivot_error_bound, tp.tci_prrlu, sp.debug, count,previous_pivots);
           integral_sum_iota += integral_element;
         }

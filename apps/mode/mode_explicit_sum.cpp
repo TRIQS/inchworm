@@ -53,8 +53,11 @@ void ModeExplicitSum::run_single_element() {
             print_pivot1(iota_d_list,iota_d_dag_list,get_elements(phi_d_list, taus),get_elements(phi_d_dag_list, taus),u_tau_max_element_vs1);
           } 
           if (u_tau_max_element_vs1 == 0) { continue; }
+           
 
-          double integral_element = do_TCI<double,double> (get_u_tau_max_element, n, tp.vi, tp.wi_v, pivot1, tp.sweep_bound, tp.bond_dim, tp.integral_error_bound, tp.pivot_error_bound, tp.tci_prrlu, sp.debug, count);
+          auto input = std::vector(n, tp.vi);
+          auto weight = std::vector(n, tp.wi_v);
+          double integral_element = do_TCI<double,double> (get_u_tau_max_element, input, weight, pivot1, tp.sweep_bound, tp.bond_dim, tp.integral_error_bound, tp.pivot_error_bound, tp.tci_prrlu, sp.debug, count);
           integral_sum_iota += integral_element;
         }
         integral_sum_n_left += integral_sum_iota;
