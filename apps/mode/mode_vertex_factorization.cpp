@@ -106,7 +106,7 @@ void ModeVertexFactorization::run_single_element() {
         std::vector<int> pivot1{};
         auto pivot1_to_append = all_iota_pivots[iota_pivot_index];
         pivot1.reserve(n);
-        for (int i = 0; i < pivot1_to_append.size(); i++) { pivot1.push_back(v_pivot1[i] + pivot1_to_append[i]); }
+        for (int i = 0; i < pivot1_to_append.size(); i++) { pivot1.push_back(v_pivot1[i] + pivot1_to_append[i] *tp.n_GK); }
         std::cout << "pivot1: ";
         print_vector(pivot1);
         std::cout << "v_iota_s1: ";
