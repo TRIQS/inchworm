@@ -6,6 +6,34 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 
+enum debug_t {
+  none, //0, no debug
+  low,  //1, simulation level debug
+  high  //2, simulation level debug + TCI level debug
+};
+
+//printing helper
+template <typename T> void print_vector(const std::vector<T> &vec) {
+  for (auto v : vec) std::cout << v << ' ';
+  std::cout << std::endl;
+}
+
+template <typename T> inline void print_rank(xfac::TensorTrain<T> tt) {
+  int len = tt.M.size();
+  std::vector<int> rs(len - 1);
+  for (auto i = 0u; i < len - 1; i++) rs[i] = tt.M[i].n_slices;
+  std::cout << "rank: ";
+  print_vector(rs);
+  std::cout << std::endl;
+}
+
+template <typename T> void print_block_shape(block_gf<imtime, T> const &x_tau) {
+  std::cout << "number of taus: " << x_tau[0].mesh().size() << std::endl;
+  std::cout << "number of block: " << x_tau.size() << std::endl;
+  for (int bl = 0; bl < x_tau.size(); ++bl) { std::cout << "block: " << bl << " shape: " << x_tau[bl].target_shape() << std::endl; }
+}
+
+// quadrature helper
 inline unsigned long long factorial(int n) {
   unsigned long long result = 1;
   for (int i = 1; i <= n; ++i) { result *= i; }
@@ -38,11 +66,7 @@ inline auto select_quadrature_GK(int n, double a = 0, double b = 1) {
   }
 }
 
-template <typename T> void print_vector(const std::vector<T> &vec) {
-  for (auto v : vec) std::cout << v << ' ';
-  std::cout << std::endl;
-}
-
+// generate helper
 inline std::vector<std::pair<std::vector<int>, std::vector<int>>> get_all_phi(std::vector<int> const &range) {
   std::vector<std::pair<std::vector<int>, std::vector<int>>> res{};
   int order = range.size() / 2;
@@ -95,8 +119,7 @@ inline std::vector<std::pair<std::vector<int>, std::vector<int>>> get_all_phi_cr
 }
 
 // geneerate all samples of B.size() from A and store them in all_combinations; each element of B can take any value from A
-template <typename T>
-void generate_combinations(const std::vector<T> &A, std::vector<T> &B, int idx, std::vector<std::vector<T>> &all_combinations) {
+template <typename T> void generate_combinations(const std::vector<T> &A, std::vector<T> &B, int idx, std::vector<std::vector<T>> &all_combinations) {
   if (idx == B.size()) {
     all_combinations.push_back(B);
     return;
@@ -188,12 +211,6 @@ inline double jacobian(const std::vector<double> &taus, double tau_max, double t
   return std::abs(prod);
 }
 
-template <typename T> void print_block_shape(block_gf<imtime, T> const &x_tau) {
-  std::cout << "number of taus: " << x_tau[0].mesh().size() << std::endl;
-  std::cout << "number of block: " << x_tau.size() << std::endl;
-  for (int bl = 0; bl < x_tau.size(); ++bl) { std::cout << "block: " << bl << " shape: " << x_tau[bl].target_shape() << std::endl; }
-}
-
 inline std::pair<int, int> findIndex(const std::vector<int> &block_shape, int iota) {
   int running_sum    = 0;
   int subspace_index = 0;
@@ -214,10 +231,11 @@ inline std::pair<int, int> findIndex(const std::vector<int> &block_shape, int io
   return std::make_pair(-1, -1); // Return a pair of -1s if not found
 }
 
-double evaluate_u_tau_max(frame_t &frame_zeroth_order, double tau_split, double tau_max, std::vector<std::vector<fop_t>> const &all_d_ops,
-                          std::vector<std::vector<fop_t>> const &all_d_dag_ops, std::vector<int> const &block_shape, constr_params_t const &cp,
-                          hyb_tau_t const &Delta_tau, atom_diag const &ad_imp, interpolator_t<scalar_t> const &u_interpolator, auto const &tau_d_list,
-                          auto const &tau_d_dag_list, auto const &iota_d_list, auto const &iota_d_dag_list, int bl_indx, int subspace_indx) {
+inline double evaluate_u_tau_max(frame_t &frame_zeroth_order, double tau_split, double tau_max, std::vector<std::vector<fop_t>> const &all_d_ops,
+                                 std::vector<std::vector<fop_t>> const &all_d_dag_ops, std::vector<int> const &block_shape, constr_params_t const &cp,
+                                 hyb_tau_t const &Delta_tau, atom_diag const &ad_imp, interpolator_t<scalar_t> const &u_interpolator,
+                                 auto const &tau_d_list, auto const &tau_d_dag_list, auto const &iota_d_list, auto const &iota_d_dag_list,
+                                 int bl_indx, int subspace_indx) {
   auto config = config_t(frame_zeroth_order, cp.gf_struct, {0.0, tau_split});
   for (auto i : range(tau_d_list.size())) {
     auto [bl, subspace_d_index]       = findIndex(block_shape, iota_d_list[i]);
@@ -256,14 +274,126 @@ double evaluate_u_tau_max(frame_t &frame_zeroth_order, double tau_split, double 
   }
 }
 
-template <typename T> inline void print_rank(xfac::TensorTrain<T> tt) {
-  int len = tt.M.size();
-  std::vector<int> rs(len - 1);
-  for (auto i = 0u; i < len - 1; i++) rs[i] = tt.M[i].n_slices;
-  std::cout << "rank: ";
-  print_vector(rs);
-  std::cout << std::endl;
+template <typename T_output, typename T_input>
+T_output do_TCI(std::function<T_output(std::vector<T_input>)> func, int dim, std::vector<T_input> &xi, std::vector<double> &wi,
+                std::vector<int> &pivot1, int sweep_bound, int bond_dim, double integral_error_bound, double pivot_error_bound, bool tci_prrlu,
+                debug_t debug, long &count) {
+  double current_integral{0};
+  double previous_integral{0};
+  double last_pivot_error{0};
+  if (debug > 1) { std::cout << "iteration nEval LastSweepPivotError integral\n"; }
+  if (tci_prrlu) {
+    auto ci = xfac::CTensorCI2<T_output, T_input>(func, std::vector(dim, xi), {.bond_dim = bond_dim, .pivot1 = pivot1});
+    for (int i = 1; i <= sweep_bound; i++) {
+      ci.iterate();
+      ci.makeCanonical();
+      current_integral = ci.tt.sum(std::vector(dim, wi));
+      last_pivot_error = ci.pivotError[ci.pivotError.size() - 1];
+      if (debug > 1) { std::cout << i << " " << count << " " << last_pivot_error << " " << current_integral << std::endl; }
+      if (std::abs(current_integral - previous_integral) < integral_error_bound || last_pivot_error < pivot_error_bound) { break; }
+      previous_integral = current_integral;
+    }
+    if (debug > 1) { print_rank(ci.tt); }
+  } else {
+    auto ci = xfac::CTensorCI<T_output, T_input>(func, std::vector(dim, xi), {.pivot1 = pivot1});
+    for (int i = 1; i <= sweep_bound; i++) {
+      ci.iterate();
+      current_integral = ci.sumWeighted(std::vector(dim, wi));
+      last_pivot_error = ci.pivotError[ci.pivotError.size() - 1];
+      if (debug > 1) { std::cout << i << " " << count << " " << last_pivot_error << " " << current_integral << std::endl; }
+      if (std::abs(current_integral - previous_integral) < integral_error_bound || last_pivot_error < pivot_error_bound) { break; }
+      previous_integral = current_integral;
+    }
+    if (debug > 1) {
+      std::cout << "rank:" << std::endl;
+      print_vector(ci.rank());
+    }
+  }
+  if (debug > 1) { std::cout << std::endl; }
+  return current_integral;
 }
 
+template <typename T_output, typename T_input>
+T_output do_TCI_reuse_pivots(std::function<T_output(std::vector<T_input>)> func, int dim, std::vector<T_input> &xi, std::vector<double> &wi,
+                             std::vector<int> &pivot1, int sweep_bound, int bond_dim, double integral_error_bound, double pivot_error_bound,
+                             bool tci_prrlu, debug_t debug, long &count, std::vector<std::vector<std::vector<int>>> &previous_pivots) {
+  double current_integral{0};
+  double previous_integral{0};
+  double last_pivot_error{0};
+  if (debug > 1) { std::cout << "iteration nEval LastSweepPivotError integral\n"; }
+  if (tci_prrlu) {
+    auto ci = xfac::CTensorCI2<T_output, T_input>(func, std::vector(dim, xi), {.bond_dim = bond_dim, .pivot1 = pivot1});
+    //only supported in prrlu
+    if (!previous_pivots.empty()) {
+      if (debug > 1) { std::cout << "reuse pivots" << std::endl; }
+      for (auto b = 0u; b < ci.len() - 1; b++) {
+        auto pivots = previous_pivots[b];
+        // auto first_half_pivots = std::vector(pivots.begin(), pivots.begin() + pivots.size() / 2);
+        ci.addPivotsAt(pivots, b);
+      }
+      // ci.makeCanonical();
+      // last_pivot_error = ci.pivotError[ci.pivotError.size() - 1];
+      current_integral = ci.tt.sum(std::vector(dim, wi));
+      // if (std::abs(current_integral - previous_integral) > integral_error_bound) {
+      //   previous_integral = current_integral;
+      //   for (int i = 1; i <= sweep_bound; i++) {
+      //     ci.iterate();
+      //     ci.makeCanonical();
+      //     last_pivot_error = ci.pivotError[ci.pivotError.size() - 1];
+      //     current_integral = ci.tt.sum(std::vector(dim, wi));
+      //     if (debug > 1) { std::cout << i << " " << count << " " << last_pivot_error << " " << current_integral << std::endl; }
+      //     if (std::abs(current_integral - previous_integral) < integral_error_bound || last_pivot_error < pivot_error_bound) { break; }
+      //     previous_integral = current_integral;
+      //   }
+      // }
+    } else { //empty
+      for (int i = 1; i <= sweep_bound; i++) {
+        ci.iterate();
+        ci.makeCanonical();
+        current_integral = ci.tt.sum(std::vector(dim, wi));
+        last_pivot_error = ci.pivotError[ci.pivotError.size() - 1];
+        if (debug > 1) { std::cout << i << " " << count << " " << last_pivot_error << " " << current_integral << std::endl; }
+        if (std::abs(current_integral - previous_integral) < integral_error_bound || last_pivot_error < pivot_error_bound) { break; }
+        previous_integral = current_integral;
+      }
+    }
+    if (debug > 1) { print_rank(ci.tt); }
+    if (previous_pivots.empty()) {
+      previous_pivots.reserve(ci.len() - 1);
+      for (auto b = 0u; b < ci.len() - 1; b++) {
+        auto pivots = ci.getPivotsAt(b);
+        previous_pivots.push_back(pivots);
+      }
+    }
+  } else {
+    auto ci = xfac::CTensorCI<T_output, T_input>(func, std::vector(dim, xi), {.pivot1 = pivot1});
+    for (int i = 1; i <= sweep_bound; i++) {
+      ci.iterate();
+      current_integral = ci.sumWeighted(std::vector(dim, wi));
+      last_pivot_error = ci.pivotError[ci.pivotError.size() - 1];
+      if (debug > 1) { std::cout << i << " " << count << " " << last_pivot_error << " " << current_integral << std::endl; }
+      if (std::abs(current_integral - previous_integral) < integral_error_bound || last_pivot_error < pivot_error_bound) { break; }
+      previous_integral = current_integral;
+    }
+    if (debug > 1) {
+      std::cout << "rank:" << std::endl;
+      print_vector(ci.rank());
+    }
+  }
+  if (debug > 1) { std::cout << std::endl; }
+  return current_integral;
+}
 
-
+inline void print_pivot1(std::vector<int> const &iota_d_list, std::vector<int> const &iota_d_dag_list, std::vector<double> const &tau_d_list,
+                         std::vector<double> const &tau_d_dag_list, double pivot_value) {
+  std::cout << "iota_d_list: ";
+  print_vector(iota_d_list);
+  std::cout << "iota_d_dag_list: ";
+  print_vector(iota_d_dag_list);
+  std::cout << "tau_d_list: ";
+  print_vector(tau_d_list);
+  std::cout << "tau_d_dag_list: ";
+  print_vector(tau_d_dag_list);
+  std::cout << "get_u_tau_max_element(pivot1): " << pivot_value << std::endl;
+  std::cout << std::endl;
+}

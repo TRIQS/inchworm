@@ -10,10 +10,10 @@ using namespace inchworm;
 void ModeVertexFactorization::run_single_element() {
 
 // TCI
-  int n_phi                                 = std::accumulate(mp.gf_block_shape.begin(), mp.gf_block_shape.end(), 0);
-  std::vector<double> iotai(n_phi);
+
+  std::vector<double> iotai(mp.n_phi);
   std::iota(iotai.begin(), iotai.end(), 0);
-  auto wi_iota = std::vector(n_phi, 1.0);
+  auto wi_iota = std::vector(mp.n_phi, 1.0);
   for (int order : sp.order_list) {
     auto start_time = std::chrono::high_resolution_clock::now();
     int n           = 2 * order;     // number of tau's
@@ -23,7 +23,7 @@ void ModeVertexFactorization::run_single_element() {
     auto phi_pair_list = get_all_phi(index_range); //gives all possible phi
 
     std::vector<int> iota_pivots(n, 0);
-    std::vector<int> iota_pivots_range(n_phi);
+    std::vector<int> iota_pivots_range(mp.n_phi);
     std::iota(iota_pivots_range.begin(), iota_pivots_range.end(), 0);
     std::vector<std::vector<int>> all_iota_pivots{};
     generate_combinations(iota_pivots_range, iota_pivots, 0, all_iota_pivots);
@@ -112,7 +112,7 @@ void ModeVertexFactorization::run_single_element() {
         std::cout << "v_iota_s1: ";
         print_vector(v_iota_s1);
 
-        if (sp.debug) {
+        if (sp.debug>1) {
           std::vector<double> vs1{};
           std::vector<double> iotas1{};
           vs1.reserve(v_iota_s1.size());
@@ -148,10 +148,10 @@ void ModeVertexFactorization::run_single_element() {
         double current_integral{0};
         double previous_integral{0};
         double integral_element{0};
-        if (sp.debug) { std::cout << "iteration nEval LastSweepPivotError integral\n"; }
+        if (sp.debug>1) { std::cout << "iteration nEval LastSweepPivotError integral\n"; }
         std::vector<double> v_iota_i;
         std::vector<double> weight_i;
-        for (int i = 0; i < n_phi; i++) {
+        for (int i = 0; i < mp.n_phi; i++) {
           for (int j = 0; j < tp.vi.size(); j++) {
             v_iota_i.push_back(i + tp.vi[j]);
             weight_i.push_back( tp.wi_v[j]);
@@ -170,28 +170,28 @@ void ModeVertexFactorization::run_single_element() {
             ci.iterate();
             // ci.makeCanonical();
             current_integral = ci.tt.sum(weight);
-            if (sp.debug) { std::cout << i << " " << count << " " << ci.pivotError[ci.pivotError.size() - 1] << " " << current_integral << std::endl; }
-            if (std::abs(current_integral - previous_integral) <  tp.error_bound && i > 1) { break; }
+            if (sp.debug>1) { std::cout << i << " " << count << " " << ci.pivotError[ci.pivotError.size() - 1] << " " << current_integral << std::endl; }
+            if (std::abs(current_integral - previous_integral) <  tp.integral_error_bound && i > 1) { break; }
             previous_integral = current_integral;
           }
           integral_element = current_integral;
-          if (sp.debug) { print_rank(ci.tt); }
+          if (sp.debug>1) { print_rank(ci.tt); }
         } else {
           auto ci = xfac::CTensorCI<double, double>(get_u_tau_max_element, input, {.pivot1 = pivot1});
           for (int i = 0; i <  tp.sweep_bound; i++) {
             ci.iterate();
             current_integral = ci.sumWeighted(weight);
-            if (sp.debug) { std::cout << i << " " << count << " " << ci.pivotError[ci.pivotError.size() - 1] << " " << current_integral << std::endl; }
-            if (std::abs(current_integral - previous_integral) <  tp.error_bound && i > 5) { break; }
+            if (sp.debug>1) { std::cout << i << " " << count << " " << ci.pivotError[ci.pivotError.size() - 1] << " " << current_integral << std::endl; }
+            if (std::abs(current_integral - previous_integral) <  tp.integral_error_bound && i > 5) { break; }
             previous_integral = current_integral;
           }
           integral_element = current_integral;
-          if (sp.debug) {
+          if (sp.debug>1) {
             std::cout << "rank:" << std::endl;
             print_vector(ci.rank());
           }
         }
-        if (sp.debug) { std::cout << std::endl; }
+        if (sp.debug>1) { std::cout << std::endl; }
         integral_sum_iota += integral_element;
         // }
         integral_sum_n_left += integral_sum_iota;

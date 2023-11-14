@@ -76,19 +76,21 @@
         ],
         "bl_index": 0,
         "subspace_index": 0,
-        "debug": 1
+        "debug": 2
     },
     "tp":{
         "n_GK": 15,
         "bond_dim": 20,
         "sweep_bound": 30,
         "tci_prrlu": true,
-        "error_bound": 1e-6
+        "integral_error_bound": 1e-6,
+        "pivot_error_bound": 1e-10
     },
     "tp_iota": {
         "tci_prrlu": true,
         "bond_dim": 3,
         "sweep_bound": 30,
-        "error_bound": 1e-3
+        "integral_error_bound": 1e-6,
+        "pivot_error_bound": 1e-10
     }
 }

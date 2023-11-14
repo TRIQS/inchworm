@@ -2,38 +2,6 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 
-template <typename T_output, typename T_input>
-T_output base_mode::do_TCI(std::function<T_output(T_input)> func, int dim, std::vector<T_input> & xi, std::vector<double> & wi, std::vector<int> & pivot1,
-                  int sweep_bound, int bond_dim, double error_bound, bool tci_prrlu, bool debug, int& count) {
-  double current_integral{0};
-  double previous_integral{0};
-  double last_pivot_error{0};
-  if (ttci_prrlu) {
-    auto ci = xfac::CTensorCI2<T_output, T_input>(func, std::vector(dim, xi), {.bond_dim = bond_dim, .pivot1 = pivot1});
-    for (int i = 1; i <= sweep_bound; i++) {
-      ci.iterate();
-      ci.makeCanonical();
-      current_integral = ci.tt.sum(std::vector(dim, wi));
-      last_pivot_error = ci.pivotError[ci.pivotError.size() - 1];
-      if (debug) { std::cout << i << " " << count << " " << last_pivot_error << " " << current_integral << std::endl; }
-      if (std::abs(current_integral - previous_integral) < error_bound && i > 1) { break; }
-      previous_integral = current_integral;
-    }
-    integral_element = current_integral;
-    if (debug) { print_rank(ci.tt); }
-  } else {
-    auto ci = xfac::CTensorCI<T_output, T_input>(func, std::vector(dim, xi), {.bond_dim = bond_dim, .pivot1 = pivot1});
-    for (int i = 1; i <= sweep_bound; i++) {
-      ci.iterate();
-      current_integral = ci.sumWeighted(std::vector(dim, wi));
-      last_pivot_error = ci.pivotError[ci.pivotError.size() - 1];
-      if (debug) { std::cout << i << " " << count << " " << last_pivot_error << " " << current_integral << std::endl; }
-      if (std::abs(current_integral - previous_integral) < error_bound && i > 1) { break; }
-      previous_integral = current_integral;
-    }
-  }
-}
-
 void base_mode::prepare_input() {
   std::tie(tp.vi, tp.wi_v)                              = select_quadrature_GK(tp.n_GK, 0, 1);
   std::tie(mp.Delta_tau, mp.ad_imp, sr.u_tau, sr.G_tau) = test_setup(mp.n_site, mp.n_bath, mp.n_spin, mp.U, mp.mu, mp.t, cp, mp.theta, mp.epsilon);
@@ -47,7 +15,8 @@ void base_mode::prepare_input() {
     auto [bl_name, bl_size] = bl_pair;
     mp.gf_block_shape.push_back(bl_size);
   }
-  mp.fops = fundamental_operator_set{cp.gf_struct};
+  mp.n_phi = std::accumulate(mp.gf_block_shape.begin(), mp.gf_block_shape.end(), 0);
+  mp.fops  = fundamental_operator_set{cp.gf_struct};
   for (auto [bl, bl_pair] : enumerate(cp.gf_struct)) {
     auto [bl_name, bl_size] = bl_pair;
     mp.all_d_ops[bl].clear();
@@ -156,9 +125,10 @@ void base_mode::read_json_parameters(std::string json_file_path) {
   }
 
   // Read TCI parameters
-  tp.n_GK        = root.get<int>("tp.n_GK");
-  tp.tci_prrlu   = root.get<bool>("tp.tci_prrlu");
-  tp.bond_dim    = root.get<int>("tp.bond_dim");
-  tp.sweep_bound = root.get<int>("tp.sweep_bound");
-  tp.error_bound = root.get<double>("tp.error_bound");
+  tp.n_GK                 = root.get<int>("tp.n_GK");
+  tp.tci_prrlu            = root.get<bool>("tp.tci_prrlu");
+  tp.bond_dim             = root.get<int>("tp.bond_dim");
+  tp.sweep_bound          = root.get<int>("tp.sweep_bound");
+  tp.integral_error_bound = root.get<double>("tp.integral_error_bound");
+  tp.pivot_error_bound    = root.get<double>("tp.pivot_error_bound");
 }

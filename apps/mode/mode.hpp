@@ -20,11 +20,6 @@
 #include "../hubbard.hpp"
 #include "../utility.hpp"
 
-enum debug_t {
-  none, //0, no debug
-  low,  //1, only important information is printed
-  high  //2, all information is printed
-};
 
 struct model_params_t {
   int n_site{};
@@ -43,6 +38,7 @@ struct model_params_t {
   std::vector<std::vector<fop_t>> all_d_dag_ops{};
   long n_bl{};
   fundamental_operator_set fops{};
+  int n_phi{};
 };
 
 struct tci_params_t {
@@ -50,7 +46,8 @@ struct tci_params_t {
   bool tci_prrlu{};
   int bond_dim{};
   int sweep_bound{};
-  double error_bound{};
+  double integral_error_bound{};
+  double pivot_error_bound{};
   std::vector<double> vi{};
   std::vector<double> wi_v{};
 };
@@ -90,10 +87,6 @@ class base_mode {
   tci_params_t tp{};
   simulation_params_t sp{};
   simulation_results_t sr{};
-  // auxiliary functions for simulation
-  template <typename T_output, typename T_input>
-  T_output do_TCI(std::function<T_output(T_input)> func, int dim, std::vector<T_input> & xi, std::vector<double> & wi, std::vector<int> & pivot1,
-                  int sweep_bound, int bond_dim, double error_bound, bool tci_prrlu, bool debug, int& count);
 };
 
 class ModeExplicitSum : public base_mode {
