@@ -332,7 +332,7 @@ T_output do_TCI_reuse_pivots(std::function<T_output(std::vector<T_input>)> func,
         // auto first_half_pivots = std::vector(pivots.begin(), pivots.begin() + pivots.size() / 2);
         ci.addPivotsAt(pivots, b);
       }
-      ci.makeCanonical();
+      // ci.makeCanonical();
       // last_pivot_error = ci.pivotError[ci.pivotError.size() - 1];
       current_integral = ci.tt.sum(weight);
       // if (std::abs(current_integral - previous_integral) > integral_error_bound) {
