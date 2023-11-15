@@ -15,7 +15,7 @@ int main(int argc, char *argv[]) {
     json_file_path = "../../apps/params.json";
   } else {
     std::cout << "Please provide mode (and file path)" << std::endl;
-    std::cout << "Supported modes: use_norm_pivots, full_factorization, vertex_factorization, nested_tci, reuse_pivots, partition_factorization, combine_factorization, explicit_sum" << std::endl;
+    std::cout << "Supported modes: full_factorization, vertex_factorization, nested_tci, reuse_pivots, partition_factorization, combine_factorization, explicit_sum" << std::endl;
     return 0;
   }
 
