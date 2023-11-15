@@ -47,12 +47,7 @@ void ModePartitionFactorization::run_single_element() {
           // print_vector(iotas);
           std::vector<double> iota_d_list(iotas.begin(), iotas.begin() + mid_iota);
           std::vector<double> iota_d_dag_list(iotas.begin() + mid_iota, iotas.end());
-          std::vector<double> vs_left(vs.begin(), vs.begin() + n_left);
-          std::vector<double> vs_right(vs.begin() + n_left, vs.end());
-          std::vector<double> taus_left  = change_variable(vs_left, sp.tau_split, 0.0);
-          std::vector<double> taus_right = change_variable(vs_right, sp.tau_max, sp.tau_split);
-          auto taus(taus_left);
-          taus.insert(taus.end(), taus_right.begin(), taus_right.end());
+          auto [taus_left,taus_right, taus] = obtain_taus(vs, n_left, sp.tau_split, sp.tau_max);
           double integrand = evaluate_u_tau_max(sr.u_tau_max_zeroth_order, sp.tau_split, sp.tau_max, mp.all_d_ops, mp.all_d_dag_ops, mp.gf_block_shape, cp, mp.Delta_tau,
                                                 mp.ad_imp, sr.u_interpolator, get_elements(phi_d_list, taus), get_elements(phi_d_dag_list, taus), iota_d_list,
                                                 iota_d_dag_list, sp.bl_index, sp.subspace_index);
@@ -95,20 +90,15 @@ void ModePartitionFactorization::run_single_element() {
           int mid_iota1 = iotas1.size() / 2;
           std::vector<double> iota_d_list1(iotas1.begin(), iotas1.begin() + mid_iota1);
           std::vector<double> iota_d_dag_list1(iotas1.begin() + mid_iota1, iotas1.end());
-          std::vector<double> vs1_left(vs1.begin(), vs1.begin() + n_left);
-          std::vector<double> vs1_right(vs1.begin() + n_left, vs1.end());
-          std::vector<double> taus1_left  = change_variable(vs1_left, sp.tau_split, 0.0);
-          std::vector<double> taus1_right = change_variable(vs1_right, sp.tau_max, sp.tau_split);
-          auto taus(taus1_left);
-          taus.insert(taus.end(), taus1_right.begin(), taus1_right.end());
+                   auto [taus_left1,taus_right1, taus1] = obtain_taus(vs1, n_left, sp.tau_split, sp.tau_max);
           std::cout << "iota_d_list: ";
           print_vector(iota_d_list1);
           std::cout << "iota_d_dag_list: ";
           print_vector(iota_d_dag_list1);
           std::cout << "tau_d_list: ";
-          print_vector(get_elements(phi_d_list, taus));
+          print_vector(get_elements(phi_d_list, taus1));
           std::cout << "tau_d_dag_list: ";
-          print_vector(get_elements(phi_d_dag_list, taus));
+          print_vector(get_elements(phi_d_dag_list, taus1));
           std::cout << "get_u_tau_max_element(pivot1): " << u_tau_max_element_vs1 << "\n" << std::endl;
         }
         if (u_tau_max_element_vs1 == 0) { continue; }

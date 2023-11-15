@@ -290,7 +290,7 @@ T_output do_TCI(std::function<T_output(std::vector<T_input>)> func, std::vector<
       current_integral = ci.tt.sum(weight);
       last_pivot_error = ci.pivotError[ci.pivotError.size() - 1];
       if (debug > 1) { std::cout << i << " " << count << " " << last_pivot_error << " " << current_integral << std::endl; }
-      if (std::abs(current_integral - previous_integral) < integral_error_bound || last_pivot_error < pivot_error_bound) { break; }
+      if (std::abs(current_integral - previous_integral) < integral_error_bound || last_pivot_error < pivot_error_bound && i > 1) { break; }
       previous_integral = current_integral;
     }
     if (debug > 1) { print_rank(ci.tt); }
@@ -301,7 +301,7 @@ T_output do_TCI(std::function<T_output(std::vector<T_input>)> func, std::vector<
       current_integral = ci.sumWeighted(weight);
       last_pivot_error = ci.pivotError[ci.pivotError.size() - 1];
       if (debug > 1) { std::cout << i << " " << count << " " << last_pivot_error << " " << current_integral << std::endl; }
-      if (std::abs(current_integral - previous_integral) < integral_error_bound || last_pivot_error < pivot_error_bound) { break; }
+      if (std::abs(current_integral - previous_integral) < integral_error_bound || last_pivot_error < pivot_error_bound && i > 1) { break; }
       previous_integral = current_integral;
     }
     if (debug > 1) {
@@ -397,4 +397,15 @@ inline void print_pivot1(std::vector<int> const &iota_d_list, std::vector<int> c
   print_vector(tau_d_dag_list);
   std::cout << "get_u_tau_max_element(pivot1): " << pivot_value << std::endl;
   std::cout << std::endl;
+}
+
+inline std::tuple<std::vector<double>,std::vector<double>,std::vector<double>> obtain_taus(const std::vector<double> &vs, int n_left, double tau_split, double tau_max) {
+  std::vector<double> vs_left(vs.begin(), vs.begin() + n_left);
+  std::vector<double> vs_right(vs.begin() + n_left, vs.end());
+  std::vector<double> taus_left  = change_variable(vs_left, tau_split, 0.0);
+  std::vector<double> taus_right = change_variable(vs_right, tau_max, tau_split);
+  auto taus(taus_left);
+  taus.insert(taus.end(), taus_right.begin(), taus_right.end());
+
+  return std::make_tuple(taus_left, taus_right, taus);
 }

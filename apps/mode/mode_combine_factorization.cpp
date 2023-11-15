@@ -29,12 +29,7 @@ void ModeCombineFactorization::run_single_element() {
                                       &iota_pair_list](const std::vector<double> &v_iota_s) {
           auto [iota_d_list, iota_d_dag_list] = iota_pair_list[static_cast<int>(v_iota_s[0])];
           std::vector<double> vs(v_iota_s.begin() + 1, v_iota_s.end());
-          std::vector<double> vs_left(vs.begin(), vs.begin() + n_left);
-          std::vector<double> vs_right(vs.begin() + n_left, vs.end());
-          std::vector<double> taus_left  = change_variable(vs_left, sp.tau_split, 0.0);
-          std::vector<double> taus_right = change_variable(vs_right, sp.tau_max, sp.tau_split);
-          auto taus(taus_left);
-          taus.insert(taus.end(), taus_right.begin(), taus_right.end());
+          auto [taus_left,taus_right, taus] = obtain_taus(vs, n_left, sp.tau_split, sp.tau_max);
           double integrand = evaluate_u_tau_max(sr.u_tau_max_zeroth_order, sp.tau_split, sp.tau_max, mp.all_d_ops, mp.all_d_dag_ops,
                                                 mp.gf_block_shape, cp, mp.Delta_tau, mp.ad_imp, sr.u_interpolator, get_elements(phi_d_list, taus),
                                                 get_elements(phi_d_dag_list, taus), iota_d_list, iota_d_dag_list, sp.bl_index, sp.subspace_index);
@@ -70,13 +65,8 @@ void ModeCombineFactorization::run_single_element() {
         if (sp.debug > 1) {
           auto [iota_d_list1, iota_d_dag_list1] = iota_pair_list[iota_pivot_list_valid[static_cast<int>(v_iota_s1[0])]];
           std::vector<double> vs1(v_iota_s1.begin() + 1, v_iota_s1.end());
-          std::vector<double> vs1_left(vs1.begin(), vs1.begin() + n_left);
-          std::vector<double> vs1_right(vs1.begin() + n_left, vs1.end());
-          std::vector<double> taus1_left  = change_variable(vs1_left, sp.tau_split, 0.0);
-          std::vector<double> taus1_right = change_variable(vs1_right, sp.tau_max, sp.tau_split);
-          auto taus(taus1_left);
-          taus.insert(taus.end(), taus1_right.begin(), taus1_right.end());
-          print_pivot1(iota_d_list1, iota_d_dag_list1, get_elements(phi_d_list, taus), get_elements(phi_d_dag_list, taus), u_tau_max_element_vs1);
+                   auto [taus_left1,taus_right1, taus1] = obtain_taus(vs1, n_left, sp.tau_split, sp.tau_max);
+          print_pivot1(iota_d_list1, iota_d_dag_list1, get_elements(phi_d_list, taus1), get_elements(phi_d_dag_list, taus1), u_tau_max_element_vs1);
         }
         if (u_tau_max_element_vs1 == 0) { continue; }
 

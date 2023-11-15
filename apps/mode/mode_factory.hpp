@@ -1,3 +1,4 @@
+#pragma once
 #include "./mode.hpp"
 
 inline base_mode* create_mode(const std::string& mode_name) {
