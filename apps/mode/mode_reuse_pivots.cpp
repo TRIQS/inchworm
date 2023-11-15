@@ -46,13 +46,8 @@ void ModeReusePivots::run_single_element() {
           for (int i = 0; i < pivot1.size(); i++) { vs1.push_back(tp.vi[pivot1[i]]); }
           double u_tau_max_element_vs1 = get_u_tau_max_element(vs1);
           if (sp.debug>1) {
-            std::vector<double> vs1_left(vs1.begin(), vs1.begin() + n_left);
-            std::vector<double> vs1_right(vs1.begin() + n_left, vs1.end());
-            std::vector<double> taus1_left  = change_variable(vs1_left, sp.tau_split, 0.0);
-            std::vector<double> taus1_right = change_variable(vs1_right, sp.tau_max, sp.tau_split);
-            auto taus(taus1_left);
-            taus.insert(taus.end(), taus1_right.begin(), taus1_right.end());
-            print_pivot1(iota_d_list, iota_d_dag_list, get_elements(phi_d_list, taus), get_elements(phi_d_dag_list, taus), u_tau_max_element_vs1);
+          auto [taus_left1, taus_right1, taus1] = obtain_taus(vs1, n_left, sp.tau_split, sp.tau_max);
+            print_pivot1(iota_d_list, iota_d_dag_list, get_elements(phi_d_list, taus1), get_elements(phi_d_dag_list, taus1), u_tau_max_element_vs1);
           }
           if (u_tau_max_element_vs1 == 0) { continue; }
 

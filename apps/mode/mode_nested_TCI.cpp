@@ -79,26 +79,25 @@ void ModeNestedTCI::read_json_parameters(std::string json_file_path) {
   }
 
   // Read TCI parameters
-  tp.n_GK        = root.get<int>("tp.n_GK");
-  tp.tci_prrlu   = root.get<bool>("tp.tci_prrlu");
-  tp.bond_dim    = root.get<int>("tp.bond_dim");
-  tp.sweep_bound = root.get<int>("tp.sweep_bound");
+  tp.n_GK                 = root.get<int>("tp.n_GK");
+  tp.tci_prrlu            = root.get<bool>("tp.tci_prrlu");
+  tp.bond_dim             = root.get<int>("tp.bond_dim");
+  tp.sweep_bound          = root.get<int>("tp.sweep_bound");
   tp.integral_error_bound = root.get<double>("tp.integral_error_bound");
-  tp.pivot_error_bound = root.get<double>("tp.pivot_error_bound");
+  tp.pivot_error_bound    = root.get<double>("tp.pivot_error_bound");
 
   // Read TCI parameters for iota
-  tp_iota.tci_prrlu   = root.get<bool>("tp_iota.tci_prrlu");
-  tp_iota.bond_dim    = root.get<int>("tp_iota.bond_dim");
-  tp_iota.sweep_bound = root.get<int>("tp_iota.sweep_bound");
+  tp_iota.tci_prrlu            = root.get<bool>("tp_iota.tci_prrlu");
+  tp_iota.bond_dim             = root.get<int>("tp_iota.bond_dim");
+  tp_iota.sweep_bound          = root.get<int>("tp_iota.sweep_bound");
   tp_iota.integral_error_bound = root.get<double>("tp_iota.integral_error_bound");
-  tp_iota.pivot_error_bound = root.get<double>("tp_iota.pivot_error_bound");
+  tp_iota.pivot_error_bound    = root.get<double>("tp_iota.pivot_error_bound");
 }
 
 void ModeNestedTCI::init(std::string json_file_path) { ModeNestedTCI::read_json_parameters(json_file_path); }
 
 void ModeNestedTCI::run_single_element() {
 
-  // TCI
   std::vector<int> iotai(mp.n_phi);
   std::iota(iotai.begin(), iotai.end(), 0);
   auto wi_iota = std::vector(mp.n_phi, 1.0);
@@ -109,29 +108,27 @@ void ModeNestedTCI::run_single_element() {
     std::vector<int> index_range(n);
     std::iota(index_range.begin(), index_range.end(), 0);
     auto phi_pair_list = get_all_phi(index_range); //gives all possible phi
-    std::vector<int> iota_pivots(n, 0);
-    std::vector<int> iota_pivots_range(mp.n_phi);
+
+    std::vector<int> iota_pivots(n, 0);           // this is an intermediate variable for generating all possible iota
+    std::vector<int> iota_pivots_range(mp.n_phi); // the int version of iotai
     std::iota(iota_pivots_range.begin(), iota_pivots_range.end(), 0);
     std::vector<std::vector<int>> all_iota_pivots{};
-    generate_combinations(iota_pivots_range, iota_pivots, 0, all_iota_pivots); //gives all possible iota pivots
+    generate_combinations(iota_pivots_range, iota_pivots, 0, all_iota_pivots);
+
     double integral_sum_phi = 0.0;
     for (auto [phi_d_list, phi_d_dag_list] : phi_pair_list) {
       double integral_sum_n_left = 0.0;
       for (int n_left = 1; n_left < n; n_left++) {
         double integral_sum_iota        = 0.0;
         long count_iota                 = 0;
-        auto get_u_tau_max_element_iota = [this, &count_iota, &phi_d_list = phi_d_list, &phi_d_dag_list = phi_d_dag_list, &n_left, &pivot1, &n](const std::vector<int> &iotas) {
+        auto get_u_tau_max_element_iota = [this, &count_iota, &phi_d_list = phi_d_list, &phi_d_dag_list = phi_d_dag_list, &n_left, &pivot1,
+                                           &n](const std::vector<int> &iotas) {
           std::vector<int> iota_d_list     = get_elements(phi_d_list, iotas);
           std::vector<int> iota_d_dag_list = get_elements(phi_d_dag_list, iotas);
           long count                       = 0;
           auto get_u_tau_max_element       = [this, &count, &phi_d_list = phi_d_list, &phi_d_dag_list = phi_d_dag_list, &iota_d_list = iota_d_list,
                                         &iota_d_dag_list = iota_d_dag_list, &n_left](const std::vector<double> &vs) {
-            std::vector<double> vs_left(vs.begin(), vs.begin() + n_left);
-            std::vector<double> vs_right(vs.begin() + n_left, vs.end());
-            std::vector<double> taus_left  = change_variable(vs_left, sp.tau_split, 0.0);
-            std::vector<double> taus_right = change_variable(vs_right, sp.tau_max, sp.tau_split);
-            auto taus(taus_left);
-            taus.insert(taus.end(), taus_right.begin(), taus_right.end());
+            auto [taus_left, taus_right, taus] = obtain_taus(vs, n_left, sp.tau_split, sp.tau_max);
             double integrand = evaluate_u_tau_max(sr.u_tau_max_zeroth_order, sp.tau_split, sp.tau_max, mp.all_d_ops, mp.all_d_dag_ops,
                                                         mp.gf_block_shape, cp, mp.Delta_tau, mp.ad_imp, sr.u_interpolator, get_elements(phi_d_list, taus),
                                                         get_elements(phi_d_dag_list, taus), iota_d_list, iota_d_dag_list, sp.bl_index, sp.subspace_index);
@@ -141,66 +138,21 @@ void ModeNestedTCI::run_single_element() {
           };
           std::vector<double> vs1;
           for (int i = 0; i < pivot1.size(); i++) { vs1.push_back(tp.vi[pivot1[i]]); }
-          double u_tau_max_element_vs1 = 0;
-          if (sp.debug>1) {
-            std::vector<double> vs1_left(vs1.begin(), vs1.begin() + n_left);
-            std::vector<double> vs1_right(vs1.begin() + n_left, vs1.end());
-            std::vector<double> taus1_left  = change_variable(vs1_left, sp.tau_split, 0.0);
-            std::vector<double> taus1_right = change_variable(vs1_right, sp.tau_max, sp.tau_split);
-            auto taus(taus1_left);
-            taus.insert(taus.end(), taus1_right.begin(), taus1_right.end());
-            std::cout << "iota_d_list: ";
-            print_vector(iota_d_list);
-            std::cout << "iota_d_dag_list: ";
-            print_vector(iota_d_dag_list);
-            std::cout << "tau_d_list: ";
-            print_vector(get_elements(phi_d_list, taus));
-            std::cout << "tau_d_dag_list: ";
-            print_vector(get_elements(phi_d_dag_list, taus));
-            u_tau_max_element_vs1 = get_u_tau_max_element(vs1);
-            std::cout << "get_u_tau_max_element(pivot1): " << u_tau_max_element_vs1 << "\n" << std::endl;
-          } else {
-            u_tau_max_element_vs1 = get_u_tau_max_element(vs1);
+          double u_tau_max_element_vs1 = get_u_tau_max_element(vs1);
+          if (sp.debug > 1) {
+            auto [taus_left1, taus_right1, taus1] = obtain_taus(vs1, n_left, sp.tau_split, sp.tau_max);
+            print_pivot1(iota_d_list, iota_d_dag_list, get_elements(phi_d_list, taus1), get_elements(phi_d_dag_list, taus1), u_tau_max_element_vs1);
           }
           if (u_tau_max_element_vs1 == 0) {
             count_iota++;
             return 0.0;
           }
-          double current_integral{0};
-          double previous_integral{0};
-          double integral_element{0};
-          if (sp.debug>1) { std::cout << "iteration nEval LastSweepPivotError integral\n"; }
-          if (tp.tci_prrlu) {
-            auto ci = xfac::CTensorCI2<double, double>(get_u_tau_max_element, std::vector(n, tp.vi), {.bond_dim = tp.bond_dim, .pivot1 = pivot1});
-            for (int i = 0; i < tp.sweep_bound; i++) {
-              ci.iterate();
-              ci.makeCanonical();
-              current_integral = ci.tt.sum(std::vector(n, tp.wi_v));
-              if (sp.debug>1) {
-                std::cout << i << " " << count << " " << ci.pivotError[ci.pivotError.size() - 1] << " " << current_integral << std::endl;
-              }
-              if (std::abs(current_integral - previous_integral) < tp.integral_error_bound && i > 1) { break; }
-              previous_integral = current_integral;
-            }
-            integral_element = current_integral;
-            if (sp.debug>1) { print_rank(ci.tt); }
-          } else {
-            auto ci = xfac::CTensorCI<double, double>(get_u_tau_max_element, std::vector(n, tp.vi), {.pivot1 = pivot1});
-            for (int i = 0; i < tp.sweep_bound; i++) {
-              ci.iterate();
-              current_integral = ci.sumWeighted(std::vector(n, tp.wi_v));
-              if (sp.debug>1) {
-                std::cout << i << " " << count << " " << ci.pivotError[ci.pivotError.size() - 1] << " " << current_integral << std::endl;
-              }
-              if (std::abs(current_integral - previous_integral) < tp.integral_error_bound && i > 1) { break; }
-              previous_integral = current_integral;
-            }
-            integral_element = current_integral;
-          }
-          if (sp.debug>1) { std::cout << std::endl; }
-          count_iota++;
+          auto input              = std::vector(n, tp.vi);
+          auto weight             = std::vector(n, tp.wi_v);
+          double integral_element = do_TCI<double, double>(get_u_tau_max_element, input, weight, pivot1, tp.sweep_bound, tp.bond_dim,
+                                                           tp.integral_error_bound, tp.pivot_error_bound, tp.tci_prrlu, sp.debug, count);
           return integral_element;
-        };
+        }; // end of definition of get_u_tau_max_element_iota
 
         std::vector<int> pivot1_iota = {};
         for (auto iota_pivot1 : all_iota_pivots) {
@@ -210,44 +162,11 @@ void ModeNestedTCI::run_single_element() {
             break;
           }
         }
-        if (pivot1_iota.empty()) {
-          // std::cout << "pivot1_iota is empty" << std::endl;
-          continue;
-        }
-        double current_integral{0};
-        double previous_integral{0};
-        double integral_element{0};
-        //find the pivot for iota
-        if (sp.debug>1) { std::cout << "iteration nEval LastSweepPivotError integral\n"; }
-        if (tp_iota.tci_prrlu) {
-          auto ci =
-             xfac::CTensorCI2<double, int>(get_u_tau_max_element_iota, std::vector(n, iotai), {.bond_dim = tp_iota.bond_dim, .pivot1 = pivot1_iota});
-          for (int i = 0; i < tp_iota.sweep_bound; i++) {
-            ci.iterate();
-            ci.makeCanonical();
-            current_integral = ci.tt.sum(std::vector(n, wi_iota));
-            if (sp.debug>1) {
-              std::cout << i << " " << count_iota << " " << ci.pivotError[ci.pivotError.size() - 1] << " " << current_integral << std::endl;
-            }
-            if (std::abs(current_integral - previous_integral) < tp_iota.integral_error_bound && i > 1) { break; }
-            previous_integral = current_integral;
-          }
-          integral_element = current_integral;
-          if (sp.debug>1) { print_rank(ci.tt); }
-        } else {
-          auto ci = xfac::CTensorCI<double, int>(get_u_tau_max_element_iota, std::vector(n, iotai), {.pivot1 = pivot1_iota});
-          for (int i = 0; i < tp_iota.sweep_bound; i++) {
-            ci.iterate();
-            current_integral = ci.sumWeighted(std::vector(n, wi_iota));
-            if (sp.debug>1) {
-              std::cout << i << " " << count_iota << " " << ci.pivotError[ci.pivotError.size() - 1] << " " << current_integral << std::endl;
-            }
-            if (std::abs(current_integral - previous_integral) < tp_iota.integral_error_bound && i > 1) { break; }
-            previous_integral = current_integral;
-          }
-          integral_element = current_integral;
-        }
-        if (sp.debug>1) { std::cout << std::endl; }
+        if (pivot1_iota.empty()) { continue; }
+        auto input_iota         = std::vector(n, iotai);
+        auto weight_iota        = std::vector(n, wi_iota);
+        double integral_element = do_TCI<double, int>(get_u_tau_max_element_iota, input_iota, weight_iota, pivot1_iota, tp_iota.sweep_bound, tp_iota.bond_dim,
+                                                         tp_iota.integral_error_bound, tp_iota.pivot_error_bound, tp_iota.tci_prrlu, sp.debug, count_iota);
         integral_sum_iota += integral_element;
         integral_sum_n_left += integral_sum_iota;
       }
