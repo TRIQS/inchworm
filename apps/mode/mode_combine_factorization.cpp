@@ -9,7 +9,7 @@ using namespace inchworm;
 
 void ModeCombineFactorization::run_single_element() {
 
-  // TCI
+
   for (int order : sp.order_list) {
     auto start_time = std::chrono::high_resolution_clock::now();
     int n           = 2 * order; //the number of tau's, i.e., the number of operators

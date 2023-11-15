@@ -52,16 +52,16 @@ void ModeFullFactorization::run_single_element() {
           std::vector<int> number_in_block_d     = generate_number_in_block(mp.gf_block_shape, iota_d_list_int);
           std::vector<int> number_in_block_d_dag = generate_number_in_block(mp.gf_block_shape, iota_d_dag_list_int);
           if (number_in_block_d != number_in_block_d_dag) { return 0.0; }
-          auto [taus_left,taus_right, taus] = obtain_taus(vs, n_left, sp.tau_split, sp.tau_max);
-          double integrand = evaluate_u_tau_max(sr.u_tau_max_zeroth_order, sp.tau_split, sp.tau_max, mp.all_d_ops, mp.all_d_dag_ops,
-                                                mp.gf_block_shape, cp, mp.Delta_tau, mp.ad_imp, sr.u_interpolator, get_elements(phi_d_list, taus),
-                                                get_elements(phi_d_dag_list, taus), iota_d_list, iota_d_dag_list, sp.bl_index, sp.subspace_index);
+          auto [taus_left, taus_right, taus] = obtain_taus(vs, n_left, sp.tau_split, sp.tau_max);
+          double integrand                   = evaluate_u_tau_max(sr.u_tau_max_zeroth_order, sp.tau_split, sp.tau_max, mp.all_d_ops, mp.all_d_dag_ops,
+                                                                  mp.gf_block_shape, cp, mp.Delta_tau, mp.ad_imp, sr.u_interpolator, get_elements(phi_d_list, taus),
+                                                                  get_elements(phi_d_dag_list, taus), iota_d_list, iota_d_dag_list, sp.bl_index, sp.subspace_index);
           count++;
           double j = jacobian(taus_left, sp.tau_split, 0.0) * jacobian(taus_right, sp.tau_max, sp.tau_split);
           return integrand * j;
         };
 
-        std::vector<double> v_iota_s1;
+        std::vector<double> v_iota_s1{};
         for (int i = 0; i < v_pivot1.size(); i++) { v_iota_s1.push_back(tp.vi[v_pivot1[i]]); } //insert v only temporarily
         double u_tau_max_element_vs1 = 0;
 
@@ -108,7 +108,7 @@ void ModeFullFactorization::run_single_element() {
           std::vector<double> iota_d_dag_list1 = get_elements(phi_d_dag_list, iotas1);
           std::vector<int> iota_d_list_int1(iota_d_list1.begin(), iota_d_list1.end());
           std::vector<int> iota_d_dag_list_int1(iota_d_dag_list1.begin(), iota_d_dag_list1.end());
-                   auto [taus_left1,taus_right1, taus1] = obtain_taus(vs1, n_left, sp.tau_split, sp.tau_max);
+          auto [taus_left1, taus_right1, taus1] = obtain_taus(vs1, n_left, sp.tau_split, sp.tau_max);
           print_pivot1(iota_d_list_int1, iota_d_dag_list_int1, get_elements(phi_d_list, taus1), get_elements(phi_d_dag_list, taus1),
                        u_tau_max_element_vs1);
         }
