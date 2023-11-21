@@ -7,7 +7,7 @@
 
 using namespace inchworm;
 
-void ModeExplicitSum::run_single_element() {
+void ModeExplicitSumExact::run_single_element() {
 
   for (int order : sp.order_list) {
     auto start_time = std::chrono::high_resolution_clock::now();
@@ -47,7 +47,7 @@ void ModeExplicitSum::run_single_element() {
           auto [taus_left1, taus_right1, taus1] = obtain_taus(vs1, n_left, sp.tau_split, sp.tau_max);
             print_pivot1(iota_d_list,iota_d_dag_list,get_elements(phi_d_list, taus1),get_elements(phi_d_dag_list, taus1),u_tau_max_element_vs1);
           } 
-          if (std::abs(u_tau_max_element_vs1) < tp.pivot_error_bound) { continue; }
+          if (u_tau_max_element_vs1 == 0) { continue; }
            
 
           auto input = std::vector(n, tp.vi);

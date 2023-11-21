@@ -95,6 +95,12 @@ class ModeExplicitSum : public base_mode {
   void run_single_element() override;
 };
 
+class ModeExplicitSumExact : public base_mode {
+  public:
+  ModeExplicitSumExact() : base_mode() {}
+  void run_single_element() override;
+};
+
 class ModeFullFactorization : public base_mode {
   public:
   ModeFullFactorization() : base_mode() {}
@@ -104,6 +110,18 @@ class ModeFullFactorization : public base_mode {
 class ModeVertexFactorization : public base_mode {
   public:
   ModeVertexFactorization() : base_mode() {}
+  void run_single_element() override;
+};
+
+class ModeVertexFactorizationSymmetrized : public base_mode {
+  public:
+  ModeVertexFactorizationSymmetrized() : base_mode() {}
+  void run_single_element() override;
+};
+
+class ModeVertexFactorizationBath : public base_mode {
+  public:
+  ModeVertexFactorizationBath() : base_mode() {}
   void run_single_element() override;
 };
 

@@ -7,8 +7,11 @@
 
 using namespace inchworm;
 
-void ModeVertexFactorization::run_single_element() {
-
+void ModeVertexFactorizationSymmetrized::run_single_element() {
+  if (mp.gf_block_shape.size() != 2) {
+    std::cerr << "gf_block_shape size must be 2" << std::endl;
+    exit(1);
+  }
   std::vector<double> iotai(mp.n_phi);
   std::iota(iotai.begin(), iotai.end(), 0);
   auto wi_iota = std::vector(mp.n_phi, 1.0);
@@ -23,28 +26,55 @@ void ModeVertexFactorization::run_single_element() {
     std::vector<int> iota_pivots(n, 0);           // this is an intermediate variable for generating all possible iota
     std::vector<int> iota_pivots_range(mp.n_phi); // the int version of iotai
     std::iota(iota_pivots_range.begin(), iota_pivots_range.end(), 0);
-    std::vector<std::vector<int>> all_iota_pivots{};
-    generate_combinations(iota_pivots_range, iota_pivots, 0, all_iota_pivots);
+    int half_size = mp.n_phi / 2;
+    std::vector<int> iota_pivots_range_half(half_size); // the int version of iotai
+    std::iota(iota_pivots_range_half.begin(), iota_pivots_range_half.end(), 0);
+    std::vector<std::vector<int>> all_iota_pivots_symmetrized{};
+    generate_combinations_symmetrized(iota_pivots_range, iota_pivots_range_half, iota_pivots, 0, all_iota_pivots_symmetrized);
 
     double integral_sum_phi = 0.0;
     for (auto [phi_d_list, phi_d_dag_list] : phi_pair_list) {
       double integral_sum_n_left = 0.0;
       for (int n_left = 1; n_left < n; n_left++) {
+
         double integral_sum_iota   = 0.0;
         long count                 = 0;
         auto get_u_tau_max_element = [this, &count, &phi_d_list = phi_d_list, &phi_d_dag_list = phi_d_dag_list,
                                       &n_left](const std::vector<double> &v_iota_s) {
           std::vector<double> vs{};
           std::vector<double> iotas{};
+          std::vector<double> iotas_flipped{};
           vs.reserve(v_iota_s.size());
           iotas.reserve(v_iota_s.size());
+          iotas_flipped.reserve(v_iota_s.size());
           for (int i = 0; i < v_iota_s.size(); i++) {
             double int_part;
             double frac_part;
             frac_part = modf(v_iota_s[i], &int_part);
             vs.push_back(frac_part);
             iotas.push_back(int_part);
+            if (int_part < mp.gf_block_shape[0]) {
+              iotas_flipped.push_back(int_part + mp.gf_block_shape[0]);
+            } else {
+              iotas_flipped.push_back(int_part - mp.gf_block_shape[0]);
+            }
+            if (i == 0 && int_part > mp.gf_block_shape[0]) {
+              std::cout << "strange" << std::endl;
+              exit(1);
+            }
           }
+          //for debugging
+          //print iotas
+          // std::cout << "DEBUG: iotas and iotas_flipped:" << std::endl;
+          // for(auto i:iotas){
+          //   std::cout << i << " ";
+          //   if(i ==0){exit(1);}
+          // }
+          // std::cout << std::endl;
+          // for(auto i:iotas_flipped){
+          //   std::cout << i << " ";
+          // }
+          // std::cout << std::endl;
           std::vector<double> iota_d_list     = get_elements(phi_d_list, iotas);
           std::vector<double> iota_d_dag_list = get_elements(phi_d_dag_list, iotas);
           std::vector<int> iota_d_list_int(iota_d_list.begin(), iota_d_list.end());
@@ -53,10 +83,18 @@ void ModeVertexFactorization::run_single_element() {
           std::vector<int> number_in_block_d_dag = generate_number_in_block(mp.gf_block_shape, iota_d_dag_list_int);
           if (number_in_block_d != number_in_block_d_dag) { return 0.0; }
 
+          std::vector<double> iota_d_list_flipped     = get_elements(phi_d_list, iotas_flipped);
+          std::vector<double> iota_d_dag_list_flipped = get_elements(phi_d_dag_list, iotas_flipped);
+
           auto [taus_left, taus_right, taus] = obtain_taus(vs, n_left, sp.tau_split, sp.tau_max);
           double integrand                   = evaluate_u_tau_max(sr.u_tau_max_zeroth_order, sp.tau_split, sp.tau_max, mp.all_d_ops, mp.all_d_dag_ops,
                                                                   mp.gf_block_shape, cp, mp.Delta_tau, mp.ad_imp, sr.u_interpolator, get_elements(phi_d_list, taus),
                                                                   get_elements(phi_d_dag_list, taus), iota_d_list, iota_d_dag_list, sp.bl_index, sp.subspace_index);
+
+          double integrand_flipped =
+             evaluate_u_tau_max(sr.u_tau_max_zeroth_order, sp.tau_split, sp.tau_max, mp.all_d_ops, mp.all_d_dag_ops, mp.gf_block_shape, cp,
+                                mp.Delta_tau, mp.ad_imp, sr.u_interpolator, get_elements(phi_d_list, taus), get_elements(phi_d_dag_list, taus),
+                                iota_d_list_flipped, iota_d_dag_list_flipped, sp.bl_index, sp.subspace_index);
           count++;
 
           // double sum_iota_d = std::accumulate(iota_d_list.begin(), iota_d_list.end(), 0.0);
@@ -66,7 +104,7 @@ void ModeVertexFactorization::run_single_element() {
           // }
 
           double j = jacobian(taus_left, sp.tau_split, 0.0) * jacobian(taus_right, sp.tau_max, sp.tau_split);
-          return integrand * j;
+          return (integrand + integrand_flipped) * j;
         };
 
         std::vector<double> v_iota_s1;
@@ -74,12 +112,13 @@ void ModeVertexFactorization::run_single_element() {
 
         // set pivot for iota
         int iota_pivot_index = 0;
-        for (auto iota_pivot1 : all_iota_pivots) {
+        for (auto iota_pivot1 : all_iota_pivots_symmetrized) {
           std::vector<double> v_iota_s1_temp{};
           for (int i = 0; i < iota_pivot1.size(); i++) {
             double value = iota_pivot1[i] + tp.vi[v_pivot1[i]];
             v_iota_s1_temp.push_back(value);
           }
+          // std::cout << "iota_pivot1:"<< std::endl;
           u_tau_max_element_vs1 = get_u_tau_max_element(v_iota_s1_temp);
           if (u_tau_max_element_vs1 != 0) {
             v_iota_s1 = v_iota_s1_temp;
@@ -87,7 +126,7 @@ void ModeVertexFactorization::run_single_element() {
           }
           iota_pivot_index++;
         }
-        if (iota_pivot_index == all_iota_pivots.size()) {
+        if (iota_pivot_index == all_iota_pivots_symmetrized.size()) {
           // for debugging
           std::cout << "skipped" << std::endl;
           std::cout << "n_left: " << n_left << std::endl;
@@ -101,7 +140,7 @@ void ModeVertexFactorization::run_single_element() {
         }
 
         std::vector<int> pivot1{};
-        auto pivot1_to_append = all_iota_pivots[iota_pivot_index];
+        auto pivot1_to_append = all_iota_pivots_symmetrized[iota_pivot_index];
         pivot1.reserve(n);
         for (int i = 0; i < pivot1_to_append.size(); i++) { pivot1.push_back(v_pivot1[i] + pivot1_to_append[i] * tp.n_GK); }
 
@@ -135,6 +174,14 @@ void ModeVertexFactorization::run_single_element() {
             weight_i.push_back(tp.wi_v[j]);
           }
         }
+        std::vector<double> v_iota_i_half;
+        std::vector<double> weight_i_half;
+        for (int i = 0; i < mp.n_phi / 2; i++) {
+          for (int j = 0; j < tp.vi.size(); j++) {
+            v_iota_i_half.push_back(i + tp.vi[j]);
+            weight_i_half.push_back(tp.wi_v[j]);
+          }
+        }
 
         //for debuging
         if (order == 2) {
@@ -161,19 +208,21 @@ void ModeVertexFactorization::run_single_element() {
           std::cout << "------------" << std::endl;
         }
 
-        std::vector<std::vector<double>> input  = std::vector(n, v_iota_i);
-        std::vector<std::vector<double>> weight = std::vector(n, weight_i);
-        double integral_element                 = do_TCI<double, double>(get_u_tau_max_element, input, weight, pivot1, tp.sweep_bound, tp.bond_dim,
+        std::vector<std::vector<double>> input  = std::vector(n - 1, v_iota_i);
+        std::vector<std::vector<double>> weight = std::vector(n - 1, weight_i);
+        input.insert(input.begin(), v_iota_i_half);
+        weight.insert(weight.begin(), weight_i_half);
+        double integral_element = do_TCI<double, double>(get_u_tau_max_element, input, weight, pivot1, tp.sweep_bound, tp.bond_dim,
                                                          tp.integral_error_bound, tp.pivot_error_bound, tp.tci_prrlu, sp.debug, count);
         integral_sum_iota += integral_element;
         integral_sum_n_left += integral_sum_iota;
       }
       integral_sum_phi += integral_sum_n_left;
     }
-    auto end_time            = std::chrono::high_resolution_clock::now();
-    auto duration            = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count();
-    auto duration_in_seconds = static_cast<double>(duration) / 1e6;
-    sr.calculation_time_list.push_back(duration_in_seconds);
-    sr.integral_order_list.push_back(integral_sum_phi);
+      auto end_time            = std::chrono::high_resolution_clock::now();
+      auto duration            = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count();
+      auto duration_in_seconds = static_cast<double>(duration) / 1e6;
+      sr.calculation_time_list.push_back(duration_in_seconds);
+      sr.integral_order_list.push_back(integral_sum_phi);
+    }
   }
-}

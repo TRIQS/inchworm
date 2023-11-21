@@ -65,7 +65,8 @@ inline double one_fermion(double tau, double eps, double beta) {
   }
 }
 
-inline std::tuple<hyb_tau_t, atom_diag, u_tau_t, g_tau_t> test_setup(int n_site, int n_bath, int n_spin, double U, double mu, double t,constr_params_t const &cp, mat_t const &theta, vec_t const &eps) {
+inline std::tuple<hyb_tau_t, atom_diag, u_tau_t, g_tau_t> test_setup(int n_site, int n_bath, int n_spin, double U, double mu, double t,
+                                                                     constr_params_t const &cp, mat_t const &theta, vec_t const &eps) {
 
   // === Define fundamental operator sets
 
@@ -88,6 +89,9 @@ inline std::tuple<hyb_tau_t, atom_diag, u_tau_t, g_tau_t> test_setup(int n_site,
     if (n_spin == 2) {
       h_imp -= mu * n("dn", j);
       h_imp += U * n("up", j) * n("dn", j);
+      //symmetry breaking
+      // double h=1;
+      // h_imp += h * c_dag("up", j) * c("dn", j) + h * c_dag("dn", j) * c("up", j);
     }
     for (int i = 0; i < n_site; i++) {
       if (i != j) {
@@ -96,6 +100,7 @@ inline std::tuple<hyb_tau_t, atom_diag, u_tau_t, g_tau_t> test_setup(int n_site,
       }
     }
   }
+  // h_imp -= 1* n("up", 0);
 
   // h_bath: Hamiltonian of the bath (n_site)
   for (int k = 0; k < n_bath; k++) {
@@ -106,6 +111,7 @@ inline std::tuple<hyb_tau_t, atom_diag, u_tau_t, g_tau_t> test_setup(int n_site,
   // h_hyb: Hamiltonian coupling the impurity and the bath
   for (int i = 0; i < n_site; i++) {
     for (int k = 0; k < n_bath; k++) {
+      std::cout << "theta(" << i << "," << k << ") = " << theta(i, k) << std::endl;
       h_hyb += theta(i, k) * (c_dag("up", i) * c("up", k + n_site));
       h_hyb += theta(i, k) * (c_dag("up", k + n_site) * c("up", i));
       if (n_spin == 2) {
@@ -114,7 +120,20 @@ inline std::tuple<hyb_tau_t, atom_diag, u_tau_t, g_tau_t> test_setup(int n_site,
       }
     }
   }
-
+  // diagonal hybridization
+  // if (n_bath % 2 == 0 || n_site == 2 || n_spin == 1) { std::cout << "test case error" << std::endl;
+  // many_body_operator h_hyb_diagonal;
+  // int mid = n_bath / 2;
+  // for (int k = 0; k < mid; k++) {
+  //   h_hyb_diagonal += theta(0, k) * (c_dag("up", 0) * c("up", k + n_site));
+  //   h_hyb_diagonal += theta(0, k) * (c_dag("up", k + n_site) * c("up", 0));
+  // }
+  // for(int k=mid ; k<n_bath ; k++){
+  //   h_hyb_diagonal += theta(1, k) * (c_dag("up", 1) * c("up", k + n_site));
+  //   h_hyb_diagonal += theta(1, k) * (c_dag("up", k + n_site) * c("up", 1));
+  // }
+  // h_hyb = h_hyb_diagonal;
+  // }
   // === Define the 3 different atom_diag objects (ED calculation with Triqs)
 
   auto ad_tot  = inchworm::atom_diag(h_imp + h_bath + h_hyb, fops_tot);
@@ -135,6 +154,12 @@ inline std::tuple<hyb_tau_t, atom_diag, u_tau_t, g_tau_t> test_setup(int n_site,
       Delta_tau[block][tau] = 0.0;
       for (auto [i, j, n] : product_range(n_site, n_site, n_bath)) {
         Delta_tau[block][tau](i, j) += theta(i, n) * dagger(theta)(n, j) * one_fermion(tau, eps(n), cp.beta);
+        // if (theta(i, n) * dagger(theta)(n, j) * one_fermion(tau, eps(n), cp.beta) < 1e-18) {
+        //   std::cout << "theta(i, n) == 0 || theta(n, j) == 0" << std::endl;
+        //   std::cout << theta(i, n) * dagger(theta)(n, j) * one_fermion(tau, eps(n), cp.beta) << std::endl;
+        //   std::cout << "i = " << i << ", j = " << j << ", n = " << n << std::endl;
+        //   std::cout << Delta_tau[block][tau](i, j) << std::endl;
+        // }
       }
     }
   }

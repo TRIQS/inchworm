@@ -1,17 +1,18 @@
 {
     "cp": {
-        "beta": 1,
+        "beta": 2,
         "gf_struct": {
-            "up": 3
+            "up": 1,
+            "dn": 1
         },
         "n_tau_green": 5,
         "n_tau_inch": 10001,
         "n_tau": 10001
     },
     "mp": {
-        "n_site": 3,
+        "n_site": 1,
         "n_bath": 2,
-        "n_spin": 1,
+        "n_spin": 2,
         "U": 10.0,
         "mu": 0.0,
         "t": 2.0,
@@ -67,7 +68,7 @@
         ]
     },
     "sp": {
-        "tau_max": 1,
+        "tau_max": 2,
         "tau_split_ratio": 0.9,
         "order_list": [
             1,2

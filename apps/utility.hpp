@@ -131,6 +131,26 @@ template <typename T> void generate_combinations(const std::vector<T> &A, std::v
   }
 }
 
+//similar as generate_combinations but for first element of all_combinations, it only takes values from A_half
+template <typename T> void generate_combinations_symmetrized(const std::vector<T> &A,const std::vector<T> &A_half, std::vector<T> &B, int idx, std::vector<std::vector<T>> &all_combinations) {
+  if (idx == B.size()) {
+    all_combinations.push_back(B);
+    return;
+  }
+  if(idx == 0){
+    for (int i = 0; i < A_half.size(); ++i) {
+      B[idx] = A_half[i];
+      generate_combinations(A, B, idx + 1, all_combinations);
+    }
+  }
+  else{
+  for (int i = 0; i < A.size(); ++i) {
+    B[idx] = A[i];
+    generate_combinations(A, B, idx + 1, all_combinations);
+  }
+  }
+}
+
 inline std::vector<int> generate_number_in_block(const std::vector<int> &block_shape, const std::vector<int> &iota_d_list) {
   std::vector<int> res(block_shape.size(), 0);
   for (auto iota : iota_d_list) {
@@ -283,25 +303,39 @@ T_output do_TCI(std::function<T_output(std::vector<T_input>)> func, std::vector<
   double last_pivot_error{0};
   if (debug > 1) { std::cout << "iteration nEval LastSweepPivotError integral\n"; }
   if (tci_prrlu) {
-    auto ci = xfac::CTensorCI2<T_output, T_input>(func, input, {.bond_dim = bond_dim, .pivot1 = pivot1});
+    auto ci = xfac::CTensorCI2<T_output, T_input>(func, input, {.bond_dim = bond_dim, .reltol = 1e-18, .do_full_search = true, .pivot1 = pivot1});
+    std::cout << "bond_dim: " << ci.param.bond_dim << std::endl;
     for (int i = 1; i <= sweep_bound; i++) {
       ci.iterate();
-      ci.makeCanonical();
+      // ci.makeCanonical();
       current_integral = ci.tt.sum(weight);
       last_pivot_error = ci.pivotError[ci.pivotError.size() - 1];
       if (debug > 1) { std::cout << i << " " << count << " " << last_pivot_error << " " << current_integral << std::endl; }
-      if (std::abs(current_integral - previous_integral) < integral_error_bound || last_pivot_error < pivot_error_bound && i > 1) { break; }
+      //  if ( last_pivot_error < pivot_error_bound && i > 1) { break; }
+      // if (std::abs(current_integral - previous_integral) < integral_error_bound || last_pivot_error < pivot_error_bound && i > 1) { break; }
+      // if (i == 2) {
+      //   std::cout << "add pivots" << std::endl;
+      //   for (auto b = 0u; b < ci.len() - 1; b++) {
+      //     auto pivots = ci.getPivotsAt(b);
+      //     auto first_pivots = pivots[0];
+      //     for(auto &p : first_pivots) {
+      //       p = (p+15)%30;
+      //     }
+      //     ci.addPivotsAt(pivots, b);
+      //   }
+      // }
       previous_integral = current_integral;
     }
     if (debug > 1) { print_rank(ci.tt); }
   } else {
-    auto ci = xfac::CTensorCI<T_output, T_input>(func, input, {.pivot1 = pivot1});
+    auto ci = xfac::CTensorCI<T_output, T_input>(func, input, {.reltol = 1e-18, .pivot1 = pivot1, .wi = weight});
     for (int i = 1; i <= sweep_bound; i++) {
       ci.iterate();
       current_integral = ci.sumWeighted(weight);
       last_pivot_error = ci.pivotError[ci.pivotError.size() - 1];
       if (debug > 1) { std::cout << i << " " << count << " " << last_pivot_error << " " << current_integral << std::endl; }
-      if (std::abs(current_integral - previous_integral) < integral_error_bound || last_pivot_error < pivot_error_bound && i > 1) { break; }
+      // if ( last_pivot_error < pivot_error_bound && i > 1) { break; }
+      // if (std::abs(current_integral - previous_integral) < integral_error_bound || last_pivot_error < pivot_error_bound && i > 1) { break; }
       previous_integral = current_integral;
     }
     if (debug > 1) {
@@ -399,7 +433,8 @@ inline void print_pivot1(std::vector<int> const &iota_d_list, std::vector<int> c
   std::cout << std::endl;
 }
 
-inline std::tuple<std::vector<double>,std::vector<double>,std::vector<double>> obtain_taus(const std::vector<double> &vs, int n_left, double tau_split, double tau_max) {
+inline std::tuple<std::vector<double>, std::vector<double>, std::vector<double>> obtain_taus(const std::vector<double> &vs, int n_left,
+                                                                                             double tau_split, double tau_max) {
   std::vector<double> vs_left(vs.begin(), vs.begin() + n_left);
   std::vector<double> vs_right(vs.begin() + n_left, vs.end());
   std::vector<double> taus_left  = change_variable(vs_left, tau_split, 0.0);
