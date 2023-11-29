@@ -3,9 +3,11 @@
 
 inline base_mode *create_mode(const std::string &mode_name) {
   if (mode_name == "full_factorization") return new ModeFullFactorization();
+  if (mode_name == "full_factorization_bath") return new ModeFullFactorizationBath();
   if (mode_name == "vertex_factorization") return new ModeVertexFactorization();
+  if (mode_name == "tree_factorization1") return new ModeTreeFactorization1();
+  if (mode_name == "tree_factorization1_bath") return new ModeTreeFactorization1Bath();
   if (mode_name == "vertex_factorization_symmetrized") return new ModeVertexFactorizationSymmetrized();
-
   if (mode_name == "vertex_factorization_bath") return new ModeVertexFactorizationBath();
   if (mode_name == "nested_tci") return new ModeNestedTCI();
   if (mode_name == "reuse_pivots") return new ModeReusePivots();

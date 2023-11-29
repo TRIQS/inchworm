@@ -107,9 +107,27 @@ class ModeFullFactorization : public base_mode {
   void run_single_element() override;
 };
 
+class ModeFullFactorizationBath : public base_mode {
+  public:
+  ModeFullFactorizationBath() : base_mode() {}
+  void run_single_element() override;
+};
+
 class ModeVertexFactorization : public base_mode {
   public:
   ModeVertexFactorization() : base_mode() {}
+  void run_single_element() override;
+};
+
+class ModeTreeFactorization1 : public base_mode {
+  public:
+  ModeTreeFactorization1() : base_mode() {}
+  void run_single_element() override;
+};
+
+class ModeTreeFactorization1Bath : public base_mode {
+  public:
+  ModeTreeFactorization1Bath() : base_mode() {}
   void run_single_element() override;
 };
 

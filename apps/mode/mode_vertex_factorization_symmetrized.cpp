@@ -60,7 +60,6 @@ void ModeVertexFactorizationSymmetrized::run_single_element() {
             }
             if (i == 0 && int_part > mp.gf_block_shape[0]) {
               std::cout << "strange" << std::endl;
-              exit(1);
             }
           }
           //for debugging
@@ -216,13 +215,42 @@ void ModeVertexFactorizationSymmetrized::run_single_element() {
                                                          tp.integral_error_bound, tp.pivot_error_bound, tp.tci_prrlu, sp.debug, count);
         integral_sum_iota += integral_element;
         integral_sum_n_left += integral_sum_iota;
+        // for debugging
+        // for debugging
+        if (n_left == 2 && phi_d_list[0] == 1 && phi_d_list[1] == 3 && phi_d_dag_list[0] == 0 && phi_d_dag_list[1] == 2) {
+          auto ci = xfac::CTensorCI2<double, double>(get_u_tau_max_element, input,
+                                                     {.bond_dim = tp.bond_dim, .reltol = 1e-18, .do_full_search = true, .pivot1 = pivot1});
+          std::cout << "bond_dim: " << ci.param.bond_dim << std::endl;
+          double current_integral = 0;
+          double last_pivot_error = 0;
+          for (int i = 1; i <= tp.sweep_bound; i++) {
+            ci.iterate();
+            current_integral = ci.tt.sum(weight);
+            last_pivot_error = ci.pivotError[ci.pivotError.size() - 1];
+            std::cout << i << " " << count << " " << last_pivot_error << " " << current_integral << std::endl;
+          }
+          std::ofstream outfile("./tci_symm.txt");
+          std::cout << "writing tci" << std::endl;
+          for (int id0 = 0; id0 < v_iota_i_half.size(); id0++) {
+            for (int id1 = 0; id1 < v_iota_i.size(); id1++) {
+              for (int id2 = 0; id2 < v_iota_i.size(); id2++) {
+                for (int id3 = 0; id3 < v_iota_i.size(); id3++) {
+                  // double element = get_u_tau_max_element({v_iota_i[id0], v_iota_i[id1], v_iota_i[id2], v_iota_i[id3]});
+                  double element = ci.tt.eval({id0, id1, id2, id3});
+                  outfile << element << " ";
+                }
+              }
+            }
+          }
+          outfile.close();
+        }
       }
       integral_sum_phi += integral_sum_n_left;
     }
-      auto end_time            = std::chrono::high_resolution_clock::now();
-      auto duration            = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count();
-      auto duration_in_seconds = static_cast<double>(duration) / 1e6;
-      sr.calculation_time_list.push_back(duration_in_seconds);
-      sr.integral_order_list.push_back(integral_sum_phi);
-    }
+    auto end_time            = std::chrono::high_resolution_clock::now();
+    auto duration            = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count();
+    auto duration_in_seconds = static_cast<double>(duration) / 1e6;
+    sr.calculation_time_list.push_back(duration_in_seconds);
+    sr.integral_order_list.push_back(integral_sum_phi);
   }
+}

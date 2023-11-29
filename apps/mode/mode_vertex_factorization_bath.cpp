@@ -104,7 +104,7 @@ void ModeVertexFactorizationBath::run_single_element() {
           std::cout << std::endl;
           continue;
         }
-        double bath_value = max_value/2;
+        double bath_value          = max_value / 2;
         auto get_u_tau_max_element = [this, &count, &phi_d_list = phi_d_list, &phi_d_dag_list = phi_d_dag_list, &n_left,
                                       &bath_value](const std::vector<double> &v_iota_s) {
           std::vector<double> vs{};
@@ -148,7 +148,6 @@ void ModeVertexFactorizationBath::run_single_element() {
         pivot1.reserve(n);
         for (int i = 0; i < pivot1_to_append.size(); i++) { pivot1.push_back(v_pivot1[i] + pivot1_to_append[i] * tp.n_GK); }
 
-
         u_tau_max_element_vs1 = get_u_tau_max_element(v_iota_s1);
         if (sp.debug > 1) {
           std::vector<double> vs1{};
@@ -169,7 +168,7 @@ void ModeVertexFactorizationBath::run_single_element() {
           auto [taus_left1, taus_right1, taus1] = obtain_taus(vs1, n_left, sp.tau_split, sp.tau_max);
           print_pivot1(iota_d_list_int1, iota_d_dag_list_int1, get_elements(phi_d_list, taus1), get_elements(phi_d_dag_list, taus1),
                        u_tau_max_element_vs1);
-          std::cout << "bath value: " <<bath_value << std::endl;
+          std::cout << "bath value: " << bath_value << std::endl;
         }
         if (u_tau_max_element_vs1 == 0) { continue; }
 
@@ -217,21 +216,33 @@ void ModeVertexFactorizationBath::run_single_element() {
         integral_sum_iota += integral_element;
         integral_sum_n_left += integral_sum_iota;
         // for debugging
-        // if (n_left == 2) {
-        //   std::ofstream outfile("./mps.txt");
-        //   std::cout << "writing mps" << std::endl;
-        //   for (int id0 = 0; id0 < v_iota_i.size(); id0++) {
-        //     for (int id1 = 0; id1 < v_iota_i.size(); id1++) {
-        //       for (int id2 = 0; id2 < v_iota_i.size(); id2++) {
-        //         for (int id3 = 0; id3 < v_iota_i.size(); id3++) {
-        //           double element = get_u_tau_max_element({v_iota_i[id0], v_iota_i[id1], v_iota_i[id2], v_iota_i[id3]});
-        //           outfile << element << " ";
-        //         }
-        //       }
-        //     }
-        //   }
-        //   outfile.close();
-        // }
+        if (n_left == 2 && phi_d_list[0] == 1 && phi_d_list[1] == 3 && phi_d_dag_list[0] == 0 && phi_d_dag_list[1] == 2) {
+          auto ci = xfac::CTensorCI2<double, double>(get_u_tau_max_element, input,
+                                                     {.bond_dim = tp.bond_dim, .reltol = 1e-18, .do_full_search = true, .pivot1 = pivot1});
+          std::cout << "bond_dim: " << ci.param.bond_dim << std::endl;
+          double current_integral = 0;
+          double last_pivot_error = 0;
+          for (int i = 1; i <= tp.sweep_bound; i++) {
+            ci.iterate();
+            current_integral = ci.tt.sum(weight);
+            last_pivot_error = ci.pivotError[ci.pivotError.size() - 1];
+            std::cout << i << " " << count << " " << last_pivot_error << " " << current_integral << std::endl;
+          }
+          std::ofstream outfile("./tci_bath.txt");
+          std::cout << "writing tci" << std::endl;
+          for (int id0 = 0; id0 < v_iota_i.size(); id0++) {
+            for (int id1 = 0; id1 < v_iota_i.size(); id1++) {
+              for (int id2 = 0; id2 < v_iota_i.size(); id2++) {
+                for (int id3 = 0; id3 < v_iota_i.size(); id3++) {
+                  // double element = get_u_tau_max_element({v_iota_i[id0], v_iota_i[id1], v_iota_i[id2], v_iota_i[id3]});
+                  double element = ci.tt.eval({id0, id1, id2, id3});
+                  outfile << element << " ";
+                }
+              }
+            }
+          }
+          outfile.close();
+        }
       }
       integral_sum_phi += integral_sum_n_left;
     }
