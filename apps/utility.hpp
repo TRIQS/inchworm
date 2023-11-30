@@ -348,6 +348,48 @@ T_output do_TCI(std::function<T_output(std::vector<T_input>)> func, std::vector<
 }
 
 template <typename T_output, typename T_input>
+T_output do_TCI_add_pivots(std::function<T_output(std::vector<T_input>)> func, std::vector<std::vector<T_input>> &input,
+                std::vector<std::vector<double>> &weight, std::vector<int> &pivot1, int sweep_bound, int bond_dim, double integral_error_bound,
+                double pivot_error_bound, bool tci_prrlu, debug_t debug, long &count, std::vector<std::vector<int>> &valid_pivots) {
+  double current_integral{0};
+  double previous_integral{0};
+  double last_pivot_error{0};
+  if (debug > 1) { std::cout << "iteration nEval LastSweepPivotError integral\n"; }
+  if (tci_prrlu) {
+    auto ci = xfac::CTensorCI2<T_output, T_input>(func, input, {.bond_dim = bond_dim, .reltol = 1e-18, .do_full_search = true, .pivot1 = pivot1});
+    std::cout << "bond_dim: " << ci.param.bond_dim << std::endl;
+    ci.addPivotsAllBonds(valid_pivots);
+    // ci.makeCanonical();
+    for (int i = 1; i <= sweep_bound; i++) {
+      ci.iterate();
+      // ci.makeCanonical();
+      current_integral = ci.tt.sum(weight);
+      last_pivot_error = ci.pivotError[ci.pivotError.size() - 1];
+      if (debug > 1) { std::cout << i << " " << count << " " << last_pivot_error << " " << current_integral << std::endl; }
+      previous_integral = current_integral;
+      if (debug > 1) { print_rank(ci.tt); }
+    }
+  } else {
+    auto ci = xfac::CTensorCI<T_output, T_input>(func, input, {.reltol = 1e-18, .pivot1 = pivot1, .wi = weight});
+    for (int i = 1; i <= sweep_bound; i++) {
+      ci.iterate();
+      current_integral = ci.sumWeighted(weight);
+      last_pivot_error = ci.pivotError[ci.pivotError.size() - 1];
+      if (debug > 1) { std::cout << i << " " << count << " " << last_pivot_error << " " << current_integral << std::endl; }
+      // if ( last_pivot_error < pivot_error_bound && i > 1) { break; }
+      // if (std::abs(current_integral - previous_integral) < integral_error_bound || last_pivot_error < pivot_error_bound && i > 1) { break; }
+      previous_integral = current_integral;
+    }
+    if (debug > 1) {
+      std::cout << "rank:" << std::endl;
+      print_vector(ci.rank());
+    }
+  }
+  if (debug > 1) { std::cout << std::endl; }
+  return current_integral;
+}
+
+template <typename T_output, typename T_input>
 T_output do_TCI_reuse_pivots(std::function<T_output(std::vector<T_input>)> func, std::vector<std::vector<T_input>> &input,
                              std::vector<std::vector<double>> &weight, std::vector<int> &pivot1, int sweep_bound, int bond_dim,
                              double integral_error_bound, double pivot_error_bound, bool tci_prrlu, debug_t debug, long &count,
@@ -443,4 +485,39 @@ inline std::tuple<std::vector<double>, std::vector<double>, std::vector<double>>
   taus.insert(taus.end(), taus_right.begin(), taus_right.end());
 
   return std::make_tuple(taus_left, taus_right, taus);
+}
+
+template <typename T1, typename T2>
+std::vector<T2> sort_B_according_A (std::vector<T1> A, std::vector<T2> B, double reltol=1e-8) {
+    std::vector<size_t> indices(A.size());
+    std::iota(indices.begin(), indices.end(), 0); // Fill with 0, 1, 2, ...
+
+    // Sort indices based on corresponding values in A
+    std::sort(indices.begin(), indices.end(), 
+              [&](size_t i1, size_t i2) { return std::abs(A[i1]) > std::abs(A[i2]); });
+
+    // Create a sorted copy of B and A
+    std::vector<T1> sorted_A(A.size());
+    std::vector<T2> sorted_B(B.size());
+    for (size_t i = 0; i < indices.size(); ++i) {
+        sorted_A[i] = A[indices[i]];
+        sorted_B[i] = B[indices[i]];
+    }
+    // truncation according to reltol
+    T1 A0 = sorted_A[0];
+    size_t truncation_index = 0;
+    for(size_t i = 0; i < sorted_A.size(); ++i){
+      truncation_index = i;
+      if(std::abs(sorted_A[i]) < std::abs(A0) * reltol){
+        break;
+      }
+    }
+    truncation_index++;
+    //print A and sorted A
+    // std::cout<< "A:  ";
+    // print_vector(A);
+    // std::cout<< "sorted_A:  ";
+    // print_vector(sorted_A);
+
+    return std::vector<T2>(sorted_B.begin(), sorted_B.begin() + truncation_index);
 }

@@ -107,6 +107,12 @@ class ModeFullFactorization : public base_mode {
   void run_single_element() override;
 };
 
+class ModeFullFactorizationPivots : public base_mode {
+  public:
+  ModeFullFactorizationPivots() : base_mode() {}
+  void run_single_element() override;
+};
+
 class ModeFullFactorizationBath : public base_mode {
   public:
   ModeFullFactorizationBath() : base_mode() {}
@@ -116,6 +122,12 @@ class ModeFullFactorizationBath : public base_mode {
 class ModeVertexFactorization : public base_mode {
   public:
   ModeVertexFactorization() : base_mode() {}
+  void run_single_element() override;
+};
+
+class ModeVertexFactorizationPivots : public base_mode {
+  public:
+  ModeVertexFactorizationPivots() : base_mode() {}
   void run_single_element() override;
 };
 
