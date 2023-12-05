@@ -4,6 +4,7 @@
 #include <numeric>
 #include <chrono>
 #include "./mode.hpp"
+#include <omp.h>
 
 using namespace inchworm;
 
@@ -92,45 +93,51 @@ void ModeFullPartition::run_single_element() {
     std::vector<double> vs1;
     for (int i = 0; i < pivot1.size(); i++) { vs1.push_back(tp.vi[pivot1[i]]); }
     std::vector<std::vector<int>> valid_pivots{};
-    std::vector<int> valid_pivots_index = {};
+    std::vector<int> valid_pivots_index    = {};
     std::vector<double> valid_pivots_value = {};
-    bool found_valid_pivot = false;
-    // std::cout << "all_n_left_pivots.size() = " << all_n_left_pivots.size() << std::endl;
-    // std::cout << "all_phi_pivots.size() = " << all_phi_pivots.size() << std::endl;
-    // std::cout << "all_phi_pivots= " << std::endl;
-    // for (auto i : all_phi_pivots) {
-    //   print_vector(i);
-    //   std::cout << std::endl;
-    // }
+    bool found_valid_pivot                 = false;
+// std::cout << "all_n_left_pivots.size() = " << all_n_left_pivots.size() << std::endl;
+// std::cout << "all_phi_pivots.size() = " << all_phi_pivots.size() << std::endl;
+// std::cout << "all_phi_pivots= " << std::endl;
+// for (auto i : all_phi_pivots) {
+//   print_vector(i);
+//   std::cout << std::endl;
+// }
+#pragma omp parallel for collapse(3)
     for (auto pivot_n_left : all_n_left_pivots) {
       for (auto pivot_phi : all_phi_pivots) {
         for (auto pivot_iota : all_iota_pivots) {
-          // std::cout << "pivot_n_left = ";
-          // print_vector(pivot_n_left);
-          // std::cout << "pivot_phi = ";
-          // print_vector(pivot_phi);
-          std::vector<double> fulls1;
-          for (int i = 0; i < pivot_n_left.size(); i++) { fulls1.push_back(n_left_value_range[pivot_n_left[i]]); }
-          for (int i = 0; i < pivot_phi.size(); i++) { fulls1.push_back(phi_value_range[pivot_phi[i]]); }
-          for (int i = 0; i < pivot_iota.size(); i++) { fulls1.push_back(iota_value_range[pivot_iota[i]]); }
-          fulls1.insert(fulls1.end(), vs1.begin(), vs1.end());
-          // std::cout << "fulls1 = ";
-          // print_vector(fulls1);
-          // std::cout << "pivot1_temp = ";
-          // print_vector(pivot1_temp);
-          auto pivot_value = get_u_tau_max_element(fulls1) ;
-          if ( pivot_value != 0) {
-            std::vector<int> pivot1_temp;
-            for (int i = 0; i < pivot_n_left.size(); i++) { pivot1_temp.push_back(pivot_n_left[i]); }
-            for (int i = 0; i < pivot_phi.size(); i++) { pivot1_temp.push_back(pivot_phi[i]); }
-            for (int i = 0; i < pivot_iota.size(); i++) { pivot1_temp.push_back(pivot_iota[i]); }
-            pivot1_temp.insert(pivot1_temp.end(), pivot1.begin(), pivot1.end());
-            valid_pivots.push_back(pivot1_temp);
-            valid_pivots_value.push_back(pivot_value);
+          if (std::accumulate(pivot_phi.begin(), pivot_phi.end(), 0) == pivot_phi.size() / 2) {
+            // std::cout << "pivot_n_left = ";
+            // print_vector(pivot_n_left);
+            // std::cout << "pivot_phi = ";
+            // print_vector(pivot_phi);
+            std::vector<double> fulls1;
+            for (int i = 0; i < pivot_n_left.size(); i++) { fulls1.push_back(n_left_value_range[pivot_n_left[i]]); }
+            for (int i = 0; i < pivot_phi.size(); i++) { fulls1.push_back(phi_value_range[pivot_phi[i]]); }
+            for (int i = 0; i < pivot_iota.size(); i++) { fulls1.push_back(iota_value_range[pivot_iota[i]]); }
+            fulls1.insert(fulls1.end(), vs1.begin(), vs1.end());
+            // std::cout << "fulls1 = ";
+            // print_vector(fulls1);
             // std::cout << "pivot1_temp = ";
             // print_vector(pivot1_temp);
-            // std::cout << "value: " << get_u_tau_max_element(fulls1) << std::endl;
-            found_valid_pivot = true;
+            auto pivot_value = get_u_tau_max_element(fulls1);
+            if (pivot_value != 0) {
+              std::vector<int> pivot1_temp;
+              for (int i = 0; i < pivot_n_left.size(); i++) { pivot1_temp.push_back(pivot_n_left[i]); }
+              for (int i = 0; i < pivot_phi.size(); i++) { pivot1_temp.push_back(pivot_phi[i]); }
+              for (int i = 0; i < pivot_iota.size(); i++) { pivot1_temp.push_back(pivot_iota[i]); }
+              pivot1_temp.insert(pivot1_temp.end(), pivot1.begin(), pivot1.end());
+#pragma omp critical
+              {
+                valid_pivots.push_back(pivot1_temp);
+                valid_pivots_value.push_back(pivot_value);
+                // std::cout << "pivot1_temp = ";
+                // print_vector(pivot1_temp);
+                // std::cout << "value: " << get_u_tau_max_element(fulls1) << std::endl;
+                found_valid_pivot = true;
+              }
+            }
           }
         }
       }
@@ -143,16 +150,21 @@ void ModeFullPartition::run_single_element() {
     // }
     if (!found_valid_pivot) { continue; }
     bool reduce_valid_pivots = true;
-    if(reduce_valid_pivots){
-    valid_pivots_index.resize(valid_pivots.size());
-    iota(valid_pivots_index.begin(), valid_pivots_index.end(), 0);
-    sort_B_according_A(valid_pivots_value, valid_pivots_index);
-    std::vector<std::vector<int>> valid_pivots_new{};
-    for(int i = 0; i < valid_pivots_index.size(); i++){
-      valid_pivots_new.push_back(valid_pivots[valid_pivots_index[i]]);
+    if (reduce_valid_pivots) {
+      valid_pivots_index.resize(valid_pivots.size());
+      iota(valid_pivots_index.begin(), valid_pivots_index.end(), 0);
+      sort_B_according_A(valid_pivots_value, valid_pivots_index);
+      std::vector<std::vector<int>> valid_pivots_new{};
+      for (int i = 0; i < valid_pivots_index.size(); i++) { valid_pivots_new.push_back(valid_pivots[valid_pivots_index[i]]); }
+      valid_pivots = valid_pivots_new;
+      std::cout << "size of valid_pivots (after reduction) = " << valid_pivots.size() << std::endl;
     }
-    valid_pivots = valid_pivots_new;
-    std::cout << "size of valid_pivots (after reduction) = " << valid_pivots.size() << std::endl;
+    bool further_reduce = false;
+    int max_size = 20;
+    if(further_reduce){
+      if(valid_pivots.size() > max_size){
+        valid_pivots.resize(max_size);
+      }
     }
     pivot1 = valid_pivots[0];
 
@@ -160,8 +172,8 @@ void ModeFullPartition::run_single_element() {
     auto weight_n_left = std::vector(1, std::vector<double>(n_left_value_range.size(), 1.0));
     auto input_phi     = std::vector(n, phi_value_range);
     auto weight_phi    = std::vector(n, std::vector<double>(phi_value_range.size(), 1.0));
-    auto input_iota   = std::vector(n, iota_value_range);
-    auto weight_iota  = std::vector(n, std::vector<double>(iota_value_range.size(), 1.0));
+    auto input_iota    = std::vector(n, iota_value_range);
+    auto weight_iota   = std::vector(n, std::vector<double>(iota_value_range.size(), 1.0));
     auto input_v       = std::vector(n, tp.vi);
     auto weight_v      = std::vector(n, tp.wi_v);
     auto input         = input_n_left;

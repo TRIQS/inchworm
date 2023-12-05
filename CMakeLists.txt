@@ -32,6 +32,7 @@ find_package(TRIQS 3.2 REQUIRED)
 
 # Load xfac
 find_package(xfac REQUIRED)
+find_package(OpenMP)
 
 # Get the git hash & print status
 triqs_get_git_hash_of_source_dir(PROJECT_GIT_HASH)

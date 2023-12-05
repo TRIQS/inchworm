@@ -360,7 +360,8 @@ T_output do_TCI_add_pivots(std::function<T_output(std::vector<T_input>)> func, s
   if (tci_prrlu) {
     auto ci = xfac::CTensorCI2<T_output, T_input>(func, input, {.bond_dim = bond_dim, .reltol = 1e-18, .do_full_search = false, .pivot1 = pivot1});
     std::cout << "bond_dim: " << ci.param.bond_dim << std::endl;
-    ci.addPivotsAllBonds(valid_pivots);
+    ci.myAddPivotsAllBonds(valid_pivots);
+    if (debug > 1) { print_rank(ci.tt); }
     ci.makeCanonical();
     for (int i = 1; i <= sweep_bound; i++) {
       ci.iterate();
@@ -489,7 +490,7 @@ inline std::tuple<std::vector<double>, std::vector<double>, std::vector<double>>
   return std::make_tuple(taus_left, taus_right, taus);
 }
 
-template <typename T1, typename T2> void sort_B_according_A(std::vector<T1> &A, std::vector<T2> &B, double reltol = 1e-6) {
+template <typename T1, typename T2> void sort_B_according_A(std::vector<T1> &A, std::vector<T2> &B, double reltol = 1e-3) {
   std::vector<size_t> indices(A.size());
   std::iota(indices.begin(), indices.end(), 0); // Fill with 0, 1, 2, ...
 
