@@ -113,6 +113,12 @@ class ModeFullPartition : public base_mode {
   void run_single_element() override;
 };
 
+class ModePartitionMid : public base_mode {
+  public:
+  ModePartitionMid() : base_mode() {}
+  void run_single_element() override;
+};
+
 class ModeFullFactorizationPivots : public base_mode {
   public:
   ModeFullFactorizationPivots() : base_mode() {}
