@@ -24,7 +24,7 @@ void ModeExplicitSumExact::run_single_element() {
       for (int n_left = 1; n_left < n; n_left++) {
         double integral_sum_iota = 0.0;
         //for debugging
-        if (!(n_left == 2 && phi_d_list[0] == 1 && phi_d_list[1] == 3 && phi_d_dag_list[0] == 0 && phi_d_dag_list[1] == 2)) { continue; }
+        // if (!(n_left == 2 && phi_d_list[0] == 1 && phi_d_list[1] == 3 && phi_d_dag_list[0] == 0 && phi_d_dag_list[1] == 2)) { continue; }
         for (auto [iota_d_list, iota_d_dag_list] : iota_pair_list) {
           long count                 = 0;
           auto get_u_tau_max_element = [this, &count, &phi_d_list = phi_d_list, &phi_d_dag_list = phi_d_dag_list, &iota_d_list = iota_d_list,

@@ -15,7 +15,7 @@ void ModeVertexFactorizationPivots::run_single_element() {
   for (int order : sp.order_list) {
     auto start_time = std::chrono::high_resolution_clock::now();
     int n           = 2 * order;     // number of tau's
-    std::vector<int> v_pivot1(n, 0); // pivots for tau, pivots for iota are added later
+    std::vector<int> v_pivot1(n, 7); // pivots for tau, pivots for iota are added later
     std::vector<int> index_range(n);
     std::iota(index_range.begin(), index_range.end(), 0);
     auto phi_pair_list = get_all_phi(index_range); //gives all possible phi
@@ -75,8 +75,8 @@ void ModeVertexFactorizationPivots::run_single_element() {
         // set pivot for iota
         int iota_pivot_index = 0;
         bool found_pivot1    = false;
-        std::vector<int> valid_iota_index {};
-        std::vector<double> valid_iota_value {};
+        std::vector<int> valid_iota_index{};
+        std::vector<double> valid_iota_value{};
         for (auto iota_pivot1 : all_iota_pivots) {
           std::vector<double> v_iota_s1_temp{};
           for (int i = 0; i < iota_pivot1.size(); i++) {
@@ -85,7 +85,7 @@ void ModeVertexFactorizationPivots::run_single_element() {
           }
           u_tau_max_element_vs1 = get_u_tau_max_element(v_iota_s1_temp);
           if (u_tau_max_element_vs1 != 0) {
-            v_iota_s1 = v_iota_s1_temp;
+            v_iota_s1    = v_iota_s1_temp;
             found_pivot1 = true;
             valid_iota_index.push_back(iota_pivot_index);
             valid_iota_value.push_back(u_tau_max_element_vs1);
@@ -106,10 +106,11 @@ void ModeVertexFactorizationPivots::run_single_element() {
         }
         // for debugging, print the size of valid_iota_index
         std::cout << "valid_iota_index.size() before turncation: " << valid_iota_index.size() << std::endl;
-        //truncate the valid_iota_index 
+        //truncate the valid_iota_index
         // std::cout << "valid_iota_value:";
         // print_vector(valid_iota_value);
-        valid_iota_index=sort_B_according_A(valid_iota_value, valid_iota_index);
+        sort_B_according_A(valid_iota_value, valid_iota_index);
+        if (std::abs(valid_iota_value[0]) < 1e-10) { continue; }
         //for debugging, print the size of valid_iota_index
         std::cout << "valid_iota_index.size(): " << valid_iota_index.size() << std::endl;
         std::vector<std::vector<int>> valid_pivots{};
@@ -139,11 +140,10 @@ void ModeVertexFactorizationPivots::run_single_element() {
           std::vector<int> iota_d_list_int1(iota_d_list1.begin(), iota_d_list1.end());
           std::vector<int> iota_d_dag_list_int1(iota_d_dag_list1.begin(), iota_d_dag_list1.end());
           auto [taus_left1, taus_right1, taus1] = obtain_taus(vs1, n_left, sp.tau_split, sp.tau_max);
+          u_tau_max_element_vs1                 = valid_iota_value[0];
           print_pivot1(iota_d_list_int1, iota_d_dag_list_int1, get_elements(phi_d_list, taus1), get_elements(phi_d_dag_list, taus1),
                        u_tau_max_element_vs1);
-          
         }
-        u_tau_max_element_vs1 = get_u_tau_max_element(v_iota_s1);
         if (u_tau_max_element_vs1 == 0) { continue; }
 
         std::vector<double> v_iota_i;
@@ -182,8 +182,9 @@ void ModeVertexFactorizationPivots::run_single_element() {
 
         std::vector<std::vector<double>> input  = std::vector(n, v_iota_i);
         std::vector<std::vector<double>> weight = std::vector(n, weight_i);
-        double integral_element                 = do_TCI_add_pivots<double, double>(get_u_tau_max_element, input, weight, pivot1, tp.sweep_bound, tp.bond_dim,
-                                                         tp.integral_error_bound, tp.pivot_error_bound, tp.tci_prrlu, sp.debug, count, valid_pivots);
+        double integral_element =
+           do_TCI_add_pivots<double, double>(get_u_tau_max_element, input, weight, pivot1, tp.sweep_bound, tp.bond_dim, tp.integral_error_bound,
+                                             tp.pivot_error_bound, tp.tci_prrlu, sp.debug, count, valid_pivots);
         integral_sum_iota += integral_element;
         integral_sum_n_left += integral_sum_iota;
         //for debugging

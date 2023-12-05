@@ -132,22 +132,23 @@ template <typename T> void generate_combinations(const std::vector<T> &A, std::v
 }
 
 //similar as generate_combinations but for first element of all_combinations, it only takes values from A_half
-template <typename T> void generate_combinations_symmetrized(const std::vector<T> &A,const std::vector<T> &A_half, std::vector<T> &B, int idx, std::vector<std::vector<T>> &all_combinations) {
+template <typename T>
+void generate_combinations_symmetrized(const std::vector<T> &A, const std::vector<T> &A_half, std::vector<T> &B, int idx,
+                                       std::vector<std::vector<T>> &all_combinations) {
   if (idx == B.size()) {
     all_combinations.push_back(B);
     return;
   }
-  if(idx == 0){
+  if (idx == 0) {
     for (int i = 0; i < A_half.size(); ++i) {
       B[idx] = A_half[i];
       generate_combinations(A, B, idx + 1, all_combinations);
     }
-  }
-  else{
-  for (int i = 0; i < A.size(); ++i) {
-    B[idx] = A[i];
-    generate_combinations(A, B, idx + 1, all_combinations);
-  }
+  } else {
+    for (int i = 0; i < A.size(); ++i) {
+      B[idx] = A[i];
+      generate_combinations(A, B, idx + 1, all_combinations);
+    }
   }
 }
 
@@ -349,20 +350,21 @@ T_output do_TCI(std::function<T_output(std::vector<T_input>)> func, std::vector<
 
 template <typename T_output, typename T_input>
 T_output do_TCI_add_pivots(std::function<T_output(std::vector<T_input>)> func, std::vector<std::vector<T_input>> &input,
-                std::vector<std::vector<double>> &weight, std::vector<int> &pivot1, int sweep_bound, int bond_dim, double integral_error_bound,
-                double pivot_error_bound, bool tci_prrlu, debug_t debug, long &count, std::vector<std::vector<int>> &valid_pivots) {
+                           std::vector<std::vector<double>> &weight, std::vector<int> &pivot1, int sweep_bound, int bond_dim,
+                           double integral_error_bound, double pivot_error_bound, bool tci_prrlu, debug_t debug, long &count,
+                           std::vector<std::vector<int>> &valid_pivots) {
   double current_integral{0};
   double previous_integral{0};
   double last_pivot_error{0};
   if (debug > 1) { std::cout << "iteration nEval LastSweepPivotError integral\n"; }
   if (tci_prrlu) {
-    auto ci = xfac::CTensorCI2<T_output, T_input>(func, input, {.bond_dim = bond_dim, .reltol = 1e-18, .do_full_search = true, .pivot1 = pivot1});
+    auto ci = xfac::CTensorCI2<T_output, T_input>(func, input, {.bond_dim = bond_dim, .reltol = 1e-18, .do_full_search = false, .pivot1 = pivot1});
     std::cout << "bond_dim: " << ci.param.bond_dim << std::endl;
     ci.addPivotsAllBonds(valid_pivots);
-    // ci.makeCanonical();
+    ci.makeCanonical();
     for (int i = 1; i <= sweep_bound; i++) {
       ci.iterate();
-      // ci.makeCanonical();
+      ci.makeCanonical();
       current_integral = ci.tt.sum(weight);
       last_pivot_error = ci.pivotError[ci.pivotError.size() - 1];
       if (debug > 1) { std::cout << i << " " << count << " " << last_pivot_error << " " << current_integral << std::endl; }
@@ -487,37 +489,34 @@ inline std::tuple<std::vector<double>, std::vector<double>, std::vector<double>>
   return std::make_tuple(taus_left, taus_right, taus);
 }
 
-template <typename T1, typename T2>
-std::vector<T2> sort_B_according_A (std::vector<T1> A, std::vector<T2> B, double reltol=1e-8) {
-    std::vector<size_t> indices(A.size());
-    std::iota(indices.begin(), indices.end(), 0); // Fill with 0, 1, 2, ...
+template <typename T1, typename T2> void sort_B_according_A(std::vector<T1> &A, std::vector<T2> &B, double reltol = 1e-6) {
+  std::vector<size_t> indices(A.size());
+  std::iota(indices.begin(), indices.end(), 0); // Fill with 0, 1, 2, ...
 
-    // Sort indices based on corresponding values in A
-    std::sort(indices.begin(), indices.end(), 
-              [&](size_t i1, size_t i2) { return std::abs(A[i1]) > std::abs(A[i2]); });
+  // Sort indices based on corresponding values in A
+  std::sort(indices.begin(), indices.end(), [&](size_t i1, size_t i2) { return std::abs(A[i1]) > std::abs(A[i2]); });
 
-    // Create a sorted copy of B and A
-    std::vector<T1> sorted_A(A.size());
-    std::vector<T2> sorted_B(B.size());
-    for (size_t i = 0; i < indices.size(); ++i) {
-        sorted_A[i] = A[indices[i]];
-        sorted_B[i] = B[indices[i]];
-    }
-    // truncation according to reltol
-    T1 A0 = sorted_A[0];
-    size_t truncation_index = 0;
-    for(size_t i = 0; i < sorted_A.size(); ++i){
-      truncation_index = i;
-      if(std::abs(sorted_A[i]) < std::abs(A0) * reltol){
-        break;
-      }
-    }
-    truncation_index++;
-    //print A and sorted A
-    // std::cout<< "A:  ";
-    // print_vector(A);
-    // std::cout<< "sorted_A:  ";
-    // print_vector(sorted_A);
+  // Create a sorted copy of B and A
+  std::vector<T1> sorted_A(A.size());
+  std::vector<T2> sorted_B(B.size());
+  for (size_t i = 0; i < indices.size(); ++i) {
+    sorted_A[i] = A[indices[i]];
+    sorted_B[i] = B[indices[i]];
+  }
+  // truncation according to reltol
+  T1 A0                   = sorted_A[0];
+  size_t truncation_index = 0;
+  for (size_t i = 0; i < sorted_A.size(); ++i) {
+    truncation_index = i;
+    if (std::abs(sorted_A[i]) < std::abs(A0) * reltol) { break; }
+  }
+  truncation_index++;
+  //print A and sorted A
+  // std::cout<< "A:  ";
+  // print_vector(A);
+  // std::cout<< "sorted_A:  ";
+  // print_vector(sorted_A);
 
-    return std::vector<T2>(sorted_B.begin(), sorted_B.begin() + truncation_index);
+  B = std::vector<T2>(sorted_B.begin(), sorted_B.begin() + truncation_index);
+  A = std::vector<T1>(sorted_A.begin(), sorted_A.begin() + truncation_index);
 }

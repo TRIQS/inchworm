@@ -7,7 +7,7 @@
 
 using namespace inchworm;
 
-void ModeFullFactorizationPivots::run_single_element() {
+void ModePartitionFactorizationPivots::run_single_element() {
 
   std::vector<double> iotai(mp.n_phi);
   std::iota(iotai.begin(), iotai.end(), 0);
@@ -25,6 +25,7 @@ void ModeFullFactorizationPivots::run_single_element() {
     std::iota(iota_pivots_range.begin(), iota_pivots_range.end(), 0);
     std::vector<std::vector<int>> all_iota_pivots{};
     generate_combinations(iota_pivots_range, iota_pivots, 0, all_iota_pivots);
+    std::cout << "finish generating combinations" << std::endl;
 
     double integral_sum_phi = 0.0;
     for (auto [phi_d_list, phi_d_dag_list] : phi_pair_list) {
@@ -34,17 +35,9 @@ void ModeFullFactorizationPivots::run_single_element() {
         long count                 = 0;
         auto get_u_tau_max_element = [this, &count, &phi_d_list = phi_d_list, &phi_d_dag_list = phi_d_dag_list,
                                       &n_left](const std::vector<double> &v_iota_s) {
-          std::vector<double> vs{};
-          std::vector<double> iotas{};
-          vs.reserve(v_iota_s.size() / 2);
-          iotas.reserve(v_iota_s.size() / 2);
-          for (int i = 0; i < v_iota_s.size(); i++) {
-            if (i % 2 == 0) {
-              iotas.push_back(v_iota_s[i]);
-            } else {
-              vs.push_back(v_iota_s[i]);
-            }
-          }
+          int mid = v_iota_s.size() / 2;
+          std::vector<double> iotas(v_iota_s.begin(), v_iota_s.begin() + mid);
+          std::vector<double> vs(v_iota_s.begin() + mid, v_iota_s.end());
           std::vector<double> iota_d_list     = get_elements(phi_d_list, iotas);
           std::vector<double> iota_d_dag_list = get_elements(phi_d_dag_list, iotas);
           std::vector<int> iota_d_list_int(iota_d_list.begin(), iota_d_list.end());
@@ -62,8 +55,6 @@ void ModeFullFactorizationPivots::run_single_element() {
         };
 
         std::vector<double> v_iota_s1{};
-        std::vector<double> v_s1{};
-        for (int i = 0; i < v_pivot1.size(); i++) { v_s1.push_back(tp.vi[v_pivot1[i]]); } //insert v only temporarily
         double u_tau_max_element_vs1 = 0;
 
         // set pivot for iota
@@ -71,13 +62,11 @@ void ModeFullFactorizationPivots::run_single_element() {
         bool found_pivot1    = false;
         std::vector<int> valid_iota_index{};
         std::vector<double> valid_iota_value{};
+        std::cout<< " start scanning the pivots" <<std::endl;
         for (auto iota_pivot1 : all_iota_pivots) {
           std::vector<double> v_iota_s1_temp{};
-          v_iota_s1_temp.reserve(v_s1.size() + iota_pivot1.size());
-          for (int i = 0; i < iota_pivot1.size(); i++) {
-            v_iota_s1_temp.push_back(iota_pivot1[i]);
-            v_iota_s1_temp.push_back(v_s1[i]);
-          }
+          for (int i = 0; i < iota_pivot1.size(); i++) { v_iota_s1_temp.push_back(iotai[iota_pivot1[i]]); }
+          for (int i = 0; i < v_pivot1.size(); i++) { v_iota_s1_temp.push_back(tp.vi[v_pivot1[i]]); }
           u_tau_max_element_vs1 = get_u_tau_max_element(v_iota_s1_temp);
           if (u_tau_max_element_vs1 != 0) {
             v_iota_s1    = v_iota_s1_temp;
@@ -87,86 +76,55 @@ void ModeFullFactorizationPivots::run_single_element() {
           }
           iota_pivot_index++;
         }
-        if (!found_pivot1) {
-          // for debugging
-          std::cout << "skipped" << std::endl;
-          std::cout << "n_left: " << n_left << std::endl;
-          std::cout << "phi_d_list: " << std::endl;
-          for (auto i : phi_d_list) { std::cout << i << " "; }
-          std::cout << std::endl;
-          std::cout << "phi_d_dag_list: " << std::endl;
-          for (auto i : phi_d_dag_list) { std::cout << i << " "; }
-          std::cout << std::endl;
-          continue;
-        }
+        if (!found_pivot1) { continue; }
+        std::cout<< " finish scanning the pivots" <<std::endl;
+        // for debugging, print the size of valid_iota_index
         std::cout << "valid_iota_index.size() before turncation: " << valid_iota_index.size() << std::endl;
         //truncate the valid_iota_index
         // std::cout << "valid_iota_value:";
         // print_vector(valid_iota_value);
         sort_B_according_A(valid_iota_value, valid_iota_index);
-        if (std::abs(valid_iota_value[0]) < 1e-10) { continue; }
+        if(std::abs(valid_iota_value[0]) < 1e-10) { continue; }
         //for debugging, print the size of valid_iota_index
         std::cout << "valid_iota_index.size(): " << valid_iota_index.size() << std::endl;
         std::vector<std::vector<int>> valid_pivots{};
-        for (auto i : valid_iota_index) {
-          std::vector<int> pivot1_temp = {};
-          auto pivot1_to_append        = all_iota_pivots[i];
-          pivot1_temp.reserve(v_pivot1.size() + pivot1_to_append.size());
-          for (int i = 0; i < pivot1_to_append.size(); i++) {
-            pivot1_temp.push_back(pivot1_to_append[i]);
-            pivot1_temp.push_back(v_pivot1[i]);
-          }
-          valid_pivots.push_back(pivot1_temp);
-        }
-        auto pivot1 = valid_pivots[0];
+        for(auto i : valid_iota_index) {
+          std::vector<int> pivot1_temp{};
+          auto pivot1 = all_iota_pivots[i];
+          auto pivot1_to_append = v_pivot1;
+          pivot1.insert(pivot1.end(), pivot1_to_append.begin(), pivot1_to_append.end());
+          valid_pivots.push_back(pivot1);
+         }
+         auto pivot1 = valid_pivots[0];
 
-        // std::vector<int> pivot1{};
-        // auto pivot1_to_append = all_iota_pivots[iota_pivot_index];
-        // pivot1.reserve(v_pivot1.size() + pivot1_to_append.size());
-        // for (int i = 0; i < pivot1_to_append.size(); i++) {
-        //   pivot1.push_back(pivot1_to_append[i]);
-        //   pivot1.push_back(v_pivot1[i]);
-        // }
+        // auto pivot1           = all_iota_pivots[iota_pivot_index];
+        // auto pivot1_to_append = v_pivot1;
+        // pivot1.insert(pivot1.end(), pivot1_to_append.begin(), pivot1_to_append.end());
 
         if (sp.debug > 1) {
-          std::vector<double> vs1{};
-          std::vector<double> iotas1{};
-          vs1.reserve(v_iota_s1.size() / 2);
-          iotas1.reserve(v_iota_s1.size() / 2);
-          for (int i = 0; i < v_iota_s1.size(); i++) {
-            if (i % 2 == 0) {
-              iotas1.push_back(v_iota_s1[i]);
-            } else {
-              vs1.push_back(v_iota_s1[i]);
-            }
-          }
+          int mid1 = v_iota_s1.size() / 2;
+          std::vector<double> iotas1(v_iota_s1.begin(), v_iota_s1.begin() + mid1);
+          std::vector<double> vs1(v_iota_s1.begin() + mid1, v_iota_s1.end());
           std::vector<double> iota_d_list1     = get_elements(phi_d_list, iotas1);
           std::vector<double> iota_d_dag_list1 = get_elements(phi_d_dag_list, iotas1);
           std::vector<int> iota_d_list_int1(iota_d_list1.begin(), iota_d_list1.end());
           std::vector<int> iota_d_dag_list_int1(iota_d_dag_list1.begin(), iota_d_dag_list1.end());
           auto [taus_left1, taus_right1, taus1] = obtain_taus(vs1, n_left, sp.tau_split, sp.tau_max);
-          u_tau_max_element_vs1                 = valid_iota_value[0];
+                  u_tau_max_element_vs1 = valid_iota_value[0];
           print_pivot1(iota_d_list_int1, iota_d_dag_list_int1, get_elements(phi_d_list, taus1), get_elements(phi_d_dag_list, taus1),
                        u_tau_max_element_vs1);
         }
         if (u_tau_max_element_vs1 == 0) { continue; }
 
-        std::vector<std::vector<double>> input{};
-        input.reserve(2 * n);
-        for (int i = 0; i < n; i++) {
-          input.push_back(iotai);
-          input.push_back(tp.vi);
-        }
-        std::vector<std::vector<double>> weight{};
-        weight.reserve(2 * n);
-        for (int i = 0; i < n; i++) {
-          weight.push_back(wi_iota);
-          weight.push_back(tp.wi_v);
-        }
+        auto input_to_append = std::vector(n, tp.vi);
+        auto input           = std::vector(n, iotai);
+        input.insert(input.end(), input_to_append.begin(), input_to_append.end());
+        auto weight_to_append = std::vector(n, tp.wi_v);
+        auto weight           = std::vector(n, wi_iota);
+        weight.insert(weight.end(), weight_to_append.begin(), weight_to_append.end());
 
-        double integral_element =
-           do_TCI_add_pivots<double, double>(get_u_tau_max_element, input, weight, pivot1, tp.sweep_bound, tp.bond_dim, tp.integral_error_bound,
-                                             tp.pivot_error_bound, tp.tci_prrlu, sp.debug, count, valid_pivots);
+        double integral_element = do_TCI_add_pivots<double, double>(get_u_tau_max_element, input, weight, pivot1, tp.sweep_bound, tp.bond_dim,
+                                                         tp.integral_error_bound, tp.pivot_error_bound, tp.tci_prrlu, sp.debug, count,valid_pivots);
         integral_sum_iota += integral_element;
         integral_sum_n_left += integral_sum_iota;
       }
