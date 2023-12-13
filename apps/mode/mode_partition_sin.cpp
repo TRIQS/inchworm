@@ -86,7 +86,7 @@ void ModePartitionSin::run_single_element() {
           for (int i = 0; i < iota_pivot1.size(); i++) { v_iota_s1_temp.push_back(iotai[iota_pivot1[i]]); }
           for (int i = 0; i < v_pivot1.size(); i++) { v_iota_s1_temp.push_back(tp.vi[v_pivot1[i]]); }
           u_tau_max_element_vs1 = get_u_tau_max_element(v_iota_s1_temp);
-          if (u_tau_max_element_vs1 != 0) {
+          if (std::abs(u_tau_max_element_vs1)>1e-20) {
             v_iota_s1 = v_iota_s1_temp;
             break;
           }
