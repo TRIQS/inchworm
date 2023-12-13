@@ -113,6 +113,19 @@ class ModeFullPartition : public base_mode {
   void run_single_element() override;
 };
 
+class ModePartitionSin : public base_mode {
+  public:
+  ModePartitionSin() : base_mode() {}
+  void run_single_element() override;
+};
+
+class ModePartitionBath : public base_mode {
+  public:
+  ModePartitionBath() : base_mode() {}
+  void run_single_element() override;
+};
+
+
 class ModePartitionMid : public base_mode {
   public:
   ModePartitionMid() : base_mode() {}

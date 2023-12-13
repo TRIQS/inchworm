@@ -362,8 +362,8 @@ T_output do_TCI_add_pivots(std::function<T_output(std::vector<T_input>)> func, s
     auto ci = xfac::CTensorCI2<T_output, T_input>(func, input, {.bond_dim = bond_dim, .reltol = 1e-18, .do_full_search = false, .pivot1 = pivot1});
     std::cout << "bond_dim: " << ci.param.bond_dim << std::endl;
     ci.myAddPivotsAllBonds(valid_pivots);
-    if (debug > 1) { print_rank(ci.tt); }
     ci.makeCanonical();
+    if (debug > 1) { print_rank(ci.tt); }
     for (int i = 1; i <= sweep_bound; i++) {
       ci.iterate();
       ci.makeCanonical();
@@ -521,4 +521,17 @@ template <typename T1, typename T2> void sort_B_according_A(std::vector<T1> &A, 
 
   B = std::vector<T2>(sorted_B.begin(), sorted_B.begin() + truncation_index);
   A = std::vector<T1>(sorted_A.begin(), sorted_A.begin() + truncation_index);
+}
+
+template <typename T>
+inline double sin_func(std::vector<T> const &x, int n_opt) {
+  double x_val = 0;
+  // std::cout << "n_opt: " << n_opt << std::endl;
+  // std::cout << "x.size(): " << x.size() << std::endl;
+  // compress x between 0 and  1
+  double base = 1.0 / (n_opt);
+  // std::cout << "base: " << base << std::endl;
+  for (int i = 0; i < x.size(); ++i) { x_val += x[i] * std::pow(base, i+1); }
+  // std::cout << "x_val: " << x_val << std::endl;
+  return std::sin(x_val * M_PI);
 }
