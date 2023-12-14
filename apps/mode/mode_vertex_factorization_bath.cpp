@@ -218,8 +218,8 @@ void ModeVertexFactorizationBath::run_single_element() {
         // for debugging
         if (n_left == 2 && phi_d_list[0] == 1 && phi_d_list[1] == 3 && phi_d_dag_list[0] == 0 && phi_d_dag_list[1] == 2) {
           auto ci = xfac::CTensorCI2<double, double>(get_u_tau_max_element, input,
-                                                     {.bond_dim = tp.bond_dim, .reltol = 1e-18, .do_full_search = true, .pivot1 = pivot1});
-          std::cout << "bond_dim: " << ci.param.bond_dim << std::endl;
+                                                     {.bondDim = tp.bond_dim, .reltol = 1e-18, .pivot1 = pivot1, .fullPiv = true});
+          std::cout << "bond_dim: " << ci.param.bondDim << std::endl;
           double current_integral = 0;
           double last_pivot_error = 0;
           for (int i = 1; i <= tp.sweep_bound; i++) {

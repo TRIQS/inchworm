@@ -134,7 +134,7 @@ int main() {
       //   std::cout << i << " " << count << " " << ci1.pivotError[ci1.pivotError.size() - 1] << " " << integral << std::endl;
       // }
       std::cout << "tci2" << std::endl;
-      auto ci2 = xfac::CTensorCI2<double, double>(get_u_tau_max_00, std::vector(n, vi), {.bond_dim = bond_dim, .pivot1 = pivot1});
+      auto ci2 = xfac::CTensorCI2<double, double>(get_u_tau_max_00, std::vector(n, vi), {.bondDim= bond_dim, .pivot1 = pivot1});
       for (int i = 0; i < sweep_bound; i++) {
         ci2.iterate();
         if (i == sweep_bound - 1) { ci2.makeCanonical(); }
@@ -216,7 +216,7 @@ int main() {
         //   previous_integral = current_integral;
         // }
         std::cout << "tci2" << std::endl;
-        auto ci2 = xfac::CTensorCI2<double, double>(get_u_tau_max_00, std::vector(n, vi), {.bond_dim = bond_dim, .pivot1 = pivot1});
+        auto ci2 = xfac::CTensorCI2<double, double>(get_u_tau_max_00, std::vector(n, vi), {.bondDim= bond_dim, .pivot1 = pivot1});
         double current_integral{0};
         double previous_integral{0};
         std::cout << "iteration nEval LastSweepPivotError integral\n";

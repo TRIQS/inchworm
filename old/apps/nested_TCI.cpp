@@ -163,7 +163,7 @@ int main() {
           double integral_element{0};
           if (debug) { std::cout << "iteration nEval LastSweepPivotError integral\n"; }
           if (tci_prrlu) {
-            auto ci = xfac::CTensorCI2<double, double>(get_u_tau_max_element, std::vector(n, vi), {.bond_dim = bond_dim, .pivot1 = pivot1});
+            auto ci = xfac::CTensorCI2<double, double>(get_u_tau_max_element, std::vector(n, vi), {.bondDim= bond_dim, .pivot1 = pivot1});
             for (int i = 0; i < sweep_bound; i++) {
               ci.iterate();
               ci.makeCanonical();
@@ -208,7 +208,7 @@ int main() {
         //find the pivot for iota
         if (debug_iota) { std::cout << "iteration nEval LastSweepPivotError integral\n"; }
         if (tci_prrlu_iota) {
-          auto ci = xfac::CTensorCI2<double,int>(get_u_tau_max_element_iota, std::vector(n, iotai), {.bond_dim = bond_dim_iota, .pivot1 = pivot1_iota});
+          auto ci = xfac::CTensorCI2<double,int>(get_u_tau_max_element_iota, std::vector(n, iotai), {.bondDim= bond_dim_iota, .pivot1 = pivot1_iota});
           for (int i = 0; i < sweep_bound; i++) {
             ci.iterate();
             ci.makeCanonical();

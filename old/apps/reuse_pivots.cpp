@@ -146,7 +146,7 @@ int main() {
           double integral_element{0};
           if (debug) { std::cout << "iteration nEval LastSweepPivotError integral\n"; }
           if (tci_prrlu) {
-            auto ci = xfac::CTensorCI2<double, double>(get_u_tau_max_element, std::vector(n, vi), {.bond_dim = bond_dim, .pivot1 = pivot1});
+            auto ci = xfac::CTensorCI2<double, double>(get_u_tau_max_element, std::vector(n, vi), {.bondDim= bond_dim, .pivot1 = pivot1});
             if (previous_pivots.size() > 0) {
               std::cout << "reuse pivots" << std::endl;
               for (auto b = 0u; b < ci.len() - 1; b++) {

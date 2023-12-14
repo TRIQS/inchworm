@@ -202,7 +202,7 @@ int main() {
         // std::cout << "weight: " << std::endl;
         // for (auto v : weight) { print_vector(v); }
         if (tci_prrlu) {
-          auto ci = xfac::CTensorCI2<double, double>(get_u_tau_max_element, input, {.bond_dim = bond_dim, .pivot1 = pivot1});
+          auto ci = xfac::CTensorCI2<double, double>(get_u_tau_max_element, input, {.bondDim= bond_dim, .pivot1 = pivot1});
           for (int i = 0; i < sweep_bound; i++) {
             ci.iterate();
             ci.makeCanonical();
@@ -217,7 +217,7 @@ int main() {
           auto ci = xfac::CTensorCI<double, double>(get_u_tau_max_element, input, {.pivot1 = pivot1});
           for (int i = 0; i < sweep_bound; i++) {
             ci.iterate();
-            current_integral = ci.sumWeighted(weight);
+            current_integral = ci.tt.sum(weight);
             if (debug) { std::cout << i << " " << count << " " << ci.pivotError[ci.pivotError.size() - 1] << " " << current_integral << std::endl; }
             if (std::abs(current_integral - previous_integral) < error_bound && i > 1) { break; }
             previous_integral = current_integral;
@@ -225,7 +225,7 @@ int main() {
           integral_element = current_integral;
           if (debug) {
             std::cout << "rank:" << std::endl;
-            print_vector(ci.rank());
+            print_rank(ci.get_TensorTrain());
           }
         }
         if (debug) { std::cout << std::endl; }

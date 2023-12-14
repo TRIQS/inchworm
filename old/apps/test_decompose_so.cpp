@@ -160,7 +160,7 @@ int main() {
       double previous_integral{0};
       if (debug) { std::cout << "rank nEval LastSweepPivotError integral\n"; }
       if (tci_prrlu) {
-        auto ci = xfac::CTensorCI2<double, double>(get_u_tau_max_00, std::vector(n, vi), {.bond_dim = bond_dim, .pivot1 = pivot1});
+        auto ci = xfac::CTensorCI2<double, double>(get_u_tau_max_00, std::vector(n, vi), {.bondDim= bond_dim, .pivot1 = pivot1});
         for (int i = 0; i < sweep_bound; i++) {
           ci.iterate();
           ci.makeCanonical();

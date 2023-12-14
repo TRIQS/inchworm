@@ -304,8 +304,8 @@ T_output do_TCI(std::function<T_output(std::vector<T_input>)> func, std::vector<
   double last_pivot_error{0};
   if (debug > 1) { std::cout << "iteration nEval LastSweepPivotError integral\n"; }
   if (tci_prrlu) {
-    auto ci = xfac::CTensorCI2<T_output, T_input>(func, input, {.bond_dim = bond_dim, .reltol = 1e-18, .do_full_search = true, .pivot1 = pivot1});
-    std::cout << "bond_dim: " << ci.param.bond_dim << std::endl;
+    auto ci = xfac::CTensorCI2<T_output, T_input>(func, input, {.bondDim= bond_dim, .reltol = 1e-18, .pivot1 = pivot1, .fullPiv = true});
+    std::cout << "bond_dim: " << ci.param.bondDim << std::endl;
     for (int i = 1; i <= sweep_bound; i++) {
       ci.iterate();
       // ci.makeCanonical();
@@ -329,10 +329,10 @@ T_output do_TCI(std::function<T_output(std::vector<T_input>)> func, std::vector<
     }
     if (debug > 1) { print_rank(ci.tt); }
   } else {
-    auto ci = xfac::CTensorCI<T_output, T_input>(func, input, {.reltol = 1e-18, .pivot1 = pivot1, .wi = weight});
+    auto ci = xfac::CTensorCI<T_output, T_input>(func, input, {.reltol = 1e-18, .pivot1 = pivot1, .weight = weight});
     for (int i = 1; i <= sweep_bound; i++) {
       ci.iterate();
-      current_integral = ci.sumWeighted(weight);
+      current_integral =  ci.get_TensorTrain().sum(weight);
       last_pivot_error = ci.pivotError[ci.pivotError.size() - 1];
       if (debug > 1) { std::cout << i << " " << count << " " << last_pivot_error << " " << current_integral << std::endl; }
       // if ( last_pivot_error < pivot_error_bound && i > 1) { break; }
@@ -341,7 +341,7 @@ T_output do_TCI(std::function<T_output(std::vector<T_input>)> func, std::vector<
     }
     if (debug > 1) {
       std::cout << "rank:" << std::endl;
-      print_vector(ci.rank());
+      print_rank(ci.get_TensorTrain());
     }
   }
   if (debug > 1) { std::cout << std::endl; }
@@ -359,8 +359,8 @@ T_output do_TCI_add_pivots(std::function<T_output(std::vector<T_input>)> func, s
   if (debug > 1) { std::cout << "iteration nEval LastSweepPivotError integral\n"; }
   if (tci_prrlu) {
     std::cout << "test" << std::endl;
-    auto ci = xfac::CTensorCI2<T_output, T_input>(func, input, {.bond_dim = bond_dim, .reltol = 1e-18, .do_full_search = false, .pivot1 = pivot1});
-    std::cout << "bond_dim: " << ci.param.bond_dim << std::endl;
+    auto ci = xfac::CTensorCI2<T_output, T_input>(func, input, {.bondDim= bond_dim, .reltol = 1e-18, .pivot1 = pivot1, .fullPiv =false});
+    std::cout << "bond_dim: " << ci.param.bondDim << std::endl;
     ci.myAddPivotsAllBonds(valid_pivots);
     ci.makeCanonical();
     if (debug > 1) { print_rank(ci.tt); }
@@ -374,10 +374,10 @@ T_output do_TCI_add_pivots(std::function<T_output(std::vector<T_input>)> func, s
       if (debug > 1) { print_rank(ci.tt); }
     }
   } else {
-    auto ci = xfac::CTensorCI<T_output, T_input>(func, input, {.reltol = 1e-18, .pivot1 = pivot1, .wi = weight});
+    auto ci = xfac::CTensorCI<T_output, T_input>(func, input, {.reltol = 1e-18, .pivot1 = pivot1, .weight = weight});
     for (int i = 1; i <= sweep_bound; i++) {
       ci.iterate();
-      current_integral = ci.sumWeighted(weight);
+      current_integral =  ci.get_TensorTrain().sum(weight);
       last_pivot_error = ci.pivotError[ci.pivotError.size() - 1];
       if (debug > 1) { std::cout << i << " " << count << " " << last_pivot_error << " " << current_integral << std::endl; }
       // if ( last_pivot_error < pivot_error_bound && i > 1) { break; }
@@ -386,7 +386,7 @@ T_output do_TCI_add_pivots(std::function<T_output(std::vector<T_input>)> func, s
     }
     if (debug > 1) {
       std::cout << "rank:" << std::endl;
-      print_vector(ci.rank());
+      print_rank(ci.get_TensorTrain());
     }
   }
   if (debug > 1) { std::cout << std::endl; }
@@ -403,7 +403,7 @@ T_output do_TCI_reuse_pivots(std::function<T_output(std::vector<T_input>)> func,
   double last_pivot_error{0};
   if (debug > 1) { std::cout << "iteration nEval LastSweepPivotError integral\n"; }
   if (tci_prrlu) {
-    auto ci = xfac::CTensorCI2<T_output, T_input>(func, input, {.bond_dim = bond_dim, .pivot1 = pivot1});
+    auto ci = xfac::CTensorCI2<T_output, T_input>(func, input, {.bondDim= bond_dim, .pivot1 = pivot1});
     //only supported in prrlu
     if (!previous_pivots.empty()) {
       if (debug > 1) { std::cout << "reuse pivots" << std::endl; }
@@ -450,7 +450,7 @@ T_output do_TCI_reuse_pivots(std::function<T_output(std::vector<T_input>)> func,
     auto ci = xfac::CTensorCI<T_output, T_input>(func, input, {.pivot1 = pivot1});
     for (int i = 1; i <= sweep_bound; i++) {
       ci.iterate();
-      current_integral = ci.sumWeighted(weight);
+      current_integral = ci.get_TensorTrain().sum(weight);
       last_pivot_error = ci.pivotError[ci.pivotError.size() - 1];
       if (debug > 1) { std::cout << i << " " << count << " " << last_pivot_error << " " << current_integral << std::endl; }
       if (std::abs(current_integral - previous_integral) < integral_error_bound || last_pivot_error < pivot_error_bound) { break; }
@@ -458,7 +458,7 @@ T_output do_TCI_reuse_pivots(std::function<T_output(std::vector<T_input>)> func,
     }
     if (debug > 1) {
       std::cout << "rank:" << std::endl;
-      print_vector(ci.rank());
+      print_rank(ci.get_TensorTrain());
     }
   }
   if (debug > 1) { std::cout << std::endl; }

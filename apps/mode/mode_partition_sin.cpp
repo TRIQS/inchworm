@@ -120,10 +120,11 @@ void ModePartitionSin::run_single_element() {
         input_pre.insert(input_pre.end(), input_to_append_pre.begin(), input_to_append_pre.end());
         std::cout << "iteration nEval LastSweepPivotError\n";
         auto ci_pre = xfac::CTensorCI2<double, double>(get_u_tau_max_element_pre, input_pre,
-                                                       {.bond_dim = tp.bond_dim, .reltol = 1e-18, .do_full_search = true, .pivot1 = pivot1});
-        std::cout << "bond_dim: " << ci_pre.param.bond_dim << std::endl;
+                                                       {.bondDim = tp.bond_dim, .reltol = 1e-18, .pivot1 = pivot1, .fullPiv = true});
+        std::cout << "bond_dim: " << ci_pre.param.bondDim << std::endl;
         int ci_count                = 0;
-        double previous_pivot_error = 0.0;
+        double previous_pivot_error = -1E5;
+        int previous_pivot_count    = 0;
         while (true) {
           ci_pre.iterate();
           ci_pre.makeCanonical();
@@ -132,12 +133,13 @@ void ModePartitionSin::run_single_element() {
           std::cout << ci_count << " " << count << " " << last_pivot_error << " " << std::endl;
           print_rank(ci_pre.tt);
           ci_count++;
-          if (n < 5) {
-            if (ci_pre.trueError() < 1e-18) { break; }
-          } else {
-            if (last_pivot_error == previous_pivot_error) { break; }
+          if(last_pivot_error==previous_pivot_error){
+            break;
           }
+          if(ci_count == previous_pivot_count + 3){
           previous_pivot_error = last_pivot_error;
+          previous_pivot_count = ci_count;          
+          }
         }
 
         //training
@@ -151,11 +153,11 @@ void ModePartitionSin::run_single_element() {
 
         std::cout << "iteration nEval LastSweepPivotError integral\n";
         auto ci = xfac::CTensorCI2<double, double>(get_u_tau_max_element, input,
-                                                   {.bond_dim = tp.bond_dim, .reltol = 1e-18, .do_full_search = true, .pivot1 = pivot1});
+                                                   {.bondDim = tp.bond_dim, .reltol = 1e-18, .pivot1 = pivot1, .fullPiv = true});
         for (auto b = 0u; b < ci.len() - 1; b++) { ci.addPivotsAt(ci_pre.getPivotsAt(b), b); }
         // ci.makeCanonical();
         print_rank(ci.tt);
-        std::cout << "bond_dim: " << ci.param.bond_dim << std::endl;
+        std::cout << "bond_dim: " << ci.param.bondDim << std::endl;
         double current_integral = 0.0;
         for (int i = 1; i <= tp.sweep_bound; i++) {
           ci.iterate();
