@@ -491,7 +491,7 @@ inline std::tuple<std::vector<double>, std::vector<double>, std::vector<double>>
   return std::make_tuple(taus_left, taus_right, taus);
 }
 
-template <typename T1, typename T2> void sort_B_according_A(std::vector<T1> &A, std::vector<T2> &B, double reltol = 1e-2) {
+template <typename T1, typename T2> void sort_B_according_A(std::vector<T1> &A, std::vector<T2> &B, double reltol = 1e-3) {
   std::vector<size_t> indices(A.size());
   std::iota(indices.begin(), indices.end(), 0); // Fill with 0, 1, 2, ...
 
