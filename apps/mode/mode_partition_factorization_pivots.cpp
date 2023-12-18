@@ -84,7 +84,7 @@ void ModePartitionFactorizationPivots::run_single_element() {
         // std::cout << "valid_iota_value:";
         // print_vector(valid_iota_value);
         sort_B_according_A(valid_iota_value, valid_iota_index);
-        if(std::abs(valid_iota_value[0]) < 1e-10) { continue; }
+        // if(std::abs(valid_iota_value[0]) < 1e-10) { continue; }
         //for debugging, print the size of valid_iota_index
         std::cout << "valid_iota_index.size(): " << valid_iota_index.size() << std::endl;
         std::vector<std::vector<int>> valid_pivots{};
