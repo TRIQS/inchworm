@@ -32,28 +32,6 @@ void ModePartitionSin::run_single_element() {
       for (int n_left = 1; n_left < n; n_left++) {
         double integral_sum_iota       = 0.0;
         long count                     = 0;
-        auto get_u_tau_max_element_pre = [this, &count, &phi_d_list = phi_d_list, &phi_d_dag_list = phi_d_dag_list,
-                                          &n_left](const std::vector<double> &v_iota_s) {
-          int mid = v_iota_s.size() / 2;
-          std::vector<double> iotas(v_iota_s.begin(), v_iota_s.begin() + mid);
-          std::vector<double> vs(v_iota_s.begin() + mid, v_iota_s.end());
-          std::vector<double> iota_d_list     = get_elements(phi_d_list, iotas);
-          std::vector<double> iota_d_dag_list = get_elements(phi_d_dag_list, iotas);
-          std::vector<int> iota_d_list_int(iota_d_list.begin(), iota_d_list.end());
-          std::vector<int> iota_d_dag_list_int(iota_d_dag_list.begin(), iota_d_dag_list.end());
-          std::vector<int> number_in_block_d     = generate_number_in_block(mp.gf_block_shape, iota_d_list_int);
-          std::vector<int> number_in_block_d_dag = generate_number_in_block(mp.gf_block_shape, iota_d_dag_list_int);
-          if (number_in_block_d != number_in_block_d_dag) { return 0.0; }
-          auto [taus_left, taus_right, taus] = obtain_taus(vs, n_left, sp.tau_split, sp.tau_max);
-          double integrand                   = evaluate_u_tau_max(sr.u_tau_max_zeroth_order, sp.tau_split, sp.tau_max, mp.all_d_ops, mp.all_d_dag_ops,
-                                                                  mp.gf_block_shape, cp, mp.Delta_tau, mp.ad_imp, sr.u_interpolator, get_elements(phi_d_list, taus),
-                                                                  get_elements(phi_d_dag_list, taus), iota_d_list, iota_d_dag_list, sp.bl_index, sp.subspace_index);
-          count++;
-          double j        = jacobian(taus_left, sp.tau_split, 0.0) * jacobian(taus_right, sp.tau_max, sp.tau_split);
-          double sin_term = sin_func(iotas, mp.n_phi);
-          // return sin_term;
-          return sin_term + integrand * j;
-        };
 
         auto get_u_tau_max_element = [this, &count, &phi_d_list = phi_d_list, &phi_d_dag_list = phi_d_dag_list,
                                       &n_left](const std::vector<double> &v_iota_s) {
@@ -112,6 +90,30 @@ void ModePartitionSin::run_single_element() {
                        u_tau_max_element_vs1);
         }
         if (u_tau_max_element_vs1 == 0) { continue; }
+
+        double pre_factor = u_tau_max_element_vs1;
+
+        auto get_u_tau_max_element_pre = [this, &count, &phi_d_list = phi_d_list, &phi_d_dag_list = phi_d_dag_list,
+                                          &n_left,&pre_factor](const std::vector<double> &v_iota_s) {
+          int mid = v_iota_s.size() / 2;
+          std::vector<double> iotas(v_iota_s.begin(), v_iota_s.begin() + mid);
+          std::vector<double> vs(v_iota_s.begin() + mid, v_iota_s.end());
+          std::vector<double> iota_d_list     = get_elements(phi_d_list, iotas);
+          std::vector<double> iota_d_dag_list = get_elements(phi_d_dag_list, iotas);
+          std::vector<int> iota_d_list_int(iota_d_list.begin(), iota_d_list.end());
+          std::vector<int> iota_d_dag_list_int(iota_d_dag_list.begin(), iota_d_dag_list.end());
+          std::vector<int> number_in_block_d     = generate_number_in_block(mp.gf_block_shape, iota_d_list_int);
+          std::vector<int> number_in_block_d_dag = generate_number_in_block(mp.gf_block_shape, iota_d_dag_list_int);
+          if (number_in_block_d != number_in_block_d_dag) { return 0.0; }
+          auto [taus_left, taus_right, taus] = obtain_taus(vs, n_left, sp.tau_split, sp.tau_max);
+          double integrand                   = evaluate_u_tau_max(sr.u_tau_max_zeroth_order, sp.tau_split, sp.tau_max, mp.all_d_ops, mp.all_d_dag_ops,
+                                                                  mp.gf_block_shape, cp, mp.Delta_tau, mp.ad_imp, sr.u_interpolator, get_elements(phi_d_list, taus),
+                                                                  get_elements(phi_d_dag_list, taus), iota_d_list, iota_d_dag_list, sp.bl_index, sp.subspace_index);
+          count++;
+          double j        = jacobian(taus_left, sp.tau_split, 0.0) * jacobian(taus_right, sp.tau_max, sp.tau_split);
+          double sin_term = sin_func(iotas, mp.n_phi);
+          return pre_factor*sin_term + integrand * j;
+        };
 
         //pretraining
         std::cout << "pretraining" << std::endl;
