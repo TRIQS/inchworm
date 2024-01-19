@@ -24,7 +24,10 @@ void ModeExplicitSumExact::run_single_element() {
       for (int n_left = 1; n_left < n; n_left++) {
         double integral_sum_iota = 0.0;
         //for debugging
-        // if (!(n_left == 2 && phi_d_list[0] == 1 && phi_d_list[1] == 3 && phi_d_dag_list[0] == 0 && phi_d_dag_list[1] == 2)) { continue; }
+        // if (!(n_left == 2 && phi_d_list[0] == 1&& phi_d_list[1] == 3 && phi_d_dag_list[0] == 0 && phi_d_dag_list[1] == 2)) { continue; }
+        // if (!(n_left == 4 && phi_d_list[0] == 1 && phi_d_list[1] == 3 && phi_d_list[2] == 5 && phi_d_list[3] == 7 && phi_d_list[4] == 9 && phi_d_list[5] == 11 && phi_d_dag_list[0] == 0 && phi_d_dag_list[1] == 2 && phi_d_dag_list[2] == 4 && phi_d_dag_list[3] == 6 && phi_d_dag_list[4] == 8 && phi_d_dag_list[5] == 10)) { continue; }
+        if (!(n_left == 7 && phi_d_list[0] == 1 && phi_d_list[1] == 3 && phi_d_list[2] == 5 && phi_d_list[3] == 7 && phi_d_list[4] == 9 && phi_d_list[5] == 11  && phi_d_list[6] == 13 && phi_d_list[7] == 15 && phi_d_list[8] == 17 && phi_d_list[9] == 19 && phi_d_list[10] == 21 && phi_d_list[11] == 23 && phi_d_dag_list[0] == 0 && phi_d_dag_list[1] == 2 && phi_d_dag_list[2] == 4 && phi_d_dag_list[3] == 6 && phi_d_dag_list[4] == 8 && phi_d_dag_list[5] == 10 && phi_d_dag_list[6] == 12 && phi_d_dag_list[7] == 14 && phi_d_dag_list[8] == 16 && phi_d_dag_list[9] == 18 && phi_d_dag_list[10] == 20 && phi_d_dag_list[11] == 22 )) { continue; }
+        // if (!(n_left == 4 )) { continue; }
         for (auto [iota_d_list, iota_d_dag_list] : iota_pair_list) {
           long count                 = 0;
           auto get_u_tau_max_element = [this, &count, &phi_d_list = phi_d_list, &phi_d_dag_list = phi_d_dag_list, &iota_d_list = iota_d_list,

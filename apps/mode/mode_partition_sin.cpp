@@ -64,7 +64,7 @@ void ModePartitionSin::run_single_element() {
           for (int i = 0; i < iota_pivot1.size(); i++) { v_iota_s1_temp.push_back(iotai[iota_pivot1[i]]); }
           for (int i = 0; i < v_pivot1.size(); i++) { v_iota_s1_temp.push_back(tp.vi[v_pivot1[i]]); }
           u_tau_max_element_vs1 = get_u_tau_max_element(v_iota_s1_temp);
-          if (std::abs(u_tau_max_element_vs1) > 1e-20) {
+          if (std::abs(u_tau_max_element_vs1) != 0) {
             v_iota_s1 = v_iota_s1_temp;
             break;
           }
@@ -90,8 +90,9 @@ void ModePartitionSin::run_single_element() {
                        u_tau_max_element_vs1);
         }
         if (u_tau_max_element_vs1 == 0) { continue; }
-
-        double pre_factor = u_tau_max_element_vs1;
+        
+        
+        double pre_factor = 1E-16;
 
         auto get_u_tau_max_element_pre = [this, &count, &phi_d_list = phi_d_list, &phi_d_dag_list = phi_d_dag_list,
                                           &n_left,&pre_factor](const std::vector<double> &v_iota_s) {
@@ -111,25 +112,25 @@ void ModePartitionSin::run_single_element() {
                                                                   get_elements(phi_d_dag_list, taus), iota_d_list, iota_d_dag_list, sp.bl_index, sp.subspace_index);
           count++;
           double j        = jacobian(taus_left, sp.tau_split, 0.0) * jacobian(taus_right, sp.tau_max, sp.tau_split);
-          double sin_term = sin_func(iotas, mp.n_phi);
+          double sin_term = sin_func_all({},iotas, mp.n_phi);
           return pre_factor*sin_term + integrand * j;
         };
 
         //pretraining
         std::cout << "pretraining" << std::endl;
-        auto input_to_append_pre = std::vector(n, std::vector<double>{tp.vi[0]});
+        auto input_to_append_pre = std::vector(n, std::vector<double>{tp.vi[7]});
         auto input_pre           = std::vector(n, iotai);
         input_pre.insert(input_pre.end(), input_to_append_pre.begin(), input_to_append_pre.end());
         std::cout << "iteration nEval LastSweepPivotError\n";
         auto ci_pre = xfac::CTensorCI2<double, double>(get_u_tau_max_element_pre, input_pre,
-                                                       {.bondDim = tp.bond_dim, .reltol = 1e-18, .pivot1 = pivot1, .fullPiv = true});
+                                                       {.bondDim = tp.bond_dim, .reltol = 1e-30, .pivot1 = pivot1, .fullPiv = true});
         std::cout << "bond_dim: " << ci_pre.param.bondDim << std::endl;
         int ci_count                = 0;
         double previous_pivot_error = -1E5;
         int previous_pivot_count    = 0;
         while (true) {
           ci_pre.iterate();
-          ci_pre.makeCanonical();
+          // ci_pre.makeCanonical();
           auto last_pivot_error = ci_pre.pivotError[ci_pre.pivotError.size() - 1];
           // auto last_pivot_error = ci_pre.trueError();
           std::cout << ci_count << " " << count << " " << last_pivot_error << " " << std::endl;
@@ -155,9 +156,10 @@ void ModePartitionSin::run_single_element() {
 
         std::cout << "iteration nEval LastSweepPivotError integral\n";
         auto ci = xfac::CTensorCI2<double, double>(get_u_tau_max_element, input,
-                                                   {.bondDim = tp.bond_dim, .reltol = 1e-18, .pivot1 = pivot1, .fullPiv = true});
-        for (auto b = 0u; b < ci.len() - 1; b++) { ci.myAddPivotsAt(ci_pre.getPivotsAt(b), b); }
-        // ci.makeCanonical();
+                                                   {.bondDim = tp.bond_dim, .reltol = 1e-30, .pivot1 = pivot1, .fullPiv = true});
+        // for (auto b = 0u; b < ci.len() - 1; b++) { ci.myAddPivotsAt(ci_pre.getPivotsAt(b), b); }
+        ci.addPivots(ci_pre);
+        ci.makeCanonical();
         print_rank(ci.tt);
         std::cout << "bond_dim: " << ci.param.bondDim << std::endl;
         double current_integral = 0.0;

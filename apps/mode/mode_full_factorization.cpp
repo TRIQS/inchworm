@@ -131,6 +131,42 @@ void ModeFullFactorization::run_single_element() {
                                                          tp.integral_error_bound, tp.pivot_error_bound, tp.tci_prrlu, sp.debug, count);
         integral_sum_iota += integral_element;
         integral_sum_n_left += integral_sum_iota;
+        if (n_left == 2 && phi_d_list[0] == 2&& phi_d_list[1] == 3 && phi_d_dag_list[0] == 0 && phi_d_dag_list[1] == 1) {
+          // auto ci = xfac::CTensorCI2<double, double>(get_u_tau_max_element, input,
+          //                                            {.bond_dim = tp.bond_dim, .reltol = 1e-18, .pivot1 = pivot1, .fullPiv = true});
+          // std::cout << "bond_dim: " << ci.param.bondDim << std::endl;
+          // double current_integral = 0;
+          // double last_pivot_error = 0;
+          // for (int i = 1; i <= tp.sweep_bound; i++) {
+          //   ci.iterate();
+          //   current_integral = ci.tt.sum(weight);
+          //   last_pivot_error = ci.pivotError[ci.pivotError.size() - 1];
+          //   std::cout << i << " " << count << " " << last_pivot_error << " " << current_integral << std::endl;
+          // }
+          std::ofstream outfile("./tt_full_U8beta2_OO|XX.txt");
+          std::cout << "writing tci" << std::endl;
+          for (int idd0 = 0; idd0 < iotai.size(); idd0++) {
+            for (int id0 = 0; id0 < tp.vi.size(); id0++) {
+              for (int idd1 = 0; idd1 < iotai.size(); idd1++) {
+                for (int id1 = 0; id1 < tp.vi.size(); id1++) {
+                  for (int idd2 = 0; idd2 < iotai.size(); idd2++) {
+                    for (int id2 = 0; id2 < tp.vi.size(); id2++) {
+                      for (int idd3 = 0; idd3 < iotai.size(); idd3++) {
+                        for (int id3 = 0; id3 < tp.vi.size(); id3++) {
+                          double element = get_u_tau_max_element(
+                             {iotai[idd0], tp.vi[id0], iotai[idd1], tp.vi[id1], iotai[idd2], tp.vi[id2], iotai[idd3], tp.vi[id3]});
+                          // double element = ci.tt.eval({id0, id1, id2, id3});
+                          outfile << element << " ";
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+          outfile.close();
+        }
       }
       integral_sum_phi += integral_sum_n_left;
     }

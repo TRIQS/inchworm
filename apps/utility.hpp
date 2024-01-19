@@ -208,7 +208,7 @@ template <typename T> std::vector<T> get_elements(const std::vector<int> &indice
 //   std::vector<double> taus(nus.size());
 //   taus[nus.size() - 1] = tau_min + (tau_max - tau_min) * std::pow(nus[nus.size() - 1], (1.0 / nus.size()));
 //   for(int i = nus.size() - 2; i >= 0; --i) {
-//     taus[i] = tau_min + (taus[i+1]- tau_min) * std::pow(nus[i], (1.0 /(i + 1)));
+//     taus[i] = tau_min + (taus[i+1]- tau_min) * std::pow(nus[i], (1.0 /static_cast<double>(i + 1)));
 //   }
 //   return taus;
 // }
@@ -304,13 +304,14 @@ T_output do_TCI(std::function<T_output(std::vector<T_input>)> func, std::vector<
   double last_pivot_error{0};
   if (debug > 1) { std::cout << "iteration nEval LastSweepPivotError integral\n"; }
   if (tci_prrlu) {
-    auto ci = xfac::CTensorCI2<T_output, T_input>(func, input, {.bondDim= bond_dim, .reltol = 1e-18, .pivot1 = pivot1, .fullPiv = true});
+    auto ci = xfac::CTensorCI2<T_output, T_input>(func, input, {.bondDim = bond_dim, .reltol = 1e-18, .pivot1 = pivot1, .fullPiv = true});
     std::cout << "bond_dim: " << ci.param.bondDim << std::endl;
     for (int i = 1; i <= sweep_bound; i++) {
       ci.iterate();
       // ci.makeCanonical();
       current_integral = ci.tt.sum(weight);
       last_pivot_error = ci.pivotError[ci.pivotError.size() - 1];
+      // last_pivot_error = ci.trueError();
       if (debug > 1) { std::cout << i << " " << count << " " << last_pivot_error << " " << current_integral << std::endl; }
       //  if ( last_pivot_error < pivot_error_bound && i > 1) { break; }
       // if (std::abs(current_integral - previous_integral) < integral_error_bound || last_pivot_error < pivot_error_bound && i > 1) { break; }
@@ -329,18 +330,18 @@ T_output do_TCI(std::function<T_output(std::vector<T_input>)> func, std::vector<
     }
     if (debug > 1) { print_rank(ci.tt); }
   } else {
-    auto ci = xfac::CTensorCI<T_output, T_input>(func, input, {.reltol = 1e-18, .pivot1 = pivot1, .weight = weight});
-    for (int i = 1; i <= sweep_bound; i++) {
+    auto ci = xfac::CTensorCI<T_output, T_input>(func, input, {.reltol = 1e-18, .pivot1 = pivot1, .fullPiv = true, .weight = weight});
+    for (int i = 1; i <= sweep_bound+1; i++) {
       ci.iterate();
-      current_integral =  ci.get_TensorTrain().sum(weight);
+      current_integral = ci.get_TensorTrain().sum(weight);
       last_pivot_error = ci.pivotError[ci.pivotError.size() - 1];
-      if (debug > 1) { std::cout << i << " " << count << " " << last_pivot_error << " " << current_integral << std::endl; }
+      // last_pivot_error = ci.trueError();
+      if (debug > 1) { std::cout << i-1 << " " << count << " " << last_pivot_error << " " << current_integral << std::endl; }
       // if ( last_pivot_error < pivot_error_bound && i > 1) { break; }
       // if (std::abs(current_integral - previous_integral) < integral_error_bound || last_pivot_error < pivot_error_bound && i > 1) { break; }
       previous_integral = current_integral;
     }
     if (debug > 1) {
-      std::cout << "rank:" << std::endl;
       print_rank(ci.get_TensorTrain());
     }
   }
@@ -359,9 +360,11 @@ T_output do_TCI_add_pivots(std::function<T_output(std::vector<T_input>)> func, s
   if (debug > 1) { std::cout << "iteration nEval LastSweepPivotError integral\n"; }
   if (tci_prrlu) {
     std::cout << "test" << std::endl;
-    auto ci = xfac::CTensorCI2<T_output, T_input>(func, input, {.bondDim= bond_dim, .reltol = 1e-18, .pivot1 = pivot1, .fullPiv =false});
+    auto ci = xfac::CTensorCI2<T_output, T_input>(func, input, {.bondDim = bond_dim, .reltol = 1e-18, .pivot1 = pivot1, .fullPiv = false});
     std::cout << "bond_dim: " << ci.param.bondDim << std::endl;
     ci.myAddPivotsAllBonds(valid_pivots);
+    if (debug > 1) { print_rank(ci.tt); }
+    // ci.tt.compressCI(ci.param.reltol, ci.param.bondDim);
     ci.makeCanonical();
     if (debug > 1) { print_rank(ci.tt); }
     for (int i = 1; i <= sweep_bound; i++) {
@@ -369,7 +372,7 @@ T_output do_TCI_add_pivots(std::function<T_output(std::vector<T_input>)> func, s
       ci.makeCanonical();
       current_integral = ci.tt.sum(weight);
       last_pivot_error = ci.pivotError[ci.pivotError.size() - 1];
-      if (debug > 1) { std::cout << i << " " << count << " " << last_pivot_error << " " << current_integral << std::endl; }
+      if (debug > 1) { std::cout << i-1 << " " << count << " " << last_pivot_error << " " << current_integral << std::endl; }
       previous_integral = current_integral;
       if (debug > 1) { print_rank(ci.tt); }
     }
@@ -377,9 +380,9 @@ T_output do_TCI_add_pivots(std::function<T_output(std::vector<T_input>)> func, s
     auto ci = xfac::CTensorCI<T_output, T_input>(func, input, {.reltol = 1e-18, .pivot1 = pivot1, .weight = weight});
     for (int i = 1; i <= sweep_bound; i++) {
       ci.iterate();
-      current_integral =  ci.get_TensorTrain().sum(weight);
+      current_integral = ci.get_TensorTrain().sum(weight);
       last_pivot_error = ci.pivotError[ci.pivotError.size() - 1];
-      if (debug > 1) { std::cout << i << " " << count << " " << last_pivot_error << " " << current_integral << std::endl; }
+      if (debug > 1) { std::cout << i-1 << " " << count << " " << last_pivot_error << " " << current_integral << std::endl; }
       // if ( last_pivot_error < pivot_error_bound && i > 1) { break; }
       // if (std::abs(current_integral - previous_integral) < integral_error_bound || last_pivot_error < pivot_error_bound && i > 1) { break; }
       previous_integral = current_integral;
@@ -403,7 +406,7 @@ T_output do_TCI_reuse_pivots(std::function<T_output(std::vector<T_input>)> func,
   double last_pivot_error{0};
   if (debug > 1) { std::cout << "iteration nEval LastSweepPivotError integral\n"; }
   if (tci_prrlu) {
-    auto ci = xfac::CTensorCI2<T_output, T_input>(func, input, {.bondDim= bond_dim, .pivot1 = pivot1});
+    auto ci = xfac::CTensorCI2<T_output, T_input>(func, input, {.bondDim = bond_dim, .pivot1 = pivot1});
     //only supported in prrlu
     if (!previous_pivots.empty()) {
       if (debug > 1) { std::cout << "reuse pivots" << std::endl; }
@@ -491,7 +494,7 @@ inline std::tuple<std::vector<double>, std::vector<double>, std::vector<double>>
   return std::make_tuple(taus_left, taus_right, taus);
 }
 
-template <typename T1, typename T2> void sort_B_according_A(std::vector<T1> &A, std::vector<T2> &B, double reltol = 1e-10) {
+template <typename T1, typename T2> void sort_B_according_A(std::vector<T1> &A, std::vector<T2> &B, double reltol = 1e-20) {
   std::vector<size_t> indices(A.size());
   std::iota(indices.begin(), indices.end(), 0); // Fill with 0, 1, 2, ...
 
@@ -523,15 +526,34 @@ template <typename T1, typename T2> void sort_B_according_A(std::vector<T1> &A, 
   A = std::vector<T1>(sorted_A.begin(), sorted_A.begin() + truncation_index);
 }
 
-template <typename T>
-inline double sin_func(std::vector<T> const &x, int n_opt) {
+template <typename T> inline double sin_func(std::vector<T> const &x, int n_opt) {
   double x_val = 0;
   // std::cout << "n_opt: " << n_opt << std::endl;
   // std::cout << "x.size(): " << x.size() << std::endl;
   // compress x between 0 and  1
   double base = 1.0 / (n_opt);
   // std::cout << "base: " << base << std::endl;
-  for (int i = 0; i < x.size(); ++i) { x_val += x[i] * std::pow(base, i+1); }
+  for (int i = 0; i < x.size(); ++i) { x_val += x[i] * std::pow(base, i + 1); }
   // std::cout << "x_val: " << x_val << std::endl;
   return std::sin(x_val * M_PI);
+}
+
+template <typename T> inline double sin_func_pair(std::vector<T> const &x) {
+  double x_val = (x[0]+x[1]) / 2.0;
+  return std::sin(x_val * M_PI);
+}
+
+template <typename T> inline double sin_func_all(std::vector<T> const &vs, std::vector<T> const &iotas, int n_opts){
+  std::vector<T> iotas_normalized(iotas.size());
+  for (int i = 0; i < iotas.size(); ++i) { iotas_normalized[i] = iotas[i] / n_opts; }
+  std::vector<T> v_iota_s_normalized(vs.size()+iotas.size());
+  std::copy(vs.begin(), vs.end(), v_iota_s_normalized.begin());
+  std::copy(iotas_normalized.begin(), iotas_normalized.end(), v_iota_s_normalized.begin()+vs.size());
+  double res = 0.0;
+  for(int i = 0; i < v_iota_s_normalized.size()-1; ++i) {
+    std::vector<T> pair = {v_iota_s_normalized[i], v_iota_s_normalized[i+1]};
+    res += sin_func_pair(pair);
+  }
+  res /= (v_iota_s_normalized.size()-1);
+  return res;
 }

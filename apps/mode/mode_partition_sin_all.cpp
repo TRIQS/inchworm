@@ -7,7 +7,7 @@
 
 using namespace inchworm;
 
-void ModePartitionFactorization::run_single_element() {
+void ModePartitionSinAll::run_single_element() {
 
   std::vector<double> iotai(mp.n_phi);
   std::iota(iotai.begin(), iotai.end(), 0);
@@ -30,10 +30,11 @@ void ModePartitionFactorization::run_single_element() {
     for (auto [phi_d_list, phi_d_dag_list] : phi_pair_list) {
       double integral_sum_n_left = 0.0;
       for (int n_left = 1; n_left < n; n_left++) {
-        double integral_sum_iota   = 0.0;
-        long count                 = 0;
-        auto get_u_tau_max_element = [this, &count, &phi_d_list = phi_d_list, &phi_d_dag_list = phi_d_dag_list,
-                                      &n_left](const std::vector<double> &v_iota_s) {
+        double integral_sum_iota       = 0.0;
+        long count                     = 0;
+        double prefactor               = 1E-16;
+        auto get_u_tau_max_element_pre = [this, &count, &phi_d_list = phi_d_list, &phi_d_dag_list = phi_d_dag_list, &n_left,
+                                          &prefactor](const std::vector<double> &v_iota_s) {
           int mid = v_iota_s.size() / 2;
           std::vector<double> iotas(v_iota_s.begin(), v_iota_s.begin() + mid);
           std::vector<double> vs(v_iota_s.begin() + mid, v_iota_s.end());
@@ -49,7 +50,28 @@ void ModePartitionFactorization::run_single_element() {
                                                                   mp.gf_block_shape, cp, mp.Delta_tau, mp.ad_imp, sr.u_interpolator, get_elements(phi_d_list, taus),
                                                                   get_elements(phi_d_dag_list, taus), iota_d_list, iota_d_dag_list, sp.bl_index, sp.subspace_index);
           count++;
-          double j = jacobian(taus_left, sp.tau_split, 0.0) * jacobian(taus_right, sp.tau_max, sp.tau_split);
+          double j        = jacobian(taus_left, sp.tau_split, 0.0) * jacobian(taus_right, sp.tau_max, sp.tau_split);
+          double sin_term = sin_func_all(vs, iotas, mp.n_phi);
+          return integrand * j + prefactor * sin_term;
+        };
+
+        auto get_u_tau_max_element = [this, &count, &phi_d_list = phi_d_list, &phi_d_dag_list = phi_d_dag_list, &n_left](const std::vector<double> &v_iota_s) {
+          int mid = v_iota_s.size() / 2;
+          std::vector<double> iotas(v_iota_s.begin(), v_iota_s.begin() + mid);
+          std::vector<double> vs(v_iota_s.begin() + mid, v_iota_s.end());
+          std::vector<double> iota_d_list     = get_elements(phi_d_list, iotas);
+          std::vector<double> iota_d_dag_list = get_elements(phi_d_dag_list, iotas);
+          std::vector<int> iota_d_list_int(iota_d_list.begin(), iota_d_list.end());
+          std::vector<int> iota_d_dag_list_int(iota_d_dag_list.begin(), iota_d_dag_list.end());
+          std::vector<int> number_in_block_d     = generate_number_in_block(mp.gf_block_shape, iota_d_list_int);
+          std::vector<int> number_in_block_d_dag = generate_number_in_block(mp.gf_block_shape, iota_d_dag_list_int);
+          if (number_in_block_d != number_in_block_d_dag) { return 0.0; }
+          auto [taus_left, taus_right, taus] = obtain_taus(vs, n_left, sp.tau_split, sp.tau_max);
+          double integrand                   = evaluate_u_tau_max(sr.u_tau_max_zeroth_order, sp.tau_split, sp.tau_max, mp.all_d_ops, mp.all_d_dag_ops,
+                                                                  mp.gf_block_shape, cp, mp.Delta_tau, mp.ad_imp, sr.u_interpolator, get_elements(phi_d_list, taus),
+                                                                  get_elements(phi_d_dag_list, taus), iota_d_list, iota_d_dag_list, sp.bl_index, sp.subspace_index);
+          count++;
+          double j        = jacobian(taus_left, sp.tau_split, 0.0) * jacobian(taus_right, sp.tau_max, sp.tau_split);
           return integrand * j;
         };
 
@@ -97,45 +119,30 @@ void ModePartitionFactorization::run_single_element() {
         auto weight           = std::vector(n, wi_iota);
         weight.insert(weight.end(), weight_to_append.begin(), weight_to_append.end());
 
-        double integral_element = do_TCI<double, double>(get_u_tau_max_element, input, weight, pivot1, tp.sweep_bound, tp.bond_dim,
-                                                         tp.integral_error_bound, tp.pivot_error_bound, tp.tci_prrlu, sp.debug, count);
+        auto ci_pre = xfac::CTensorCI2<double, double>(get_u_tau_max_element_pre, input,
+                                                       {.bondDim = tp.bond_dim, .reltol = 1e-30, .pivot1 = pivot1, .fullPiv = true});
+
+        if (sp.debug > 1) { std::cout << "iteration nEval LastSweepPivotError integral\n"; }
+        std::cout << "bond_dim: " << ci_pre.param.bondDim << std::endl;
+        double last_pivot_error = 0.0;
+        double current_integral = 0.0;
+        for (int i = 1; i < tp.sweep_bound+1; i++) {
+          ci_pre.iterate();
+          current_integral = ci_pre.tt.sum(weight);
+          last_pivot_error = ci_pre.pivotError[ci_pre.pivotError.size() - 1];
+          if (sp.debug > 1) { std::cout << i << " " << count << " " << last_pivot_error << " " << current_integral << std::endl; }
+          print_rank(ci_pre.tt);
+        }
+        auto ci = xfac::CTensorCI2<double, double>(get_u_tau_max_element, input,
+                                                       {.bondDim = tp.bond_dim, .reltol = 1e-30, .pivot1 = pivot1, .fullPiv = true});
+        ci.addPivots(ci_pre);
+        // ci.makeCanonical();
+        double integral_element = ci.tt.sum(weight); 
+        std::cout << "integral_element = " << integral_element << "\n";
+        print_rank(ci.tt);
+
         integral_sum_iota += integral_element;
         integral_sum_n_left += integral_sum_iota;
-        if (n_left == 2 && phi_d_list[0] == 2&& phi_d_list[1] == 3 && phi_d_dag_list[0] == 0 && phi_d_dag_list[1] == 1) {
-          // auto ci = xfac::CTensorCI2<double, double>(get_u_tau_max_element, input,
-          //                                            {.bond_dim = tp.bond_dim, .reltol = 1e-18, .pivot1 = pivot1, .fullPiv = true});
-          // std::cout << "bond_dim: " << ci.param.bondDim << std::endl;
-          // double current_integral = 0;
-          // double last_pivot_error = 0;
-          // for (int i = 1; i <= tp.sweep_bound; i++) {
-          //   ci.iterate();
-          //   current_integral = ci.tt.sum(weight);
-          //   last_pivot_error = ci.pivotError[ci.pivotError.size() - 1];
-          //   std::cout << i << " " << count << " " << last_pivot_error << " " << current_integral << std::endl;
-          // }
-          std::ofstream outfile("./tt_partition_U8beta2_OO|XX.txt");
-          std::cout << "writing tci" << std::endl;
-          for (int idd0 = 0; idd0 < iotai.size(); idd0++) {
-            for (int idd1 = 0; idd1 < iotai.size(); idd1++) {
-              for (int idd2 = 0; idd2 < iotai.size(); idd2++) {
-                for (int idd3 = 0; idd3 < iotai.size(); idd3++) {
-                  for (int id0 = 0; id0 < tp.vi.size(); id0++) {
-                    for (int id1 = 0; id1 < tp.vi.size(); id1++) {
-                      for (int id2 = 0; id2 < tp.vi.size(); id2++) {
-                        for (int id3 = 0; id3 < tp.vi.size(); id3++) {
-                          double element = get_u_tau_max_element({iotai[idd0], iotai[idd1], iotai[idd2], iotai[idd3],tp.vi[id0], tp.vi[id1], tp.vi[id2], tp.vi[id3]});
-                          // double element = ci.tt.eval({id0, id1, id2, id3});
-                          outfile << element << " ";
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-          outfile.close();
-        }
       }
       integral_sum_phi += integral_sum_n_left;
     }
