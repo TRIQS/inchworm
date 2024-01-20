@@ -156,7 +156,7 @@ void ModePartitionSin::run_single_element() {
 
         std::cout << "iteration nEval LastSweepPivotError integral\n";
         auto ci = xfac::CTensorCI2<double, double>(get_u_tau_max_element, input,
-                                                   {.bondDim = tp.bond_dim, .reltol = 1e-30, .pivot1 = pivot1, .fullPiv = true});
+                                                   {.bondDim = tp.bond_dim, .reltol = 1e-18, .pivot1 = pivot1, .fullPiv = true});
         // for (auto b = 0u; b < ci.len() - 1; b++) { ci.myAddPivotsAt(ci_pre.getPivotsAt(b), b); }
         ci.addPivots(ci_pre);
         ci.makeCanonical();
