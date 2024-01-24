@@ -187,7 +187,7 @@ void ModePartitionSin::run_single_element() {
         std::cout << "pre_integral: " << pre_integral << std::endl;
         if (std::abs(pre_integral) < pre_integral_lower_bound) {
           std::cout << "pre_trained integral is too small, skip the integral" << std::endl;
-          // continue;
+          continue;
         }
 
         //training
