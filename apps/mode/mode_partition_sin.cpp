@@ -30,8 +30,8 @@ void ModePartitionSin::run_single_element() {
     for (auto [phi_d_list, phi_d_dag_list] : phi_pair_list) {
       double integral_sum_n_left = 0.0;
       for (int n_left = 1; n_left < n; n_left++) {
-        double integral_sum_iota       = 0.0;
-        long count                     = 0;
+        double integral_sum_iota = 0.0;
+        long count               = 0;
 
         auto get_u_tau_max_element = [this, &count, &phi_d_list = phi_d_list, &phi_d_dag_list = phi_d_dag_list,
                                       &n_left](const std::vector<double> &v_iota_s) {
@@ -90,13 +90,12 @@ void ModePartitionSin::run_single_element() {
                        u_tau_max_element_vs1);
         }
         if (u_tau_max_element_vs1 == 0) { continue; }
-        
-        
+
         double pre_factor = tp.auxi_height;
         double relto_test = tp.reltol;
 
-        auto get_u_tau_max_element_pre = [this, &count, &phi_d_list = phi_d_list, &phi_d_dag_list = phi_d_dag_list,
-                                          &n_left,&pre_factor](const std::vector<double> &v_iota_s) {
+        auto get_u_tau_max_element_pre = [this, &count, &phi_d_list = phi_d_list, &phi_d_dag_list = phi_d_dag_list, &n_left,
+                                          &pre_factor](const std::vector<double> &v_iota_s) {
           int mid = v_iota_s.size() / 2;
           std::vector<double> iotas(v_iota_s.begin(), v_iota_s.begin() + mid);
           std::vector<double> vs(v_iota_s.begin() + mid, v_iota_s.end());
@@ -113,16 +112,16 @@ void ModePartitionSin::run_single_element() {
                                                                   get_elements(phi_d_dag_list, taus), iota_d_list, iota_d_dag_list, sp.bl_index, sp.subspace_index);
           count++;
           double j        = jacobian(taus_left, sp.tau_split, 0.0) * jacobian(taus_right, sp.tau_max, sp.tau_split);
-          double sin_term = sin_func_all({},iotas, mp.n_phi);
-          return pre_factor*sin_term + integrand * j;
+          double sin_term = sin_func_all({}, iotas, mp.n_phi);
+          return pre_factor * sin_term + integrand * j;
         };
 
         //pretraining
         std::cout << "pretraining" << std::endl;
-        auto input_to_append_pre = std::vector(n, std::vector<double>{tp.vi[7]});
-        auto input_pre           = std::vector(n, iotai);
-        auto weight_artificial = std::vector<double>(tp.vi.size(),0.0);
-        weight_artificial[7] = 1.0;
+        auto input_to_append_pre  = std::vector(n, std::vector<double>{tp.vi[7]});
+        auto input_pre            = std::vector(n, iotai);
+        auto weight_artificial    = std::vector<double>(tp.vi.size(), 0.0);
+        weight_artificial[7]      = 1.0;
         auto weight_to_append_pre = std::vector(n, weight_artificial);
         auto weight_pre           = std::vector(n, wi_iota);
 
@@ -135,7 +134,7 @@ void ModePartitionSin::run_single_element() {
         int ci_count                = 0;
         double previous_pivot_error = -1E5;
         int previous_pivot_count    = 0;
-        bool skip_integral = false;
+        bool skip_integral          = false;
         while (true) {
           ci_pre.iterate();
           // ci_pre.makeCanonical();
@@ -143,23 +142,19 @@ void ModePartitionSin::run_single_element() {
           // auto last_pivot_error = ci_pre.trueError();
           std::cout << ci_count << " " << count << " " << last_pivot_error << " " << std::endl;
           print_rank(ci_pre.tt);
-          ci_count++;
-          if(ci_count ==0 && last_pivot_error < tp.auxi_height){
+          if (ci_count == 1 && last_pivot_error < tp.auxi_height) {
             std::cout << "probably too small, skip the integral" << std::endl;
             skip_integral = true;
             break;
           }
-          if(last_pivot_error==previous_pivot_error){
-            break;
-          }
-          if(ci_count == previous_pivot_count + 3){
-          previous_pivot_error = last_pivot_error;
-          previous_pivot_count = ci_count;          
+          ci_count++;
+          if (last_pivot_error == previous_pivot_error) { break; }
+          if (ci_count == previous_pivot_count + 3) {
+            previous_pivot_error = last_pivot_error;
+            previous_pivot_count = ci_count;
           }
         }
-        if(skip_integral){
-          continue;
-        }
+        if (skip_integral) { continue; }
 
         //training
         std::cout << "training" << std::endl;
