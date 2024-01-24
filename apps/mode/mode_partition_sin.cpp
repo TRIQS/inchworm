@@ -121,7 +121,13 @@ void ModePartitionSin::run_single_element() {
         std::cout << "pretraining" << std::endl;
         auto input_to_append_pre = std::vector(n, std::vector<double>{tp.vi[7]});
         auto input_pre           = std::vector(n, iotai);
+        auto weight_artificial = std::vector<double>(tp.vi.size(),0.0);
+        weight_artificial[7] = 1.0;
+        auto weight_to_append_pre = std::vector(n, weight_artificial);
+        auto weight_pre           = std::vector(n, wi_iota);
+
         input_pre.insert(input_pre.end(), input_to_append_pre.begin(), input_to_append_pre.end());
+        weight_pre.insert(weight_pre.end(), weight_to_append_pre.begin(), weight_to_append_pre.end());
         std::cout << "iteration nEval LastSweepPivotError\n";
         auto ci_pre = xfac::CTensorCI2<double, double>(get_u_tau_max_element_pre, input_pre,
                                                        {.bondDim = tp.bond_dim, .reltol = relto_test, .pivot1 = pivot1, .fullPiv = true});
@@ -129,6 +135,7 @@ void ModePartitionSin::run_single_element() {
         int ci_count                = 0;
         double previous_pivot_error = -1E5;
         int previous_pivot_count    = 0;
+        bool skip_integral = false;
         while (true) {
           ci_pre.iterate();
           // ci_pre.makeCanonical();
@@ -137,6 +144,11 @@ void ModePartitionSin::run_single_element() {
           std::cout << ci_count << " " << count << " " << last_pivot_error << " " << std::endl;
           print_rank(ci_pre.tt);
           ci_count++;
+          if(ci_count ==0 && last_pivot_error < tp.auxi_height){
+            std::cout << "probably too small, skip the integral" << std::endl;
+            skip_integral = true;
+            break;
+          }
           if(last_pivot_error==previous_pivot_error){
             break;
           }
@@ -144,6 +156,9 @@ void ModePartitionSin::run_single_element() {
           previous_pivot_error = last_pivot_error;
           previous_pivot_count = ci_count;          
           }
+        }
+        if(skip_integral){
+          continue;
         }
 
         //training
@@ -162,6 +177,12 @@ void ModePartitionSin::run_single_element() {
         ci.addPivots(ci_pre);
         ci.makeCanonical();
         print_rank(ci.tt);
+        double pre_integral = ci.tt.sum(weight_pre);
+        std::cout << "pre_integral: " << pre_integral << std::endl;
+        // if(std::abs(pre_integral)<1e-6){
+        //   continue;
+        //   std::cout << "pre_trained integral is too small, skip the integral" << std::endl;
+        // }
         std::cout << "bond_dim: " << ci.param.bondDim << std::endl;
         double current_integral = 0.0;
         for (int i = 1; i <= tp.sweep_bound; i++) {
