@@ -52,6 +52,7 @@ struct tci_params_t {
   std::vector<double> wi_v{};
   double auxi_height{};
   double reltol{};
+  double integral_lower_bound{};
 };
 
 struct simulation_params_t {

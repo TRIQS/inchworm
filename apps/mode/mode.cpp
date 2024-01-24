@@ -133,5 +133,6 @@ void base_mode::read_json_parameters(std::string json_file_path) {
   tp.pivot_error_bound    = root.get<double>("tp.pivot_error_bound");
   tp.auxi_height          = root.get<double>("tp.auxi_height");
   tp.reltol               = root.get<double>("tp.reltol");
+  tp.integral_lower_bound = root.get<double>("tp.integral_lower_bound");
   std::cout << "json parameter file read successfully" << std::endl;
 }
