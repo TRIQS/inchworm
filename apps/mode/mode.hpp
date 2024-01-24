@@ -50,6 +50,8 @@ struct tci_params_t {
   double pivot_error_bound{};
   std::vector<double> vi{};
   std::vector<double> wi_v{};
+  double auxi_height{};
+  double reltol{};
 };
 
 struct simulation_params_t {

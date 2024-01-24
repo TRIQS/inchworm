@@ -92,7 +92,8 @@ void ModePartitionSin::run_single_element() {
         if (u_tau_max_element_vs1 == 0) { continue; }
         
         
-        double pre_factor = 1E-16;
+        double pre_factor = tp.auxi_height;
+        double relto_test = tp.reltol;
 
         auto get_u_tau_max_element_pre = [this, &count, &phi_d_list = phi_d_list, &phi_d_dag_list = phi_d_dag_list,
                                           &n_left,&pre_factor](const std::vector<double> &v_iota_s) {
@@ -123,7 +124,7 @@ void ModePartitionSin::run_single_element() {
         input_pre.insert(input_pre.end(), input_to_append_pre.begin(), input_to_append_pre.end());
         std::cout << "iteration nEval LastSweepPivotError\n";
         auto ci_pre = xfac::CTensorCI2<double, double>(get_u_tau_max_element_pre, input_pre,
-                                                       {.bondDim = tp.bond_dim, .reltol = 1e-20, .pivot1 = pivot1, .fullPiv = true});
+                                                       {.bondDim = tp.bond_dim, .reltol = relto_test, .pivot1 = pivot1, .fullPiv = true});
         std::cout << "bond_dim: " << ci_pre.param.bondDim << std::endl;
         int ci_count                = 0;
         double previous_pivot_error = -1E5;
@@ -156,7 +157,7 @@ void ModePartitionSin::run_single_element() {
 
         std::cout << "iteration nEval LastSweepPivotError integral\n";
         auto ci = xfac::CTensorCI2<double, double>(get_u_tau_max_element, input,
-                                                   {.bondDim = tp.bond_dim, .reltol = 1e-20, .pivot1 = pivot1, .fullPiv = true});
+                                                   {.bondDim = tp.bond_dim, .reltol = relto_test, .pivot1 = pivot1, .fullPiv = true});
         // for (auto b = 0u; b < ci.len() - 1; b++) { ci.myAddPivotsAt(ci_pre.getPivotsAt(b), b); }
         ci.addPivots(ci_pre);
         ci.makeCanonical();
