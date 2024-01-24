@@ -172,7 +172,7 @@ void ModePartitionSin::run_single_element() {
           //   break;
           // }
           ci_count++;
-          if (std::abs(last_pivot_error - previous_pivot_error) < 1e-16) { break; }
+          if (std::abs(last_pivot_error - previous_pivot_error) < 1e-20) { break; }
           if (ci_count == previous_pivot_count + 3) {
             previous_pivot_error = last_pivot_error;
             previous_pivot_count = ci_count;
