@@ -120,12 +120,33 @@ void ModePartitionSin::run_single_element() {
           return pre_factor * sin_term + integrand * j;
         };
 
+        auto get_u_tau_max_element_pre_abs = [this, &count, &phi_d_list = phi_d_list, &phi_d_dag_list = phi_d_dag_list, &n_left,
+                                          &pre_factor](const std::vector<double> &v_iota_s) {
+          int mid = v_iota_s.size() / 2;
+          std::vector<double> iotas(v_iota_s.begin(), v_iota_s.begin() + mid);
+          std::vector<double> vs(v_iota_s.begin() + mid, v_iota_s.end());
+          std::vector<double> iota_d_list     = get_elements(phi_d_list, iotas);
+          std::vector<double> iota_d_dag_list = get_elements(phi_d_dag_list, iotas);
+          std::vector<int> iota_d_list_int(iota_d_list.begin(), iota_d_list.end());
+          std::vector<int> iota_d_dag_list_int(iota_d_dag_list.begin(), iota_d_dag_list.end());
+          std::vector<int> number_in_block_d     = generate_number_in_block(mp.gf_block_shape, iota_d_list_int);
+          std::vector<int> number_in_block_d_dag = generate_number_in_block(mp.gf_block_shape, iota_d_dag_list_int);
+          if (number_in_block_d != number_in_block_d_dag) { return 0.0; }
+          auto [taus_left, taus_right, taus] = obtain_taus(vs, n_left, sp.tau_split, sp.tau_max);
+          double integrand                   = evaluate_u_tau_max(sr.u_tau_max_zeroth_order, sp.tau_split, sp.tau_max, mp.all_d_ops, mp.all_d_dag_ops,
+                                                                  mp.gf_block_shape, cp, mp.Delta_tau, mp.ad_imp, sr.u_interpolator, get_elements(phi_d_list, taus),
+                                                                  get_elements(phi_d_dag_list, taus), iota_d_list, iota_d_dag_list, sp.bl_index, sp.subspace_index);
+          count++;
+          double j        = jacobian(taus_left, sp.tau_split, 0.0) * jacobian(taus_right, sp.tau_max, sp.tau_split);
+          double sin_term = sin_func_all({}, iotas, mp.n_phi);
+          return std::abs(integrand * j);
+        };
+
         //pretraining
         std::cout << "pretraining" << std::endl;
         auto input_to_append_pre  = std::vector(n, std::vector<double>{tp.vi[7]});
         auto input_pre            = std::vector(n, iotai);
-        auto weight_artificial    = std::vector<double>(tp.vi.size(), 0.0);
-        weight_artificial[7]      = 1.0;
+        auto weight_artificial    = std::vector<double> {1.0};
         auto weight_to_append_pre = std::vector(n, weight_artificial);
         auto weight_pre           = std::vector(n, wi_iota);
 
@@ -138,7 +159,6 @@ void ModePartitionSin::run_single_element() {
         int ci_count                = 0;
         double previous_pivot_error = -1E5;
         int previous_pivot_count    = 0;
-        bool skip_integral          = false;
         while (true) {
           ci_pre.iterate();
           // ci_pre.makeCanonical();
@@ -158,7 +178,17 @@ void ModePartitionSin::run_single_element() {
             previous_pivot_count = ci_count;
           }
         }
-        if (skip_integral) { continue; }
+
+        auto ci_pre_abs = xfac::CTensorCI2<double, double>(get_u_tau_max_element_pre_abs, input_pre,
+                                                       {.bondDim = tp.bond_dim, .reltol = relto_test, .pivot1 = pivot1, .fullPiv = true});
+        ci_pre_abs.addPivots(ci_pre);
+        ci_pre_abs.makeCanonical();
+        double pre_integral = ci_pre_abs.tt.sum(weight_pre);
+        std::cout << "pre_integral: " << pre_integral << std::endl;
+        if (std::abs(pre_integral) < pre_integral_lower_bound) {
+          std::cout << "pre_trained integral is too small, skip the integral" << std::endl;
+          // continue;
+        }
 
         //training
         std::cout << "training" << std::endl;
@@ -176,12 +206,6 @@ void ModePartitionSin::run_single_element() {
         ci.addPivots(ci_pre);
         ci.makeCanonical();
         print_rank(ci.tt);
-        double pre_integral = ci.tt.sum(weight_pre);
-        std::cout << "pre_integral: " << pre_integral << std::endl;
-        if (std::abs(pre_integral) < pre_integral_lower_bound) {
-          std::cout << "pre_trained integral is too small, skip the integral" << std::endl;
-          // continue;
-        }
         std::cout << "bond_dim: " << ci.param.bondDim << std::endl;
         double current_integral = 0.0;
         for (int i = 1; i <= tp.sweep_bound; i++) {
