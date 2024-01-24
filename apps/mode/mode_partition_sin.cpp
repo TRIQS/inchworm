@@ -13,8 +13,8 @@ void ModePartitionSin::run_single_element() {
   std::iota(iotai.begin(), iotai.end(), 0);
   auto wi_iota = std::vector(mp.n_phi, 1.0);
   for (int order : sp.order_list) {
-    auto max_weight = *std::max_element(tp.wi_v.begin(), tp.wi_v.end());
-    double pre_integral_lower_bound = tp.integral_lower_bound/(std::pow(max_weight,order*2)* std::pow(tp.wi_v.size(),order*2));
+    auto max_weight                 = *std::max_element(tp.wi_v.begin(), tp.wi_v.end());
+    double pre_integral_lower_bound = tp.integral_lower_bound / (std::pow(max_weight, order * 2) * std::pow(tp.wi_v.size(), order * 2));
     std::cout << "### order " << order << " ###" << std::endl;
     std::cout << "pre_integral_lower_bound: " << pre_integral_lower_bound << std::endl;
     auto start_time = std::chrono::high_resolution_clock::now();
@@ -152,7 +152,7 @@ void ModePartitionSin::run_single_element() {
           //   break;
           // }
           ci_count++;
-          if (std::abs(last_pivot_error - previous_pivot_error)<1e-12) { break; }
+          if (std::abs(last_pivot_error - previous_pivot_error) < 1e-12) { break; }
           if (ci_count == previous_pivot_count + 3) {
             previous_pivot_error = last_pivot_error;
             previous_pivot_count = ci_count;
@@ -178,9 +178,9 @@ void ModePartitionSin::run_single_element() {
         print_rank(ci.tt);
         double pre_integral = ci.tt.sum(weight_pre);
         std::cout << "pre_integral: " << pre_integral << std::endl;
-        if(std::abs(pre_integral)<pre_integral_lower_bound){
-          continue;
+        if (std::abs(pre_integral) < pre_integral_lower_bound) {
           std::cout << "pre_trained integral is too small, skip the integral" << std::endl;
+          continue;
         }
         std::cout << "bond_dim: " << ci.param.bondDim << std::endl;
         double current_integral = 0.0;
