@@ -161,6 +161,7 @@ void ModePartitionSin::run_single_element() {
         int previous_pivot_count    = 0;
         while (true) {
           ci_pre.iterate();
+          ci_pre.makeCanonical();
           // ci_pre.makeCanonical();
           auto last_pivot_error = ci_pre.pivotError[ci_pre.pivotError.size() - 1];
           // auto last_pivot_error = ci_pre.trueError();
@@ -178,6 +179,7 @@ void ModePartitionSin::run_single_element() {
             previous_pivot_count = ci_count;
           }
         }
+        std::cout << "pretraining finished" << std::endl;
 
         auto ci_pre_abs = xfac::CTensorCI2<double, double>(get_u_tau_max_element_pre_abs, input_pre,
                                                        {.bondDim = tp.bond_dim, .reltol = relto_test, .pivot1 = pivot1, .fullPiv = true});
