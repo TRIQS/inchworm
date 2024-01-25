@@ -239,7 +239,7 @@ void ModePartitionSin::run_single_element() {
         std::cout << "integral_abs: " << integral_abs << std::endl;
         if (std::abs(integral_abs) < pre_integral_lower_bound) {
           std::cout << "pre_trained integral is too small, skip the integral" << std::endl;
-          // continue;
+          continue;
         }
 
         auto ci_pre_val = xfac::CTensorCI2<double, double>(get_u_tau_max_element, input_pre,
