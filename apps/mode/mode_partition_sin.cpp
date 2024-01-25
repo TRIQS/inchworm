@@ -120,7 +120,7 @@ void ModePartitionSin::run_single_element() {
           return pre_factor * sin_term + integrand * j;
         };
 
-        auto get_u_tau_max_element_pre_abs = [this, &count, &phi_d_list = phi_d_list, &phi_d_dag_list = phi_d_dag_list, &n_left,
+        auto get_u_tau_max_element_abs = [this, &count, &phi_d_list = phi_d_list, &phi_d_dag_list = phi_d_dag_list, &n_left,
                                           &pre_factor](const std::vector<double> &v_iota_s) {
           int mid = v_iota_s.size() / 2;
           std::vector<double> iotas(v_iota_s.begin(), v_iota_s.begin() + mid);
@@ -140,6 +140,23 @@ void ModePartitionSin::run_single_element() {
           double j        = jacobian(taus_left, sp.tau_split, 0.0) * jacobian(taus_right, sp.tau_max, sp.tau_split);
           double sin_term = sin_func_all({}, iotas, mp.n_phi);
           return std::abs(integrand * j);
+        };
+
+         auto get_background = [this, &count, &phi_d_list = phi_d_list, &phi_d_dag_list = phi_d_dag_list, &n_left,
+                                          &pre_factor](const std::vector<double> &v_iota_s) {
+          int mid = v_iota_s.size() / 2;
+          std::vector<double> iotas(v_iota_s.begin(), v_iota_s.begin() + mid);
+          std::vector<double> vs(v_iota_s.begin() + mid, v_iota_s.end());
+          std::vector<double> iota_d_list     = get_elements(phi_d_list, iotas);
+          std::vector<double> iota_d_dag_list = get_elements(phi_d_dag_list, iotas);
+          std::vector<int> iota_d_list_int(iota_d_list.begin(), iota_d_list.end());
+          std::vector<int> iota_d_dag_list_int(iota_d_dag_list.begin(), iota_d_dag_list.end());
+          std::vector<int> number_in_block_d     = generate_number_in_block(mp.gf_block_shape, iota_d_list_int);
+          std::vector<int> number_in_block_d_dag = generate_number_in_block(mp.gf_block_shape, iota_d_dag_list_int);
+          if (number_in_block_d != number_in_block_d_dag) { return 0.0; }
+          auto [taus_left, taus_right, taus] = obtain_taus(vs, n_left, sp.tau_split, sp.tau_max);
+          double sin_term = sin_func_all({}, iotas, mp.n_phi);
+          return pre_factor * sin_term;
         };
 
         //pretraining
@@ -180,17 +197,58 @@ void ModePartitionSin::run_single_element() {
           }
         }
         std::cout << "pretraining finished" << std::endl;
-
-        auto ci_pre_abs = xfac::CTensorCI2<double, double>(get_u_tau_max_element_pre_abs, input_pre,
+        std::cout << "get background" << std::endl;
+        std::cout << "iteration nEval LastSweepPivotError\n";
+        auto pivot1_background = std::vector<int>(n, 1);
+        pivot1_background.insert(pivot1_background.end(), v_pivot1.begin(), v_pivot1.end());
+        auto ci_pre_background = xfac::CTensorCI2<double, double>(get_background, input_pre,
+                                                       {.bondDim = tp.bond_dim, .reltol = relto_test, .pivot1 = pivot1_background, .fullPiv = true});
+        int ci_count_background                = 0;
+        double previous_pivot_error_background = -1E5;
+        int previous_pivot_count_background    = 0;
+        while (true) {
+          ci_pre_background.iterate();
+          ci_pre_background.makeCanonical();
+          // ci_pre.makeCanonical();
+          auto last_pivot_error = ci_pre_background.pivotError[ci_pre_background.pivotError.size() - 1];
+          // auto last_pivot_error = ci_pre.trueError();
+          std::cout << ci_count_background << " " << count << " " << last_pivot_error << " " << std::endl;
+          print_rank(ci_pre_background.tt);
+          // if (ci_count == 1 && last_pivot_error < tp.auxi_height) {
+          //   std::cout << "probably too small, skip the integral" << std::endl;
+          //   skip_integral = true;
+          //   break;
+          // }
+          ci_count_background++;
+          if (std::abs(last_pivot_error - previous_pivot_error_background) < 1e-20) { break; }
+          if (ci_count_background == previous_pivot_count_background + 1) {
+            previous_pivot_error_background = last_pivot_error;
+            previous_pivot_count_background = ci_count_background;
+          }
+        }
+        
+        double integral_pre = ci_pre.tt.sum(weight_pre);
+        std::cout << "integral_pre: " << integral_pre << std::endl;
+        double integral_background = ci_pre_background.tt.sum(weight_pre);
+        std::cout << "integral_background: " << integral_background << std::endl;
+        auto ci_pre_abs = xfac::CTensorCI2<double, double>(get_u_tau_max_element_abs, input_pre,
                                                        {.bondDim = tp.bond_dim, .reltol = relto_test, .pivot1 = pivot1, .fullPiv = true});
         ci_pre_abs.addPivots(ci_pre);
-        ci_pre_abs.makeCanonical();
-        double pre_integral = ci_pre_abs.tt.sum(weight_pre);
-        std::cout << "pre_integral: " << pre_integral << std::endl;
-        if (std::abs(pre_integral) < pre_integral_lower_bound) {
+        // ci_pre_abs.makeCanonical();
+        double integral_abs = ci_pre_abs.tt.sum(weight_pre);
+        std::cout << "integral_abs: " << integral_abs << std::endl;
+        if (std::abs(integral_abs) < pre_integral_lower_bound) {
           std::cout << "pre_trained integral is too small, skip the integral" << std::endl;
-          continue;
+          // continue;
         }
+
+        auto ci_pre_val = xfac::CTensorCI2<double, double>(get_u_tau_max_element, input_pre,
+                                                       {.bondDim = tp.bond_dim, .reltol = relto_test, .pivot1 = pivot1, .fullPiv = true});
+        ci_pre_val.addPivots(ci_pre);
+        // ci_test.makeCanonical();
+        double integral = ci_pre_val.tt.sum(weight_pre);
+        std::cout << "integral: " << integral << std::endl;
+        std::cout << "integral+background: " << integral_background+integral << std::endl;
 
         //training
         std::cout << "training" << std::endl;
