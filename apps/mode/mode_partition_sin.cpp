@@ -11,18 +11,23 @@ void ModePartitionSin::run_single_element() {
 
   std::vector<double> iotai(mp.n_phi);
   std::iota(iotai.begin(), iotai.end(), 0);
-  auto wi_iota = std::vector(mp.n_phi, 1.0);
+  auto wi_iota                        = std::vector(mp.n_phi, 1.0);
+  auto max_weight_v                   = *std::max_element(tp.wi_v.begin(), tp.wi_v.end());
+  double auxi_height                  = tp.auxi_height; //height of the auxiliary function in the pre-training
+  double reltol_test                  = tp.reltol;
+  double tci_convergence_threshold    = 1E-20;
+  double pre_train_relative_threshold = 1E-20;
   for (int order : sp.order_list) {
-    auto max_weight                 = *std::max_element(tp.wi_v.begin(), tp.wi_v.end());
-    double pre_integral_lower_bound = tp.integral_lower_bound / (std::pow(max_weight, order * 2) * std::pow(tp.wi_v.size(), order * 2));
-    std::cout << "### order " << order << " ###" << std::endl;
-    std::cout << "pre_integral_lower_bound: " << pre_integral_lower_bound << std::endl;
     auto start_time = std::chrono::high_resolution_clock::now();
-    int n           = 2 * order;     // number of tau's
-    std::vector<int> v_pivot1(n, 0); // for tau only; pivots for iota are set later
+    int n           = 2 * order; // number of operators
+    std::cout << "### order " << order << " ###" << std::endl;
+    std::vector<int> v_pivot1(n, int(tp.vi.size() / 2)); // for tau only; pivots for iota are set later
+    std::vector<int> v_pivot1_pre(n, 0);
+
     std::vector<int> index_range(n);
     std::iota(index_range.begin(), index_range.end(), 0);
     auto phi_pair_list = get_all_phi(index_range); //gives all possible phi
+    int n_phi_pair     = phi_pair_list.size();
 
     std::vector<int> iota_pivots(n, 0);           // this is an intermediate variable for generating all possible iota
     std::vector<int> iota_pivots_range(mp.n_phi); // the int version of iotai
@@ -30,13 +35,56 @@ void ModePartitionSin::run_single_element() {
     std::vector<std::vector<int>> all_iota_pivots{};
     generate_combinations(iota_pivots_range, iota_pivots, 0, all_iota_pivots);
 
+    // calculate the lower bound of the pre-trained integral
+    // tp.integral_lower_bound is the bound for the integral contribution for a specific order, below which the integral can be skipped
+    double pre_integral_lower_bound = tp.integral_lower_bound / (std::pow(max_weight_v * tp.wi_v.size(), n) * n_phi_pair * (n - 1));
+    std::cout << "pre_integral_lower_bound: " << pre_integral_lower_bound << std::endl;
+
+    // calculate the integral for the auxiliary function for the pre-training
+    int count_auxiliary = 0;
+    auto get_auxiliary  = [this, &auxi_height, &count_auxiliary](const std::vector<double> &v_iota_s) {
+      int mid = v_iota_s.size() / 2;
+      std::vector<double> iotas(v_iota_s.begin(), v_iota_s.begin() + mid);
+      std::vector<double> vs(v_iota_s.begin() + mid, v_iota_s.end());
+      double sin_term = sin_func_all({}, iotas, mp.n_phi);
+      count_auxiliary++;
+      return auxi_height * sin_term;
+    };
+    auto pivot1_auxiliary = std::vector<int>(n, 1);
+    pivot1_auxiliary.insert(pivot1_auxiliary.end(), v_pivot1_pre.begin(), v_pivot1_pre.end());
+    auto input_to_append_pre  = std::vector(n, std::vector<double>{tp.vi[int(tp.vi.size() / 2)]}); // for the pre-training, the v variable is fixed
+    auto input_pre            = std::vector(n, iotai);
+    auto weight_artificial    = std::vector<double>{1.0};
+    auto weight_to_append_pre = std::vector(n, weight_artificial);
+    auto weight_pre           = std::vector(n, wi_iota);
+    input_pre.insert(input_pre.end(), input_to_append_pre.begin(), input_to_append_pre.end());
+    weight_pre.insert(weight_pre.end(), weight_to_append_pre.begin(), weight_to_append_pre.end());
+
+    auto ci_pre_auxiliary = xfac::CTensorCI2<double, double>(
+       get_auxiliary, input_pre, {.bondDim = tp.bond_dim, .reltol = reltol_test, .pivot1 = pivot1_auxiliary, .fullPiv = true});
+    std::cout << "integral for the auxiliary function" << std::endl;
+    std::cout << "iteration nEval LastSweepPivotError\n";
+    int ci_count_auxiliary                = 0;
+    double previous_pivot_error_auxiliary = -1E5;
+    while (true) {
+      ci_pre_auxiliary.iterate();
+      auto last_pivot_error = ci_pre_auxiliary.pivotError[ci_pre_auxiliary.pivotError.size() - 1];
+      std::cout << ci_count_auxiliary << " " << count_auxiliary << " " << last_pivot_error << " " << std::endl;
+      print_rank(ci_pre_auxiliary.tt);
+      ci_count_auxiliary++;
+      if (std::abs(last_pivot_error - previous_pivot_error_auxiliary) < tci_convergence_threshold) { break; }
+      previous_pivot_error_auxiliary = last_pivot_error;
+    }
+    double integral_auxiliary = ci_pre_auxiliary.tt.sum(weight_pre);
+    std::cout << "integral_auxiliary: " << integral_auxiliary << std::endl;
+
     double integral_sum_phi = 0.0;
     for (auto [phi_d_list, phi_d_dag_list] : phi_pair_list) {
       double integral_sum_n_left = 0.0;
       for (int n_left = 1; n_left < n; n_left++) {
-        double integral_sum_iota = 0.0;
-        long count               = 0;
-
+        std::cout << " ------- tci start ------- " << std::endl;
+        double integral_sum_iota   = 0.0;
+        long count                 = 0;
         auto get_u_tau_max_element = [this, &count, &phi_d_list = phi_d_list, &phi_d_dag_list = phi_d_dag_list,
                                       &n_left](const std::vector<double> &v_iota_s) {
           int mid = v_iota_s.size() / 2;
@@ -58,11 +106,12 @@ void ModePartitionSin::run_single_element() {
           return integrand * j;
         };
 
+        // find the pivot that gives a non-zero integrand
+        std::cout << "searching for a non-zero integrand" << std::endl;
+        auto start_time_searching = std::chrono::high_resolution_clock::now();
         std::vector<double> v_iota_s1{};
         double u_tau_max_element_vs1 = 0;
-
-        // set pivot for iota
-        int iota_pivot_index = 0;
+        int iota_pivot_index         = 0;
         for (auto iota_pivot1 : all_iota_pivots) {
           std::vector<double> v_iota_s1_temp{};
           for (int i = 0; i < iota_pivot1.size(); i++) { v_iota_s1_temp.push_back(iotai[iota_pivot1[i]]); }
@@ -74,14 +123,26 @@ void ModePartitionSin::run_single_element() {
           }
           iota_pivot_index++;
         }
-        if (iota_pivot_index == all_iota_pivots.size()) { continue; }
-
+        auto end_time_searching            = std::chrono::high_resolution_clock::now();
+        auto duration_searching            = std::chrono::duration_cast<std::chrono::microseconds>(end_time_searching - start_time_searching).count();
+        auto duration_in_seconds_searching = static_cast<double>(duration_searching) / 1e6;
+        std::cout << "duration_in_seconds_searching: " << duration_in_seconds_searching << " seconds" << std::endl;
+        std::cout << "finished searching for a non-zero integrand" << std::endl;
+        if (iota_pivot_index == all_iota_pivots.size()) {
+          std::cout << "no non-zero integrand found, skip the integral" << std::endl;
+          std::cout << " ------- tci finish ------- " << std::endl;
+          continue;
+        }
         auto pivot1           = all_iota_pivots[iota_pivot_index];
         auto pivot1_to_append = v_pivot1;
         pivot1.insert(pivot1.end(), pivot1_to_append.begin(), pivot1_to_append.end());
-
+        auto pivot1_pre           = all_iota_pivots[iota_pivot_index];
+        auto pivot1_to_append_pre = v_pivot1_pre;
+        pivot1_pre.insert(pivot1_pre.end(), pivot1_to_append_pre.begin(), pivot1_to_append_pre.end());
         u_tau_max_element_vs1 = get_u_tau_max_element(v_iota_s1);
         if (sp.debug > 1) {
+          std::cout << std::endl;
+          std::cout << "find a non-zero integrand" << std::endl;
           int mid1 = v_iota_s1.size() / 2;
           std::vector<double> iotas1(v_iota_s1.begin(), v_iota_s1.begin() + mid1);
           std::vector<double> vs1(v_iota_s1.begin() + mid1, v_iota_s1.end());
@@ -93,13 +154,9 @@ void ModePartitionSin::run_single_element() {
           print_pivot1(iota_d_list_int1, iota_d_dag_list_int1, get_elements(phi_d_list, taus1), get_elements(phi_d_dag_list, taus1),
                        u_tau_max_element_vs1);
         }
-        if (u_tau_max_element_vs1 == 0) { continue; }
-
-        double pre_factor = tp.auxi_height;
-        double relto_test = tp.reltol;
-
-        auto get_u_tau_max_element_pre = [this, &count, &phi_d_list = phi_d_list, &phi_d_dag_list = phi_d_dag_list, &n_left,
-                                          &pre_factor](const std::vector<double> &v_iota_s) {
+        long count_pre                 = 0;
+        auto get_u_tau_max_element_pre = [this, &count_pre, &phi_d_list = phi_d_list, &phi_d_dag_list = phi_d_dag_list, &n_left,
+                                          &auxi_height](const std::vector<double> &v_iota_s) {
           int mid = v_iota_s.size() / 2;
           std::vector<double> iotas(v_iota_s.begin(), v_iota_s.begin() + mid);
           std::vector<double> vs(v_iota_s.begin() + mid, v_iota_s.end());
@@ -114,14 +171,14 @@ void ModePartitionSin::run_single_element() {
           double integrand                   = evaluate_u_tau_max(sr.u_tau_max_zeroth_order, sp.tau_split, sp.tau_max, mp.all_d_ops, mp.all_d_dag_ops,
                                                                   mp.gf_block_shape, cp, mp.Delta_tau, mp.ad_imp, sr.u_interpolator, get_elements(phi_d_list, taus),
                                                                   get_elements(phi_d_dag_list, taus), iota_d_list, iota_d_dag_list, sp.bl_index, sp.subspace_index);
-          count++;
+          count_pre++;
           double j        = jacobian(taus_left, sp.tau_split, 0.0) * jacobian(taus_right, sp.tau_max, sp.tau_split);
           double sin_term = sin_func_all({}, iotas, mp.n_phi);
-          return pre_factor * sin_term + integrand * j;
+          return auxi_height * sin_term + integrand * j;
         };
 
-        auto get_u_tau_max_element_abs = [this, &count, &phi_d_list = phi_d_list, &phi_d_dag_list = phi_d_dag_list, &n_left,
-                                          &pre_factor](const std::vector<double> &v_iota_s) {
+        auto get_u_tau_max_element_abs = [this, &phi_d_list = phi_d_list, &phi_d_dag_list = phi_d_dag_list, &n_left,
+                                          &auxi_height](const std::vector<double> &v_iota_s) {
           int mid = v_iota_s.size() / 2;
           std::vector<double> iotas(v_iota_s.begin(), v_iota_s.begin() + mid);
           std::vector<double> vs(v_iota_s.begin() + mid, v_iota_s.end());
@@ -136,119 +193,69 @@ void ModePartitionSin::run_single_element() {
           double integrand                   = evaluate_u_tau_max(sr.u_tau_max_zeroth_order, sp.tau_split, sp.tau_max, mp.all_d_ops, mp.all_d_dag_ops,
                                                                   mp.gf_block_shape, cp, mp.Delta_tau, mp.ad_imp, sr.u_interpolator, get_elements(phi_d_list, taus),
                                                                   get_elements(phi_d_dag_list, taus), iota_d_list, iota_d_dag_list, sp.bl_index, sp.subspace_index);
-          count++;
-          double j        = jacobian(taus_left, sp.tau_split, 0.0) * jacobian(taus_right, sp.tau_max, sp.tau_split);
-          double sin_term = sin_func_all({}, iotas, mp.n_phi);
+          double j                           = jacobian(taus_left, sp.tau_split, 0.0) * jacobian(taus_right, sp.tau_max, sp.tau_split);
+          double sin_term                    = sin_func_all({}, iotas, mp.n_phi);
           return std::abs(integrand * j);
         };
 
-         auto get_background = [this, &count, &phi_d_list = phi_d_list, &phi_d_dag_list = phi_d_dag_list, &n_left,
-                                          &pre_factor](const std::vector<double> &v_iota_s) {
-          int mid = v_iota_s.size() / 2;
-          std::vector<double> iotas(v_iota_s.begin(), v_iota_s.begin() + mid);
-          std::vector<double> vs(v_iota_s.begin() + mid, v_iota_s.end());
-          std::vector<double> iota_d_list     = get_elements(phi_d_list, iotas);
-          std::vector<double> iota_d_dag_list = get_elements(phi_d_dag_list, iotas);
-          std::vector<int> iota_d_list_int(iota_d_list.begin(), iota_d_list.end());
-          std::vector<int> iota_d_dag_list_int(iota_d_dag_list.begin(), iota_d_dag_list.end());
-          std::vector<int> number_in_block_d     = generate_number_in_block(mp.gf_block_shape, iota_d_list_int);
-          std::vector<int> number_in_block_d_dag = generate_number_in_block(mp.gf_block_shape, iota_d_dag_list_int);
-          if (number_in_block_d != number_in_block_d_dag) { return 0.0; }
-          auto [taus_left, taus_right, taus] = obtain_taus(vs, n_left, sp.tau_split, sp.tau_max);
-          double sin_term = sin_func_all({}, iotas, mp.n_phi);
-          return pre_factor * sin_term;
-        };
-
         //pretraining
+        auto start_time_pre_training = std::chrono::high_resolution_clock::now();
         std::cout << "pretraining" << std::endl;
-        auto input_to_append_pre  = std::vector(n, std::vector<double>{tp.vi[7]});
-        auto input_pre            = std::vector(n, iotai);
-        auto weight_artificial    = std::vector<double> {1.0};
-        auto weight_to_append_pre = std::vector(n, weight_artificial);
-        auto weight_pre           = std::vector(n, wi_iota);
-
-        input_pre.insert(input_pre.end(), input_to_append_pre.begin(), input_to_append_pre.end());
-        weight_pre.insert(weight_pre.end(), weight_to_append_pre.begin(), weight_to_append_pre.end());
         std::cout << "iteration nEval LastSweepPivotError\n";
         auto ci_pre = xfac::CTensorCI2<double, double>(get_u_tau_max_element_pre, input_pre,
-                                                       {.bondDim = tp.bond_dim, .reltol = relto_test, .pivot1 = pivot1, .fullPiv = true});
+                                                       {.bondDim = tp.bond_dim, .reltol = reltol_test, .pivot1 = pivot1_pre, .fullPiv = true});
         std::cout << "bond_dim: " << ci_pre.param.bondDim << std::endl;
         int ci_count                = 0;
         double previous_pivot_error = -1E5;
-        int previous_pivot_count    = 0;
         while (true) {
           ci_pre.iterate();
           ci_pre.makeCanonical();
-          // ci_pre.makeCanonical();
           auto last_pivot_error = ci_pre.pivotError[ci_pre.pivotError.size() - 1];
-          // auto last_pivot_error = ci_pre.trueError();
-          std::cout << ci_count << " " << count << " " << last_pivot_error << " " << std::endl;
+          std::cout << ci_count << " " << count_pre << " " << last_pivot_error << " " << std::endl;
           print_rank(ci_pre.tt);
-          // if (ci_count == 1 && last_pivot_error < tp.auxi_height) {
-          //   std::cout << "probably too small, skip the integral" << std::endl;
-          //   skip_integral = true;
-          //   break;
-          // }
           ci_count++;
-          if (std::abs(last_pivot_error - previous_pivot_error) < 1e-20) { break; }
-          if (ci_count == previous_pivot_count + 1) {
-            previous_pivot_error = last_pivot_error;
-            previous_pivot_count = ci_count;
-          }
+          if (std::abs(last_pivot_error - previous_pivot_error) < tci_convergence_threshold) { break; }
+          previous_pivot_error = last_pivot_error;
         }
+        auto end_time_pre_training = std::chrono::high_resolution_clock::now();
+        auto duration_pre_training = std::chrono::duration_cast<std::chrono::microseconds>(end_time_pre_training - start_time_pre_training).count();
+        auto duration_in_seconds_pre_training = static_cast<double>(duration_pre_training) / 1e6;
+        std::cout << "duration_in_seconds_pre_training: " << duration_in_seconds_pre_training << " seconds" << std::endl;
         std::cout << "pretraining finished" << std::endl;
-        std::cout << "get background" << std::endl;
-        std::cout << "iteration nEval LastSweepPivotError\n";
-        auto pivot1_background = std::vector<int>(n, 1);
-        pivot1_background.insert(pivot1_background.end(), v_pivot1.begin(), v_pivot1.end());
-        auto ci_pre_background = xfac::CTensorCI2<double, double>(get_background, input_pre,
-                                                       {.bondDim = tp.bond_dim, .reltol = relto_test, .pivot1 = pivot1_background, .fullPiv = true});
-        int ci_count_background                = 0;
-        double previous_pivot_error_background = -1E5;
-        int previous_pivot_count_background    = 0;
-        while (true) {
-          ci_pre_background.iterate();
-          ci_pre_background.makeCanonical();
-          // ci_pre.makeCanonical();
-          auto last_pivot_error = ci_pre_background.pivotError[ci_pre_background.pivotError.size() - 1];
-          // auto last_pivot_error = ci_pre.trueError();
-          std::cout << ci_count_background << " " << count << " " << last_pivot_error << " " << std::endl;
-          print_rank(ci_pre_background.tt);
-          // if (ci_count == 1 && last_pivot_error < tp.auxi_height) {
-          //   std::cout << "probably too small, skip the integral" << std::endl;
-          //   skip_integral = true;
-          //   break;
-          // }
-          ci_count_background++;
-          if (std::abs(last_pivot_error - previous_pivot_error_background) < 1e-20) { break; }
-          if (ci_count_background == previous_pivot_count_background + 1) {
-            previous_pivot_error_background = last_pivot_error;
-            previous_pivot_count_background = ci_count_background;
-          }
-        }
-        
+
         double integral_pre = ci_pre.tt.sum(weight_pre);
         std::cout << "integral_pre: " << integral_pre << std::endl;
-        double integral_background = ci_pre_background.tt.sum(weight_pre);
-        std::cout << "integral_background: " << integral_background << std::endl;
+        double integral_diff = integral_pre - integral_auxiliary;
+        std::cout << "integral_pre-integral_auxiliary: " << integral_diff << std::endl;
+        if (std::abs(integral_diff) < pre_train_relative_threshold) {
+          std::cout << "pre_trained integral is too small, skip the integral" << std::endl;
+          std::cout << "integral_diff: " << integral_diff << std::endl;
+          std::cout << " ------- tci finish------- " << std::endl;
+          continue;
+        }
+
         auto ci_pre_abs = xfac::CTensorCI2<double, double>(get_u_tau_max_element_abs, input_pre,
-                                                       {.bondDim = tp.bond_dim, .reltol = relto_test, .pivot1 = pivot1, .fullPiv = true});
+                                                           {.bondDim = tp.bond_dim, .reltol = reltol_test, .pivot1 = pivot1_pre, .fullPiv = true});
         ci_pre_abs.addPivots(ci_pre);
-        // ci_pre_abs.makeCanonical();
+        ci_pre_abs.makeCanonical();
         double integral_abs = ci_pre_abs.tt.sum(weight_pre);
         std::cout << "integral_abs: " << integral_abs << std::endl;
         if (std::abs(integral_abs) < pre_integral_lower_bound) {
           std::cout << "pre_trained integral is too small, skip the integral" << std::endl;
+          std::cout << " ------- tci finish ------- " << std::endl;
           continue;
         }
 
+        // a consistency check
         auto ci_pre_val = xfac::CTensorCI2<double, double>(get_u_tau_max_element, input_pre,
-                                                       {.bondDim = tp.bond_dim, .reltol = relto_test, .pivot1 = pivot1, .fullPiv = true});
+                                                           {.bondDim = tp.bond_dim, .reltol = reltol_test, .pivot1 = pivot1_pre, .fullPiv = true});
         ci_pre_val.addPivots(ci_pre);
-        // ci_test.makeCanonical();
+        ci_pre_val.makeCanonical();
         double integral = ci_pre_val.tt.sum(weight_pre);
+        std::cout << "consistency check" << std::endl;
         std::cout << "integral: " << integral << std::endl;
-        std::cout << "integral+background: " << integral_background+integral << std::endl;
+        std::cout << "integral+auxiliary: " << integral_auxiliary + integral << std::endl;
+        std::cout << "integral_pre: " << integral_pre << std::endl;
 
         //training
         std::cout << "training" << std::endl;
@@ -258,11 +265,9 @@ void ModePartitionSin::run_single_element() {
         auto weight_to_append = std::vector(n, tp.wi_v);
         auto weight           = std::vector(n, wi_iota);
         weight.insert(weight.end(), weight_to_append.begin(), weight_to_append.end());
-
         std::cout << "iteration nEval LastSweepPivotError integral\n";
         auto ci = xfac::CTensorCI2<double, double>(get_u_tau_max_element, input,
-                                                   {.bondDim = tp.bond_dim, .reltol = relto_test, .pivot1 = pivot1, .fullPiv = true});
-        // for (auto b = 0u; b < ci.len() - 1; b++) { ci.myAddPivotsAt(ci_pre.getPivotsAt(b), b); }
+                                                   {.bondDim = tp.bond_dim, .reltol = reltol_test, .pivot1 = pivot1, .fullPiv = true});
         ci.addPivots(ci_pre);
         ci.makeCanonical();
         print_rank(ci.tt);
@@ -277,6 +282,7 @@ void ModePartitionSin::run_single_element() {
           print_rank(ci.tt);
         }
         auto integral_element = current_integral;
+        std::cout << " ------- tci finish ------- " << std::endl;
 
         integral_sum_iota += integral_element;
         integral_sum_n_left += integral_sum_iota;
@@ -289,4 +295,6 @@ void ModePartitionSin::run_single_element() {
     sr.calculation_time_list.push_back(duration_in_seconds);
     sr.integral_order_list.push_back(integral_sum_phi);
   }
+  std::cout << "all orders finished" << std::endl;
+  std::cout << std::endl;
 }

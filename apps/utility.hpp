@@ -24,7 +24,6 @@ template <typename T> inline void print_rank(xfac::TensorTrain<T> tt) {
   for (auto i = 0u; i < len - 1; i++) rs[i] = tt.M[i].n_slices;
   std::cout << "rank: ";
   print_vector(rs);
-  std::cout << std::endl;
 }
 
 template <typename T> void print_block_shape(block_gf<imtime, T> const &x_tau) {
