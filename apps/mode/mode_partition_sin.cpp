@@ -17,6 +17,7 @@ void ModePartitionSin::run_single_element() {
   double reltol_test                  = tp.reltol;
   double tci_convergence_threshold    = 1E-20;
   double pre_train_relative_threshold = 1E-20;
+  double time_for_find_pivot          = 0.0;
   for (int order : sp.order_list) {
     auto start_time = std::chrono::high_resolution_clock::now();
     int n           = 2 * order; // number of operators
@@ -127,6 +128,7 @@ void ModePartitionSin::run_single_element() {
         auto duration_searching            = std::chrono::duration_cast<std::chrono::microseconds>(end_time_searching - start_time_searching).count();
         auto duration_in_seconds_searching = static_cast<double>(duration_searching) / 1e6;
         std::cout << "duration_in_seconds_searching: " << duration_in_seconds_searching << " seconds" << std::endl;
+        time_for_find_pivot += duration_in_seconds_searching;
         std::cout << "finished searching for a non-zero integrand" << std::endl;
         if (iota_pivot_index == all_iota_pivots.size()) {
           std::cout << "no non-zero integrand found, skip the integral" << std::endl;
@@ -296,5 +298,6 @@ void ModePartitionSin::run_single_element() {
     sr.integral_order_list.push_back(integral_sum_phi);
   }
   std::cout << "all orders finished" << std::endl;
+  std::cout << "time_for_find_pivot: " << time_for_find_pivot << " seconds" << std::endl;
   std::cout << std::endl;
 }
