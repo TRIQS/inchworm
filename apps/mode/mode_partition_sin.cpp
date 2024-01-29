@@ -224,6 +224,7 @@ void ModePartitionSin::run_single_element() {
           if (std::abs(last_pivot_error - previous_pivot_error) < tci_convergence_threshold) { break; }
           previous_pivot_error = last_pivot_error;
         }
+        ci_pre.makeCanonical();
         auto end_time_pre_training = std::chrono::high_resolution_clock::now();
         auto duration_pre_training = std::chrono::duration_cast<std::chrono::microseconds>(end_time_pre_training - start_time_pre_training).count();
         auto duration_in_seconds_pre_training = static_cast<double>(duration_pre_training) / 1e6;
