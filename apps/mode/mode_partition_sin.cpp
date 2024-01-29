@@ -39,6 +39,8 @@ void ModePartitionSin::run_single_element() {
     // calculate the lower bound of the pre-trained integral
     // tp.integral_lower_bound is the bound for the integral contribution for a specific order, below which the integral can be skipped
     double pre_integral_lower_bound = tp.integral_lower_bound / (std::pow(max_weight_v * tp.wi_v.size(), n) * n_phi_pair * (n - 1));
+    // this bound is underestimated, ajust for now
+    pre_integral_lower_bound = pre_integral_lower_bound * 10;
     std::cout << "pre_integral_lower_bound: " << pre_integral_lower_bound << std::endl;
 
     // calculate the integral for the auxiliary function for the pre-training
@@ -108,11 +110,13 @@ void ModePartitionSin::run_single_element() {
         };
 
         // find the pivot that gives a non-zero integrand
+        // this calculation can be performed only once and cached for all inchworm steps
         std::cout << "searching for a non-zero integrand" << std::endl;
         auto start_time_searching = std::chrono::high_resolution_clock::now();
         std::vector<double> v_iota_s1{};
         double u_tau_max_element_vs1 = 0;
         int iota_pivot_index         = 0;
+        // parallelization is possible here
         for (auto iota_pivot1 : all_iota_pivots) {
           std::vector<double> v_iota_s1_temp{};
           for (int i = 0; i < iota_pivot1.size(); i++) { v_iota_s1_temp.push_back(iotai[iota_pivot1[i]]); }
@@ -169,6 +173,7 @@ void ModePartitionSin::run_single_element() {
           std::vector<int> number_in_block_d     = generate_number_in_block(mp.gf_block_shape, iota_d_list_int);
           std::vector<int> number_in_block_d_dag = generate_number_in_block(mp.gf_block_shape, iota_d_dag_list_int);
           if (number_in_block_d != number_in_block_d_dag) { return 0.0; }
+          //Note: if local Hamiltonian commute with density operators, further simplication could be applied: the operator of the same type can not be next to each other on the time axis
           auto [taus_left, taus_right, taus] = obtain_taus(vs, n_left, sp.tau_split, sp.tau_max);
           double integrand                   = evaluate_u_tau_max(sr.u_tau_max_zeroth_order, sp.tau_split, sp.tau_max, mp.all_d_ops, mp.all_d_dag_ops,
                                                                   mp.gf_block_shape, cp, mp.Delta_tau, mp.ad_imp, sr.u_interpolator, get_elements(phi_d_list, taus),
