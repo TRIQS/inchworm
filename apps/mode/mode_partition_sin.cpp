@@ -15,7 +15,7 @@ void ModePartitionSin::run_single_element() {
   auto max_weight_v                   = *std::max_element(tp.wi_v.begin(), tp.wi_v.end());
   double auxi_height                  = tp.auxi_height; //height of the auxiliary function in the pre-training
   double reltol_test                  = tp.reltol;
-  double tci_convergence_threshold    = 1E-20;
+  double tci_convergence_threshold    = 1E-30;
   double pre_train_relative_threshold = 1E-20;
   double time_for_find_pivot          = 0.0;
   for (int order : sp.order_list) {
