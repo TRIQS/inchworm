@@ -195,11 +195,15 @@ void ModePartitionSinHalf::run_single_element() {
         std::cout << "iteration nEval LastSweepPivotError\n";
         auto ci_pre = xfac::CTensorCI2<double, double>(get_u_tau_max_element_pre, input_pre,
                                                        {.bondDim = tp.bond_dim, .reltol = reltol_test, .pivot1 = pivot1_auxiliary, .fullPiv = true});
-        ci_pre.addPivots(ci_pre_auxiliary);
+        // ci_pre.addPivots(ci_pre_auxiliary);
+        for (auto b = 0u; b < ci_pre.len() - 1; b++) {
+          auto pivots = ci_pre_auxiliary.getPivotsAt(b);
+          ci_pre.myAddPivotsAt(pivots, b);
+        }
         double integral_pre = ci_pre.tt.sum(weight_pre);
         std::cout << "integral_pre (start): " << integral_pre << std::endl;
         std::cout << "integral_auxiliary: " << integral_auxiliary << std::endl;
-        if (std::abs(integral_auxiliary - integral_pre) == 0) {
+        if (std::abs(integral_auxiliary - integral_pre) < pre_integral_lower_bound) {
           std::cout << "pre_trained integral is too small, skip the integral" << std::endl;
           std::cout << "integral_auxiliary-integral_pre: " << integral_auxiliary - integral_pre << std::endl;
           std::cout << " ------- tci finish------- " << std::endl;
@@ -234,7 +238,7 @@ void ModePartitionSinHalf::run_single_element() {
         std::cout << "integral_auxiliary: " << integral_auxiliary << std::endl;
         double integral_diff = integral_pre - integral_auxiliary;
         std::cout << "integral_pre-integral_auxiliary: " << integral_diff << std::endl;
-        if (integral_diff == 0) {
+        if (std::abs(integral_diff) < pre_integral_lower_bound) {
           std::cout << "pre_trained integral is too small, skip the integral" << std::endl;
           std::cout << "strange!!" << std::endl;
           std::cout << "integral_diff: " << integral_diff << std::endl;
@@ -284,7 +288,6 @@ void ModePartitionSinHalf::run_single_element() {
         // ci.addPivots(ci_pre);
         for (auto b = 0u; b < ci.len() - 1; b++) {
           auto pivots = ci_pre.getPivotsAt(b);
-          // auto first_half_pivots = std::vector(pivots.begin(), pivots.begin() + pivots.size() / 2);
           ci.myAddPivotsAt(pivots, b);
         }
         print_rank(ci.tt);
@@ -296,7 +299,7 @@ void ModePartitionSinHalf::run_single_element() {
           ci.iterate();
           current_integral      = ci.tt.sum(weight);
           auto last_pivot_error = ci.pivotError[ci.pivotError.size() - 1];
-          std::cout << i << " " << count_pre << " " << last_pivot_error << " " << current_integral << std::endl;
+          std::cout << i << " " << count << " " << last_pivot_error << " " << current_integral << std::endl;
           print_rank(ci.tt);
         }
         ci.makeCanonical();
