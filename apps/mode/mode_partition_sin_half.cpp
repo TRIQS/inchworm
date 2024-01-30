@@ -141,11 +141,11 @@ void ModePartitionSinHalf::run_single_element() {
         //   std::cout << " ------- tci finish ------- " << std::endl;
         //   continue;
         // }
-        int iota_pivot_index = 1;
-        auto pivot1           = all_iota_pivots[iota_pivot_index];
-        auto pivot1_to_append = v_pivot1;
-        pivot1.insert(pivot1.end(), pivot1_to_append.begin(), pivot1_to_append.end());
-        auto pivot1_pre           = all_iota_pivots[iota_pivot_index];
+        // int iota_pivot_index = 1;
+        // auto pivot1           = all_iota_pivots[iota_pivot_index];
+        // auto pivot1_to_append = v_pivot1;
+        // pivot1.insert(pivot1.end(), pivot1_to_append.begin(), pivot1_to_append.end());
+        auto pivot1_pre           = std::vector<int>(n, 1);
         auto pivot1_to_append_pre = v_pivot1_pre;
         pivot1_pre.insert(pivot1_pre.end(), pivot1_to_append_pre.begin(), pivot1_to_append_pre.end());
         // u_tau_max_element_vs1 = get_u_tau_max_element(v_iota_s1);
@@ -237,7 +237,7 @@ void ModePartitionSinHalf::run_single_element() {
         weight.insert(weight.end(), weight_to_append.begin(), weight_to_append.end());
         std::cout << "iteration nEval LastSweepPivotError integral\n";
         auto ci = xfac::CTensorCI2<double, double>(get_u_tau_max_element_pre, input,
-                                                   {.bondDim = tp.bond_dim, .reltol = reltol_test, .pivot1 = pivot1, .fullPiv = true});
+                                                   {.bondDim = tp.bond_dim, .reltol = reltol_test, .pivot1 = pivot1_pre, .fullPiv = true});
         ci.addPivots(ci_pre);
         ci.makeCanonical();
         print_rank(ci.tt);
