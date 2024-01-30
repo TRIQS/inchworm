@@ -261,7 +261,7 @@ void ModePartitionSinHalf::run_single_element() {
             // print_vector(p);
             // print_vector(v_iota_s);
             auto val = get_u_tau_max_element(v_iota_s);
-            if ( val != 0) {
+            if (val != 0) {
               find_pivot1  = true;
               pivot1_train = p;
               std::cout << "found pivot1 with value: " << val << std::endl;
@@ -294,12 +294,13 @@ void ModePartitionSinHalf::run_single_element() {
         double current_integral = 0.0;
         for (int i = 1; i <= tp.sweep_bound; i++) {
           ci.iterate();
-          // ci.makeCanonical();
           current_integral      = ci.tt.sum(weight);
           auto last_pivot_error = ci.pivotError[ci.pivotError.size() - 1];
           std::cout << i << " " << count_pre << " " << last_pivot_error << " " << current_integral << std::endl;
           print_rank(ci.tt);
         }
+        ci.makeCanonical();
+        current_integral      = ci.tt.sum(weight);
         auto integral_element = current_integral;
         std::cout << " ------- tci finish ------- " << std::endl;
 
