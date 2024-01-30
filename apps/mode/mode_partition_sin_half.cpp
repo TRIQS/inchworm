@@ -77,7 +77,7 @@ void ModePartitionSinHalf::run_single_element() {
       std::cout << ci_count_auxiliary << " " << count_auxiliary << " " << last_pivot_error << " " << std::endl;
       print_rank(ci_pre_auxiliary.tt);
       ci_count_auxiliary++;
-      if (std::abs(last_pivot_error - previous_pivot_error_auxiliary ) < tci_convergence_threshold && ci_count_auxiliary>3) { break; }
+      if (std::abs(last_pivot_error - previous_pivot_error_auxiliary) < tci_convergence_threshold && ci_count_auxiliary > 3) { break; }
       previous_pivot_error_auxiliary = last_pivot_error;
     }
     double integral_auxiliary = ci_pre_auxiliary.tt.sum(weight_pre);
@@ -199,15 +199,15 @@ void ModePartitionSinHalf::run_single_element() {
         double previous_pivot_error = -1E5;
         while (true) {
           ci_pre.iterate();
-          ci_pre.makeCanonical();
+          // ci_pre.makeCanonical();
           auto last_pivot_error = ci_pre.pivotError[ci_pre.pivotError.size() - 1];
           std::cout << ci_count << " " << count_pre << " " << last_pivot_error << " " << std::endl;
           print_rank(ci_pre.tt);
           ci_count++;
-          if (std::abs(last_pivot_error - previous_pivot_error) < tci_convergence_threshold && ci_count >3) { break; }
+          if (std::abs(last_pivot_error - previous_pivot_error) < tci_convergence_threshold && ci_count > 3) { break; }
           previous_pivot_error = last_pivot_error;
         }
-        ci_pre.makeCanonical();
+        // ci_pre.makeCanonical();
         auto end_time_pre_training = std::chrono::high_resolution_clock::now();
         auto duration_pre_training = std::chrono::duration_cast<std::chrono::microseconds>(end_time_pre_training - start_time_pre_training).count();
         auto duration_in_seconds_pre_training = static_cast<double>(duration_pre_training) / 1e6;
@@ -245,7 +245,7 @@ void ModePartitionSinHalf::run_single_element() {
         double current_integral = 0.0;
         for (int i = 1; i <= tp.sweep_bound; i++) {
           ci.iterate();
-          ci.makeCanonical();
+          // ci.makeCanonical();
           current_integral      = ci.tt.sum(weight);
           auto last_pivot_error = ci.pivotError[ci.pivotError.size() - 1];
           std::cout << i << " " << count_pre << " " << last_pivot_error << " " << current_integral << std::endl;
@@ -254,7 +254,7 @@ void ModePartitionSinHalf::run_single_element() {
         auto integral_element = current_integral;
         std::cout << " ------- tci finish ------- " << std::endl;
 
-        integral_sum_iota += integral_element-integral_auxiliary;
+        integral_sum_iota += integral_element - integral_auxiliary;
         integral_sum_n_left += integral_sum_iota;
       }
       integral_sum_phi += integral_sum_n_left;
