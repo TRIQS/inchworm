@@ -208,7 +208,7 @@ void ModePartitionSinHalf::run_single_element() {
         // reset
         std::cout << "bond_dim: " << ci_pre.param.bondDim << std::endl;
         ci_pre                      = xfac::CTensorCI2<double, double>(get_u_tau_max_element_pre, input_pre,
-                                                  {.bondDim = tp.bond_dim, .reltol = reltol_test, .pivot1 = pivot1_auxiliary, .fullPiv = false});
+                                                  {.bondDim = tp.bond_dim, .reltol = reltol_test, .pivot1 = pivot1_auxiliary, .fullPiv = true});
         int ci_count                = 0;
         double previous_pivot_error = -1E5;
         while (true) {
@@ -277,7 +277,7 @@ void ModePartitionSinHalf::run_single_element() {
         }
         std::cout << "iteration nEval LastSweepPivotError integral\n";
         auto ci = xfac::CTensorCI2<double, double>(get_u_tau_max_element, input,
-                                                   {.bondDim = tp.bond_dim, .reltol = reltol_test, .pivot1 = pivot1_train, .fullPiv = false});
+                                                   {.bondDim = tp.bond_dim, .reltol = reltol_test, .pivot1 = pivot1_train, .fullPiv = true});
         print_rank(ci.tt);
         // ci_pre.iterate(2, 0);
         // ci_pre.iterate(2, 1);
