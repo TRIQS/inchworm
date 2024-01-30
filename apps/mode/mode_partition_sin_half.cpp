@@ -199,7 +199,7 @@ void ModePartitionSinHalf::run_single_element() {
         double integral_pre = ci_pre.tt.sum(weight_pre);
         std::cout << "integral_pre (start): " << integral_pre << std::endl;
         std::cout << "integral_auxiliary: " << integral_auxiliary << std::endl;
-        if (std::abs(integral_auxiliary - integral_pre) < pre_integral_lower_bound) {
+        if (std::abs(integral_auxiliary - integral_pre) == 0) {
           std::cout << "pre_trained integral is too small, skip the integral" << std::endl;
           std::cout << "integral_auxiliary-integral_pre: " << integral_auxiliary - integral_pre << std::endl;
           std::cout << " ------- tci finish------- " << std::endl;
@@ -234,8 +234,9 @@ void ModePartitionSinHalf::run_single_element() {
         std::cout << "integral_auxiliary: " << integral_auxiliary << std::endl;
         double integral_diff = integral_pre - integral_auxiliary;
         std::cout << "integral_pre-integral_auxiliary: " << integral_diff << std::endl;
-        if (std::abs(integral_diff) < pre_train_relative_threshold) {
+        if (integral_diff == 0) {
           std::cout << "pre_trained integral is too small, skip the integral" << std::endl;
+          std::cout << "strange!!" << std::endl;
           std::cout << "integral_diff: " << integral_diff << std::endl;
           std::cout << " ------- tci finish------- " << std::endl;
           continue;
@@ -270,7 +271,7 @@ void ModePartitionSinHalf::run_single_element() {
           if (find_pivot1) { break; }
         }
         if (!find_pivot1) {
-          std::cout << "wierd!! " << std::endl;
+          std::cout << "weird!! " << std::endl;
           std::cout << " ------- tci finish ------- " << std::endl;
           continue;
         }
