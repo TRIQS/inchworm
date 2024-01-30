@@ -263,6 +263,7 @@ void ModePartitionSinHalf::run_single_element() {
             if (std::abs(val)>1E-20) {
               find_pivot1 = true;
               pivot1_train = p;
+              std::cout << "found pivot1 with value: " << val << std::endl; 
               break;
             }
           }
