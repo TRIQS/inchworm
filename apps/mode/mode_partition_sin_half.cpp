@@ -205,7 +205,10 @@ void ModePartitionSinHalf::run_single_element() {
           std::cout << " ------- tci finish------- " << std::endl;
           continue;
         }
+        // reset
         std::cout << "bond_dim: " << ci_pre.param.bondDim << std::endl;
+        ci_pre = xfac::CTensorCI2<double, double>(get_u_tau_max_element_pre, input_pre,
+                                                       {.bondDim = tp.bond_dim, .reltol = reltol_test, .pivot1 = pivot1_auxiliary, .fullPiv = true});
         int ci_count                = 0;
         double previous_pivot_error = -1E5;
         while (true) {
@@ -215,7 +218,7 @@ void ModePartitionSinHalf::run_single_element() {
           std::cout << ci_count << " " << count_pre << " " << last_pivot_error << " " << std::endl;
           print_rank(ci_pre.tt);
           ci_count++;
-          if (std::abs(last_pivot_error - previous_pivot_error) < tci_convergence_threshold) { break; }
+          if (std::abs(last_pivot_error - previous_pivot_error) < tci_convergence_threshold && ci_count >3) { break; }
           previous_pivot_error = last_pivot_error;
         }
         // ci_pre.makeCanonical();
