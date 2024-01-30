@@ -77,7 +77,7 @@ void ModePartitionSinHalf::run_single_element() {
       std::cout << ci_count_auxiliary << " " << count_auxiliary << " " << last_pivot_error << " " << std::endl;
       print_rank(ci_pre_auxiliary.tt);
       ci_count_auxiliary++;
-      if (std::abs(last_pivot_error - previous_pivot_error_auxiliary) < tci_convergence_threshold && ci_count_auxiliary > 3) { break; }
+      if (std::abs(last_pivot_error - previous_pivot_error_auxiliary) < tci_convergence_threshold && ci_count_auxiliary > 4) { break; }
       previous_pivot_error_auxiliary = last_pivot_error;
     }
     double integral_auxiliary = ci_pre_auxiliary.tt.sum(weight_pre);
