@@ -7,6 +7,7 @@ inline base_mode *create_mode(const std::string &mode_name) {
   if (mode_name == "partition_mid") return new ModePartitionMid();
   if (mode_name == "partition_sin") return new ModePartitionSin();
   if (mode_name == "partition_sin_all") return new ModePartitionSinAll();
+  if (mode_name == "partition_sin_half") return new ModePartitionSinHalf();
   if (mode_name == "partition_bath") return new ModePartitionBath();
   if (mode_name == "full_factorization_pivots") return new ModeFullFactorizationPivots();
   if (mode_name == "vertex_factorization_pivots") return new ModeVertexFactorizationPivots();

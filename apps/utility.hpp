@@ -556,3 +556,56 @@ template <typename T> inline double sin_func_all(std::vector<T> const &vs, std::
   res /= (v_iota_s_normalized.size()-1);
   return res;
 }
+
+// template <typename T> inline double sin_func_pair(std::vector<T> const &x) {
+//   double x_val = (x[0]+x[1]) / 2.0;
+//   return std::sin(2*x_val * M_PI);
+// }
+
+// template <typename T> inline double sin_func_all(std::vector<T> const &vs, std::vector<T> const &iotas, int n_opts){
+//   std::vector<T> iotas_normalized(iotas.size());
+//   for (int i = 0; i < iotas.size(); ++i) { iotas_normalized[i] = (iotas[i]+1) / (n_opts+1); }
+//   std::vector<T> v_iota_s_normalized(vs.size()+iotas.size());
+//   std::copy(vs.begin(), vs.end(), v_iota_s_normalized.begin());
+//   std::copy(iotas_normalized.begin(), iotas_normalized.end(), v_iota_s_normalized.begin()+vs.size());
+//   double res = 0.0;
+//   for(int i = 0; i < v_iota_s_normalized.size()-1; ++i) {
+//     std::vector<T> pair = {v_iota_s_normalized[i], v_iota_s_normalized[i+1]};
+//     res += sin_func_pair(pair);
+//   }
+//   res /= (v_iota_s_normalized.size()-1);
+//   return res;
+// }
+
+
+template <typename T> inline double linear_func_all(std::vector<T> const &iotas, int n_opts){
+  double x_val = 0;
+  double base = 1.0 / (n_opts);
+  for (int i = 0; i < iotas.size(); ++i) { x_val += iotas[i] * std::pow(base, i + 1); }
+  // return (2.0* (x_val + std::pow(base, iotas.size())/2)-1.0)/2.0;
+  return std::sin((x_val + std::pow(base, iotas.size())/2) * M_PI);
+}
+
+
+template<typename T>
+T estimateError_1norm_rel(std::function<T(std::vector<int>)> f, xfac::TensorTrain<T> tt, std::vector<int> localDims, size_t numEval=1e3, bool checkNeg=false) {
+
+  T e=0; // Error
+  T m=0; // Magnitude
+  std::mt19937 mt_rand(0);
+  std::vector<int> idxs(localDims.size(), 0);
+  for(size_t samp=0; samp<numEval; samp++) {
+    for(auto i=0u; i < idxs.size(); i++) idxs[i] = mt_rand()%(localDims[i]);
+    T tt_res = tt.eval(idxs);
+    if (checkNeg and (tt_res<0)) {
+      std::cout << "Negative tt_res!" << std::endl;
+      std::exit(1);
+    }
+    T current_f = f(idxs);
+    m += std::abs(current_f);
+    e += std::abs(tt_res - current_f);
+  }
+  return e/m;
+
+}
+
