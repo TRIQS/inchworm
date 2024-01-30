@@ -18,6 +18,7 @@ void ModePartitionSin::run_single_element() {
   double tci_convergence_threshold    = 1E-30;
   double pre_train_relative_threshold = 1E-20;
   double time_for_find_pivot          = 0.0;
+  double time_for_pre_training        = 0.0;
   for (int order : sp.order_list) {
     auto start_time = std::chrono::high_resolution_clock::now();
     int n           = 2 * order; // number of operators
@@ -230,6 +231,7 @@ void ModePartitionSin::run_single_element() {
         auto duration_pre_training = std::chrono::duration_cast<std::chrono::microseconds>(end_time_pre_training - start_time_pre_training).count();
         auto duration_in_seconds_pre_training = static_cast<double>(duration_pre_training) / 1e6;
         std::cout << "duration_in_seconds_pre_training: " << duration_in_seconds_pre_training << " seconds" << std::endl;
+        time_for_pre_training += duration_in_seconds_pre_training;
         std::cout << "pretraining finished" << std::endl;
 
         double integral_pre = ci_pre.tt.sum(weight_pre);
@@ -306,5 +308,6 @@ void ModePartitionSin::run_single_element() {
   }
   std::cout << "all orders finished" << std::endl;
   std::cout << "time_for_find_pivot: " << time_for_find_pivot << " seconds" << std::endl;
+  std::cout << "time_for_pre_training: " << time_for_pre_training << " seconds" << std::endl;
   std::cout << std::endl;
 }
