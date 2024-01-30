@@ -89,27 +89,27 @@ void ModePartitionSinHalf::run_single_element() {
       for (int n_left = 1; n_left < n; n_left++) {
         std::cout << " ------- tci start ------- " << std::endl;
         double integral_sum_iota   = 0.0;
-        long count                 = 0;
-        auto get_u_tau_max_element = [this, &count, &phi_d_list = phi_d_list, &phi_d_dag_list = phi_d_dag_list,
-                                      &n_left](const std::vector<double> &v_iota_s) {
-          int mid = v_iota_s.size() / 2;
-          std::vector<double> iotas(v_iota_s.begin(), v_iota_s.begin() + mid);
-          std::vector<double> vs(v_iota_s.begin() + mid, v_iota_s.end());
-          std::vector<double> iota_d_list     = get_elements(phi_d_list, iotas);
-          std::vector<double> iota_d_dag_list = get_elements(phi_d_dag_list, iotas);
-          std::vector<int> iota_d_list_int(iota_d_list.begin(), iota_d_list.end());
-          std::vector<int> iota_d_dag_list_int(iota_d_dag_list.begin(), iota_d_dag_list.end());
-          std::vector<int> number_in_block_d     = generate_number_in_block(mp.gf_block_shape, iota_d_list_int);
-          std::vector<int> number_in_block_d_dag = generate_number_in_block(mp.gf_block_shape, iota_d_dag_list_int);
-          if (number_in_block_d != number_in_block_d_dag) { return 0.0; }
-          auto [taus_left, taus_right, taus] = obtain_taus(vs, n_left, sp.tau_split, sp.tau_max);
-          double integrand                   = evaluate_u_tau_max(sr.u_tau_max_zeroth_order, sp.tau_split, sp.tau_max, mp.all_d_ops, mp.all_d_dag_ops,
-                                                                  mp.gf_block_shape, cp, mp.Delta_tau, mp.ad_imp, sr.u_interpolator, get_elements(phi_d_list, taus),
-                                                                  get_elements(phi_d_dag_list, taus), iota_d_list, iota_d_dag_list, sp.bl_index, sp.subspace_index);
-          count++;
-          double j = jacobian(taus_left, sp.tau_split, 0.0) * jacobian(taus_right, sp.tau_max, sp.tau_split);
-          return integrand * j;
-        };
+        // long count                 = 0;
+        // auto get_u_tau_max_element = [this, &count, &phi_d_list = phi_d_list, &phi_d_dag_list = phi_d_dag_list,
+        //                               &n_left](const std::vector<double> &v_iota_s) {
+        //   int mid = v_iota_s.size() / 2;
+        //   std::vector<double> iotas(v_iota_s.begin(), v_iota_s.begin() + mid);
+        //   std::vector<double> vs(v_iota_s.begin() + mid, v_iota_s.end());
+        //   std::vector<double> iota_d_list     = get_elements(phi_d_list, iotas);
+        //   std::vector<double> iota_d_dag_list = get_elements(phi_d_dag_list, iotas);
+        //   std::vector<int> iota_d_list_int(iota_d_list.begin(), iota_d_list.end());
+        //   std::vector<int> iota_d_dag_list_int(iota_d_dag_list.begin(), iota_d_dag_list.end());
+        //   std::vector<int> number_in_block_d     = generate_number_in_block(mp.gf_block_shape, iota_d_list_int);
+        //   std::vector<int> number_in_block_d_dag = generate_number_in_block(mp.gf_block_shape, iota_d_dag_list_int);
+        //   if (number_in_block_d != number_in_block_d_dag) { return 0.0; }
+        //   auto [taus_left, taus_right, taus] = obtain_taus(vs, n_left, sp.tau_split, sp.tau_max);
+        //   double integrand                   = evaluate_u_tau_max(sr.u_tau_max_zeroth_order, sp.tau_split, sp.tau_max, mp.all_d_ops, mp.all_d_dag_ops,
+        //                                                           mp.gf_block_shape, cp, mp.Delta_tau, mp.ad_imp, sr.u_interpolator, get_elements(phi_d_list, taus),
+        //                                                           get_elements(phi_d_dag_list, taus), iota_d_list, iota_d_dag_list, sp.bl_index, sp.subspace_index);
+        //   count++;
+        //   double j = jacobian(taus_left, sp.tau_split, 0.0) * jacobian(taus_right, sp.tau_max, sp.tau_split);
+        //   return integrand * j;
+        // };
 
         // // find the pivot that gives a non-zero integrand
         // // this calculation can be performed only once and cached for all inchworm steps
@@ -163,6 +163,7 @@ void ModePartitionSinHalf::run_single_element() {
         //   print_pivot1(iota_d_list_int1, iota_d_dag_list_int1, get_elements(phi_d_list, taus1), get_elements(phi_d_dag_list, taus1),
         //                u_tau_max_element_vs1);
         // }
+
         long count_pre                 = 0;
         auto get_u_tau_max_element_pre = [this, &count_pre, &phi_d_list = phi_d_list, &phi_d_dag_list = phi_d_dag_list, &n_left,
                                           &auxi_height](const std::vector<double> &v_iota_s) {
@@ -175,16 +176,16 @@ void ModePartitionSinHalf::run_single_element() {
           std::vector<int> iota_d_dag_list_int(iota_d_dag_list.begin(), iota_d_dag_list.end());
           std::vector<int> number_in_block_d     = generate_number_in_block(mp.gf_block_shape, iota_d_list_int);
           std::vector<int> number_in_block_d_dag = generate_number_in_block(mp.gf_block_shape, iota_d_dag_list_int);
-          if (number_in_block_d != number_in_block_d_dag) { return 0.0; }
+          double sin_term                        = sin_func_all({}, iotas, mp.n_phi);
+          // double sin_term = linear_func_all( iotas, mp.n_phi);
+          if (number_in_block_d != number_in_block_d_dag) { return auxi_height * sin_term; }
           //Note: if local Hamiltonian commute with density operators, further simplication could be applied: the operator of the same type can not be next to each other on the time axis
           auto [taus_left, taus_right, taus] = obtain_taus(vs, n_left, sp.tau_split, sp.tau_max);
           double integrand                   = evaluate_u_tau_max(sr.u_tau_max_zeroth_order, sp.tau_split, sp.tau_max, mp.all_d_ops, mp.all_d_dag_ops,
                                                                   mp.gf_block_shape, cp, mp.Delta_tau, mp.ad_imp, sr.u_interpolator, get_elements(phi_d_list, taus),
                                                                   get_elements(phi_d_dag_list, taus), iota_d_list, iota_d_dag_list, sp.bl_index, sp.subspace_index);
           count_pre++;
-          double j        = jacobian(taus_left, sp.tau_split, 0.0) * jacobian(taus_right, sp.tau_max, sp.tau_split);
-          double sin_term = sin_func_all({}, iotas, mp.n_phi);
-          // double sin_term = linear_func_all( iotas, mp.n_phi);
+          double j = jacobian(taus_left, sp.tau_split, 0.0) * jacobian(taus_right, sp.tau_max, sp.tau_split);
           return auxi_height * sin_term + integrand * j;
         };
 
@@ -198,7 +199,7 @@ void ModePartitionSinHalf::run_single_element() {
         double integral_pre = ci_pre.tt.sum(weight_pre);
         std::cout << "integral_pre (start): " << integral_pre << std::endl;
         std::cout << "integral_auxiliary: " << integral_auxiliary << std::endl;
-        if(std::abs(integral_auxiliary - integral_pre) < pre_integral_lower_bound){
+        if (std::abs(integral_auxiliary - integral_pre) < pre_integral_lower_bound) {
           std::cout << "pre_trained integral is too small, skip the integral" << std::endl;
           std::cout << "integral_auxiliary-integral_pre: " << integral_auxiliary - integral_pre << std::endl;
           std::cout << " ------- tci finish------- " << std::endl;
@@ -214,7 +215,7 @@ void ModePartitionSinHalf::run_single_element() {
           std::cout << ci_count << " " << count_pre << " " << last_pivot_error << " " << std::endl;
           print_rank(ci_pre.tt);
           ci_count++;
-          if (std::abs(last_pivot_error - previous_pivot_error) < tci_convergence_threshold && ci_count > 4) { break; }
+          if (std::abs(last_pivot_error - previous_pivot_error) < tci_convergence_threshold) { break; }
           previous_pivot_error = last_pivot_error;
         }
         // ci_pre.makeCanonical();
