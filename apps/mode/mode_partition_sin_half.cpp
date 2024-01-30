@@ -77,10 +77,13 @@ void ModePartitionSinHalf::run_single_element() {
       std::cout << ci_count_auxiliary << " " << count_auxiliary << " " << last_pivot_error << " " << std::endl;
       print_rank(ci_pre_auxiliary.tt);
       ci_count_auxiliary++;
-      if (std::abs(last_pivot_error - previous_pivot_error_auxiliary) < tci_convergence_threshold && ci_count_auxiliary > 4) { break; }
+      if (std::abs(last_pivot_error - previous_pivot_error_auxiliary) < tci_convergence_threshold && ci_count_auxiliary > 3) { break; }
       previous_pivot_error_auxiliary = last_pivot_error;
     }
+    // ci_pre_auxiliary.iterate(2,0);
+    // ci_pre_auxiliary.makeCanonical();
     double integral_auxiliary = ci_pre_auxiliary.tt.sum(weight_pre);
+    print_rank(ci_pre_auxiliary.tt);
     std::cout << "integral_auxiliary: " << integral_auxiliary << std::endl;
 
     double integral_sum_phi = 0.0;
@@ -200,6 +203,7 @@ void ModePartitionSinHalf::run_single_element() {
           auto pivots = ci_pre_auxiliary.getPivotsAt(b);
           ci_pre.myAddPivotsAt(pivots, b);
         }
+        ci_pre.makeCanonical();
         double integral_pre = ci_pre.tt.sum(weight_pre);
         std::cout << "integral_pre (start): " << integral_pre << std::endl;
         std::cout << "integral_auxiliary: " << integral_auxiliary << std::endl;
@@ -222,7 +226,7 @@ void ModePartitionSinHalf::run_single_element() {
           std::cout << ci_count << " " << count_pre << " " << last_pivot_error << " " << std::endl;
           print_rank(ci_pre.tt);
           ci_count++;
-          if (std::abs(last_pivot_error - previous_pivot_error) < tci_convergence_threshold && ci_count > 4) { break; }
+          if (std::abs(last_pivot_error - previous_pivot_error) < tci_convergence_threshold && ci_count > 3) { break; }
           previous_pivot_error = last_pivot_error;
         }
         // ci_pre.makeCanonical();
