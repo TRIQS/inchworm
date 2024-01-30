@@ -77,7 +77,7 @@ void ModePartitionSinHalf::run_single_element() {
       std::cout << ci_count_auxiliary << " " << count_auxiliary << " " << last_pivot_error << " " << std::endl;
       print_rank(ci_pre_auxiliary.tt);
       ci_count_auxiliary++;
-      if (std::abs(last_pivot_error - previous_pivot_error_auxiliary) < tci_convergence_threshold && ci_count_auxiliary > 4) { break; }
+      if (std::abs(last_pivot_error - previous_pivot_error_auxiliary) < tci_convergence_threshold && ci_count_auxiliary > 3) { break; }
       previous_pivot_error_auxiliary = last_pivot_error;
     }
     double integral_auxiliary = ci_pre_auxiliary.tt.sum(weight_pre);
@@ -193,7 +193,17 @@ void ModePartitionSinHalf::run_single_element() {
         std::cout << "pretraining" << std::endl;
         std::cout << "iteration nEval LastSweepPivotError\n";
         auto ci_pre = xfac::CTensorCI2<double, double>(get_u_tau_max_element_pre, input_pre,
-                                                       {.bondDim = tp.bond_dim, .reltol = reltol_test, .pivot1 = pivot1_pre, .fullPiv = true});
+                                                       {.bondDim = tp.bond_dim, .reltol = reltol_test, .pivot1 = pivot1_auxiliary, .fullPiv = true});
+        ci_pre.addPivots(ci_pre_auxiliary);
+        double integral_pre = ci_pre.tt.sum(weight_pre);
+        std::cout << "integral_pre (start): " << integral_pre << std::endl;
+        std::cout << "integral_auxiliary: " << integral_auxiliary << std::endl;
+        if(std::abs(integral_auxiliary - integral_pre) < pre_integral_lower_bound){
+          std::cout << "pre_trained integral is too small, skip the integral" << std::endl;
+          std::cout << "integral_auxiliary-integral_pre: " << integral_auxiliary - integral_pre << std::endl;
+          std::cout << " ------- tci finish------- " << std::endl;
+          continue;
+        }
         std::cout << "bond_dim: " << ci_pre.param.bondDim << std::endl;
         int ci_count                = 0;
         double previous_pivot_error = -1E5;
@@ -204,7 +214,7 @@ void ModePartitionSinHalf::run_single_element() {
           std::cout << ci_count << " " << count_pre << " " << last_pivot_error << " " << std::endl;
           print_rank(ci_pre.tt);
           ci_count++;
-          if (std::abs(last_pivot_error - previous_pivot_error) < tci_convergence_threshold && ci_count > 3) { break; }
+          if (std::abs(last_pivot_error - previous_pivot_error) < tci_convergence_threshold && ci_count > 4) { break; }
           previous_pivot_error = last_pivot_error;
         }
         // ci_pre.makeCanonical();
@@ -215,7 +225,7 @@ void ModePartitionSinHalf::run_single_element() {
         time_for_pre_training += duration_in_seconds_pre_training;
         std::cout << "pretraining finished" << std::endl;
 
-        double integral_pre = ci_pre.tt.sum(weight_pre);
+        integral_pre = ci_pre.tt.sum(weight_pre);
         std::cout << "integral_pre: " << integral_pre << std::endl;
         std::cout << "integral_auxiliary: " << integral_auxiliary << std::endl;
         double integral_diff = integral_pre - integral_auxiliary;
@@ -237,7 +247,7 @@ void ModePartitionSinHalf::run_single_element() {
         weight.insert(weight.end(), weight_to_append.begin(), weight_to_append.end());
         std::cout << "iteration nEval LastSweepPivotError integral\n";
         auto ci = xfac::CTensorCI2<double, double>(get_u_tau_max_element_pre, input,
-                                                   {.bondDim = tp.bond_dim, .reltol = reltol_test, .pivot1 = pivot1_pre, .fullPiv = true});
+                                                   {.bondDim = tp.bond_dim, .reltol = reltol_test, .pivot1 = pivot1_auxiliary, .fullPiv = true});
         ci.addPivots(ci_pre);
         ci.makeCanonical();
         print_rank(ci.tt);
