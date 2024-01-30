@@ -260,7 +260,7 @@ void ModePartitionSinHalf::run_single_element() {
             // print_vector(p);
             // print_vector(v_iota_s);
             auto val = get_u_tau_max_element(v_iota_s);
-            if (std::abs(val) > 1E-20) {
+            if ( val != 0) {
               find_pivot1  = true;
               pivot1_train = p;
               std::cout << "found pivot1 with value: " << val << std::endl;
@@ -287,8 +287,8 @@ void ModePartitionSinHalf::run_single_element() {
           ci.myAddPivotsAt(pivots, b);
         }
         print_rank(ci.tt);
-        ci.makeCanonical();
-        print_rank(ci.tt);
+        // ci.makeCanonical();
+        // print_rank(ci.tt);
         std::cout << "bond_dim: " << ci.param.bondDim << std::endl;
         double current_integral = 0.0;
         for (int i = 1; i <= tp.sweep_bound; i++) {
