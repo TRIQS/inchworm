@@ -207,8 +207,8 @@ void ModePartitionSinHalf::run_single_element() {
         }
         // reset
         std::cout << "bond_dim: " << ci_pre.param.bondDim << std::endl;
-        ci_pre = xfac::CTensorCI2<double, double>(get_u_tau_max_element_pre, input_pre,
-                                                       {.bondDim = tp.bond_dim, .reltol = reltol_test, .pivot1 = pivot1_auxiliary, .fullPiv = false});
+        ci_pre                      = xfac::CTensorCI2<double, double>(get_u_tau_max_element_pre, input_pre,
+                                                  {.bondDim = tp.bond_dim, .reltol = reltol_test, .pivot1 = pivot1_auxiliary, .fullPiv = false});
         int ci_count                = 0;
         double previous_pivot_error = -1E5;
         while (true) {
@@ -218,7 +218,7 @@ void ModePartitionSinHalf::run_single_element() {
           std::cout << ci_count << " " << count_pre << " " << last_pivot_error << " " << std::endl;
           print_rank(ci_pre.tt);
           ci_count++;
-          if (std::abs(last_pivot_error - previous_pivot_error) < tci_convergence_threshold && ci_count >3) { break; }
+          if (std::abs(last_pivot_error - previous_pivot_error) < tci_convergence_threshold && ci_count > 3) { break; }
           previous_pivot_error = last_pivot_error;
         }
         // ci_pre.makeCanonical();
@@ -249,27 +249,27 @@ void ModePartitionSinHalf::run_single_element() {
         auto weight_to_append = std::vector(n, tp.wi_v);
         auto weight           = std::vector(n, wi_iota);
         weight.insert(weight.end(), weight_to_append.begin(), weight_to_append.end());
-        bool find_pivot1 = false;
+        bool find_pivot1              = false;
         std::vector<int> pivot1_train = {};
         for (auto b = 0u; b < ci_pre.len() - 1; b++) {
           auto pivots = ci_pre.getPivotsAt(b);
           for (auto p : pivots) {
             auto mid = p.size() / 2;
-            std::vector<double> v_iota_s (p.begin(), p.end()-mid);
-            for (int i = 0; i < v_pivot1.size(); i++) { v_iota_s.push_back(tp.vi[int(tp.vi.size() / 2)]); } 
+            std::vector<double> v_iota_s(p.begin(), p.end() - mid);
+            for (int i = 0; i < v_pivot1.size(); i++) { v_iota_s.push_back(tp.vi[int(tp.vi.size() / 2)]); }
             // print_vector(p);
             // print_vector(v_iota_s);
             auto val = get_u_tau_max_element(v_iota_s);
-            if (std::abs(val)>1E-20) {
-              find_pivot1 = true;
+            if (std::abs(val) > 1E-20) {
+              find_pivot1  = true;
               pivot1_train = p;
-              std::cout << "found pivot1 with value: " << val << std::endl; 
+              std::cout << "found pivot1 with value: " << val << std::endl;
               break;
             }
           }
-          if (find_pivot1) { break;}
+          if (find_pivot1) { break; }
         }
-        if(!find_pivot1) {
+        if (!find_pivot1) {
           std::cout << "wierd!! " << std::endl;
           std::cout << " ------- tci finish ------- " << std::endl;
           continue;
@@ -280,7 +280,13 @@ void ModePartitionSinHalf::run_single_element() {
         print_rank(ci.tt);
         // ci_pre.iterate(2, 0);
         // ci_pre.iterate(2, 1);
-        ci.addPivots(ci_pre);
+        // ci.addPivots(ci_pre);
+        for (auto b = 0u; b < ci.len() - 1; b++) {
+          auto pivots = ci_pre.getPivotsAt(b);
+          // auto first_half_pivots = std::vector(pivots.begin(), pivots.begin() + pivots.size() / 2);
+          ci.myAddPivotsAt(pivots, b);
+        }
+        print_rank(ci.tt);
         ci.makeCanonical();
         print_rank(ci.tt);
         std::cout << "bond_dim: " << ci.param.bondDim << std::endl;
