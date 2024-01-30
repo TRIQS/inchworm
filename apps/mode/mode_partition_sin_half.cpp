@@ -257,10 +257,10 @@ void ModePartitionSinHalf::run_single_element() {
             auto mid = p.size() / 2;
             std::vector<double> v_iota_s (p.begin(), p.end()-mid);
             for (int i = 0; i < v_pivot1.size(); i++) { v_iota_s.push_back(tp.vi[int(tp.vi.size() / 2)]); } 
-            print_vector(p);
-            print_vector(v_iota_s);
+            // print_vector(p);
+            // print_vector(v_iota_s);
             auto val = get_u_tau_max_element(v_iota_s);
-            if (std::abs(val)!=0) {
+            if (std::abs(val)>1E-20) {
               find_pivot1 = true;
               pivot1_train = p;
               break;
