@@ -15,8 +15,8 @@ void ModePartitionSinHalf::run_single_element() {
   auto max_weight_v                   = *std::max_element(tp.wi_v.begin(), tp.wi_v.end());
   double auxi_height                  = tp.auxi_height; //height of the auxiliary function in the pre-training
   double reltol_test                  = tp.reltol;
-  double tci_convergence_threshold    = 1E-20;
-  double pre_train_relative_threshold = 1E-20;
+  double tci_convergence_threshold    = 1E-25;
+  // double pre_train_relative_threshold = 1E-20;
   double time_for_find_pivot          = 0.0;
   double time_for_pre_training        = 0.0;
   for (int order : sp.order_list) {
@@ -41,7 +41,7 @@ void ModePartitionSinHalf::run_single_element() {
     // tp.integral_lower_bound is the bound for the integral contribution for a specific order, below which the integral can be skipped
     double pre_integral_lower_bound = tp.integral_lower_bound / (std::pow(max_weight_v * tp.wi_v.size(), n) * n_phi_pair * (n - 1));
     // this bound is underestimated, ajust for now
-    pre_integral_lower_bound = pre_integral_lower_bound * 10;
+    pre_integral_lower_bound = pre_integral_lower_bound;
     std::cout << "pre_integral_lower_bound: " << pre_integral_lower_bound << std::endl;
 
     // calculate the integral for the auxiliary function for the pre-training
@@ -81,10 +81,22 @@ void ModePartitionSinHalf::run_single_element() {
       previous_pivot_error_auxiliary = last_pivot_error;
     }
     // ci_pre_auxiliary.iterate(2,0);
-    // ci_pre_auxiliary.makeCanonical();
+    ci_pre_auxiliary.makeCanonical();
     double integral_auxiliary = ci_pre_auxiliary.tt.sum(weight_pre);
     print_rank(ci_pre_auxiliary.tt);
     std::cout << "integral_auxiliary: " << integral_auxiliary << std::endl;
+
+    // auto ci_pre_auxiliary2 = xfac::CTensorCI2<double, double>(
+    //    get_auxiliary, input_pre, {.bondDim = tp.bond_dim, .reltol = reltol_test, .pivot1 = pivot1_auxiliary, .fullPiv = true});
+    // for (auto b = 0u; b < ci_pre_auxiliary2.len() - 1; b++) {
+    //   auto pivots = ci_pre_auxiliary.getPivotsAt(b);
+    //   ci_pre_auxiliary2.myAddPivotsAt(pivots, b);
+    // }
+    // ci_pre_auxiliary2.makeCanonical();
+    // double integral_auxiliary2 = ci_pre_auxiliary2.tt.sum(weight_pre);
+    // print_rank(ci_pre_auxiliary2.tt);
+    // std::cout << "integral_auxiliary2: " << integral_auxiliary2 << std::endl;
+    // integral_auxiliary = integral_auxiliary2;
 
     double integral_sum_phi = 0.0;
     for (auto [phi_d_list, phi_d_dag_list] : phi_pair_list) {
@@ -199,24 +211,24 @@ void ModePartitionSinHalf::run_single_element() {
         auto ci_pre = xfac::CTensorCI2<double, double>(get_u_tau_max_element_pre, input_pre,
                                                        {.bondDim = tp.bond_dim, .reltol = reltol_test, .pivot1 = pivot1_auxiliary, .fullPiv = true});
         // ci_pre.addPivots(ci_pre_auxiliary);
-        for (auto b = 0u; b < ci_pre.len() - 1; b++) {
-          auto pivots = ci_pre_auxiliary.getPivotsAt(b);
-          ci_pre.myAddPivotsAt(pivots, b);
-        }
-        ci_pre.makeCanonical();
-        double integral_pre = ci_pre.tt.sum(weight_pre);
-        std::cout << "integral_pre (start): " << integral_pre << std::endl;
-        std::cout << "integral_auxiliary: " << integral_auxiliary << std::endl;
-        if (std::abs(integral_auxiliary - integral_pre) < pre_train_relative_threshold) {
-          std::cout << "pre_trained integral is too small, skip the integral" << std::endl;
-          std::cout << "integral_auxiliary-integral_pre: " << integral_auxiliary - integral_pre << std::endl;
-          std::cout << " ------- tci finish------- " << std::endl;
-          continue;
-        }
+        // for (auto b = 0u; b < ci_pre.len() - 1; b++) {
+        //   auto pivots = ci_pre_auxiliary.getPivotsAt(b);
+        //   ci_pre.myAddPivotsAt(pivots, b);
+        // }
+        // ci_pre.makeCanonical();
+        // double integral_pre = ci_pre.tt.sum(weight_pre);
+        // std::cout << "integral_pre (start): " << integral_pre << std::endl;
+        // std::cout << "integral_auxiliary: " << integral_auxiliary << std::endl;
+        // if (std::abs(integral_auxiliary - integral_pre) < pre_train_relative_threshold) {
+        //   std::cout << "pre_trained integral is too small, skip the integral" << std::endl;
+        //   std::cout << "integral_auxiliary-integral_pre: " << integral_auxiliary - integral_pre << std::endl;
+        //   std::cout << " ------- tci finish------- " << std::endl;
+        //   continue;
+        // }
         // reset
         std::cout << "bond_dim: " << ci_pre.param.bondDim << std::endl;
-        ci_pre                      = xfac::CTensorCI2<double, double>(get_u_tau_max_element_pre, input_pre,
-                                                  {.bondDim = tp.bond_dim, .reltol = reltol_test, .pivot1 = pivot1_auxiliary, .fullPiv = true});
+        // ci_pre                      = xfac::CTensorCI2<double, double>(get_u_tau_max_element_pre, input_pre,
+        //                                           {.bondDim = tp.bond_dim, .reltol = reltol_test, .pivot1 = pivot1_auxiliary, .fullPiv = true});
         int ci_count                = 0;
         double previous_pivot_error = -1E5;
         while (true) {
@@ -237,14 +249,13 @@ void ModePartitionSinHalf::run_single_element() {
         time_for_pre_training += duration_in_seconds_pre_training;
         std::cout << "pretraining finished" << std::endl;
         ci_pre.makeCanonical();
-        integral_pre = ci_pre.tt.sum(weight_pre);
+        double integral_pre = ci_pre.tt.sum(weight_pre);
         std::cout << "integral_pre: " << integral_pre << std::endl;
         std::cout << "integral_auxiliary: " << integral_auxiliary << std::endl;
         double integral_diff = integral_pre - integral_auxiliary;
         std::cout << "integral_pre-integral_auxiliary: " << integral_diff << std::endl;
-        if (std::abs(integral_diff) < pre_train_relative_threshold) {
+        if (std::abs(integral_diff) < pre_integral_lower_bound) {
           std::cout << "pre_trained integral is too small, skip the integral" << std::endl;
-          std::cout << "strange!!" << std::endl;
           std::cout << "integral_diff: " << integral_diff << std::endl;
           std::cout << " ------- tci finish------- " << std::endl;
           continue;
