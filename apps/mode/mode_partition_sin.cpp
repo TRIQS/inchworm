@@ -41,7 +41,7 @@ void ModePartitionSin::run_single_element() {
     // tp.integral_lower_bound is the bound for the integral contribution for a specific order, below which the integral can be skipped
     double pre_integral_lower_bound = tp.integral_lower_bound / (std::pow(max_weight_v * tp.wi_v.size(), n) * n_phi_pair * (n - 1));
     // this bound is underestimated, ajust for now
-    pre_integral_lower_bound = pre_integral_lower_bound * 10;
+    pre_integral_lower_bound = pre_integral_lower_bound;
     std::cout << "pre_integral_lower_bound: " << pre_integral_lower_bound << std::endl;
 
     // calculate the integral for the auxiliary function for the pre-training
