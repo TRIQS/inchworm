@@ -66,7 +66,7 @@ void ModePartitionSin::run_single_element() {
     weight_pre.insert(weight_pre.end(), weight_to_append_pre.begin(), weight_to_append_pre.end());
 
     auto ci_pre_auxiliary = xfac::CTensorCI2<double, double>(
-       get_auxiliary, input_pre, {.bondDim = tp.bond_dim, .reltol = reltol_test, .pivot1 = pivot1_auxiliary, .fullPiv = true});
+       get_auxiliary, input_pre, {.bondDim = tp.bond_dim, .reltol = reltol_test, .pivot1 = pivot1_auxiliary, .fullPiv = false});
     std::cout << "integral for the auxiliary function" << std::endl;
     std::cout << "iteration nEval LastSweepPivotError\n";
     int ci_count_auxiliary                = 0;
@@ -212,13 +212,13 @@ void ModePartitionSin::run_single_element() {
         std::cout << "pretraining" << std::endl;
         std::cout << "iteration nEval LastSweepPivotError\n";
         auto ci_pre = xfac::CTensorCI2<double, double>(get_u_tau_max_element_pre, input_pre,
-                                                       {.bondDim = tp.bond_dim, .reltol = reltol_test, .pivot1 = pivot1_pre, .fullPiv = true});
+                                                       {.bondDim = tp.bond_dim, .reltol = reltol_test, .pivot1 = pivot1_pre, .fullPiv = false});
         std::cout << "bond_dim: " << ci_pre.param.bondDim << std::endl;
         int ci_count                = 0;
         double previous_pivot_error = -1E5;
         while (true) {
           ci_pre.iterate();
-          ci_pre.makeCanonical();
+          // ci_pre.makeCanonical();
           auto last_pivot_error = ci_pre.pivotError[ci_pre.pivotError.size() - 1];
           std::cout << ci_count << " " << count_pre << " " << last_pivot_error << " " << std::endl;
           print_rank(ci_pre.tt);
@@ -226,7 +226,7 @@ void ModePartitionSin::run_single_element() {
           if (std::abs(last_pivot_error - previous_pivot_error) < tci_convergence_threshold && ci_count >3) { break; }
           previous_pivot_error = last_pivot_error;
         }
-        ci_pre.makeCanonical();
+        // ci_pre.makeCanonical();
         auto end_time_pre_training = std::chrono::high_resolution_clock::now();
         auto duration_pre_training = std::chrono::duration_cast<std::chrono::microseconds>(end_time_pre_training - start_time_pre_training).count();
         auto duration_in_seconds_pre_training = static_cast<double>(duration_pre_training) / 1e6;
@@ -246,9 +246,9 @@ void ModePartitionSin::run_single_element() {
         }
 
         auto ci_pre_abs = xfac::CTensorCI2<double, double>(get_u_tau_max_element_abs, input_pre,
-                                                           {.bondDim = tp.bond_dim, .reltol = reltol_test, .pivot1 = pivot1_pre, .fullPiv = true});
+                                                           {.bondDim = tp.bond_dim, .reltol = reltol_test, .pivot1 = pivot1_pre, .fullPiv = false});
         ci_pre_abs.addPivots(ci_pre);
-        ci_pre_abs.makeCanonical();
+        // ci_pre_abs.makeCanonical();
         double integral_abs = ci_pre_abs.tt.sum(weight_pre);
         std::cout << "integral_abs: " << integral_abs << std::endl;
         if (std::abs(integral_abs) < pre_integral_lower_bound) {
@@ -259,9 +259,9 @@ void ModePartitionSin::run_single_element() {
 
         // a consistency check
         auto ci_pre_val = xfac::CTensorCI2<double, double>(get_u_tau_max_element, input_pre,
-                                                           {.bondDim = tp.bond_dim, .reltol = reltol_test, .pivot1 = pivot1_pre, .fullPiv = true});
+                                                           {.bondDim = tp.bond_dim, .reltol = reltol_test, .pivot1 = pivot1_pre, .fullPiv = false});
         ci_pre_val.addPivots(ci_pre);
-        ci_pre_val.makeCanonical();
+        // ci_pre_val.makeCanonical();
         double integral = ci_pre_val.tt.sum(weight_pre);
         std::cout << "consistency check" << std::endl;
         std::cout << "integral: " << integral << std::endl;
@@ -278,15 +278,15 @@ void ModePartitionSin::run_single_element() {
         weight.insert(weight.end(), weight_to_append.begin(), weight_to_append.end());
         std::cout << "iteration nEval LastSweepPivotError integral\n";
         auto ci = xfac::CTensorCI2<double, double>(get_u_tau_max_element, input,
-                                                   {.bondDim = tp.bond_dim, .reltol = reltol_test, .pivot1 = pivot1, .fullPiv = true});
+                                                   {.bondDim = tp.bond_dim, .reltol = reltol_test, .pivot1 = pivot1, .fullPiv = false});
         ci.addPivots(ci_pre);
-        ci.makeCanonical();
+        // ci.makeCanonical();
         print_rank(ci.tt);
         std::cout << "bond_dim: " << ci.param.bondDim << std::endl;
         double current_integral = 0.0;
         for (int i = 1; i <= tp.sweep_bound; i++) {
           ci.iterate();
-          ci.makeCanonical();
+          // ci.makeCanonical();
           current_integral      = ci.tt.sum(weight);
           auto last_pivot_error = ci.pivotError[ci.pivotError.size() - 1];
           std::cout << i << " " << count << " " << last_pivot_error << " " << current_integral << std::endl;

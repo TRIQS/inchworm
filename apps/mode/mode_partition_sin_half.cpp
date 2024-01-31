@@ -66,7 +66,7 @@ void ModePartitionSinHalf::run_single_element() {
     weight_pre.insert(weight_pre.end(), weight_to_append_pre.begin(), weight_to_append_pre.end());
 
     auto ci_pre_auxiliary = xfac::CTensorCI2<double, double>(
-       get_auxiliary, input_pre, {.bondDim = tp.bond_dim, .reltol = reltol_test, .pivot1 = pivot1_auxiliary, .fullPiv = true});
+       get_auxiliary, input_pre, {.bondDim = tp.bond_dim, .reltol = reltol_test, .pivot1 = pivot1_auxiliary, .fullPiv = false});
     std::cout << "integral for the auxiliary function" << std::endl;
     std::cout << "iteration nEval LastSweepPivotError\n";
     int ci_count_auxiliary                = 0;
@@ -81,7 +81,7 @@ void ModePartitionSinHalf::run_single_element() {
       previous_pivot_error_auxiliary = last_pivot_error;
     }
     // ci_pre_auxiliary.iterate(2,0);
-    ci_pre_auxiliary.makeCanonical();
+    // ci_pre_auxiliary.makeCanonical();
     double integral_auxiliary = ci_pre_auxiliary.tt.sum(weight_pre);
     print_rank(ci_pre_auxiliary.tt);
     std::cout << "integral_auxiliary: " << integral_auxiliary << std::endl;
@@ -209,7 +209,7 @@ void ModePartitionSinHalf::run_single_element() {
         std::cout << "pretraining" << std::endl;
         std::cout << "iteration nEval LastSweepPivotError\n";
         auto ci_pre = xfac::CTensorCI2<double, double>(get_u_tau_max_element_pre, input_pre,
-                                                       {.bondDim = tp.bond_dim, .reltol = reltol_test, .pivot1 = pivot1_auxiliary, .fullPiv = true});
+                                                       {.bondDim = tp.bond_dim, .reltol = reltol_test, .pivot1 = pivot1_auxiliary, .fullPiv = false});
         // ci_pre.addPivots(ci_pre_auxiliary);
         // for (auto b = 0u; b < ci_pre.len() - 1; b++) {
         //   auto pivots = ci_pre_auxiliary.getPivotsAt(b);
@@ -248,7 +248,7 @@ void ModePartitionSinHalf::run_single_element() {
         std::cout << "duration_in_seconds_pre_training: " << duration_in_seconds_pre_training << " seconds" << std::endl;
         time_for_pre_training += duration_in_seconds_pre_training;
         std::cout << "pretraining finished" << std::endl;
-        ci_pre.makeCanonical();
+        // ci_pre.makeCanonical();
         double integral_pre = ci_pre.tt.sum(weight_pre);
         std::cout << "integral_pre: " << integral_pre << std::endl;
         std::cout << "integral_auxiliary: " << integral_auxiliary << std::endl;
@@ -296,18 +296,19 @@ void ModePartitionSinHalf::run_single_element() {
         }
         std::cout << "iteration nEval LastSweepPivotError integral\n";
         auto ci = xfac::CTensorCI2<double, double>(get_u_tau_max_element, input,
-                                                   {.bondDim = tp.bond_dim, .reltol = reltol_test, .pivot1 = pivot1_train, .fullPiv = true});
+                                                   {.bondDim = tp.bond_dim, .reltol = reltol_test, .pivot1 = pivot1_train, .fullPiv = false});
         print_rank(ci.tt);
         // ci_pre.iterate(2, 0);
         // ci_pre.iterate(2, 1);
         // ci.addPivots(ci_pre);
-        for (auto b = 0u; b < ci.len() - 1; b++) {
-          auto pivots = ci_pre.getPivotsAt(b);
-          ci.myAddPivotsAt(pivots, b);
-        }
-        print_rank(ci.tt);
-        // ci.makeCanonical();
+        // for (auto b = 0u; b < ci.len() - 1; b++) {
+        //   auto pivots = ci_pre.getPivotsAt(b);
+        //   ci.myAddPivotsAt(pivots, b);
+        // }
+        ci.addPivots(ci_pre);
         // print_rank(ci.tt);
+        // ci.makeCanonical();
+        print_rank(ci.tt);
         std::cout << "bond_dim: " << ci.param.bondDim << std::endl;
         double current_integral = 0.0;
         for (int i = 1; i <= tp.sweep_bound; i++) {
@@ -317,7 +318,7 @@ void ModePartitionSinHalf::run_single_element() {
           std::cout << i << " " << count << " " << last_pivot_error << " " << current_integral << std::endl;
           print_rank(ci.tt);
         }
-        ci.makeCanonical();
+        // ci.makeCanonical();
         current_integral      = ci.tt.sum(weight);
         auto integral_element = current_integral;
         std::cout << " ------- tci finish ------- " << std::endl;
