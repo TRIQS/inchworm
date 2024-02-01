@@ -18,7 +18,7 @@ template <typename T> void print_vector(const std::vector<T> &vec) {
   std::cout << std::endl;
 }
 
-template <typename T> inline void print_rank(xfac::TensorTrain<T> tt) {
+template <typename T> inline void print_rank(T tt) {
   int len = tt.M.size();
   std::vector<int> rs(len - 1);
   for (auto i = 0u; i < len - 1; i++) rs[i] = tt.M[i].n_slices;

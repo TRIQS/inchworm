@@ -223,7 +223,7 @@ void ModePartitionSin::run_single_element() {
           std::cout << ci_count << " " << count_pre << " " << last_pivot_error << " " << std::endl;
           print_rank(ci_pre.tt);
           ci_count++;
-          if (std::abs(last_pivot_error - previous_pivot_error) < tci_convergence_threshold && ci_count >3) { break; }
+          if (std::abs(last_pivot_error - previous_pivot_error) < tci_convergence_threshold && ci_count > 3) { break; }
           previous_pivot_error = last_pivot_error;
         }
         // ci_pre.makeCanonical();
@@ -284,6 +284,7 @@ void ModePartitionSin::run_single_element() {
         print_rank(ci.tt);
         std::cout << "bond_dim: " << ci.param.bondDim << std::endl;
         double current_integral = 0.0;
+        ci.cIter                = 1;
         for (int i = 1; i <= tp.sweep_bound; i++) {
           ci.iterate();
           // ci.makeCanonical();

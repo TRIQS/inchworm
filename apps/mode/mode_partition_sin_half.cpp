@@ -11,14 +11,14 @@ void ModePartitionSinHalf::run_single_element() {
 
   std::vector<double> iotai(mp.n_phi);
   std::iota(iotai.begin(), iotai.end(), 0);
-  auto wi_iota                        = std::vector(mp.n_phi, 1.0);
-  auto max_weight_v                   = *std::max_element(tp.wi_v.begin(), tp.wi_v.end());
-  double auxi_height                  = tp.auxi_height; //height of the auxiliary function in the pre-training
-  double reltol_test                  = tp.reltol;
-  double tci_convergence_threshold    = 1E-25;
+  auto wi_iota                     = std::vector(mp.n_phi, 1.0);
+  auto max_weight_v                = *std::max_element(tp.wi_v.begin(), tp.wi_v.end());
+  double auxi_height               = tp.auxi_height; //height of the auxiliary function in the pre-training
+  double reltol_test               = tp.reltol;
+  double tci_convergence_threshold = 1E-25;
   // double pre_train_relative_threshold = 1E-20;
-  double time_for_find_pivot          = 0.0;
-  double time_for_pre_training        = 0.0;
+  double time_for_find_pivot   = 0.0;
+  double time_for_pre_training = 0.0;
   for (int order : sp.order_list) {
     auto start_time = std::chrono::high_resolution_clock::now();
     int n           = 2 * order; // number of operators
@@ -85,6 +85,27 @@ void ModePartitionSinHalf::run_single_element() {
     double integral_auxiliary = ci_pre_auxiliary.tt.sum(weight_pre);
     print_rank(ci_pre_auxiliary.tt);
     std::cout << "integral_auxiliary: " << integral_auxiliary << std::endl;
+
+    // auto ci_pre_auxiliary = xfac::CTensorCI<double, double>(
+    //    get_auxiliary, input_pre, {.reltol= reltol_test, .pivot1 = pivot1_auxiliary});
+    // std::cout << "integral for the auxiliary function" << std::endl;
+    // std::cout << "iteration nEval LastSweepPivotError\n";
+    // int ci_count_auxiliary                = 0;
+    // double previous_pivot_error_auxiliary = -1E5;
+    // while (true) {
+    //   ci_pre_auxiliary.iterate();
+    //   auto last_pivot_error = ci_pre_auxiliary.pivotError[ci_pre_auxiliary.pivotError.size() - 1];
+    //   std::cout << ci_count_auxiliary << " " << count_auxiliary << " " << last_pivot_error << " " << std::endl;
+    //   print_rank(ci_pre_auxiliary.get_TensorTrain());
+    //   ci_count_auxiliary++;
+    //   if (std::abs(last_pivot_error - previous_pivot_error_auxiliary) < tci_convergence_threshold && ci_count_auxiliary > 3) { break; }
+    //   previous_pivot_error_auxiliary = last_pivot_error;
+    // }
+    // // ci_pre_auxiliary.iterate(2,0);
+    // // ci_pre_auxiliary.makeCanonical();
+    // double integral_auxiliary = ci_pre_auxiliary.get_TensorTrain().sum(weight_pre);
+    // print_rank(ci_pre_auxiliary.get_TensorTrain());
+    // std::cout << "integral_auxiliary: " << integral_auxiliary << std::endl;
 
     // auto ci_pre_auxiliary2 = xfac::CTensorCI2<double, double>(
     //    get_auxiliary, input_pre, {.bondDim = tp.bond_dim, .reltol = reltol_test, .pivot1 = pivot1_auxiliary, .fullPiv = true});
@@ -204,7 +225,7 @@ void ModePartitionSinHalf::run_single_element() {
           return auxi_height * sin_term + integrand * j;
         };
 
-        //pretraining
+        // pretraining
         auto start_time_pre_training = std::chrono::high_resolution_clock::now();
         std::cout << "pretraining" << std::endl;
         std::cout << "iteration nEval LastSweepPivotError\n";
@@ -261,7 +282,46 @@ void ModePartitionSinHalf::run_single_element() {
           continue;
         }
 
+        // // pretraining
+        // auto start_time_pre_training = std::chrono::high_resolution_clock::now();
+        // std::cout << "pretraining" << std::endl;
+        // std::cout << "iteration nEval LastSweepPivotError\n";
+        // auto ci_pre = xfac::CTensorCI<double, double>(get_u_tau_max_element_pre, input_pre,
+        //                                                {.reltol= reltol_test, .pivot1 = pivot1_auxiliary});
+        // int ci_count                = 0;
+        // double previous_pivot_error = -1E5;
+        // while (true) {
+        //   ci_pre.iterate();
+        //   // ci_pre.makeCanonical();
+        //   auto last_pivot_error = ci_pre.pivotError[ci_pre.pivotError.size() - 1];
+        //   std::cout << ci_count << " " << count_pre << " " << last_pivot_error << " " << std::endl;
+        //   print_rank(ci_pre.get_TensorTrain());
+        //   ci_count++;
+        //   if (std::abs(last_pivot_error - previous_pivot_error) < tci_convergence_threshold && ci_count > 3) { break; }
+        //   previous_pivot_error = last_pivot_error;
+        // }
+        // // ci_pre.makeCanonical();
+        // auto end_time_pre_training = std::chrono::high_resolution_clock::now();
+        // auto duration_pre_training = std::chrono::duration_cast<std::chrono::microseconds>(end_time_pre_training - start_time_pre_training).count();
+        // auto duration_in_seconds_pre_training = static_cast<double>(duration_pre_training) / 1e6;
+        // std::cout << "duration_in_seconds_pre_training: " << duration_in_seconds_pre_training << " seconds" << std::endl;
+        // time_for_pre_training += duration_in_seconds_pre_training;
+        // std::cout << "pretraining finished" << std::endl;
+        // // ci_pre.makeCanonical();
+        // double integral_pre = ci_pre.get_TensorTrain().sum(weight_pre);
+        // std::cout << "integral_pre: " << integral_pre << std::endl;
+        // std::cout << "integral_auxiliary: " << integral_auxiliary << std::endl;
+        // double integral_diff = integral_pre - integral_auxiliary;
+        // std::cout << "integral_pre-integral_auxiliary: " << integral_diff << std::endl;
+        // if (std::abs(integral_diff) < pre_integral_lower_bound) {
+        //   std::cout << "pre_trained integral is too small, skip the integral" << std::endl;
+        //   std::cout << "integral_diff: " << integral_diff << std::endl;
+        //   std::cout << " ------- tci finish------- " << std::endl;
+        //   continue;
+        // }
+
         //training
+        auto start_time_find_pivot = std::chrono::high_resolution_clock::now();
         std::cout << "training" << std::endl;
         auto input_to_append = std::vector(n, tp.vi);
         auto input           = std::vector(n, iotai);
@@ -294,6 +354,10 @@ void ModePartitionSinHalf::run_single_element() {
           std::cout << " ------- tci finish ------- " << std::endl;
           continue;
         }
+        auto end_time_find_pivot = std::chrono::high_resolution_clock::now();
+        auto duration_find_pivot = std::chrono::duration_cast<std::chrono::microseconds>(end_time_find_pivot - start_time_find_pivot).count();
+        auto duration_in_seconds_find_pivot = static_cast<double>(duration_find_pivot) / 1e6;
+        time_for_find_pivot += duration_in_seconds_find_pivot;
         std::cout << "iteration nEval LastSweepPivotError integral\n";
         auto ci = xfac::CTensorCI2<double, double>(get_u_tau_max_element, input,
                                                    {.bondDim = tp.bond_dim, .reltol = reltol_test, .pivot1 = pivot1_train, .fullPiv = false});
