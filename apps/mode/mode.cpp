@@ -3,13 +3,13 @@
 #include <boost/property_tree/json_parser.hpp>
 
 void base_mode::prepare_input() {
-  std::tie(tp.v_value, tp.v_weight)                              = select_quadrature_GK(tp.n_GK, 0, 1);
+  std::tie(tp.v_value, tp.v_weight)                     = select_quadrature_GK(tp.n_GK, 0, 1);
   std::tie(mp.Delta_tau, mp.ad_imp, sr.u_tau, sr.G_tau) = test_setup(mp.n_site, mp.n_bath, mp.n_spin, mp.U, mp.mu, mp.t, cp, mp.theta, mp.epsilon);
   sr.u_interpolator                                     = interpolator_t<scalar_t>(sr.u_tau, sr.u_tau[0].mesh().size());
   sr.u_tau_max_zeroth_order = sr.u_interpolator(sp.tau_max - sp.tau_split) * sr.u_interpolator(sp.tau_split); //oder 0 result
 
   // parameters for bare mode
-  sr.partition_function = trace(sr.u_interpolator(cp.beta));
+  sr.partition_function          = trace(sr.u_interpolator(cp.beta));
   sr.u_tau_max_zeroth_order_bare = make_bare_u_frame(mp.ad_imp, cp.beta);
 
   int n_bl = cp.gf_struct.size();
@@ -41,7 +41,7 @@ void base_mode::prepare_input() {
 }
 
 void base_mode::print_summary() {
-  
+
   int i = sp.subspace_index / sr.u_tau[sp.bl_index].target_shape()[0];
   int j = sp.subspace_index % sr.u_tau[sp.bl_index].target_shape()[0];
 
@@ -49,14 +49,16 @@ void base_mode::print_summary() {
   std::cout << "partition_function: " << std::setw(10) << sr.partition_function << std::endl;
   std::cout << std::left << std::setw(10) << "order" << std::setw(30) << "value" << std::setw(30) << "time(s)" << std::endl;
   std::cout << std::setw(10) << "0" << std::setw(30) << sr.u_tau_max_zeroth_order[sp.bl_index](i, j) << std::endl;
+  std::cout << std::setw(10) << "0 (Z)" << std::setw(30) << trace(sr.u_tau_max_zeroth_order_bare) << std::endl;
   for (int i = 0; i < sp.order_list.size(); i++) {
     std::cout << std::setw(10) << sp.order_list[i] << std::setw(30) << sr.integral_list[i] << std::setw(30) << sr.calculation_time_list[i]
               << std::endl;
   }
-  double sum_value =
-     sr.u_tau_max_zeroth_order[sp.bl_index](i, j) + std::accumulate(sr.integral_list.begin(), sr.integral_list.end(), 0.0);
-  double sum_time = std::accumulate(sr.calculation_time_list.begin(), sr.calculation_time_list.end(), 0.0);
+  double sum_value   = sr.u_tau_max_zeroth_order[sp.bl_index](i, j) + std::accumulate(sr.integral_list.begin(), sr.integral_list.end(), 0.0);
+  double sum_value_Z = trace(sr.u_tau_max_zeroth_order_bare) + std::accumulate(sr.integral_list.begin(), sr.integral_list.end(), 0.0);
+  double sum_time    = std::accumulate(sr.calculation_time_list.begin(), sr.calculation_time_list.end(), 0.0);
   std::cout << std::setw(10) << "sum:" << std::setw(30) << sum_value << std::setw(10) << sum_time << std::endl;
+  std::cout << std::setw(10) << "sum (Z):" << std::setw(30) << sum_value_Z << std::setw(10) << sum_time << std::endl;
 }
 
 void base_mode::read_json_parameters(std::string json_file_path) {
@@ -140,7 +142,7 @@ void base_mode::read_json_parameters(std::string json_file_path) {
   tp.auxi_height          = root.get<double>("tp.auxi_height");
   tp.reltol               = root.get<double>("tp.reltol");
   tp.integral_lower_bound = root.get<double>("tp.integral_lower_bound");
-  tp.convergence_bound = root.get<double>("tp.convergence_bound");
-  tp.convergence_iter      = root.get<int>("tp.convergence_iter");
+  tp.convergence_bound    = root.get<double>("tp.convergence_bound");
+  tp.convergence_iter     = root.get<int>("tp.convergence_iter");
   std::cout << "json parameter file read successfully" << std::endl;
 }

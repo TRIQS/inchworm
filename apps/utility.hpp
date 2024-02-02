@@ -285,9 +285,9 @@ inline double evaluate_u_tau_max(frame_t &frame_zeroth_order, double tau_split, 
   int sign          = 0;
   double hyb_weight = 0.0;
   if (bl_indx == -1) { //-1 is for returning the trace
-    // if(has_zero_trace(ad_imp, diagram)){
-    //   return 0.0;
-    // }
+    if(has_zero_trace(ad_imp, diagram)){
+      return 0.0;
+    }
     auto hyb_mat = diagram::hyb_matrix_t(diagram, Delta_tau);
     sign         = diagram.sign();
     hyb_weight   = hyb_mat.det();
