@@ -1,13 +1,21 @@
-{
+{   
+    "gp": {
+        "target": "propagator",
+        "integrand": "plain",
+        "integral_variable": "v",
+        "tci_shape": "plain",
+        "trick": "none",
+        "model_type": 0
+    },
     "cp": {
         "beta": 2,
+        "n_tau_green": 5,
+        "n_tau_inch": 10001,
+        "n_tau": 10001,
         "gf_struct": {
             "up": 1,
             "dn": 1
-        },
-        "n_tau_green": 5,
-        "n_tau_inch": 10001,
-        "n_tau": 10001
+        }
     },
     "mp": {
         "n_site": 1,
@@ -70,26 +78,23 @@
     "sp": {
         "tau_max": 2,
         "tau_split_ratio": 0.9,
-        "order_list": [
-            1,2
-        ],
         "bl_index": 0,
         "subspace_index": 0,
-        "debug": 2
+        "debug": 2,
+        "order_list": [
+            1,2
+        ]
     },
     "tp":{
         "n_GK": 15,
+        "mapping_v": 0,
+        "tci_prrlu": true,
         "bond_dim": 100,
         "sweep_bound": 30,
-        "tci_prrlu": true,
-        "integral_error_bound": 1e-8,
-        "pivot_error_bound": 1e-15
-    },
-    "tp_iota": {
-        "tci_prrlu": true,
-        "bond_dim": 3,
-        "sweep_bound": 30,
-        "integral_error_bound": 1e-6,
-        "pivot_error_bound": 1e-10
+        "auxi_height": 1e-16,
+        "reltol": 1e-30,
+        "integral_lower_bound": 1e-20,
+        "convergence_bound": 1e-25,
+        "convergence_iter": 3
     }
 }

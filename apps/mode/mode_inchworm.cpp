@@ -7,6 +7,7 @@
 
 using namespace inchworm;
 
-void ModeInchworm::run_single_element() {}
-
-void ModeInchworm::run() {}
+void ModeInchworm::run() {
+  std::cerr << "not implemented yet" << std::endl;
+  std::exit(EXIT_FAILURE);
+}

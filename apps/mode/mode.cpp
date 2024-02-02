@@ -2,70 +2,18 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 
-void base_mode::prepare_input() {
-  std::tie(tp.v_value, tp.v_weight)                     = select_quadrature_GK(tp.n_GK, 0, 1);
-  std::tie(mp.Delta_tau, mp.ad_imp, sr.u_tau, sr.G_tau) = test_setup(mp.n_site, mp.n_bath, mp.n_spin, mp.U, mp.mu, mp.t, cp, mp.theta, mp.epsilon);
-  sr.u_interpolator                                     = interpolator_t<scalar_t>(sr.u_tau, sr.u_tau[0].mesh().size());
-  sr.u_tau_max_zeroth_order = sr.u_interpolator(sp.tau_max - sp.tau_split) * sr.u_interpolator(sp.tau_split); //oder 0 result
-
-  // parameters for bare mode
-  sr.partition_function          = trace(sr.u_interpolator(cp.beta));
-  sr.u_tau_max_zeroth_order_bare = make_bare_u_frame(mp.ad_imp, cp.beta);
-
-  int n_bl = cp.gf_struct.size();
-  mp.all_d_ops.resize(n_bl, {});
-  mp.all_d_dag_ops.resize(n_bl, {});
-  for (auto [bl, bl_pair] : enumerate(cp.gf_struct)) {
-    auto [bl_name, bl_size] = bl_pair;
-    mp.gf_block_shape.push_back(bl_size);
-  }
-  mp.n_phi = std::accumulate(mp.gf_block_shape.begin(), mp.gf_block_shape.end(), 0);
-  mp.fops  = fundamental_operator_set{cp.gf_struct};
-  for (auto [bl, bl_pair] : enumerate(cp.gf_struct)) {
-    auto [bl_name, bl_size] = bl_pair;
-    mp.all_d_ops[bl].clear();
-    mp.all_d_dag_ops[bl].clear();
-    for (auto idx : range(bl_size)) {
-      mp.all_d_ops[bl].emplace_back(0.0, false, mp.fops[{bl_name, idx}], bl, idx);
-      mp.all_d_dag_ops[bl].emplace_back(0.0, true, mp.fops[{bl_name, idx}], bl, idx);
-    }
-  }
-  if (sp.debug > 1) {
-    std::cout << "Delta_tau shape:" << std::endl;
-    print_block_shape(mp.Delta_tau);
-    std::cout << "G_tau shape:" << std::endl;
-    print_block_shape(sr.G_tau);
-    std::cout << "u_tau shape:" << std::endl;
-    print_block_shape(sr.u_tau);
-  }
-}
-
-void base_mode::print_summary() {
-
-  int i = sp.subspace_index / sr.u_tau[sp.bl_index].target_shape()[0];
-  int j = sp.subspace_index % sr.u_tau[sp.bl_index].target_shape()[0];
-
-  std::cout << "u_tau_max exact: " << std::setw(10) << sr.u_interpolator(sp.tau_max)[sp.bl_index](i, j) << std::endl;
-  std::cout << "partition_function: " << std::setw(10) << sr.partition_function << std::endl;
-  std::cout << std::left << std::setw(10) << "order" << std::setw(30) << "value" << std::setw(30) << "time(s)" << std::endl;
-  std::cout << std::setw(10) << "0" << std::setw(30) << sr.u_tau_max_zeroth_order[sp.bl_index](i, j) << std::endl;
-  std::cout << std::setw(10) << "0 (Z)" << std::setw(30) << trace(sr.u_tau_max_zeroth_order_bare) << std::endl;
-  for (int i = 0; i < sp.order_list.size(); i++) {
-    std::cout << std::setw(10) << sp.order_list[i] << std::setw(30) << sr.integral_list[i] << std::setw(30) << sr.calculation_time_list[i]
-              << std::endl;
-  }
-  double sum_value   = sr.u_tau_max_zeroth_order[sp.bl_index](i, j) + std::accumulate(sr.integral_list.begin(), sr.integral_list.end(), 0.0);
-  double sum_value_Z = trace(sr.u_tau_max_zeroth_order_bare) + std::accumulate(sr.integral_list.begin(), sr.integral_list.end(), 0.0);
-  double sum_time    = std::accumulate(sr.calculation_time_list.begin(), sr.calculation_time_list.end(), 0.0);
-  std::cout << std::setw(10) << "sum:" << std::setw(30) << sum_value << std::setw(10) << sum_time << std::endl;
-  std::cout << std::setw(10) << "sum (Z):" << std::setw(30) << sum_value_Z << std::setw(10) << sum_time << std::endl;
-}
-
-void base_mode::read_json_parameters(std::string json_file_path) {
-
+void ModeBase::read_json_parameters(std::string json_file_path) {
   namespace pt = boost::property_tree;
   pt::ptree root;
   pt::read_json(json_file_path, root);
+
+  // Read global parameters
+  gp.target            = root.get<std::string>("gp.target");
+  gp.integrand         = root.get<std::string>("gp.integrand");
+  gp.integral_variable = root.get<std::string>("gp.integral_variable");
+  gp.tci_shape         = root.get<std::string>("gp.tci_shape");
+  gp.trick             = root.get<std::string>("gp.trick");
+  gp.model_type        = root.get<int>("gp.model_type");
 
   // Read construction parameters
   cp.beta        = root.get<double>("cp.beta");
@@ -134,15 +82,116 @@ void base_mode::read_json_parameters(std::string json_file_path) {
 
   // Read TCI parameters
   tp.n_GK                 = root.get<int>("tp.n_GK");
+  tp.mapping_v            = root.get<int>("tp.mapping_v");
   tp.tci_prrlu            = root.get<bool>("tp.tci_prrlu");
   tp.bond_dim             = root.get<int>("tp.bond_dim");
   tp.sweep_bound          = root.get<int>("tp.sweep_bound");
-  tp.integral_error_bound = root.get<double>("tp.integral_error_bound");
-  tp.pivot_error_bound    = root.get<double>("tp.pivot_error_bound");
   tp.auxi_height          = root.get<double>("tp.auxi_height");
   tp.reltol               = root.get<double>("tp.reltol");
   tp.integral_lower_bound = root.get<double>("tp.integral_lower_bound");
   tp.convergence_bound    = root.get<double>("tp.convergence_bound");
   tp.convergence_iter     = root.get<int>("tp.convergence_iter");
   std::cout << "json parameter file read successfully" << std::endl;
-}
+} // end of read_json_parameters
+
+void ModeBase::prepare_input() {
+  std::tie(tp.v_value, tp.v_weight) = select_quadrature_GK(tp.n_GK, 0, 1);
+
+  if (gp.model_type == 0) { //model_type 0: discrete bath, where exact results (reference) are available
+
+    // input parameters and exact results
+    std::tie(mp.Delta_tau, mp.ad_imp, sr.u_tau_ref, sr.G_tau_ref) =
+       test_setup(mp.n_site, mp.n_bath, mp.n_spin, mp.U, mp.mu, mp.t, cp, mp.theta, mp.epsilon);
+    sr.u_interpolator_ref     = interpolator_t<scalar_t>(sr.u_tau_ref, sr.u_tau_ref[0].mesh().size());
+    sr.partition_function_ref = trace(sr.u_interpolator_ref(cp.beta));
+
+    // structure information about Green's function
+    int n_bl = cp.gf_struct.size();
+    mp.all_d_ops.resize(n_bl, {});
+    mp.all_d_dag_ops.resize(n_bl, {});
+    for (auto [bl, bl_pair] : enumerate(cp.gf_struct)) {
+      auto [bl_name, bl_size] = bl_pair;
+      mp.gf_block_shape.push_back(bl_size);
+    }
+    mp.n_phi = std::accumulate(mp.gf_block_shape.begin(), mp.gf_block_shape.end(), 0);
+    mp.fops  = fundamental_operator_set{cp.gf_struct};
+    for (auto [bl, bl_pair] : enumerate(cp.gf_struct)) {
+      auto [bl_name, bl_size] = bl_pair;
+      mp.all_d_ops[bl].clear();
+      mp.all_d_dag_ops[bl].clear();
+      for (auto idx : range(bl_size)) {
+        mp.all_d_ops[bl].emplace_back(0.0, false, mp.fops[{bl_name, idx}], bl, idx);
+        mp.all_d_dag_ops[bl].emplace_back(0.0, true, mp.fops[{bl_name, idx}], bl, idx);
+      }
+    }
+    if (sp.debug > 1) {
+      std::cout << "Delta_tau shape:" << std::endl;
+      print_block_shape(mp.Delta_tau);
+      std::cout << "G_tau shape:" << std::endl;
+      print_block_shape(sr.G_tau_ref);
+      std::cout << "u_tau shape:" << std::endl;
+      print_block_shape(sr.u_tau_ref);
+    }
+  } else if (gp.model_type == 1) { //model_type 1: continuous bath (read from file)
+    std::cerr << "not implemented yet" << std::endl;
+    std::exit(EXIT_FAILURE);
+
+  } else if (gp.model_type == 2) { //model_type 2: bethe lattice
+    std::cerr << "not implemented yet" << std::endl;
+    std::exit(EXIT_FAILURE);
+  }
+  else{
+    std::cerr << "invalid model_type" << std::endl;
+    std::exit(EXIT_FAILURE);
+  }
+} // end of prepare_input
+
+void ModeBase::print_summary() {
+  // global parameters
+  std::cout << "mode_name: " << mode_name << std::endl;
+  std::cout << "target: " << gp.target << std::endl;
+  std::cout << "integrand: " << gp.integrand << std::endl;
+  std::cout << "integral_variable: " << gp.integral_variable << std::endl;
+  std::cout << "tci_shape: " << gp.tci_shape << std::endl;
+  std::cout << "trick: " << gp.trick << std::endl;
+  if (gp.model_type == 0) {
+    std::cout << "model_type: discrete bath" << std::endl;
+  } else if (gp.model_type == 1) {
+    std::cout << "model_type: continuous bath" << std::endl;
+  } else if (gp.model_type == 2) {
+    std::cout << "model_type: bethe lattice" << std::endl;
+  }
+
+  if (mode_name == "debug") {
+    // debug mode now only work on evaluating a single element of the propagator
+    int i = sp.subspace_index / sr.u_tau[sp.bl_index].target_shape()[0];
+    int j = sp.subspace_index % sr.u_tau[sp.bl_index].target_shape()[0];
+    std::cout << "element index: "
+              << "(" << i << ", " << j << ")" << std::endl;
+    std::cout << "u_tau_max exact: " << std::setw(10) << sr.u_interpolator_ref(sp.tau_max)[sp.bl_index](i, j) << std::endl;
+    std::cout << std::left << std::setw(10) << "order" << std::setw(30) << "value" << std::setw(30) << "time(s)"
+              << "time_find_pivot(s)" << std::setw(30) << "time_pretrain(s)" << std::setw(30) << "time_train(s)" << std::endl;
+    std::cout << std::setw(10) << "0" << std::setw(30) << sr.u_tau_zeroth_order_ref[sp.bl_index](i, j) << std::endl;
+    for (int i = 0; i < sp.order_list.size(); i++) {
+      std::cout << std::setw(10) << sp.order_list[i] << std::setw(30) << sr.integral_list[i] << std::setw(30) << sr.calculation_time_list[i]
+                << std::setw(30) << sr.find_pivot_time_list[i] << std::setw(30) << sr.pretrain_time_list[i] << std::setw(30) << sr.train_time_list[i]
+                << std::endl;
+    }
+    double sum_value = sr.u_tau_max_zeroth_order[sp.bl_index](i, j) + std::accumulate(sr.integral_list.begin(), sr.integral_list.end(), 0.0);
+    double sum_time  = std::accumulate(sr.calculation_time_list.begin(), sr.calculation_time_list.end(), 0.0);
+    double sum_time_find_pivot = std::accumulate(sr.find_pivot_time_list.begin(), sr.find_pivot_time_list.end(), 0.0);
+    double sum_time_pretrain   = std::accumulate(sr.pretrain_time_list.begin(), sr.pretrain_time_list.end(), 0.0);
+    double sum_time_train      = std::accumulate(sr.train_time_list.begin(), sr.train_time_list.end(), 0.0);
+    std::cout << std::setw(10) << "sum:" << std::setw(30) << sum_value << std::setw(10) << sum_time << std::setw(10) << sum_time_find_pivot
+              << std::setw(10) << sum_time_pretrain << std::setw(10) << sum_time_train << std::endl;
+  } else if (mode_name == "bare") {
+    std::cerr << "not implemented yet" << std::endl;
+    std::exit(EXIT_FAILURE);
+  } else if (mode_name == "inchworm") {
+    std::cerr << "not implemented yet" << std::endl;
+    std::exit(EXIT_FAILURE);
+  } else {
+    std::cerr << "invalid mode_name" << std::endl;
+    std::exit(EXIT_FAILURE);
+  }
+} // end of print_summary

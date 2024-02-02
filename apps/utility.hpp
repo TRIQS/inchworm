@@ -82,14 +82,6 @@ inline std::vector<std::pair<std::vector<int>, std::vector<int>>> get_all_phi(st
         order_d_dag_ls.push_back(range[i]);
       }
     }
-    // std::cout << "tau_d_ls size: " << tau_d_ls.size() << std::endl;
-    // std::cout << "tau_d_dag_ls size: " << tau_d_dag_ls.size() << std::endl;
-    // Display the generated sub-vectors
-    // std::cerr << "First: " << std::endl;
-    // print_vector(order_d_ls);
-    // std::cerr << "Second: " << std::endl;
-    // print_vector(order_d_dag_ls);
-    // std::cerr << "---\n";
     res.push_back(std::make_pair(order_d_ls, order_d_dag_ls));
   } while (std::next_permutation(indicator.begin(), indicator.end()));
   return res;
@@ -104,8 +96,6 @@ inline std::vector<std::pair<std::vector<int>, std::vector<int>>> get_all_phi_cr
     order_d_ls.push_back(range[i]);
     order_d_dag_ls.push_back(range[i + 1]);
   }
-  // std::cout << "tau_d_ls size: " << order_d_ls.size() << std::endl;
-  // std::cout << "tau_d_dag_ls size: " << order_d_dag_ls.size() << std::endl;
   res.push_back(std::make_pair(order_d_ls, order_d_dag_ls));
   order_d_ls.clear();
   order_d_dag_ls.clear();

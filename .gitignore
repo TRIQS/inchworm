@@ -1,6 +1,7 @@
 compile_commands.json
 doc/cpp2rst_generated
 
+tci_v1
 buildSAN
 build
 build_*

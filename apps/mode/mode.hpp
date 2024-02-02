@@ -20,6 +20,14 @@
 #include "../hubbard.hpp"
 #include "../utility.hpp"
 
+struct global_params_t {
+  std::string target{};
+  std::string integrand{};
+  std::string integral_variable{};
+  std::string tci_shape{};
+  std::string trick{};
+  int model_type{}; // 0 for discrete bath, 1 for continuous bath, 2 for bethe lattice
+};
 
 struct model_params_t {
   int n_site{};
@@ -43,11 +51,10 @@ struct model_params_t {
 
 struct tci_params_t {
   int n_GK{};
+  int mapping_v{}; //0 for the mapping in Phys. Rev. B 107, 245135, 1 for the mapping in 	arXiv:2310.16957
   bool tci_prrlu{};
   int bond_dim{};
   int sweep_bound{};
-  double integral_error_bound{};
-  double pivot_error_bound{};
   std::vector<double> v_value{};
   std::vector<double> v_weight{};
   double auxi_height{};
@@ -67,196 +74,63 @@ struct simulation_params_t {
 };
 
 struct simulation_results_t {
+  double partition_function{};
   u_tau_t u_tau{};
   g_tau_t G_tau{};
   interpolator_t<scalar_t> u_interpolator{};
   frame_t u_tau_max_zeroth_order{};
-  frame_t u_tau_max_zeroth_order_bare{};
-  std::vector<double> integral_list   = {};
+  double partition_function_ref{};
+  u_tau_t u_tau_ref{};
+  g_tau_t G_tau_ref{};
+  interpolator_t<scalar_t> u_interpolator_ref{};
+  frame_t u_tau_zeroth_order_ref{};
+  frame_t u_tau_zeroth_order_bare{};
+
+  std::vector<double> integral_list         = {};
   std::vector<double> calculation_time_list = {};
   std::vector<double> pretrain_time_list    = {};
   std::vector<double> find_pivot_time_list  = {};
   std::vector<double> train_time_list       = {};
-  double partition_function{};
 };
 
-class base_mode {
+class ModeBase {
   public:
-  base_mode() {}
-  virtual void init(std::string json_file_path) { base_mode::read_json_parameters(json_file_path); }
-  virtual void prepare_input();
+  ModeBase() {}
+  virtual void init(std::string json_file_path) {
+    read_json_parameters(json_file_path);
+    prepare_input();
+  }
   virtual void print_summary();
-  virtual void run_single_element() = 0;
-  virtual void run() {};
-  virtual void read_json_parameters(std::string json_file_path);
-  virtual ~base_mode() {}
+  virtual void run() = 0;
+  virtual ~ModeBase() {}
+  std::string mode_name{};
 
   protected:
   // parameters for all modes
+  global_params_t gp{};
   constr_params_t cp{};
   model_params_t mp{};
   tci_params_t tp{};
   simulation_params_t sp{};
   simulation_results_t sr{};
+  void read_json_parameters(std::string json_file_path);
+  void prepare_input();
 };
 
-class ModeExplicitSum : public base_mode {
+class ModeDebug : public ModeBase {
   public:
-  ModeExplicitSum() : base_mode() {}
-  void run_single_element() override;
-};
-
-class ModeExplicitSumExact : public base_mode {
-  public:
-  ModeExplicitSumExact() : base_mode() {}
-  void run_single_element() override;
-};
-
-class ModeFullFactorization : public base_mode {
-  public:
-  ModeFullFactorization() : base_mode() {}
-  void run_single_element() override;
-};
-
-class ModeFullPartition : public base_mode {
-  public:
-  ModeFullPartition() : base_mode() {}
-  void run_single_element() override;
-};
-
-class ModePartitionSin : public base_mode {
-  public:
-  ModePartitionSin() : base_mode() {}
-  void run_single_element() override;
-};
-
-class ModePartitionSinAll : public base_mode {
-  public:
-  ModePartitionSinAll() : base_mode() {}
-  void run_single_element() override;
-};
-
-class ModePartitionSinHalf : public base_mode {
-  public:
-  ModePartitionSinHalf() : base_mode() {}
-  void run_single_element() override;
-};
-
-class ModePartitionBath : public base_mode {
-  public:
-  ModePartitionBath() : base_mode() {}
-  void run_single_element() override;
-};
-
-
-class ModePartitionMid : public base_mode {
-  public:
-  ModePartitionMid() : base_mode() {}
-  void run_single_element() override;
-};
-
-class ModeFullFactorizationPivots : public base_mode {
-  public:
-  ModeFullFactorizationPivots() : base_mode() {}
-  void run_single_element() override;
-};
-
-class ModeFullFactorizationBath : public base_mode {
-  public:
-  ModeFullFactorizationBath() : base_mode() {}
-  void run_single_element() override;
-};
-
-class ModeVertexFactorization : public base_mode {
-  public:
-  ModeVertexFactorization() : base_mode() {}
-  void run_single_element() override;
-};
-
-class ModeVertexFactorizationPivots : public base_mode {
-  public:
-  ModeVertexFactorizationPivots() : base_mode() {}
-  void run_single_element() override;
-};
-
-class ModeTreeFactorization1 : public base_mode {
-  public:
-  ModeTreeFactorization1() : base_mode() {}
-  void run_single_element() override;
-};
-
-class ModeTreeFactorization1Bath : public base_mode {
-  public:
-  ModeTreeFactorization1Bath() : base_mode() {}
-  void run_single_element() override;
-};
-
-class ModeVertexFactorizationSymmetrized : public base_mode {
-  public:
-  ModeVertexFactorizationSymmetrized() : base_mode() {}
-  void run_single_element() override;
-};
-
-class ModeVertexFactorizationBath : public base_mode {
-  public:
-  ModeVertexFactorizationBath() : base_mode() {}
-  void run_single_element() override;
-};
-
-class ModeReusePivots : public base_mode {
-  public:
-  ModeReusePivots() : base_mode() {}
-  void run_single_element() override;
-};
-
-class ModePartitionFactorization : public base_mode {
-  public:
-  ModePartitionFactorization() : base_mode() {}
-  void run_single_element() override;
-};
-
-class ModePartitionFactorizationPivots : public base_mode {
-  public:
-  ModePartitionFactorizationPivots() : base_mode() {}
-  void run_single_element() override;
-};
-
-class ModeCombineFactorization : public base_mode {
-  public:
-  ModeCombineFactorization() : base_mode() {}
-  void run_single_element() override;
-};
-
-class ModeNestedTCI : public base_mode {
-  public:
-  ModeNestedTCI() : base_mode() {}
-  void run_single_element() override;
-  void init(std::string json_file_path) override;
-  void read_json_parameters(std::string json_file_path) override;
-
-  private:
-  // parameters for nested TCI only
-  tci_params_t tp_iota{};
-};
-
-
-class ModeInchworm : public base_mode {
-  public:
-  ModeInchworm() : base_mode() {}
-  void run_single_element() override;
+  ModeDebug() : ModeBase() { mode_name = "debug"; }
   void run() override;
 };
 
-class ModeBare : public base_mode {
+class ModeInchworm : public ModeBase {
   public:
-  ModeBare() : base_mode() {}
-  void run_single_element() override;
+  ModeInchworm() : ModeBase() { mode_name = "inchworm"; }
   void run() override;
-  void set_up();
-  void evaluate_partition_function();
-  void evaluate_greens_function();
+};
 
-  private:
-  std::vector<double> iota_value;
-  std::vector<double> iota_weight;
+class ModeBare : public ModeBase {
+  public:
+  ModeBare() : ModeBase() { mode_name = "bare"; }
+  void run() override;
 };
