@@ -57,7 +57,8 @@ void ModePartitionSin::run_single_element() {
     };
     auto pivot1_auxiliary = std::vector<int>(n, 1);
     pivot1_auxiliary.insert(pivot1_auxiliary.end(), v_pivot1_pre.begin(), v_pivot1_pre.end());
-    auto input_to_append_pre  = std::vector(n, std::vector<double>{tp.v_value[int(tp.v_value.size() / 2)]}); // for the pre-training, the v variable is fixed
+    auto input_to_append_pre =
+       std::vector(n, std::vector<double>{tp.v_value[int(tp.v_value.size() / 2)]}); // for the pre-training, the v variable is fixed
     auto input_pre            = std::vector(n, iotai);
     auto weight_artificial    = std::vector<double>{1.0};
     auto weight_to_append_pre = std::vector(n, weight_artificial);
@@ -279,8 +280,13 @@ void ModePartitionSin::run_single_element() {
         std::cout << "iteration nEval LastSweepPivotError integral\n";
         auto ci = xfac::CTensorCI2<double, double>(get_u_tau_max_element, input,
                                                    {.bondDim = tp.bond_dim, .reltol = reltol_test, .pivot1 = pivot1, .fullPiv = false});
-        ci.addPivots(ci_pre);
-        // ci.makeCanonical();
+        // ci.addPivots(ci_pre);
+        for (auto b = 0u; b < ci.len() - 1; b++) {
+          auto pivots = ci_pre.getPivotsAt(b);
+          ci.myAddPivotsAt(pivots, ci.len() - 2 - b);
+          // ci.myAddPivotsAt(pivots, b);
+        }
+        ci.makeCanonical();
         print_rank(ci.tt);
         std::cout << "bond_dim: " << ci.param.bondDim << std::endl;
         double current_integral = 0.0;

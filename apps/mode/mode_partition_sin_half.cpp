@@ -365,16 +365,18 @@ void ModePartitionSinHalf::run_single_element() {
         // ci_pre.iterate(2, 0);
         // ci_pre.iterate(2, 1);
         // ci.addPivots(ci_pre);
-        // for (auto b = 0u; b < ci.len() - 1; b++) {
-        //   auto pivots = ci_pre.getPivotsAt(b);
-        //   ci.myAddPivotsAt(pivots, b);
-        // }
-        ci.addPivots(ci_pre);
+        for (auto b = 0u; b < ci.len() - 1; b++) {
+          auto pivots = ci_pre.getPivotsAt(b);
+          ci.myAddPivotsAt(pivots, ci.len() - 2-b);
+          // ci.myAddPivotsAt(pivots, b);
+        }
+        // ci.addPivots(ci_pre);
         // print_rank(ci.tt);
-        // ci.makeCanonical();
+        ci.makeCanonical();
         print_rank(ci.tt);
         std::cout << "bond_dim: " << ci.param.bondDim << std::endl;
         double current_integral = 0.0;
+        ci.cIter = 0;
         for (int i = 1; i <= tp.sweep_bound; i++) {
           ci.iterate();
           current_integral      = ci.tt.sum(weight);
