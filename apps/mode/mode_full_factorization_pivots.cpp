@@ -63,7 +63,7 @@ void ModeFullFactorizationPivots::run_single_element() {
 
         std::vector<double> v_iota_s1{};
         std::vector<double> v_s1{};
-        for (int i = 0; i < v_pivot1.size(); i++) { v_s1.push_back(tp.vi[v_pivot1[i]]); } //insert v only temporarily
+        for (int i = 0; i < v_pivot1.size(); i++) { v_s1.push_back(tp.v_value[v_pivot1[i]]); } //insert v only temporarily
         double u_tau_max_element_vs1 = 0;
 
         // set pivot for iota
@@ -155,13 +155,13 @@ void ModeFullFactorizationPivots::run_single_element() {
         input.reserve(2 * n);
         for (int i = 0; i < n; i++) {
           input.push_back(iotai);
-          input.push_back(tp.vi);
+          input.push_back(tp.v_value);
         }
         std::vector<std::vector<double>> weight{};
         weight.reserve(2 * n);
         for (int i = 0; i < n; i++) {
           weight.push_back(wi_iota);
-          weight.push_back(tp.wi_v);
+          weight.push_back(tp.v_weight);
         }
 
         double integral_element =
@@ -176,6 +176,6 @@ void ModeFullFactorizationPivots::run_single_element() {
     auto duration            = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count();
     auto duration_in_seconds = static_cast<double>(duration) / 1e6;
     sr.calculation_time_list.push_back(duration_in_seconds);
-    sr.integral_order_list.push_back(integral_sum_phi);
+    sr.integral_list.push_back(integral_sum_phi);
   }
 }

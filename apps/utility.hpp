@@ -256,6 +256,7 @@ inline double evaluate_u_tau_max(frame_t &frame_zeroth_order, double tau_split, 
                                  hyb_tau_t const &Delta_tau, atom_diag const &ad_imp, interpolator_t<scalar_t> const &u_interpolator,
                                  auto const &tau_d_list, auto const &tau_d_dag_list, auto const &iota_d_list, auto const &iota_d_dag_list,
                                  int bl_indx, int subspace_indx) {
+              
   auto config = config_t(frame_zeroth_order, cp.gf_struct, {0.0, tau_split});
   for (auto i : range(tau_d_list.size())) {
     auto [bl, subspace_d_index]       = findIndex(block_shape, iota_d_list[i]);
@@ -271,16 +272,26 @@ inline double evaluate_u_tau_max(frame_t &frame_zeroth_order, double tau_split, 
     config.split_times.push_back(d.tau);
     config.split_times.push_back(d_dag.tau);
   }
+
   auto diagram      = diagram::time_diagram_t{config, {tau_split}};
-  auto u_products   = make_frame(impurity_product(ad_imp, diagram, tau_max, tau_split, &u_interpolator)
+  frame_t u_products;
+  if(tau_split != 0.0) {
+  u_products   = make_frame(impurity_product(ad_imp, diagram, tau_max, tau_split, &u_interpolator)
                                  * impurity_product(ad_imp, diagram, tau_split, 0, &u_interpolator));
+  }
+  else {
+    u_products   = make_frame(impurity_product(ad_imp, diagram, tau_max, tau_split));
+  }
   int sign          = 0;
   double hyb_weight = 0.0;
-  if (bl_indx == -1) { //-1 is for returning the norm
+  if (bl_indx == -1) { //-1 is for returning the trace
+    // if(has_zero_trace(ad_imp, diagram)){
+    //   return 0.0;
+    // }
     auto hyb_mat = diagram::hyb_matrix_t(diagram, Delta_tau);
     sign         = diagram.sign();
-    hyb_weight   = inclusion_exclusion(diagram, hyb_mat);
-    return hyb_weight * sign * norm(u_products);
+    hyb_weight   = hyb_mat.det();
+    return hyb_weight * sign * trace(u_products);
   } else if (u_products[bl_indx].size() != 0) {
     auto hyb_mat = diagram::hyb_matrix_t(diagram, Delta_tau);
     sign         = diagram.sign();
@@ -481,8 +492,12 @@ inline void print_pivot1(std::vector<int> const &iota_d_list, std::vector<int> c
   std::cout << std::endl;
 }
 
-inline std::tuple<std::vector<double>, std::vector<double>, std::vector<double>> obtain_taus(const std::vector<double> &vs, int n_left,
-                                                                                             double tau_split, double tau_max) {
+inline std::tuple<std::vector<double>, std::vector<double>, std::vector<double>> obtain_taus(const std::vector<double> &vs, int n_left,                                                                                             double tau_split, double tau_max) {
+  if(n_left==0 && tau_split==0.0 ){
+    std::vector<double> taus(vs.size());
+    taus = change_variable(vs, tau_max, 0.0);
+    return std::make_tuple(taus, taus, taus);
+  }
   std::vector<double> vs_left(vs.begin(), vs.begin() + n_left);
   std::vector<double> vs_right(vs.begin() + n_left, vs.end());
   std::vector<double> taus_left  = change_variable(vs_left, tau_split, 0.0);

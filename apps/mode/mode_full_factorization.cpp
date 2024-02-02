@@ -62,7 +62,7 @@ void ModeFullFactorization::run_single_element() {
         };
 
         std::vector<double> v_iota_s1{};
-        for (int i = 0; i < v_pivot1.size(); i++) { v_iota_s1.push_back(tp.vi[v_pivot1[i]]); } //insert v only temporarily
+        for (int i = 0; i < v_pivot1.size(); i++) { v_iota_s1.push_back(tp.v_value[v_pivot1[i]]); } //insert v only temporarily
         double u_tau_max_element_vs1 = 0;
 
         // set pivot for iota
@@ -118,13 +118,13 @@ void ModeFullFactorization::run_single_element() {
         input.reserve(2 * n);
         for (int i = 0; i < n; i++) {
           input.push_back(iotai);
-          input.push_back(tp.vi);
+          input.push_back(tp.v_value);
         }
         std::vector<std::vector<double>> weight{};
         weight.reserve(2 * n);
         for (int i = 0; i < n; i++) {
           weight.push_back(wi_iota);
-          weight.push_back(tp.wi_v);
+          weight.push_back(tp.v_weight);
         }
 
         double integral_element = do_TCI<double, double>(get_u_tau_max_element, input, weight, pivot1, tp.sweep_bound, tp.bond_dim,
@@ -146,15 +146,15 @@ void ModeFullFactorization::run_single_element() {
           std::ofstream outfile("./tt_full_U8beta2_OO|XX.txt");
           std::cout << "writing tci" << std::endl;
           for (int idd0 = 0; idd0 < iotai.size(); idd0++) {
-            for (int id0 = 0; id0 < tp.vi.size(); id0++) {
+            for (int id0 = 0; id0 < tp.v_value.size(); id0++) {
               for (int idd1 = 0; idd1 < iotai.size(); idd1++) {
-                for (int id1 = 0; id1 < tp.vi.size(); id1++) {
+                for (int id1 = 0; id1 < tp.v_value.size(); id1++) {
                   for (int idd2 = 0; idd2 < iotai.size(); idd2++) {
-                    for (int id2 = 0; id2 < tp.vi.size(); id2++) {
+                    for (int id2 = 0; id2 < tp.v_value.size(); id2++) {
                       for (int idd3 = 0; idd3 < iotai.size(); idd3++) {
-                        for (int id3 = 0; id3 < tp.vi.size(); id3++) {
+                        for (int id3 = 0; id3 < tp.v_value.size(); id3++) {
                           double element = get_u_tau_max_element(
-                             {iotai[idd0], tp.vi[id0], iotai[idd1], tp.vi[id1], iotai[idd2], tp.vi[id2], iotai[idd3], tp.vi[id3]});
+                             {iotai[idd0], tp.v_value[id0], iotai[idd1], tp.v_value[id1], iotai[idd2], tp.v_value[id2], iotai[idd3], tp.v_value[id3]});
                           // double element = ci.tt.eval({id0, id1, id2, id3});
                           outfile << element << " ";
                         }
@@ -174,6 +174,6 @@ void ModeFullFactorization::run_single_element() {
     auto duration            = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count();
     auto duration_in_seconds = static_cast<double>(duration) / 1e6;
     sr.calculation_time_list.push_back(duration_in_seconds);
-    sr.integral_order_list.push_back(integral_sum_phi);
+    sr.integral_list.push_back(integral_sum_phi);
   }
 }

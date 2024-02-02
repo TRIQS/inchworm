@@ -80,7 +80,7 @@ int main() {
   std::cout << std::setprecision(17) << std::endl;
 
   // TCI
-  std::vector<double> integral_order_list   = {};
+  std::vector<double> integral_list   = {};
   std::vector<double> calculation_time_list = {};
   for (int order : order_list) {
     auto start_time = std::chrono::high_resolution_clock::now();
@@ -180,7 +180,7 @@ int main() {
     auto duration            = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count();
     auto duration_in_seconds = static_cast<double>(duration) / 1e6;
     calculation_time_list.push_back(duration_in_seconds);
-    integral_order_list.push_back(integral_sum_phi);
+    integral_list.push_back(integral_sum_phi);
   }
 
   // print results
@@ -190,9 +190,9 @@ int main() {
   std::cout << std::left << std::setw(10) << "order" << std::setw(30) << "value" << std::setw(30) << "time(s)" << std::endl;
   std::cout << std::setw(10) << "0" << std::setw(30) << u_tau_max_zeroth_order[bl_index](i, j) << std::endl;
   for (int i = 0; i < order_list.size(); i++) {
-    std::cout << std::setw(10) << order_list[i] << std::setw(30) << integral_order_list[i] << std::setw(30) << calculation_time_list[i] << std::endl;
+    std::cout << std::setw(10) << order_list[i] << std::setw(30) << integral_list[i] << std::setw(30) << calculation_time_list[i] << std::endl;
   }
-  double sum_value = u_tau_max_zeroth_order[bl_index](i, j) + std::accumulate(integral_order_list.begin(), integral_order_list.end(), 0.0);
+  double sum_value = u_tau_max_zeroth_order[bl_index](i, j) + std::accumulate(integral_list.begin(), integral_list.end(), 0.0);
   double sum_time  = std::accumulate(calculation_time_list.begin(), calculation_time_list.end(), 0.0);
   std::cout << std::setw(10) << "sum:" << std::setw(30) << sum_value << std::setw(10) << sum_time << std::endl;
 

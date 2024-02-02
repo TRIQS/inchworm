@@ -24,7 +24,13 @@ int main(int argc, char *argv[]) {
     std::cout << std::setprecision(18) << "##### Tensor Train Based Hybridyzation Expansion Inchworm Algorithm #####" << std::endl;
     mode->init(json_file_path);
     mode->prepare_input();
-    mode->run_single_element();
+    if(mode_name == "inch" || mode_name == "bare"){
+      mode->run();
+    }
+    else
+    {
+          mode->run_single_element();
+    }
     mode->print_summary();
     delete mode;
   } else {

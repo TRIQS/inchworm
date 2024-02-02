@@ -63,7 +63,7 @@ void ModeFullFactorizationBath::run_single_element() {
         };
 
         std::vector<double> v_iota_s1{};
-        for (int i = 0; i < v_pivot1.size(); i++) { v_iota_s1.push_back(tp.vi[v_pivot1[i]]); } //insert v only temporarily
+        for (int i = 0; i < v_pivot1.size(); i++) { v_iota_s1.push_back(tp.v_value[v_pivot1[i]]); } //insert v only temporarily
         double u_tau_max_element_vs1 = 0;
 
         // set pivot for iota
@@ -114,9 +114,9 @@ void ModeFullFactorizationBath::run_single_element() {
                        u_tau_max_element_vs1);
         }
         if (u_tau_max_element_vs1 == 0) { continue; }
-        auto vi_extended = tp.vi;
+        auto vi_extended = tp.v_value;
         vi_extended.push_back(-1.0);
-        auto wi_v_extended = tp.wi_v;
+        auto wi_v_extended = tp.v_weight;
         wi_v_extended.push_back(0.0);
         std::vector<std::vector<double>> input{};
         input.reserve(2 * n);
@@ -142,6 +142,6 @@ void ModeFullFactorizationBath::run_single_element() {
     auto duration            = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count();
     auto duration_in_seconds = static_cast<double>(duration) / 1e6;
     sr.calculation_time_list.push_back(duration_in_seconds);
-    sr.integral_order_list.push_back(integral_sum_phi);
+    sr.integral_list.push_back(integral_sum_phi);
   }
 }

@@ -132,7 +132,7 @@ void ModeUseNormPivots::run_single_element() {
     auto duration            = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count();
     auto duration_in_seconds = static_cast<double>(duration) / 1e6;
     calculation_time_list.push_back(duration_in_seconds);
-    integral_order_list.push_back(integral_sum_phi);
+    integral_list.push_back(integral_sum_phi);
   }
 
 

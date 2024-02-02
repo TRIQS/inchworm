@@ -39,7 +39,7 @@ void ModeCombineFactorization::run_single_element() {
         };
 
         std::vector<double> v_iota_s1;
-        for (int i = 0; i < v_pivot1.size(); i++) { v_iota_s1.push_back(tp.vi[v_pivot1[i]]); }
+        for (int i = 0; i < v_pivot1.size(); i++) { v_iota_s1.push_back(tp.v_value[v_pivot1[i]]); }
         double u_tau_max_element_vs1              = 0;
         std::vector<double> iota_pivot_list_valid = {}; // all the valid iota pivot
         for (int iota_pivot1 = 0; iota_pivot1 < iota_pair_list.size(); iota_pivot1++) {
@@ -72,10 +72,10 @@ void ModeCombineFactorization::run_single_element() {
 
         std::vector<double> iotai = iota_pivot_list_valid;
         auto wi_iota              = std::vector(iota_pivot_list_valid.size(), 1.0);
-        auto input_to_append      = std::vector(n, tp.vi);
+        auto input_to_append      = std::vector(n, tp.v_value);
         auto input                = std::vector(1, iotai);
         input.insert(input.end(), input_to_append.begin(), input_to_append.end());
-        auto weight_to_append = std::vector(n, tp.wi_v);
+        auto weight_to_append = std::vector(n, tp.v_weight);
         auto weight           = std::vector(1, wi_iota);
         weight.insert(weight.end(), weight_to_append.begin(), weight_to_append.end());
 
@@ -90,6 +90,6 @@ void ModeCombineFactorization::run_single_element() {
     auto duration            = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count();
     auto duration_in_seconds = static_cast<double>(duration) / 1e6;
     sr.calculation_time_list.push_back(duration_in_seconds);
-    sr.integral_order_list.push_back(integral_sum_phi);
+    sr.integral_list.push_back(integral_sum_phi);
   }
 }

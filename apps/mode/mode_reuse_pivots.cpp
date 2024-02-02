@@ -43,7 +43,7 @@ void ModeReusePivots::run_single_element() {
           };
 
           std::vector<double> vs1;
-          for (int i = 0; i < pivot1.size(); i++) { vs1.push_back(tp.vi[pivot1[i]]); }
+          for (int i = 0; i < pivot1.size(); i++) { vs1.push_back(tp.v_value[pivot1[i]]); }
           double u_tau_max_element_vs1 = get_u_tau_max_element(vs1);
           if (sp.debug>1) {
           auto [taus_left1, taus_right1, taus1] = obtain_taus(vs1, n_left, sp.tau_split, sp.tau_max);
@@ -51,8 +51,8 @@ void ModeReusePivots::run_single_element() {
           }
           if (u_tau_max_element_vs1 == 0) { continue; }
 
-          auto input = std::vector(n, tp.vi);
-          auto weight = std::vector(n, tp.wi_v);
+          auto input = std::vector(n, tp.v_value);
+          auto weight = std::vector(n, tp.v_weight);
           double integral_element = do_TCI_reuse_pivots<double, double>(get_u_tau_max_element, input, weight, pivot1, tp.sweep_bound, tp.bond_dim,
                                                            tp.integral_error_bound, tp.pivot_error_bound, tp.tci_prrlu, sp.debug, count,previous_pivots);
           integral_sum_iota += integral_element;
@@ -65,6 +65,6 @@ void ModeReusePivots::run_single_element() {
     auto duration            = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count();
     auto duration_in_seconds = static_cast<double>(duration) / 1e6;
     sr.calculation_time_list.push_back(duration_in_seconds);
-    sr.integral_order_list.push_back(integral_sum_phi);
+    sr.integral_list.push_back(integral_sum_phi);
   }
 }

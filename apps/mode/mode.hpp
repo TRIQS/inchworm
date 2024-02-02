@@ -48,11 +48,13 @@ struct tci_params_t {
   int sweep_bound{};
   double integral_error_bound{};
   double pivot_error_bound{};
-  std::vector<double> vi{};
-  std::vector<double> wi_v{};
+  std::vector<double> v_value{};
+  std::vector<double> v_weight{};
   double auxi_height{};
   double reltol{};
   double integral_lower_bound{};
+  double convergence_bound{};
+  int convergence_iter{};
 };
 
 struct simulation_params_t {
@@ -69,17 +71,23 @@ struct simulation_results_t {
   g_tau_t G_tau{};
   interpolator_t<scalar_t> u_interpolator{};
   frame_t u_tau_max_zeroth_order{};
-  std::vector<double> integral_order_list   = {};
+  frame_t u_tau_max_zeroth_order_bare{};
+  std::vector<double> integral_list   = {};
   std::vector<double> calculation_time_list = {};
+  std::vector<double> pretrain_time_list    = {};
+  std::vector<double> find_pivot_time_list  = {};
+  std::vector<double> train_time_list       = {};
+  double partition_function{};
 };
 
 class base_mode {
   public:
   base_mode() {}
   virtual void init(std::string json_file_path) { base_mode::read_json_parameters(json_file_path); }
-  void prepare_input();
-  void print_summary();
+  virtual void prepare_input();
+  virtual void print_summary();
   virtual void run_single_element() = 0;
+  virtual void run() {};
   virtual void read_json_parameters(std::string json_file_path);
   virtual ~base_mode() {}
 
@@ -229,4 +237,26 @@ class ModeNestedTCI : public base_mode {
   private:
   // parameters for nested TCI only
   tci_params_t tp_iota{};
+};
+
+
+class ModeInchworm : public base_mode {
+  public:
+  ModeInchworm() : base_mode() {}
+  void run_single_element() override;
+  void run() override;
+};
+
+class ModeBare : public base_mode {
+  public:
+  ModeBare() : base_mode() {}
+  void run_single_element() override;
+  void run() override;
+  void set_up();
+  void evaluate_partition_function();
+  void evaluate_greens_function();
+
+  private:
+  std::vector<double> iota_value;
+  std::vector<double> iota_weight;
 };

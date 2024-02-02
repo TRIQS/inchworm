@@ -12,7 +12,7 @@ void ModePartitionSinHalf::run_single_element() {
   std::vector<double> iotai(mp.n_phi);
   std::iota(iotai.begin(), iotai.end(), 0);
   auto wi_iota                     = std::vector(mp.n_phi, 1.0);
-  auto max_weight_v                = *std::max_element(tp.wi_v.begin(), tp.wi_v.end());
+  auto max_weight_v                = *std::max_element(tp.v_weight.begin(), tp.v_weight.end());
   double auxi_height               = tp.auxi_height; //height of the auxiliary function in the pre-training
   double reltol_test               = tp.reltol;
   double tci_convergence_threshold = 1E-25;
@@ -23,7 +23,7 @@ void ModePartitionSinHalf::run_single_element() {
     auto start_time = std::chrono::high_resolution_clock::now();
     int n           = 2 * order; // number of operators
     std::cout << "### order " << order << " ###" << std::endl;
-    std::vector<int> v_pivot1(n, int(tp.vi.size() / 2)); // for tau only; pivots for iota are set later
+    std::vector<int> v_pivot1(n, int(tp.v_value.size() / 2)); // for tau only; pivots for iota are set later
     std::vector<int> v_pivot1_pre(n, 0);
 
     std::vector<int> index_range(n);
@@ -39,7 +39,7 @@ void ModePartitionSinHalf::run_single_element() {
 
     // calculate the lower bound of the pre-trained integral
     // tp.integral_lower_bound is the bound for the integral contribution for a specific order, below which the integral can be skipped
-    double pre_integral_lower_bound = tp.integral_lower_bound / (std::pow(max_weight_v * tp.wi_v.size(), n) * n_phi_pair * (n - 1));
+    double pre_integral_lower_bound = tp.integral_lower_bound / (std::pow(max_weight_v * tp.v_weight.size(), n) * n_phi_pair * (n - 1));
     // this bound is underestimated, ajust for now
     pre_integral_lower_bound = pre_integral_lower_bound;
     std::cout << "pre_integral_lower_bound: " << pre_integral_lower_bound << std::endl;
@@ -57,7 +57,7 @@ void ModePartitionSinHalf::run_single_element() {
     };
     auto pivot1_auxiliary = std::vector<int>(n, 1);
     pivot1_auxiliary.insert(pivot1_auxiliary.end(), v_pivot1_pre.begin(), v_pivot1_pre.end());
-    auto input_to_append_pre  = std::vector(n, std::vector<double>{tp.vi[int(tp.vi.size() / 2)]}); // for the pre-training, the v variable is fixed
+    auto input_to_append_pre  = std::vector(n, std::vector<double>{tp.v_value[int(tp.v_value.size() / 2)]}); // for the pre-training, the v variable is fixed
     auto input_pre            = std::vector(n, iotai);
     auto weight_artificial    = std::vector<double>{1.0};
     auto weight_to_append_pre = std::vector(n, weight_artificial);
@@ -158,7 +158,7 @@ void ModePartitionSinHalf::run_single_element() {
         // for (auto iota_pivot1 : all_iota_pivots) {
         //   std::vector<double> v_iota_s1_temp{};
         //   for (int i = 0; i < iota_pivot1.size(); i++) { v_iota_s1_temp.push_back(iotai[iota_pivot1[i]]); }
-        //   for (int i = 0; i < v_pivot1.size(); i++) { v_iota_s1_temp.push_back(tp.vi[v_pivot1[i]]); }
+        //   for (int i = 0; i < v_pivot1.size(); i++) { v_iota_s1_temp.push_back(tp.v_value[v_pivot1[i]]); }
         //   u_tau_max_element_vs1 = get_u_tau_max_element(v_iota_s1_temp);
         //   if (std::abs(u_tau_max_element_vs1) != 0) {
         //     v_iota_s1 = v_iota_s1_temp;
@@ -323,10 +323,10 @@ void ModePartitionSinHalf::run_single_element() {
         //training
         auto start_time_find_pivot = std::chrono::high_resolution_clock::now();
         std::cout << "training" << std::endl;
-        auto input_to_append = std::vector(n, tp.vi);
+        auto input_to_append = std::vector(n, tp.v_value);
         auto input           = std::vector(n, iotai);
         input.insert(input.end(), input_to_append.begin(), input_to_append.end());
-        auto weight_to_append = std::vector(n, tp.wi_v);
+        auto weight_to_append = std::vector(n, tp.v_weight);
         auto weight           = std::vector(n, wi_iota);
         weight.insert(weight.end(), weight_to_append.begin(), weight_to_append.end());
         bool find_pivot1              = false;
@@ -336,7 +336,7 @@ void ModePartitionSinHalf::run_single_element() {
           for (auto p : pivots) {
             auto mid = p.size() / 2;
             std::vector<double> v_iota_s(p.begin(), p.end() - mid);
-            for (int i = 0; i < v_pivot1.size(); i++) { v_iota_s.push_back(tp.vi[int(tp.vi.size() / 2)]); }
+            for (int i = 0; i < v_pivot1.size(); i++) { v_iota_s.push_back(tp.v_value[int(tp.v_value.size() / 2)]); }
             // print_vector(p);
             // print_vector(v_iota_s);
             auto val = get_u_tau_max_element(v_iota_s);
@@ -396,7 +396,7 @@ void ModePartitionSinHalf::run_single_element() {
     auto duration            = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count();
     auto duration_in_seconds = static_cast<double>(duration) / 1e6;
     sr.calculation_time_list.push_back(duration_in_seconds);
-    sr.integral_order_list.push_back(integral_sum_phi);
+    sr.integral_list.push_back(integral_sum_phi);
   }
   std::cout << "all orders finished" << std::endl;
   std::cout << "time_for_find_pivot: " << time_for_find_pivot << " seconds" << std::endl;

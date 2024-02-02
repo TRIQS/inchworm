@@ -64,7 +64,7 @@ void ModePartitionBath::run_single_element() {
         for (auto iota_pivot1 : all_iota_pivots) {
           std::vector<double> v_iota_s1_temp{};
           for (int i = 0; i < iota_pivot1.size(); i++) { v_iota_s1_temp.push_back(iotai[iota_pivot1[i]]); }
-          for (int i = 0; i < v_pivot1.size(); i++) { v_iota_s1_temp.push_back(tp.vi[v_pivot1[i]]); }
+          for (int i = 0; i < v_pivot1.size(); i++) { v_iota_s1_temp.push_back(tp.v_value[v_pivot1[i]]); }
           u_tau_max_element_vs1 = get_u_tau_max_element_init(v_iota_s1_temp);
           if (u_tau_max_element_vs1 != 0 && found == false) {
             iota_pivot_index = index;
@@ -132,11 +132,11 @@ void ModePartitionBath::run_single_element() {
         };
         
 
-        auto vi_bath = tp.vi;
+        auto vi_bath = tp.v_value;
         vi_bath.push_back(-1);
         auto iotai_bath = iotai;
         iotai_bath.push_back(-1);
-        auto wi_bath = tp.wi_v;
+        auto wi_bath = tp.v_weight;
         wi_bath.push_back(0.0);
         auto wi_iota_bath = wi_iota;
         wi_iota_bath.push_back(0.0);
@@ -158,6 +158,6 @@ void ModePartitionBath::run_single_element() {
     auto duration            = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count();
     auto duration_in_seconds = static_cast<double>(duration) / 1e6;
     sr.calculation_time_list.push_back(duration_in_seconds);
-    sr.integral_order_list.push_back(integral_sum_phi);
+    sr.integral_list.push_back(integral_sum_phi);
   }
 }

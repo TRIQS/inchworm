@@ -79,7 +79,7 @@ void ModeTreeFactorization1Bath::run_single_element() {
           auto v_iota_s1_temp = v_iota_s1_init;
           for (int i = 0; i < iota_pivot1.size(); i++) {
             pivot1_temp[i * mp.n_phi + iota_pivot1[i]]    = 0;
-            v_iota_s1_temp[i * mp.n_phi + iota_pivot1[i]] = tp.vi[0];
+            v_iota_s1_temp[i * mp.n_phi + iota_pivot1[i]] = tp.v_value[0];
           }
           double u_tau_max_element_vs1_temp = get_u_tau_max_element(v_iota_s1_temp);
           if (u_tau_max_element_vs1_temp > u_tau_max_element_vs1) {
@@ -127,8 +127,8 @@ void ModeTreeFactorization1Bath::run_single_element() {
         }
         if (u_tau_max_element_vs1 == 0) { continue; }
 
-        std::vector<double> v_iota_i = tp.vi;
-        std::vector<double> weight_i = tp.wi_v;
+        std::vector<double> v_iota_i = tp.v_value;
+        std::vector<double> weight_i = tp.v_weight;
         v_iota_i.push_back(-1.0);
          v_iota_i.push_back(0.0);
         weight_i.push_back(1.0);
@@ -144,17 +144,17 @@ void ModeTreeFactorization1Bath::run_single_element() {
           std::cout << "phi_d_dag_list: " << std::endl;
           for (auto i : phi_d_dag_list) { std::cout << i << " "; }
           std::cout << std::endl;
-          std::vector<double> v_iota_s2{0 + tp.vi[0], 0 + tp.vi[0], 0 + tp.vi[0], 0 + tp.vi[0]};
+          std::vector<double> v_iota_s2{0 + tp.v_value[0], 0 + tp.v_value[0], 0 + tp.v_value[0], 0 + tp.v_value[0]};
           std::cout << "get_u_tau_max_element(0,0,0,0): " << get_u_tau_max_element(v_iota_s2) << std::endl;
-          std::vector<double> v_iota_s3{0 + tp.vi[0], 0 + tp.vi[0], 0 + tp.vi[0], 1 + tp.vi[0]};
+          std::vector<double> v_iota_s3{0 + tp.v_value[0], 0 + tp.v_value[0], 0 + tp.v_value[0], 1 + tp.v_value[0]};
           std::cout << "get_u_tau_max_element(0,0,0,1): " << get_u_tau_max_element(v_iota_s3) << std::endl;
-          std::vector<double> v_iota_s4{0 + tp.vi[0], 0 + tp.vi[0], 1 + tp.vi[0], 0 + tp.vi[0]};
+          std::vector<double> v_iota_s4{0 + tp.v_value[0], 0 + tp.v_value[0], 1 + tp.v_value[0], 0 + tp.v_value[0]};
           std::cout << "get_u_tau_max_element(0,0,1,0): " << get_u_tau_max_element(v_iota_s4) << std::endl;
-          std::vector<double> v_iota_s5{0 + tp.vi[0], 0 + tp.vi[0], 1 + tp.vi[0], 1 + tp.vi[0]};
+          std::vector<double> v_iota_s5{0 + tp.v_value[0], 0 + tp.v_value[0], 1 + tp.v_value[0], 1 + tp.v_value[0]};
           std::cout << "get_u_tau_max_element(0,0,1,1): " << get_u_tau_max_element(v_iota_s5) << std::endl;
-          std::vector<double> v_iota_s6{1 + tp.vi[0], 1 + tp.vi[0], 0 + tp.vi[0], 0 + tp.vi[0]};
+          std::vector<double> v_iota_s6{1 + tp.v_value[0], 1 + tp.v_value[0], 0 + tp.v_value[0], 0 + tp.v_value[0]};
           std::cout << "get_u_tau_max_element(1,1,0,0): " << get_u_tau_max_element(v_iota_s6) << std::endl;
-          std::vector<double> v_iota_s7{0 + tp.vi[0], 1 + tp.vi[0], 0 + tp.vi[0], 1 + tp.vi[0]};
+          std::vector<double> v_iota_s7{0 + tp.v_value[0], 1 + tp.v_value[0], 0 + tp.v_value[0], 1 + tp.v_value[0]};
           std::cout << "get_u_tau_max_element(0,1,0,1): " << get_u_tau_max_element(v_iota_s7) << std::endl;
           std::cout << "------------" << std::endl;
         }
@@ -172,6 +172,6 @@ void ModeTreeFactorization1Bath::run_single_element() {
     auto duration            = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count();
     auto duration_in_seconds = static_cast<double>(duration) / 1e6;
     sr.calculation_time_list.push_back(duration_in_seconds);
-    sr.integral_order_list.push_back(integral_sum_phi);
+    sr.integral_list.push_back(integral_sum_phi);
   }
 }

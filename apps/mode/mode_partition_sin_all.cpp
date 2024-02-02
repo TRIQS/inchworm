@@ -83,7 +83,7 @@ void ModePartitionSinAll::run_single_element() {
         for (auto iota_pivot1 : all_iota_pivots) {
           std::vector<double> v_iota_s1_temp{};
           for (int i = 0; i < iota_pivot1.size(); i++) { v_iota_s1_temp.push_back(iotai[iota_pivot1[i]]); }
-          for (int i = 0; i < v_pivot1.size(); i++) { v_iota_s1_temp.push_back(tp.vi[v_pivot1[i]]); }
+          for (int i = 0; i < v_pivot1.size(); i++) { v_iota_s1_temp.push_back(tp.v_value[v_pivot1[i]]); }
           u_tau_max_element_vs1 = get_u_tau_max_element(v_iota_s1_temp);
           if (u_tau_max_element_vs1 != 0) {
             v_iota_s1 = v_iota_s1_temp;
@@ -112,10 +112,10 @@ void ModePartitionSinAll::run_single_element() {
         }
         if (u_tau_max_element_vs1 == 0) { continue; }
 
-        auto input_to_append = std::vector(n, tp.vi);
+        auto input_to_append = std::vector(n, tp.v_value);
         auto input           = std::vector(n, iotai);
         input.insert(input.end(), input_to_append.begin(), input_to_append.end());
-        auto weight_to_append = std::vector(n, tp.wi_v);
+        auto weight_to_append = std::vector(n, tp.v_weight);
         auto weight           = std::vector(n, wi_iota);
         weight.insert(weight.end(), weight_to_append.begin(), weight_to_append.end());
 
@@ -150,6 +150,6 @@ void ModePartitionSinAll::run_single_element() {
     auto duration            = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count();
     auto duration_in_seconds = static_cast<double>(duration) / 1e6;
     sr.calculation_time_list.push_back(duration_in_seconds);
-    sr.integral_order_list.push_back(integral_sum_phi);
+    sr.integral_list.push_back(integral_sum_phi);
   }
 }

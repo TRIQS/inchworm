@@ -24,5 +24,7 @@ inline base_mode *create_mode(const std::string &mode_name) {
   if (mode_name == "combine_factorization") return new ModeCombineFactorization();
   if (mode_name == "explicit_sum") return new ModeExplicitSum();
   if (mode_name == "explicit_sum_exact") return new ModeExplicitSumExact();
+  if (mode_name == "inch") return new ModeInchworm();
+  if (mode_name == "bare") return new ModeBare();
   return nullptr;
 }

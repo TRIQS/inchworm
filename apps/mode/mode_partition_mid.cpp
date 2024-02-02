@@ -92,7 +92,7 @@ void ModePartitionMid::run_single_element() {
       };
 
       std::vector<double> vs1;
-      for (int i = 0; i < pivot1.size(); i++) { vs1.push_back(tp.vi[pivot1[i]]); }
+      for (int i = 0; i < pivot1.size(); i++) { vs1.push_back(tp.v_value[pivot1[i]]); }
       std::vector<std::vector<int>> valid_pivots{};
       std::vector<int> valid_pivots_index    = {};
       std::vector<double> valid_pivots_value = {};
@@ -179,8 +179,8 @@ void ModePartitionMid::run_single_element() {
       // auto weight_phi    = std::vector(n, std::vector<double>(phi_value_range.size(), 1.0));
       auto input_iota  = std::vector(n, iota_value_range);
       auto weight_iota = std::vector(n, std::vector<double>(iota_value_range.size(), 1.0));
-      auto input_v     = std::vector(n, tp.vi);
-      auto weight_v    = std::vector(n, tp.wi_v);
+      auto input_v     = std::vector(n, tp.v_value);
+      auto weight_v    = std::vector(n, tp.v_weight);
       auto input       = input_n_left;
       // input.insert(input.end(), input_phi.begin(), input_phi.end());
       input.insert(input.end(), input_iota.begin(), input_iota.end());
@@ -218,6 +218,6 @@ void ModePartitionMid::run_single_element() {
     auto duration            = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count();
     auto duration_in_seconds = static_cast<double>(duration) / 1e6;
     sr.calculation_time_list.push_back(duration_in_seconds);
-    sr.integral_order_list.push_back(integral_sum_phi);
+    sr.integral_list.push_back(integral_sum_phi);
   }
 }
