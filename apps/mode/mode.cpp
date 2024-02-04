@@ -88,9 +88,11 @@ void ModeBase::read_json_parameters(std::string json_file_path) {
   tp.sweep_bound          = root.get<int>("tp.sweep_bound");
   tp.auxi_height          = root.get<double>("tp.auxi_height");
   tp.reltol               = root.get<double>("tp.reltol");
-  tp.integral_lower_bound = root.get<double>("tp.integral_lower_bound");
+  tp.fullPiv              = root.get<bool>("tp.fullPiv");
+  tp.error_type           = root.get<int>("tp.error_type");
   tp.convergence_bound    = root.get<double>("tp.convergence_bound");
   tp.convergence_iter     = root.get<int>("tp.convergence_iter");
+  tp.integral_lower_bound = root.get<double>("tp.integral_lower_bound");
   std::cout << "json parameter file read successfully" << std::endl;
 } // end of read_json_parameters
 
@@ -102,8 +104,10 @@ void ModeBase::prepare_input() {
     // input parameters and exact results
     std::tie(mp.Delta_tau, mp.ad_imp, sr.u_tau_ref, sr.G_tau_ref) =
        test_setup(mp.n_site, mp.n_bath, mp.n_spin, mp.U, mp.mu, mp.t, cp, mp.theta, mp.epsilon);
+
     sr.u_interpolator_ref     = interpolator_t<scalar_t>(sr.u_tau_ref, sr.u_tau_ref[0].mesh().size());
     sr.partition_function_ref = trace(sr.u_interpolator_ref(cp.beta));
+    sr.u_tau_zeroth_order_ref = sr.u_interpolator_ref(sp.tau_max - sp.tau_split) * sr.u_interpolator_ref(sp.tau_split); //oder 0 result
 
     // structure information about Green's function
     int n_bl = cp.gf_struct.size();
@@ -131,6 +135,8 @@ void ModeBase::prepare_input() {
       print_block_shape(sr.G_tau_ref);
       std::cout << "u_tau shape:" << std::endl;
       print_block_shape(sr.u_tau_ref);
+      std::cout << "ad_imp shape:" << std::endl;
+      for (auto bl : range(mp.ad_imp.n_subspaces())) { std::cout << "bl: " << bl << ", dim: " << mp.ad_imp.get_subspace_dim(bl) << std::endl; }
     }
   } else if (gp.model_type == 1) { //model_type 1: continuous bath (read from file)
     std::cerr << "not implemented yet" << std::endl;
@@ -139,8 +145,7 @@ void ModeBase::prepare_input() {
   } else if (gp.model_type == 2) { //model_type 2: bethe lattice
     std::cerr << "not implemented yet" << std::endl;
     std::exit(EXIT_FAILURE);
-  }
-  else{
+  } else {
     std::cerr << "invalid model_type" << std::endl;
     std::exit(EXIT_FAILURE);
   }
@@ -164,12 +169,12 @@ void ModeBase::print_summary() {
 
   if (mode_name == "debug") {
     // debug mode now only work on evaluating a single element of the propagator
-    int i = sp.subspace_index / sr.u_tau[sp.bl_index].target_shape()[0];
-    int j = sp.subspace_index % sr.u_tau[sp.bl_index].target_shape()[0];
+    int i = sp.subspace_index / sr.u_tau_ref[sp.bl_index].target_shape()[0];
+    int j = sp.subspace_index % sr.u_tau_ref[sp.bl_index].target_shape()[0];
     std::cout << "element index: "
               << "(" << i << ", " << j << ")" << std::endl;
     std::cout << "u_tau_max exact: " << std::setw(10) << sr.u_interpolator_ref(sp.tau_max)[sp.bl_index](i, j) << std::endl;
-    std::cout << std::left << std::setw(10) << "order" << std::setw(30) << "value" << std::setw(30) << "time(s)"
+    std::cout << std::left << std::setw(10) << "order" << std::setw(30) << "value" << std::setw(30) << "time(s)" << std::setw(30)
               << "time_find_pivot(s)" << std::setw(30) << "time_pretrain(s)" << std::setw(30) << "time_train(s)" << std::endl;
     std::cout << std::setw(10) << "0" << std::setw(30) << sr.u_tau_zeroth_order_ref[sp.bl_index](i, j) << std::endl;
     for (int i = 0; i < sp.order_list.size(); i++) {
@@ -177,13 +182,13 @@ void ModeBase::print_summary() {
                 << std::setw(30) << sr.find_pivot_time_list[i] << std::setw(30) << sr.pretrain_time_list[i] << std::setw(30) << sr.train_time_list[i]
                 << std::endl;
     }
-    double sum_value = sr.u_tau_max_zeroth_order[sp.bl_index](i, j) + std::accumulate(sr.integral_list.begin(), sr.integral_list.end(), 0.0);
+    double sum_value = sr.u_tau_zeroth_order_ref[sp.bl_index](i, j) + std::accumulate(sr.integral_list.begin(), sr.integral_list.end(), 0.0);
     double sum_time  = std::accumulate(sr.calculation_time_list.begin(), sr.calculation_time_list.end(), 0.0);
     double sum_time_find_pivot = std::accumulate(sr.find_pivot_time_list.begin(), sr.find_pivot_time_list.end(), 0.0);
     double sum_time_pretrain   = std::accumulate(sr.pretrain_time_list.begin(), sr.pretrain_time_list.end(), 0.0);
     double sum_time_train      = std::accumulate(sr.train_time_list.begin(), sr.train_time_list.end(), 0.0);
-    std::cout << std::setw(10) << "sum:" << std::setw(30) << sum_value << std::setw(10) << sum_time << std::setw(10) << sum_time_find_pivot
-              << std::setw(10) << sum_time_pretrain << std::setw(10) << sum_time_train << std::endl;
+    std::cout << std::setw(10) << "sum:" << std::setw(30) << sum_value << std::setw(30) << sum_time << std::setw(30) << sum_time_find_pivot
+              << std::setw(30) << sum_time_pretrain << std::setw(30) << sum_time_train << std::endl;
   } else if (mode_name == "bare") {
     std::cerr << "not implemented yet" << std::endl;
     std::exit(EXIT_FAILURE);
@@ -195,3 +200,5 @@ void ModeBase::print_summary() {
     std::exit(EXIT_FAILURE);
   }
 } // end of print_summary
+
+void ModeBase::validate_input() {} // end of validate_input

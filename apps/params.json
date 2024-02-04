@@ -90,11 +90,13 @@
         "mapping_v": 0,
         "tci_prrlu": true,
         "bond_dim": 100,
-        "sweep_bound": 30,
+        "sweep_bound": 3,
         "auxi_height": 1e-16,
         "reltol": 1e-30,
-        "integral_lower_bound": 1e-20,
+        "fullPiv": false,
+        "error_type": 0,
         "convergence_bound": 1e-25,
-        "convergence_iter": 3
+        "convergence_iter": 3,
+        "integral_lower_bound": 1e-20
     }
 }

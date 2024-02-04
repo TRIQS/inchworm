@@ -59,9 +59,11 @@ struct tci_params_t {
   std::vector<double> v_weight{};
   double auxi_height{};
   double reltol{};
-  double integral_lower_bound{};
+  bool fullPiv{};
+  int error_type{};
   double convergence_bound{};
   int convergence_iter{};
+  double integral_lower_bound{};
 };
 
 struct simulation_params_t {
@@ -93,15 +95,42 @@ struct simulation_results_t {
   std::vector<double> train_time_list       = {};
 };
 
+template <typename T> struct Loop {
+  std::string name;
+  T container;
+  double value = 0;
+  Loop(std::string name, T container) : name(name), container(container) {}
+  Loop &operator=(const Loop &other) {
+    if (this != &other) { // protect against self-assignment
+      this->name      = other.name;
+      this->container = other.container;
+    }
+    return *this;
+  }
+};
+
 class ModeBase {
   public:
   ModeBase() {}
   virtual void init(std::string json_file_path) {
-    read_json_parameters(json_file_path);
-    prepare_input();
+    try {
+      read_json_parameters(json_file_path);
+    } catch (std::exception &e) {
+      std::cerr << "Error in reading json file: " << e.what() << std::endl;
+      std::exit(EXIT_FAILURE);
+    }
+    try {
+      prepare_input();
+    } catch (std::exception &e) {
+      std::cerr << "Error in preparing input: " << e.what() << std::endl;
+      std::exit(EXIT_FAILURE);
+    }
   }
   virtual void print_summary();
   virtual void run() = 0;
+  virtual void validate_input();
+  virtual void evaluate_propagator()      = 0;
+  virtual void evaluate_greens_function() = 0;
   virtual ~ModeBase() {}
   std::string mode_name{};
 
@@ -121,16 +150,23 @@ class ModeDebug : public ModeBase {
   public:
   ModeDebug() : ModeBase() { mode_name = "debug"; }
   void run() override;
+  void validate_input() override;
+  void evaluate_propagator() override;
+  void evaluate_greens_function() override;
 };
 
 class ModeInchworm : public ModeBase {
   public:
   ModeInchworm() : ModeBase() { mode_name = "inchworm"; }
   void run() override;
+  void evaluate_propagator() override;
+  void evaluate_greens_function() override;
 };
 
 class ModeBare : public ModeBase {
   public:
   ModeBare() : ModeBase() { mode_name = "bare"; }
   void run() override;
+  void evaluate_propagator() override;
+  void evaluate_greens_function() override;
 };

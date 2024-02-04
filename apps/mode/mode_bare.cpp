@@ -11,3 +11,11 @@ void ModeBare::run() {
   std::cerr << "not implemented yet" << std::endl;
   std::exit(EXIT_FAILURE);
 }
+
+void ModeBare::evaluate_propagator () {
+
+}
+
+void ModeBare::evaluate_greens_function () {
+
+}
