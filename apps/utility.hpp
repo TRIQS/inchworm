@@ -6,6 +6,9 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 
+using cv_func=std::function<std::vector<double>(const std::vector<double>&, double, double)>;
+using jb_func=std::function<double(const std::vector<double>&, double, double)>;
+
 enum debug_t {
   none, //0, no debug
   low,  //1, simulation level debug
@@ -193,20 +196,18 @@ template <typename T> std::vector<T> get_elements(const std::vector<int> &indice
   return result;
 }
 
-// inline std::vector<double> change_variable(const std::vector<double> &nus, double tau_max, double tau_min = 0.0) {
-//   std::vector<double> taus(nus.size());
-//   taus[nus.size() - 1] = tau_min + (tau_max - tau_min) * std::pow(nus[nus.size() - 1], (1.0 / nus.size()));
-//   for(int i = nus.size() - 2; i >= 0; --i) {
-//     taus[i] = tau_min + (taus[i+1]- tau_min) * std::pow(nus[i], (1.0 /static_cast<double>(i + 1)));
-//   }
-//   return taus;
-// }
+inline std::vector<double> change_variable1(const std::vector<double> &nus, double tau_max, double tau_min = 0.0) {
+  std::vector<double> taus(nus.size());
+  taus[nus.size() - 1] = tau_min + (tau_max - tau_min) * std::pow(nus[nus.size() - 1], (1.0 / nus.size()));
+  for (int i = nus.size() - 2; i >= 0; --i) { taus[i] = tau_min + (taus[i + 1] - tau_min) * std::pow(nus[i], (1.0 / static_cast<double>(i + 1))); }
+  return taus;
+}
 
-// inline double jacobian(const std::vector<double> &taus, double tau_max, double tau_min = 0.0) {
-//    return std::pow(tau_max - tau_min, taus.size())/factorial(taus.size());
-// }
+inline double jacobian1(const std::vector<double> &taus, double tau_max, double tau_min = 0.0) {
+  return std::pow(tau_max - tau_min, taus.size()) / factorial(taus.size());
+}
 
-inline std::vector<double> change_variable(const std::vector<double> &nus, double tau_max, double tau_min = 0.0) {
+inline std::vector<double> change_variable0(const std::vector<double> &nus, double tau_max, double tau_min = 0.0) {
   std::vector<double> taus(nus.size());
   taus[0] = nus[0] * (tau_max - tau_min) + tau_min;
 
@@ -215,7 +216,7 @@ inline std::vector<double> change_variable(const std::vector<double> &nus, doubl
   return taus;
 }
 
-inline double jacobian(const std::vector<double> &taus, double tau_max, double tau_min = 0.0) {
+inline double jacobian0(const std::vector<double> &taus, double tau_max, double tau_min = 0.0) {
   double prod = tau_max - tau_min;
   for (size_t j = 1; j < taus.size(); ++j) { prod *= (tau_max - taus[j - 1]); }
   return std::abs(prod);
@@ -299,8 +300,11 @@ T_output do_TCI(std::function<T_output(std::vector<T_input>)> integrand, std::ve
   double last_error{0};
   double current_error{0};
   T_output integral{0};
-  if (debug > 1) { std::cout << "iteration nEval error integral\n"; }
   if (tci_prrlu) {
+    if (debug > 1) {
+      std::cout << "TCI 2" << std::endl;
+      std::cout << "iteration nEval error integral\n";
+    }
     auto ci = xfac::CTensorCI2<T_output, T_input>(integrand, input, {.bondDim = bond_dim, .reltol = reltol, .pivot1 = pivot1, .fullPiv = fullPiv});
     if (debug > 1) { std::cout << "bond_dim: " << ci.param.bondDim << std::endl; }
     for (int i = 1; i <= sweep_bound; i++) {
@@ -320,6 +324,10 @@ T_output do_TCI(std::function<T_output(std::vector<T_input>)> integrand, std::ve
       if (debug > 1) { print_rank(ci.tt); }
     }
   } else {
+    if (debug > 1) {
+      std::cout << "TCI 1" << std::endl;
+      std::cout << "iteration nEval error integral\n";
+    }
     auto ci = xfac::CTensorCI<T_output, T_input>(integrand, input, {.reltol = reltol, .pivot1 = pivot1, .fullPiv = fullPiv});
     for (int i = 1; i <= sweep_bound + 1; i++) {
       ci.iterate();
@@ -403,8 +411,8 @@ inline void print_pivot1(std::vector<int> const &iota_d_list, std::vector<int> c
   std::cout << std::endl;
 }
 
-inline std::tuple<std::vector<double>, std::vector<double>, std::vector<double>> obtain_taus(const std::vector<double> &vs, int n_left,
-                                                                                             double tau_split, double tau_max) {
+inline std::tuple<std::vector<double>, std::vector<double>, std::vector<double>>
+obtain_taus(const std::vector<double> &vs, int n_left, double tau_split, double tau_max, cv_func change_variable) {
   if (n_left == 0 && tau_split == 0.0) {
     std::vector<double> taus(vs.size());
     taus = change_variable(vs, tau_max, 0.0);

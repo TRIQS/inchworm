@@ -70,6 +70,21 @@ void ModeDebug::evaluate_propagator() {
     double time_pretrain   = 0.0;
     double time_train      = 0.0;
     loop1.value            = 0;
+
+    cv_func change_variable;
+    jb_func jacobian;
+    if(tp.mapping_v == 0){
+      change_variable = change_variable0;
+      jacobian = jacobian0;
+    }
+    else if(tp.mapping_v == 1){
+      change_variable = change_variable1;
+      jacobian = jacobian1;
+    }
+    else{
+      std::cerr << "invalid mapping_v" << std::endl;
+      std::exit(EXIT_FAILURE);
+    }
     for (auto val1 : loop1.container) {
       loop2.value = 0;
       for (auto val2 : loop2.container) {
@@ -121,19 +136,15 @@ void ModeDebug::evaluate_propagator() {
 
           long count     = 0;
           auto integrand = [this, &count, &phi_d_list = phi_d_list, &phi_d_dag_list = phi_d_dag_list, &iota_d_list = iota_d_list,
-                            &iota_d_dag_list = iota_d_dag_list, &n_left](const std::vector<double> &variables) -> double {
+                            &iota_d_dag_list = iota_d_dag_list, &n_left, &change_variable, &jacobian](const std::vector<double> &variables) -> double {
             std::vector<double> vs_left{};
             std::vector<double> vs_right{};
             std::vector<double> taus_left{};
             std::vector<double> taus_right{};
+            std::vector<double> taus{};
             double integrand = 0.0;
             if (gp.integral_variable == "v" && gp.integrand == "plain") {
-              vs_left    = std::vector<double>(variables.begin(), variables.begin() + n_left);
-              vs_right   = std::vector<double>(variables.begin() + n_left, variables.end());
-              taus_left  = change_variable(vs_left, sp.tau_split, 0.0);
-              taus_right = change_variable(vs_right, sp.tau_max, sp.tau_split);
-              auto taus(taus_left);
-              taus.insert(taus.end(), taus_right.begin(), taus_right.end());
+              std::tie(taus_left, taus_right, taus) = obtain_taus(variables, n_left, sp.tau_split, sp.tau_max,change_variable);
               integrand = evaluate_u_tau_max(sr.u_tau_zeroth_order_ref, sp.tau_split, sp.tau_max, mp.all_d_ops, mp.all_d_dag_ops, mp.gf_block_shape,
                                              cp, mp.Delta_tau, mp.ad_imp, sr.u_interpolator_ref, get_elements(phi_d_list, taus),
                                              get_elements(phi_d_dag_list, taus), iota_d_list, iota_d_dag_list, sp.bl_index, sp.subspace_index);
@@ -182,8 +193,8 @@ void ModeDebug::evaluate_propagator() {
           //   std::cout << i << " " << count << " " << last_pivot_error << " " << current_integral << std::endl;
           //   print_rank(ci.tt);
           // }
-          double integral = do_TCI<double, double>(integrand, input, weight, init_pivot,count, tp.sweep_bound, tp.bond_dim, tp.reltol, tp.fullPiv,tp.tci_prrlu, tp.error_type, tp.convergence_bound,
-                                                  tp.convergence_iter, sp.debug);
+          double integral = do_TCI<double, double>(integrand, input, weight, init_pivot, count, tp.sweep_bound, tp.bond_dim, tp.reltol, tp.fullPiv,
+                                                   tp.tci_prrlu, tp.error_type, tp.convergence_bound, tp.convergence_iter, sp.debug);
           loop3.value += integral;
         } // end of loop3
         loop2.value += loop3.value;
