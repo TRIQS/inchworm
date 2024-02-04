@@ -61,6 +61,7 @@ struct tci_params_t {
   double reltol{};
   bool fullPiv{};
   int error_type{};
+  int error_eval{};
   double convergence_bound{};
   int convergence_iter{};
   double integral_lower_bound{};

@@ -6,8 +6,8 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 
-using cv_func=std::function<std::vector<double>(const std::vector<double>&, double, double)>;
-using jb_func=std::function<double(const std::vector<double>&, double, double)>;
+using cv_func = std::function<std::vector<double>(const std::vector<double> &, double, double)>;
+using jb_func = std::function<double(const std::vector<double> &, double, double)>;
 
 enum debug_t {
   none, //0, no debug
@@ -293,10 +293,55 @@ inline double evaluate_u_tau_max(frame_t &frame_zeroth_order, double tau_split, 
   }
 }
 
+// tci helper
+template <typename T_input, typename T_output>
+T_output tci_error_integral(std::function<T_output(std::vector<T_input>)> f, xfac::TensorTrain<T_output> tt, std::vector<std::vector<T_input>> input,
+                            size_t numEval = 1e3) {
+
+  T_output e = 0; // Error
+  T_output m = 0; // Magnitude
+  std::mt19937 mt(0);
+  std::vector<int> idxs(input.size(), 0);
+  std::vector<T_input> inputs(input.size(), 0);
+  for (size_t sample = 0; sample < numEval; sample++) {
+    for (auto i = 0u; i < idxs.size(); i++) {
+      int local_dim = input[i].size();
+      idxs[i]       = mt() % (local_dim);
+      inputs[i]     = input[i][idxs[i]];
+    }
+    T_output tt_res    = tt.eval(idxs);
+    T_output current_f = f(inputs);
+    m += std::abs(current_f);
+    e += std::abs(tt_res - current_f);
+  }
+  return e / m;
+}
+
+template <typename T_input, typename T_output>
+T_output tci_error_integrand(std::function<T_output(std::vector<T_input>)> f, xfac::TensorTrain<T_output> tt, std::vector<std::vector<T_input>> input,
+                             size_t numEval = 1e3) {
+
+  std::mt19937 mt(0);
+  std::vector<int> idxs(input.size(), 0);
+  std::vector<T_input> inputs(input.size(), 0);
+  double max_error = 0;
+  for (size_t sample = 0; sample < numEval; sample++) {
+    for (auto i = 0u; i < idxs.size(); i++) {
+      int local_dim = input[i].size();
+      idxs[i]       = mt() % (local_dim);
+      inputs[i]     = input[i][idxs[i]];
+    }
+    T_output tt_res    = tt.eval(idxs);
+    T_output current_f = f(inputs);
+    max_error          = std::max(max_error, std::abs(tt_res - current_f) / std::abs(current_f));
+  }
+  return max_error;
+}
+
 template <typename T_output, typename T_input>
 T_output do_TCI(std::function<T_output(std::vector<T_input>)> integrand, std::vector<std::vector<T_input>> &input,
                 std::vector<std::vector<double>> &weight, std::vector<int> &pivot1, long &count, int sweep_bound, int bond_dim, double reltol,
-                bool fullPiv, bool tci_prrlu, int error_type, double convergence_bound, int convergence_iter, debug_t debug) {
+                bool fullPiv, bool tci_prrlu, int error_type, size_t error_eval, double convergence_bound, int convergence_iter, debug_t debug) {
   double last_error{0};
   double current_error{0};
   T_output integral{0};
@@ -313,7 +358,11 @@ T_output do_TCI(std::function<T_output(std::vector<T_input>)> integrand, std::ve
       if (error_type == 0) {
         current_error = ci.pivotError[ci.pivotError.size() - 1];
       } else if (error_type == 1) {
-        current_error = ci.trueError();
+        current_error = ci.trueError(error_eval);
+      } else if (error_type == 2) {
+        current_error = tci_error_integral(integrand, ci.tt, input, error_eval);
+      } else if (error_type == 3) {
+        current_error = tci_error_integrand(integrand, ci.tt, input, error_eval);
       } else {
         std::cerr << "error_type not supported" << std::endl;
         std::exit(EXIT_FAILURE);
@@ -335,7 +384,11 @@ T_output do_TCI(std::function<T_output(std::vector<T_input>)> integrand, std::ve
       if (error_type == 0) {
         current_error = ci.pivotError[ci.pivotError.size() - 1];
       } else if (error_type == 1) {
-        current_error = ci.trueError();
+        current_error = ci.trueError( error_eval);
+      } else if (error_type == 2) {
+        current_error = tci_error_integral(integrand, ci.get_TensorTrain(), input, error_eval);
+      } else if (error_type == 3) {
+        current_error = tci_error_integrand(integrand, ci.get_TensorTrain(), input, error_eval);
       } else {
         std::cerr << "error_type not supported" << std::endl;
         std::exit(EXIT_FAILURE);
@@ -518,26 +571,4 @@ template <typename T> inline double linear_func_all(std::vector<T> const &iotas,
   for (int i = 0; i < iotas.size(); ++i) { x_val += iotas[i] * std::pow(base, i + 1); }
   // return (2.0* (x_val + std::pow(base, iotas.size())/2)-1.0)/2.0;
   return std::sin((x_val + std::pow(base, iotas.size()) / 2) * M_PI);
-}
-
-template <typename T>
-T estimateError_1norm_rel(std::function<T(std::vector<int>)> f, xfac::TensorTrain<T> tt, std::vector<int> localDims, size_t numEval = 1e3,
-                          bool checkNeg = false) {
-
-  T e = 0; // Error
-  T m = 0; // Magnitude
-  std::mt19937 mt_rand(0);
-  std::vector<int> idxs(localDims.size(), 0);
-  for (size_t samp = 0; samp < numEval; samp++) {
-    for (auto i = 0u; i < idxs.size(); i++) idxs[i] = mt_rand() % (localDims[i]);
-    T tt_res = tt.eval(idxs);
-    if (checkNeg and (tt_res < 0)) {
-      std::cout << "Negative tt_res!" << std::endl;
-      std::exit(1);
-    }
-    T current_f = f(idxs);
-    m += std::abs(current_f);
-    e += std::abs(tt_res - current_f);
-  }
-  return e / m;
 }

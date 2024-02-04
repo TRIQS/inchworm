@@ -90,6 +90,7 @@ void ModeBase::read_json_parameters(std::string json_file_path) {
   tp.reltol               = root.get<double>("tp.reltol");
   tp.fullPiv              = root.get<bool>("tp.fullPiv");
   tp.error_type           = root.get<int>("tp.error_type");
+  tp.error_eval           = root.get<int>("tp.error_eval");
   tp.convergence_bound    = root.get<double>("tp.convergence_bound");
   tp.convergence_iter     = root.get<int>("tp.convergence_iter");
   tp.integral_lower_bound = root.get<double>("tp.integral_lower_bound");

@@ -194,7 +194,7 @@ void ModeDebug::evaluate_propagator() {
           //   print_rank(ci.tt);
           // }
           double integral = do_TCI<double, double>(integrand, input, weight, init_pivot, count, tp.sweep_bound, tp.bond_dim, tp.reltol, tp.fullPiv,
-                                                   tp.tci_prrlu, tp.error_type, tp.convergence_bound, tp.convergence_iter, sp.debug);
+                                                   tp.tci_prrlu, tp.error_type, tp.error_eval, tp.convergence_bound, tp.convergence_iter, sp.debug);
           loop3.value += integral;
         } // end of loop3
         loop2.value += loop3.value;
