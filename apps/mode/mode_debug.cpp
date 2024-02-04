@@ -57,8 +57,8 @@ void ModeDebug::evaluate_propagator() {
     std::exit(EXIT_FAILURE);
   }
 
-
   for (int order : sp.order_list) {
+    if (sp.debug) std::cout << "order: " << order << std::endl;
     int n = 2 * order; // number of operators
     std::vector<int> n_left_list(n - 1);
     std::iota(n_left_list.begin(), n_left_list.end(), 1);

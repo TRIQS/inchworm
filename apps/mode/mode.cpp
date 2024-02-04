@@ -106,10 +106,11 @@ void ModeBase::prepare_input() {
     std::tie(mp.Delta_tau, mp.ad_imp, sr.u_tau_ref, sr.G_tau_ref) =
        test_setup(mp.n_site, mp.n_bath, mp.n_spin, mp.U, mp.mu, mp.t, cp, mp.theta, mp.epsilon);
 
-    sr.u_interpolator_ref     = interpolator_t<scalar_t>(sr.u_tau_ref, sr.u_tau_ref[0].mesh().size());
-    sr.partition_function_ref = trace(sr.u_interpolator_ref(cp.beta));
-    sr.u_tau_zeroth_order_ref = sr.u_interpolator_ref(sp.tau_max - sp.tau_split) * sr.u_interpolator_ref(sp.tau_split); //oder 0 result
-    sr.partition_function_zeroth_order_ref = trace(make_bare_u_frame(mp.ad_imp, cp.beta));
+    sr.u_interpolator_ref                  = interpolator_t<scalar_t>(sr.u_tau_ref, sr.u_tau_ref[0].mesh().size());
+    sr.partition_function_ref              = trace(sr.u_interpolator_ref(cp.beta));
+    sr.u_tau_zeroth_order_ref              = sr.u_interpolator_ref(sp.tau_max - sp.tau_split) * sr.u_interpolator_ref(sp.tau_split); //oder 0 result
+    sr.u_tau_zeroth_order_bare             = make_bare_u_frame(mp.ad_imp, cp.beta);
+    sr.partition_function_zeroth_order_ref = trace(sr.u_tau_zeroth_order_bare );
     // structure information about Green's function
     int n_bl = cp.gf_struct.size();
     mp.all_d_ops.resize(n_bl, {});
@@ -200,8 +201,8 @@ void ModeBase::print_summary() {
                 << std::setw(30) << sr.find_pivot_time_list[i] << std::setw(30) << sr.pretrain_time_list[i] << std::setw(30) << sr.train_time_list[i]
                 << std::endl;
     }
-    double sum_value = sr.partition_function_zeroth_order_ref + std::accumulate(sr.integral_list.begin(), sr.integral_list.end(), 0.0);
-    double sum_time  = std::accumulate(sr.calculation_time_list.begin(), sr.calculation_time_list.end(), 0.0);
+    double sum_value           = sr.partition_function_zeroth_order_ref + std::accumulate(sr.integral_list.begin(), sr.integral_list.end(), 0.0);
+    double sum_time            = std::accumulate(sr.calculation_time_list.begin(), sr.calculation_time_list.end(), 0.0);
     double sum_time_find_pivot = std::accumulate(sr.find_pivot_time_list.begin(), sr.find_pivot_time_list.end(), 0.0);
     double sum_time_pretrain   = std::accumulate(sr.pretrain_time_list.begin(), sr.pretrain_time_list.end(), 0.0);
     double sum_time_train      = std::accumulate(sr.train_time_list.begin(), sr.train_time_list.end(), 0.0);
