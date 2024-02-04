@@ -109,7 +109,7 @@ void ModeBase::prepare_input() {
     sr.u_interpolator_ref     = interpolator_t<scalar_t>(sr.u_tau_ref, sr.u_tau_ref[0].mesh().size());
     sr.partition_function_ref = trace(sr.u_interpolator_ref(cp.beta));
     sr.u_tau_zeroth_order_ref = sr.u_interpolator_ref(sp.tau_max - sp.tau_split) * sr.u_interpolator_ref(sp.tau_split); //oder 0 result
-
+    sr.partition_function_zeroth_order_ref = trace(make_bare_u_frame(mp.ad_imp, cp.beta));
     // structure information about Green's function
     int n_bl = cp.gf_struct.size();
     mp.all_d_ops.resize(n_bl, {});
@@ -191,8 +191,22 @@ void ModeBase::print_summary() {
     std::cout << std::setw(10) << "sum:" << std::setw(30) << sum_value << std::setw(30) << sum_time << std::setw(30) << sum_time_find_pivot
               << std::setw(30) << sum_time_pretrain << std::setw(30) << sum_time_train << std::endl;
   } else if (mode_name == "bare") {
-    std::cerr << "not implemented yet" << std::endl;
-    std::exit(EXIT_FAILURE);
+    std::cout << "partition function exact: " << std::setw(10) << sr.partition_function_ref << std::endl;
+    std::cout << std::left << std::setw(10) << "order" << std::setw(30) << "value" << std::setw(30) << "time(s)" << std::setw(30)
+              << "time_find_pivot(s)" << std::setw(30) << "time_pretrain(s)" << std::setw(30) << "time_train(s)" << std::endl;
+    std::cout << std::setw(10) << "0" << std::setw(30) << sr.partition_function_zeroth_order_ref << std::endl;
+    for (int i = 0; i < sp.order_list.size(); i++) {
+      std::cout << std::setw(10) << sp.order_list[i] << std::setw(30) << sr.integral_list[i] << std::setw(30) << sr.calculation_time_list[i]
+                << std::setw(30) << sr.find_pivot_time_list[i] << std::setw(30) << sr.pretrain_time_list[i] << std::setw(30) << sr.train_time_list[i]
+                << std::endl;
+    }
+    double sum_value = sr.partition_function_zeroth_order_ref + std::accumulate(sr.integral_list.begin(), sr.integral_list.end(), 0.0);
+    double sum_time  = std::accumulate(sr.calculation_time_list.begin(), sr.calculation_time_list.end(), 0.0);
+    double sum_time_find_pivot = std::accumulate(sr.find_pivot_time_list.begin(), sr.find_pivot_time_list.end(), 0.0);
+    double sum_time_pretrain   = std::accumulate(sr.pretrain_time_list.begin(), sr.pretrain_time_list.end(), 0.0);
+    double sum_time_train      = std::accumulate(sr.train_time_list.begin(), sr.train_time_list.end(), 0.0);
+    std::cout << std::setw(10) << "sum:" << std::setw(30) << sum_value << std::setw(30) << sum_time << std::setw(30) << sum_time_find_pivot
+              << std::setw(30) << sum_time_pretrain << std::setw(30) << sum_time_train << std::endl;
   } else if (mode_name == "inchworm") {
     std::cerr << "not implemented yet" << std::endl;
     std::exit(EXIT_FAILURE);

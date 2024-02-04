@@ -88,6 +88,7 @@ struct simulation_results_t {
   interpolator_t<scalar_t> u_interpolator_ref{};
   frame_t u_tau_zeroth_order_ref{};
   frame_t u_tau_zeroth_order_bare{};
+  double partition_function_zeroth_order_ref{};
 
   std::vector<double> integral_list         = {};
   std::vector<double> calculation_time_list = {};
@@ -168,6 +169,7 @@ class ModeBare : public ModeBase {
   public:
   ModeBare() : ModeBase() { mode_name = "bare"; }
   void run() override;
+  void validate_input() override;
   void evaluate_propagator() override;
   void evaluate_greens_function() override;
 };

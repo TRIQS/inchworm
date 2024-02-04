@@ -44,6 +44,20 @@ void ModeDebug::evaluate_propagator() {
   auto loop1 = Loop("empty", std::vector<int>{0});
   auto loop2 = Loop("empty", std::vector<int>{0});
   auto loop3 = Loop("empty", std::vector<int>{0});
+  cv_func change_variable;
+  jb_func jacobian;
+  if (tp.mapping_v == 0) {
+    change_variable = change_variable0;
+    jacobian        = jacobian0;
+  } else if (tp.mapping_v == 1) {
+    change_variable = change_variable1;
+    jacobian        = jacobian1;
+  } else {
+    std::cerr << "invalid mapping_v" << std::endl;
+    std::exit(EXIT_FAILURE);
+  }
+
+
   for (int order : sp.order_list) {
     int n = 2 * order; // number of operators
     std::vector<int> n_left_list(n - 1);
@@ -71,20 +85,6 @@ void ModeDebug::evaluate_propagator() {
     double time_train      = 0.0;
     loop1.value            = 0;
 
-    cv_func change_variable;
-    jb_func jacobian;
-    if(tp.mapping_v == 0){
-      change_variable = change_variable0;
-      jacobian = jacobian0;
-    }
-    else if(tp.mapping_v == 1){
-      change_variable = change_variable1;
-      jacobian = jacobian1;
-    }
-    else{
-      std::cerr << "invalid mapping_v" << std::endl;
-      std::exit(EXIT_FAILURE);
-    }
     for (auto val1 : loop1.container) {
       loop2.value = 0;
       for (auto val2 : loop2.container) {
@@ -136,15 +136,14 @@ void ModeDebug::evaluate_propagator() {
 
           long count     = 0;
           auto integrand = [this, &count, &phi_d_list = phi_d_list, &phi_d_dag_list = phi_d_dag_list, &iota_d_list = iota_d_list,
-                            &iota_d_dag_list = iota_d_dag_list, &n_left, &change_variable, &jacobian](const std::vector<double> &variables) -> double {
-            std::vector<double> vs_left{};
-            std::vector<double> vs_right{};
+                            &iota_d_dag_list = iota_d_dag_list, &n_left, &change_variable,
+                            &jacobian](const std::vector<double> &variables) -> double {
             std::vector<double> taus_left{};
             std::vector<double> taus_right{};
             std::vector<double> taus{};
             double integrand = 0.0;
             if (gp.integral_variable == "v" && gp.integrand == "plain") {
-              std::tie(taus_left, taus_right, taus) = obtain_taus(variables, n_left, sp.tau_split, sp.tau_max,change_variable);
+              std::tie(taus_left, taus_right, taus) = obtain_taus(variables, n_left, sp.tau_split, sp.tau_max, change_variable);
               integrand = evaluate_u_tau_max(sr.u_tau_zeroth_order_ref, sp.tau_split, sp.tau_max, mp.all_d_ops, mp.all_d_dag_ops, mp.gf_block_shape,
                                              cp, mp.Delta_tau, mp.ad_imp, sr.u_interpolator_ref, get_elements(phi_d_list, taus),
                                              get_elements(phi_d_dag_list, taus), iota_d_list, iota_d_dag_list, sp.bl_index, sp.subspace_index);
@@ -180,19 +179,6 @@ void ModeDebug::evaluate_propagator() {
           for (int i = 0; i < init_pivot.size(); i++) { init_input.push_back(input[i][init_pivot[i]]); }
           double init_integrand = integrand(init_input);
           if (init_integrand == 0) { continue; }
-
-          // auto ci = xfac::CTensorCI2<double, double>(integrand, input,
-          //                                            {.bondDim = tp.bond_dim, .reltol = tp.reltol, .pivot1 = init_pivot, .fullPiv = false});
-          // std::cout << "bond_dim: " << ci.param.bondDim << std::endl;
-          // print_rank(ci.tt);
-          // double current_integral = 0.0;
-          // for (int i = 1; i <= tp.sweep_bound; i++) {
-          //   ci.iterate();
-          //   current_integral      = ci.tt.sum(weight);
-          //   auto last_pivot_error = ci.pivotError[ci.pivotError.size() - 1];
-          //   std::cout << i << " " << count << " " << last_pivot_error << " " << current_integral << std::endl;
-          //   print_rank(ci.tt);
-          // }
           double integral = do_TCI<double, double>(integrand, input, weight, init_pivot, count, tp.sweep_bound, tp.bond_dim, tp.reltol, tp.fullPiv,
                                                    tp.tci_prrlu, tp.error_type, tp.error_eval, tp.convergence_bound, tp.convergence_iter, sp.debug);
           loop3.value += integral;
