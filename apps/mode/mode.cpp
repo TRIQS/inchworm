@@ -27,12 +27,13 @@ void ModeBase::read_json_parameters(std::string json_file_path) {
   }
 
   // Read model parameters
-  mp.n_site = root.get<int>("mp.n_site");
-  mp.n_bath = root.get<int>("mp.n_bath");
-  mp.n_spin = root.get<int>("mp.n_spin");
-  mp.U      = root.get<double>("mp.U");
-  mp.mu     = root.get<double>("mp.mu");
-  mp.t      = root.get<double>("mp.t");
+  mp.n_site        = root.get<int>("mp.n_site");
+  mp.n_bath        = root.get<int>("mp.n_bath");
+  mp.n_spin        = root.get<int>("mp.n_spin");
+  mp.U             = root.get<double>("mp.U");
+  mp.mu            = root.get<double>("mp.mu");
+  mp.t             = root.get<double>("mp.t");
+  mp.n_omega_bethe = root.get<int>("mp.n_omega_bethe");
 
   int size = root.get_child("mp.epsilon").size();
   mp.epsilon.resize(size);
@@ -104,14 +105,37 @@ void ModeBase::prepare_input() {
 
     // input parameters and exact results
     std::tie(mp.Delta_tau, mp.ad_imp, sr.u_tau_ref, sr.G_tau_ref) =
-       test_setup(mp.n_site, mp.n_bath, mp.n_spin, mp.U, mp.mu, mp.t, cp, mp.theta, mp.epsilon);
+       discrete_setup(mp.n_site, mp.n_bath, mp.n_spin, mp.U, mp.mu, mp.t, cp, mp.theta, mp.epsilon);
 
     sr.u_interpolator_ref                  = interpolator_t<scalar_t>(sr.u_tau_ref, sr.u_tau_ref[0].mesh().size());
     sr.partition_function_ref              = trace(sr.u_interpolator_ref(cp.beta));
     sr.u_tau_zeroth_order_ref              = sr.u_interpolator_ref(sp.tau_max - sp.tau_split) * sr.u_interpolator_ref(sp.tau_split); //oder 0 result
     sr.u_tau_zeroth_order_bare             = make_bare_u_frame(mp.ad_imp, cp.beta);
-    sr.partition_function_zeroth_order_ref = trace(sr.u_tau_zeroth_order_bare );
-    // structure information about Green's function
+    sr.partition_function_zeroth_order_ref = trace(sr.u_tau_zeroth_order_bare);
+    if (sp.debug > 1) {
+      std::cout << "Delta_tau shape:" << std::endl;
+      print_block_shape(mp.Delta_tau);
+      std::cout << "G_tau shape:" << std::endl;
+      print_block_shape(sr.G_tau_ref);
+      std::cout << "u_tau shape:" << std::endl;
+      print_block_shape(sr.u_tau_ref);
+      std::cout << "ad_imp shape:" << std::endl;
+      for (auto bl : range(mp.ad_imp.n_subspaces())) { std::cout << "bl: " << bl << ", dim: " << mp.ad_imp.get_subspace_dim(bl) << std::endl; }
+    }
+  } else if (gp.model_type == 1) { //model_type 1: continuous bath (read from file)
+    std::cerr << "not implemented yet" << std::endl;
+    std::exit(EXIT_FAILURE);
+
+  } else if (gp.model_type == 2) { //model_type 2: bethe lattice
+    std::tie(mp.Delta_tau, mp.ad_imp)      = bethe_setup(mp.n_site, mp.n_spin, mp.U, mp.mu, mp.t, cp, mp.theta, mp.n_omega_bethe);
+    sr.u_tau_zeroth_order_bare             = make_bare_u_frame(mp.ad_imp, cp.beta);
+    sr.partition_function_zeroth_order_ref = trace(sr.u_tau_zeroth_order_bare);
+    sr.partition_function_ref              = 0.0;
+  } else {
+    std::cerr << "invalid model_type" << std::endl;
+    std::exit(EXIT_FAILURE);
+  }
+  // structure information about Green's function
     int n_bl = cp.gf_struct.size();
     mp.all_d_ops.resize(n_bl, {});
     mp.all_d_dag_ops.resize(n_bl, {});
@@ -130,27 +154,6 @@ void ModeBase::prepare_input() {
         mp.all_d_dag_ops[bl].emplace_back(0.0, true, mp.fops[{bl_name, idx}], bl, idx);
       }
     }
-    if (sp.debug > 1) {
-      std::cout << "Delta_tau shape:" << std::endl;
-      print_block_shape(mp.Delta_tau);
-      std::cout << "G_tau shape:" << std::endl;
-      print_block_shape(sr.G_tau_ref);
-      std::cout << "u_tau shape:" << std::endl;
-      print_block_shape(sr.u_tau_ref);
-      std::cout << "ad_imp shape:" << std::endl;
-      for (auto bl : range(mp.ad_imp.n_subspaces())) { std::cout << "bl: " << bl << ", dim: " << mp.ad_imp.get_subspace_dim(bl) << std::endl; }
-    }
-  } else if (gp.model_type == 1) { //model_type 1: continuous bath (read from file)
-    std::cerr << "not implemented yet" << std::endl;
-    std::exit(EXIT_FAILURE);
-
-  } else if (gp.model_type == 2) { //model_type 2: bethe lattice
-    std::cerr << "not implemented yet" << std::endl;
-    std::exit(EXIT_FAILURE);
-  } else {
-    std::cerr << "invalid model_type" << std::endl;
-    std::exit(EXIT_FAILURE);
-  }
 } // end of prepare_input
 
 void ModeBase::print_summary() {

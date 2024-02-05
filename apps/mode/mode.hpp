@@ -47,6 +47,7 @@ struct model_params_t {
   long n_bl{};
   fundamental_operator_set fops{};
   int n_phi{};
+  int n_omega_bethe{};
 };
 
 struct tci_params_t {

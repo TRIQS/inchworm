@@ -37,6 +37,24 @@ using namespace inchworm;
 using mat_t = nda::matrix<double>;
 using vec_t = nda::array<double, 1>;
 
+// trapezoidal rule
+template <typename F> double integrate_trapezoidal(F f, double a, double b, int n) {
+  double h   = (b - a) / n;
+  double sum = 0.5 * (f(a) + f(b));
+  for (int i = 1; i < n; i++) sum += f(a + i * h);
+  return h * sum;
+}
+
+// DOS for the Bethe lattice
+inline double dos_bethe(double omega, double t) { return 1.0 / (2 * M_PI * t * t) * sqrt(4.0 * t * t - omega * omega); }
+
+// Hybridization function for the Bethe lattice
+inline double Delta_bethe(double tau, double t, double beta, int n) {
+  // - \int_{-2t}^{2t} d\omega DOS(\omega) e^{- \tau \omega}/(1 + e^{-\beta \omega})
+  auto f = [t, tau, beta](double omega) { return dos_bethe(omega, t) * std::exp(-tau * omega) / (1. + std::exp(-beta * omega)); };
+  return -1 * integrate_trapezoidal(f, -2 * t, 2 * t, n);
+}
+
 // Prepare fundamental operator set
 inline std::pair<fundamental_operator_set, std::vector<many_body_op_t>> make_fops(int n_site, int n_bath, int bath_offset, int n_spin) {
   fundamental_operator_set fops;
@@ -65,8 +83,8 @@ inline double one_fermion(double tau, double eps, double beta) {
   }
 }
 
-inline std::tuple<hyb_tau_t, atom_diag, u_tau_t, g_tau_t> test_setup(int n_site, int n_bath, int n_spin, double U, double mu, double t,
-                                                                     constr_params_t const &cp, mat_t const &theta, vec_t const &eps) {
+inline std::tuple<hyb_tau_t, atom_diag, u_tau_t, g_tau_t> discrete_setup(int n_site, int n_bath, int n_spin, double U, double mu, double t,
+                                                                         constr_params_t const &cp, mat_t const &theta, vec_t const &eps) {
 
   // === Define fundamental operator sets
 
@@ -89,9 +107,6 @@ inline std::tuple<hyb_tau_t, atom_diag, u_tau_t, g_tau_t> test_setup(int n_site,
     if (n_spin == 2) {
       h_imp -= mu * n("dn", j);
       h_imp += U * n("up", j) * n("dn", j);
-      //symmetry breaking
-      // double h=1;
-      // h_imp += h * c_dag("up", j) * c("dn", j) + h * c_dag("dn", j) * c("up", j);
     }
     for (int i = 0; i < n_site; i++) {
       if (i != j) {
@@ -100,7 +115,6 @@ inline std::tuple<hyb_tau_t, atom_diag, u_tau_t, g_tau_t> test_setup(int n_site,
       }
     }
   }
-  // h_imp -= 1* n("up", 0);
 
   // h_bath: Hamiltonian of the bath (n_site)
   for (int k = 0; k < n_bath; k++) {
@@ -120,20 +134,7 @@ inline std::tuple<hyb_tau_t, atom_diag, u_tau_t, g_tau_t> test_setup(int n_site,
       }
     }
   }
-  // diagonal hybridization
-  // if (n_bath % 2 == 0 || n_site == 2 || n_spin == 1) { std::cout << "test case error" << std::endl;
-  // many_body_operator h_hyb_diagonal;
-  // int mid = n_bath / 2;
-  // for (int k = 0; k < mid; k++) {
-  //   h_hyb_diagonal += theta(0, k) * (c_dag("up", 0) * c("up", k + n_site));
-  //   h_hyb_diagonal += theta(0, k) * (c_dag("up", k + n_site) * c("up", 0));
-  // }
-  // for(int k=mid ; k<n_bath ; k++){
-  //   h_hyb_diagonal += theta(1, k) * (c_dag("up", 1) * c("up", k + n_site));
-  //   h_hyb_diagonal += theta(1, k) * (c_dag("up", k + n_site) * c("up", 1));
-  // }
-  // h_hyb = h_hyb_diagonal;
-  // }
+
   // === Define the 3 different atom_diag objects (ED calculation with Triqs)
 
   auto ad_tot  = inchworm::atom_diag(h_imp + h_bath + h_hyb, fops_tot);
@@ -154,15 +155,64 @@ inline std::tuple<hyb_tau_t, atom_diag, u_tau_t, g_tau_t> test_setup(int n_site,
       Delta_tau[block][tau] = 0.0;
       for (auto [i, j, n] : product_range(n_site, n_site, n_bath)) {
         Delta_tau[block][tau](i, j) += theta(i, n) * dagger(theta)(n, j) * one_fermion(tau, eps(n), cp.beta);
-        // if (theta(i, n) * dagger(theta)(n, j) * one_fermion(tau, eps(n), cp.beta) < 1e-18) {
-        //   std::cout << "theta(i, n) == 0 || theta(n, j) == 0" << std::endl;
-        //   std::cout << theta(i, n) * dagger(theta)(n, j) * one_fermion(tau, eps(n), cp.beta) << std::endl;
-        //   std::cout << "i = " << i << ", j = " << j << ", n = " << n << std::endl;
-        //   std::cout << Delta_tau[block][tau](i, j) << std::endl;
-        // }
       }
     }
   }
 
   return {Delta_tau, ad_imp, u_tau, g_tau};
+}
+
+inline std::tuple<hyb_tau_t, atom_diag> bethe_setup(int n_site, int n_spin, double U, double mu, double t, constr_params_t const &cp,
+                                                    mat_t const &theta, int n_omega_bethe) {
+
+  // === Define fundamental operator sets
+
+  // Impurity
+  auto [fops_imp, qn_imp] = make_fops(n_site, 0, n_site, n_spin);
+
+  // === Initialize Hamiltonians
+
+  // h_imp: Hamiltonian of the impurity sites (n_site)
+  many_body_operator h_imp;
+  for (int j = 0; j < n_site; j++) {
+    h_imp -= mu * n("up", j);
+
+    if (n_spin == 2) {
+      h_imp -= mu * n("dn", j);
+      h_imp += U * n("up", j) * n("dn", j);
+    }
+    for (int i = 0; i < n_site; i++) {
+      if (i != j) {
+        h_imp -= t * c_dag("up", i) * c("up", j);
+        if (n_spin == 2) h_imp -= t * c_dag("dn", i) * c("dn", j);
+      }
+    }
+  }
+
+  // === Define the 1 different atom_diag objects (ED calculation with Triqs)
+
+  auto ad_imp = inchworm::atom_diag(h_imp, fops_imp, create_effective_hyb(cp.gf_struct));
+
+  auto Delta_tau = hyb_tau_t{{cp.beta, Fermion, cp.n_tau}, cp.gf_struct};
+
+  // create hybridization:
+  for (auto tau : Delta_tau[0].mesh()) {
+    for (int block = 0; block < cp.gf_struct.size(); block++) {
+      Delta_tau[block][tau] = 0.0;
+      for (auto [i, j] : product_range(n_site, n_site)) {
+        if (i == j) {
+          Delta_tau[block][tau](i, j) = Delta_bethe(tau, theta(i, 0), cp.beta, n_omega_bethe);
+        } else {
+          Delta_tau[block][tau](i, j) = 0.0;
+        }
+      }
+    }
+  }
+  // print Delta_tau[0](0,0)
+  // std::cout << "tau"
+  //           << " "
+  //           << "Delta_tau[0](0,0) " << std::endl;
+  // for (auto tau : Delta_tau[0].mesh()) { std::cout  << tau << " " << Delta_tau[0](tau)(0, 0) << std::endl; }
+
+  return {Delta_tau, ad_imp};
 }

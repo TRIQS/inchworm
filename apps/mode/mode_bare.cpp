@@ -9,8 +9,8 @@ using namespace inchworm;
 
 void ModeBare::validate_input() {
   ModeBase::validate_input();
-  if (gp.target != "propagator" || gp.model_type != 0) {
-    std::cerr << "bare mode: target must be propagator and model_type must be 0 (discerete bath)" << std::endl;
+  if (gp.target != "propagator" || (gp.model_type != 0 && gp.model_type != 2)) {
+    std::cerr << "bare mode: target must be propagator and model_type must be 0 (discerete bath) or 2 (bethe lattice)" << std::endl;
     std::exit(EXIT_FAILURE);
   }
 }
