@@ -208,11 +208,17 @@ inline std::tuple<hyb_tau_t, atom_diag> bethe_setup(int n_site, int n_spin, doub
       }
     }
   }
-  // print Delta_tau[0](0,0)
+  // // print Delta_tau[0](0,0)
   // std::cout << "tau"
   //           << " "
   //           << "Delta_tau[0](0,0) " << std::endl;
   // for (auto tau : Delta_tau[0].mesh()) { std::cout  << tau << " " << Delta_tau[0](tau)(0, 0) << std::endl; }
+
+  // // print Delta_tau[1](0,0)
+  // std::cout << "tau"
+  //           << " "
+  //           << "Delta_tau[1](0,0) " << std::endl;
+  // for (auto tau : Delta_tau[1].mesh()) { std::cout  << tau << " " << Delta_tau[1](tau)(0, 0) << std::endl; }
 
   return {Delta_tau, ad_imp};
 }
