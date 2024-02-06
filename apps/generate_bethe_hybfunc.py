@@ -20,10 +20,11 @@ def compute_delta(tau_grid, beta, t):
 
 def save_to_hdf5(file_path, bl_structure, tau_grid, data):
     with h5py.File(file_path, 'w') as f:
-        f['bl_structure'] = np.array(bl_structure)
-        f['tau_grid'] = tau_grid
-        f['data/00'] = data[0, 0, :]
-        f['data/11'] = data[1, 1, :]
+        f.create_dataset('bl_structure', data=np.array(bl_structure, dtype=np.int32))
+        f.create_dataset('tau_grid', data=tau_grid, dtype='f8')
+        f.create_dataset('data/0_00', data=data[0, 0, :], dtype='f8')
+        f.create_dataset('data/1_00', data=data[1, 1, :], dtype='f8')
+
 
 def main(args):
     tau_grid = np.linspace(0, args.beta, int(args.Nt))

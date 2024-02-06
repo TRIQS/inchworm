@@ -115,7 +115,7 @@ template <typename T> struct Loop {
 class ModeBase {
   public:
   ModeBase() {}
-  virtual void init(std::string json_file_path) {
+  virtual void init(std::string json_file_path, std::string hyb_file_path) {
     try {
       read_json_parameters(json_file_path);
     } catch (std::exception &e) {
@@ -123,7 +123,7 @@ class ModeBase {
       std::exit(EXIT_FAILURE);
     }
     try {
-      prepare_input();
+      prepare_input(hyb_file_path);
     } catch (std::exception &e) {
       std::cerr << "Error in preparing input: " << e.what() << std::endl;
       std::exit(EXIT_FAILURE);
@@ -146,7 +146,8 @@ class ModeBase {
   simulation_params_t sp{};
   simulation_results_t sr{};
   void read_json_parameters(std::string json_file_path);
-  void prepare_input();
+  hyb_tau_t read_hyb_function(std::string hyb_file_path, model_params_t const & mp, constr_params_t const &cp);
+  void prepare_input(std::string hyb_file_path);
 };
 
 class ModeDebug : public ModeBase {

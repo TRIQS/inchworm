@@ -1,6 +1,7 @@
 #include "./mode.hpp"
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
+#include <h5/h5.hpp>
 
 void ModeBase::read_json_parameters(std::string json_file_path) {
   namespace pt = boost::property_tree;
@@ -98,8 +99,66 @@ void ModeBase::read_json_parameters(std::string json_file_path) {
   std::cout << "json parameter file read successfully" << std::endl;
 } // end of read_json_parameters
 
-void ModeBase::prepare_input() {
+hyb_tau_t ModeBase::read_hyb_function(std::string hyb_file_path, model_params_t const &mp, constr_params_t const &cp) {
+  if (hyb_file_path.empty()) {
+    std::cerr << "hyb_file_path is empty" << std::endl;
+    std::exit(EXIT_FAILURE);
+  }
+  std::vector<int> block_shape{};
+  h5::file file{hyb_file_path, 'r'};
+  h5::group grp{file};
+  h5_read(grp, "bl_structure", block_shape);
+  if (block_shape != mp.gf_block_shape) {
+    std::cerr << "block shape in hyb_file_path does not match the gf_block_shape in json parameter file" << std::endl;
+    std::exit(EXIT_FAILURE);
+  }
+  std::vector<double> tau_grid{};
+  h5_read(grp, "tau_grid", tau_grid);
+  auto Delta_tau = hyb_tau_t{{cp.beta, Fermion, static_cast<long>(tau_grid.size())}, cp.gf_struct};
+  
+  auto Delta_tau_grid =  Delta_tau[0].mesh();
+  for(int i = 0; i < Delta_tau_grid.size(); i++){
+    if (std::abs(Delta_tau_grid[i] - tau_grid[i]) > 1e-10){
+      std::cerr << "tau_grid in hyb_file_path does not match the tau_grid in json parameter file" << std::endl;
+      std::exit(EXIT_FAILURE);
+    }
+  }
+
+  for (int block = 0; block < cp.gf_struct.size(); block++) {
+    for (auto [i, j] : product_range(mp.n_site, mp.n_site)) {
+      std::vector<double> Delta_tau_ij{};
+      Delta_tau_ij.reserve(tau_grid.size());
+      h5_read(grp, "data/" + std::to_string(block) + '_' + std::to_string(i) + std::to_string(j), Delta_tau_ij);
+      for (int k = 0; k < Delta_tau_grid.size(); k++) {
+        Delta_tau[block][Delta_tau_grid[k]](i, j) = Delta_tau_ij[k];
+      }
+    }
+  }
+
+  return Delta_tau;
+}
+
+void ModeBase::prepare_input(std::string hyb_file_path) {
   std::tie(tp.v_value, tp.v_weight) = select_quadrature_GK(tp.n_GK, 0, 1);
+  // structure information about Green's function
+  int n_bl = cp.gf_struct.size();
+  mp.all_d_ops.resize(n_bl, {});
+  mp.all_d_dag_ops.resize(n_bl, {});
+  for (auto [bl, bl_pair] : enumerate(cp.gf_struct)) {
+    auto [bl_name, bl_size] = bl_pair;
+    mp.gf_block_shape.push_back(bl_size);
+  }
+  mp.n_phi = std::accumulate(mp.gf_block_shape.begin(), mp.gf_block_shape.end(), 0);
+  mp.fops  = fundamental_operator_set{cp.gf_struct};
+  for (auto [bl, bl_pair] : enumerate(cp.gf_struct)) {
+    auto [bl_name, bl_size] = bl_pair;
+    mp.all_d_ops[bl].clear();
+    mp.all_d_dag_ops[bl].clear();
+    for (auto idx : range(bl_size)) {
+      mp.all_d_ops[bl].emplace_back(0.0, false, mp.fops[{bl_name, idx}], bl, idx);
+      mp.all_d_dag_ops[bl].emplace_back(0.0, true, mp.fops[{bl_name, idx}], bl, idx);
+    }
+  }
 
   if (gp.model_type == 0) { //model_type 0: discrete bath, where exact results (reference) are available
 
@@ -122,9 +181,12 @@ void ModeBase::prepare_input() {
       std::cout << "ad_imp shape:" << std::endl;
       for (auto bl : range(mp.ad_imp.n_subspaces())) { std::cout << "bl: " << bl << ", dim: " << mp.ad_imp.get_subspace_dim(bl) << std::endl; }
     }
-  } else if (gp.model_type == 1) { //model_type 1: continuous bath (read from file)
-    std::cerr << "not implemented yet" << std::endl;
-    std::exit(EXIT_FAILURE);
+  } else if (gp.model_type == 1) { //model_type 1: read hybridization function from input file
+    mp.ad_imp                              = imp_setup(mp.n_site, mp.n_spin, mp.U, mp.mu, mp.t, cp);
+    mp.Delta_tau                           = read_hyb_function(hyb_file_path, mp, cp);
+    sr.u_tau_zeroth_order_bare             = make_bare_u_frame(mp.ad_imp, cp.beta);
+    sr.partition_function_zeroth_order_ref = trace(sr.u_tau_zeroth_order_bare);
+    sr.partition_function_ref              = 0.0;
 
   } else if (gp.model_type == 2) { //model_type 2: bethe lattice
     std::tie(mp.Delta_tau, mp.ad_imp)      = bethe_setup(mp.n_site, mp.n_spin, mp.U, mp.mu, mp.t, cp, mp.theta, mp.n_omega_bethe);
@@ -135,25 +197,6 @@ void ModeBase::prepare_input() {
     std::cerr << "invalid model_type" << std::endl;
     std::exit(EXIT_FAILURE);
   }
-  // structure information about Green's function
-    int n_bl = cp.gf_struct.size();
-    mp.all_d_ops.resize(n_bl, {});
-    mp.all_d_dag_ops.resize(n_bl, {});
-    for (auto [bl, bl_pair] : enumerate(cp.gf_struct)) {
-      auto [bl_name, bl_size] = bl_pair;
-      mp.gf_block_shape.push_back(bl_size);
-    }
-    mp.n_phi = std::accumulate(mp.gf_block_shape.begin(), mp.gf_block_shape.end(), 0);
-    mp.fops  = fundamental_operator_set{cp.gf_struct};
-    for (auto [bl, bl_pair] : enumerate(cp.gf_struct)) {
-      auto [bl_name, bl_size] = bl_pair;
-      mp.all_d_ops[bl].clear();
-      mp.all_d_dag_ops[bl].clear();
-      for (auto idx : range(bl_size)) {
-        mp.all_d_ops[bl].emplace_back(0.0, false, mp.fops[{bl_name, idx}], bl, idx);
-        mp.all_d_dag_ops[bl].emplace_back(0.0, true, mp.fops[{bl_name, idx}], bl, idx);
-      }
-    }
 } // end of prepare_input
 
 void ModeBase::print_summary() {

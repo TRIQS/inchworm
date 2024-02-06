@@ -222,3 +222,36 @@ inline std::tuple<hyb_tau_t, atom_diag> bethe_setup(int n_site, int n_spin, doub
 
   return {Delta_tau, ad_imp};
 }
+
+inline atom_diag imp_setup(int n_site, int n_spin, double U, double mu, double t, constr_params_t const &cp) {
+
+  // === Define fundamental operator sets
+
+  // Impurity
+  auto [fops_imp, qn_imp] = make_fops(n_site, 0, n_site, n_spin);
+
+  // === Initialize Hamiltonians
+
+  // h_imp: Hamiltonian of the impurity sites (n_site)
+  many_body_operator h_imp;
+  for (int j = 0; j < n_site; j++) {
+    h_imp -= mu * n("up", j);
+
+    if (n_spin == 2) {
+      h_imp -= mu * n("dn", j);
+      h_imp += U * n("up", j) * n("dn", j);
+    }
+    for (int i = 0; i < n_site; i++) {
+      if (i != j) {
+        h_imp -= t * c_dag("up", i) * c("up", j);
+        if (n_spin == 2) h_imp -= t * c_dag("dn", i) * c("dn", j);
+      }
+    }
+  }
+
+  // === Define the 1 different atom_diag objects (ED calculation with Triqs)
+
+  auto ad_imp = inchworm::atom_diag(h_imp, fops_imp, create_effective_hyb(cp.gf_struct));
+
+  return ad_imp;
+}
