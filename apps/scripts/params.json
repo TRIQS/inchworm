@@ -88,7 +88,7 @@
     "tp":{
         "n_GK": 15,
         "mapping_v": 0,
-        "tci_prrlu": true,
+        "tci_prrlu": 1,
         "bond_dim": 100,
         "sweep_bound": 3,
         "auxi_height": 1e-16,

@@ -52,7 +52,10 @@ void ModeDebug::evaluate_propagator() {
   } else if (tp.mapping_v == 1) {
     change_variable = change_variable1;
     jacobian        = jacobian1;
-  } else {
+  }   else if (tp.mapping_v == 2) {
+    change_variable = change_variable2;
+    jacobian        = jacobian2;
+  }else {
     std::cerr << "invalid mapping_v" << std::endl;
     std::exit(EXIT_FAILURE);
   }

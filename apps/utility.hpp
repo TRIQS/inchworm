@@ -200,10 +200,26 @@ inline std::vector<double> change_variable1(const std::vector<double> &nus, doub
   std::vector<double> taus(nus.size());
   taus[nus.size() - 1] = tau_min + (tau_max - tau_min) * std::pow(nus[nus.size() - 1], (1.0 / nus.size()));
   for (int i = nus.size() - 2; i >= 0; --i) { taus[i] = tau_min + (taus[i + 1] - tau_min) * std::pow(nus[i], (1.0 / static_cast<double>(i + 1))); }
+  // std::cout << "taus: ";
+  // print_vector(taus);
+  // std::cout << "nus: ";
+  // print_vector(nus);
   return taus;
 }
 
 inline double jacobian1(const std::vector<double> &taus, double tau_max, double tau_min = 0.0) {
+  // std::cout << "jacobian1: " << std::pow(tau_max - tau_min, taus.size()) / factorial(taus.size()) << std::endl;
+  return std::pow(tau_max - tau_min, taus.size()) / factorial(taus.size());
+}
+
+inline std::vector<double> change_variable2(const std::vector<double> &nus, double tau_max, double tau_min = 0.0) {
+  std::vector<double> taus(nus.size());
+  taus[nus.size() - 1] = tau_max - (tau_max - tau_min) * std::pow(nus[nus.size() - 1], (1.0 / nus.size()));
+  for (int i = nus.size() - 2; i >= 0; --i) { taus[i] = tau_max - (tau_max - taus[i + 1]) * std::pow(nus[i], (1.0 / static_cast<double>(i + 1))); }
+  return taus;
+}
+
+inline double jacobian2(const std::vector<double> &taus, double tau_max, double tau_min = 0.0) {
   return std::pow(tau_max - tau_min, taus.size()) / factorial(taus.size());
 }
 
@@ -300,7 +316,8 @@ T_output tci_error_integral(std::function<T_output(std::vector<T_input>)> f, xfa
 
   T_output e = 0; // Error
   T_output m = 0; // Magnitude
-  std::mt19937 mt(0);
+  std::random_device rd;
+  std::mt19937 mt(rd());
   std::vector<int> idxs(input.size(), 0);
   std::vector<T_input> inputs(input.size(), 0);
   for (size_t sample = 0; sample < numEval; sample++) {
@@ -320,8 +337,8 @@ T_output tci_error_integral(std::function<T_output(std::vector<T_input>)> f, xfa
 template <typename T_input, typename T_output>
 T_output tci_error_integrand(std::function<T_output(std::vector<T_input>)> f, xfac::TensorTrain<T_output> tt, std::vector<std::vector<T_input>> input,
                              size_t numEval = 1e3) {
-
-  std::mt19937 mt(0);
+  std::random_device rd;
+  std::mt19937 mt(rd());
   std::vector<int> idxs(input.size(), 0);
   std::vector<T_input> inputs(input.size(), 0);
   double max_error = 0;
@@ -333,7 +350,13 @@ T_output tci_error_integrand(std::function<T_output(std::vector<T_input>)> f, xf
     }
     T_output tt_res    = tt.eval(idxs);
     T_output current_f = f(inputs);
-    max_error          = std::max(max_error, std::abs(tt_res - current_f) / std::abs(current_f));
+    // if (current_f != 0) {
+    //   max_error = std::max(max_error, std::abs(tt_res - current_f) / std::abs(current_f));
+    // } else {
+    //   // avoid inf but may need to be handled differently later
+    //   max_error = std::max(max_error, 0.0);
+    // }
+    max_error = std::max(max_error, std::abs(tt_res - current_f));
   }
   return max_error;
 }
@@ -341,19 +364,48 @@ T_output tci_error_integrand(std::function<T_output(std::vector<T_input>)> f, xf
 template <typename T_output, typename T_input>
 T_output do_TCI(std::function<T_output(std::vector<T_input>)> integrand, std::vector<std::vector<T_input>> &input,
                 std::vector<std::vector<double>> &weight, std::vector<int> &pivot1, long &count, int sweep_bound, int bond_dim, double reltol,
-                bool fullPiv, bool tci_prrlu, int error_type, size_t error_eval, double convergence_bound, int convergence_iter, debug_t debug) {
+                bool fullPiv, int tci_prrlu, int error_type, size_t error_eval, double convergence_bound, int convergence_iter, debug_t debug) {
   double last_error{0};
   double current_error{0};
   T_output integral{0};
-  if (tci_prrlu) {
+  if (tci_prrlu == 0) {
+    if (debug > 1) {
+      std::cout << "TCI 1" << std::endl;
+      std::cout << "iteration nEval error integral\n";
+    }
+    auto ci = xfac::CTensorCI<T_output, T_input>(integrand, input, {.reltol = reltol, .pivot1 = pivot1, .fullPiv = fullPiv});
+    for (int i = 1; i <= sweep_bound + 1; i++) {
+      ci.iterate();
+      integral = ci.get_TensorTrain().sum(weight);
+      if (error_type == 0) {
+        current_error = ci.pivotError[ci.pivotError.size() - 1];
+      } else if (error_type == 1) {
+        current_error = ci.trueError(error_eval);
+      } else if (error_type == 2) {
+        current_error = tci_error_integral(integrand, ci.get_TensorTrain(), input, error_eval);
+      } else if (error_type == 3) {
+        current_error = tci_error_integrand(integrand, ci.get_TensorTrain(), input, error_eval);
+      } else {
+        std::cerr << "error_type not supported" << std::endl;
+        std::exit(EXIT_FAILURE);
+      }
+      if (debug > 1) { std::cout << i - 1 << " " << count << " " << current_error << " " << integral << std::endl; }
+      if (std::abs(current_error - last_error) < convergence_bound && i > convergence_iter) { break; }
+      last_error = current_error;
+      if (debug > 1) { print_rank(ci.get_TensorTrain()); }
+    }
+  } else if (tci_prrlu == 1 || tci_prrlu == 2) {
     if (debug > 1) {
       std::cout << "TCI 2" << std::endl;
       std::cout << "iteration nEval error integral\n";
     }
-    auto ci = xfac::CTensorCI2<T_output, T_input>(integrand, input, {.bondDim = bond_dim, .reltol = reltol, .pivot1 = pivot1, .fullPiv = fullPiv});
+    int bond_dim_init = bond_dim;
+    if(tci_prrlu == 2) { bond_dim_init = 1; }
+    auto ci = xfac::CTensorCI2<T_output, T_input>(integrand, input, {.bondDim = bond_dim_init, .reltol = reltol, .pivot1 = pivot1, .fullPiv = fullPiv});
     if (debug > 1) { std::cout << "bond_dim: " << ci.param.bondDim << std::endl; }
     for (int i = 1; i <= sweep_bound; i++) {
       ci.iterate();
+      if(tci_prrlu == 2) { ci.param.bondDim++; }
       integral = ci.tt.sum(weight);
       if (error_type == 0) {
         current_error = ci.pivotError[ci.pivotError.size() - 1];
@@ -373,31 +425,8 @@ T_output do_TCI(std::function<T_output(std::vector<T_input>)> integrand, std::ve
       if (debug > 1) { print_rank(ci.tt); }
     }
   } else {
-    if (debug > 1) {
-      std::cout << "TCI 1" << std::endl;
-      std::cout << "iteration nEval error integral\n";
-    }
-    auto ci = xfac::CTensorCI<T_output, T_input>(integrand, input, {.reltol = reltol, .pivot1 = pivot1, .fullPiv = fullPiv});
-    for (int i = 1; i <= sweep_bound + 1; i++) {
-      ci.iterate();
-      integral = ci.get_TensorTrain().sum(weight);
-      if (error_type == 0) {
-        current_error = ci.pivotError[ci.pivotError.size() - 1];
-      } else if (error_type == 1) {
-        current_error = ci.trueError( error_eval);
-      } else if (error_type == 2) {
-        current_error = tci_error_integral(integrand, ci.get_TensorTrain(), input, error_eval);
-      } else if (error_type == 3) {
-        current_error = tci_error_integrand(integrand, ci.get_TensorTrain(), input, error_eval);
-      } else {
-        std::cerr << "error_type not supported" << std::endl;
-        std::exit(EXIT_FAILURE);
-      }
-      if (debug > 1) { std::cout << i - 1 << " " << count << " " << current_error << " " << integral << std::endl; }
-      if (std::abs(current_error - last_error) < convergence_bound && i > convergence_iter) { break; }
-      last_error = current_error;
-      if (debug > 1) { print_rank(ci.get_TensorTrain()); }
-    }
+    std::cerr << "tci_prrlu not supported" << std::endl;
+    std::exit(EXIT_FAILURE);
   }
   if (debug > 1) { std::cout << std::endl; }
   return integral;
@@ -412,7 +441,7 @@ T_output do_TCI_add_pivots(std::function<T_output(std::vector<T_input>)> func, s
   double previous_integral{0};
   double last_pivot_error{0};
   if (debug > 1) { std::cout << "iteration nEval LastSweepPivotError integral\n"; }
-  if (tci_prrlu) {
+  if (tci_prrlu == 1 || tci_prrlu == 2) {
     std::cout << "test" << std::endl;
     auto ci = xfac::CTensorCI2<T_output, T_input>(func, input, {.bondDim = bond_dim, .reltol = 1e-18, .pivot1 = pivot1, .fullPiv = false});
     std::cout << "bond_dim: " << ci.param.bondDim << std::endl;

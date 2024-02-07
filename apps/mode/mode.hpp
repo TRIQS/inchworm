@@ -53,7 +53,7 @@ struct model_params_t {
 struct tci_params_t {
   int n_GK{};
   int mapping_v{}; //0 for the mapping in Phys. Rev. B 107, 245135, 1 for the mapping in 	arXiv:2310.16957
-  bool tci_prrlu{};
+  int tci_prrlu{};
   int bond_dim{};
   int sweep_bound{};
   std::vector<double> v_value{};

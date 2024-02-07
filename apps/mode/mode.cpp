@@ -85,7 +85,7 @@ void ModeBase::read_json_parameters(std::string json_file_path) {
   // Read TCI parameters
   tp.n_GK                 = root.get<int>("tp.n_GK");
   tp.mapping_v            = root.get<int>("tp.mapping_v");
-  tp.tci_prrlu            = root.get<bool>("tp.tci_prrlu");
+  tp.tci_prrlu            = root.get<int>("tp.tci_prrlu");
   tp.bond_dim             = root.get<int>("tp.bond_dim");
   tp.sweep_bound          = root.get<int>("tp.sweep_bound");
   tp.auxi_height          = root.get<double>("tp.auxi_height");
