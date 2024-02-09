@@ -199,6 +199,19 @@ template <typename T> std::vector<T> get_elements(const std::vector<int> &indice
   return result;
 }
 
+template <typename T> std::vector<int> get_elements_int(const std::vector<int> &indices, const std::vector<T> &values) {
+  std::vector<int> result;
+  for (int index : indices) {
+    if (index >= 0 && index < values.size()) {
+      result.push_back(static_cast<int>(values[index]));
+    } else {
+      std::cerr << "get_elements: index out of range\n";
+      std::exit(EXIT_FAILURE);
+    }
+  }
+  return result;
+}
+
 inline std::vector<double> change_variable0(const std::vector<double> &nus, double tau_max, double tau_min = 0.0) {
   std::vector<double> taus(nus.size());
   taus[0] = nus[0] * (tau_max - tau_min) + tau_min;

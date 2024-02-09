@@ -115,10 +115,10 @@ hyb_tau_t ModeBase::read_hyb_function(std::string hyb_file_path, model_params_t 
   std::vector<double> tau_grid{};
   h5_read(grp, "tau_grid", tau_grid);
   auto Delta_tau = hyb_tau_t{{cp.beta, Fermion, static_cast<long>(tau_grid.size())}, cp.gf_struct};
-  
-  auto Delta_tau_grid =  Delta_tau[0].mesh();
-  for(int i = 0; i < Delta_tau_grid.size(); i++){
-    if (std::abs(Delta_tau_grid[i] - tau_grid[i]) > 1e-10){
+
+  auto Delta_tau_grid = Delta_tau[0].mesh();
+  for (int i = 0; i < Delta_tau_grid.size(); i++) {
+    if (std::abs(Delta_tau_grid[i] - tau_grid[i]) > 1e-10) {
       std::cerr << "tau_grid in hyb_file_path does not match the tau_grid in json parameter file" << std::endl;
       std::exit(EXIT_FAILURE);
     }
@@ -129,9 +129,7 @@ hyb_tau_t ModeBase::read_hyb_function(std::string hyb_file_path, model_params_t 
       std::vector<double> Delta_tau_ij{};
       Delta_tau_ij.reserve(tau_grid.size());
       h5_read(grp, "data/" + std::to_string(block) + '_' + std::to_string(i) + std::to_string(j), Delta_tau_ij);
-      for (int k = 0; k < Delta_tau_grid.size(); k++) {
-        Delta_tau[block][Delta_tau_grid[k]](i, j) = Delta_tau_ij[k];
-      }
+      for (int k = 0; k < Delta_tau_grid.size(); k++) { Delta_tau[block][Delta_tau_grid[k]](i, j) = Delta_tau_ij[k]; }
     }
   }
 
@@ -263,4 +261,273 @@ void ModeBase::print_summary() {
   }
 } // end of print_summary
 
-void ModeBase::validate_input() {} // end of validate_input
+void ModeBase::validate_input() {
+  if (gp.integral_variable == "v" && gp.tci_shape != "plain" || gp.integral_variable != "v" && gp.tci_shape == "plain") {
+    std::cerr << "invalid combination of integral_variable and tci_shape" << std::endl;
+    std::cerr << "integral_variable: " << gp.integral_variable << ", tci_shape: " << gp.tci_shape << std::endl;
+    std::exit(EXIT_FAILURE);
+  }
+} // end of validate_input
+
+void ModeBase::evaluate_propagator() {
+
+  // setup the mapping and jacobian functions for the transformation of time-ordered variables v->tau
+  cv_func change_variable;
+  jb_func jacobian;
+  if (tp.mapping_v == 0) {
+    change_variable = change_variable0;
+    jacobian        = jacobian0;
+  } else if (tp.mapping_v == 1) {
+    change_variable = change_variable1;
+    jacobian        = jacobian1;
+  } else if (tp.mapping_v == 2) {
+    change_variable = change_variable2;
+    jacobian        = jacobian2;
+  } else if (tp.mapping_v == 3) {
+    change_variable = change_variable3;
+    jacobian        = jacobian3;
+  } else {
+    std::cerr << "invalid mapping_v" << std::endl;
+    std::exit(EXIT_FAILURE);
+  }
+
+  for (int order : sp.order_list) {
+    if (sp.debug > 0) std::cout << "order: " << order << std::endl;
+    int n = 2 * order; // number of operators
+    // generate valid n_left list
+    std::vector<int> n_left_list(n - 1);
+    std::iota(n_left_list.begin(), n_left_list.end(), 1);
+    if (mode_name == "bare") {
+      n_left_list = {0}; // inchworm does not need n_left
+    }
+    // generate valid phi and iota pairs
+    std::vector<int> index_range(n);
+    std::iota(index_range.begin(), index_range.end(), 0);
+    auto phi_pair_list = get_all_phi(index_range);
+    std::vector<int> phi_list(phi_pair_list.size()); // phi_list is an index list, phi_pair_list contains actual phi pairs
+    std::iota(phi_list.begin(), phi_list.end(), 0);
+    auto iota_pair_list = get_all_iota(mp.gf_block_shape, order);
+    std::vector<int> iota_list(iota_pair_list.size());
+    std::iota(iota_list.begin(), iota_list.end(), 0); // iota_list is an index list, iota_pair_list contains actual iota pairs
+
+    //discrete index that needed to be looped over: n_left, phi, iota (i.e., at most 3 loops); here sp.bl_index and sp.subspace_index are assumed to be fixed. In inchworm mode, these two indices are either performed with an outer loop or add to tci as an physical index
+    auto loop1 = Loop("empty", std::vector<int>{0});
+    auto loop2 = Loop("empty", std::vector<int>{0});
+    auto loop3 = Loop("empty", std::vector<int>{0});
+    if (gp.integrand == "plain" && gp.integral_variable == "v") {
+      loop1 = Loop("n_left", n_left_list);
+      loop2 = Loop("phi", phi_list);
+      loop3 = Loop("iota", iota_list);
+    } else if (gp.integrand == "plain" && gp.integral_variable == "v_iota") {
+      loop1 = Loop("n_left", n_left_list);
+      loop2 = Loop("phi", phi_list);
+    } else if (gp.integrand == "sum_phi" && gp.integral_variable == "v") {
+      loop1 = Loop("n_left", n_left_list);
+      loop2 = Loop("iota", iota_list);
+    } else if (gp.integrand == "sum_phi" && gp.integral_variable == "v_iota") {
+      loop1 = Loop("n_left", n_left_list);
+    } else {
+      std::cerr << "invalid combination of integrand, integral_variable" << std::endl;
+      std::exit(EXIT_FAILURE);
+    }
+
+    auto start_time        = std::chrono::high_resolution_clock::now();
+    double time_find_pivot = 0.0;
+    double time_pretrain   = 0.0;
+    double time_train      = 0.0;
+    loop1.value            = 0;
+
+    for (auto val1 : loop1.container) {
+      loop2.value = 0;
+      for (auto val2 : loop2.container) {
+        loop3.value = 0;
+        for (auto val3 : loop3.container) {
+          int n_left = -1;
+          std::vector<int> phi_d_list{};
+          std::vector<int> phi_d_dag_list{};
+          std::vector<int> iota_d_list{};
+          std::vector<int> iota_d_dag_list{};
+          int id_phi  = -1;
+          int id_iota = -1;
+          if (loop1.name == "n_left")
+            n_left = val1;
+          else if (loop2.name == "n_left")
+            n_left = val2;
+          else if (loop3.name == "n_left")
+            n_left = val3;
+          if (loop1.name == "phi")
+            id_phi = val1;
+          else if (loop2.name == "phi")
+            id_phi = val2;
+          else if (loop3.name == "phi")
+            id_phi = val3;
+          if (loop1.name == "iota")
+            id_iota = val1;
+          else if (loop2.name == "iota")
+            id_iota = val2;
+          else if (loop3.name == "iota")
+            id_iota = val3;
+          if (id_phi != -1) {
+            std::tie(phi_d_list, phi_d_dag_list) = phi_pair_list[id_phi];
+          } else if (gp.integrand == "sum_phi") {
+          } else {
+            std::cerr << "invalid combination of integrand, integral_variable, and tci_shape" << std::endl;
+            std::exit(EXIT_FAILURE);
+          }
+          if (id_iota != -1) {
+            std::tie(iota_d_list, iota_d_dag_list) = iota_pair_list[id_iota];
+          } else if (gp.integral_variable == "v_iota") {
+          } else {
+            std::cerr << "invalid combination of integrand, integral_variable, and tci_shape" << std::endl;
+            std::exit(EXIT_FAILURE);
+          }
+          if (n_left == -1) {
+            std::cerr << "n_left is not set" << std::endl;
+            std::exit(EXIT_FAILURE);
+          }
+
+          long count     = 0;
+          auto integrand = [this, &count, &phi_d_list = phi_d_list, &phi_d_dag_list = phi_d_dag_list, &iota_d_list = iota_d_list,
+                            &iota_d_dag_list = iota_d_dag_list, &n_left, &change_variable, &jacobian, &phi_list,
+                            &phi_pair_list](const std::vector<double> &variables) -> double {
+            std::vector<double> taus_left{};
+            std::vector<double> taus_right{};
+            std::vector<double> taus{};
+            std::vector<double> vs{};
+            std::vector<double> iotas{};
+            count++;
+            double integrand_val = 0.0;
+            // set integral variables
+            if (gp.integral_variable == "v") {
+              vs = variables;
+            } else if (gp.integral_variable == "v_iota" && gp.tci_shape == "vertex") {
+              vs.reserve(variables.size());
+              iotas.reserve(variables.size());
+              for (int i = 0; i < variables.size(); i++) {
+                double int_part;
+                double frac_part;
+                frac_part = modf(variables[i], &int_part);
+                vs.push_back(frac_part);
+                iotas.push_back(int_part);
+              }
+            } else if (gp.integral_variable == "v_iota" && gp.tci_shape == "partition") {
+              int mid_idx = variables.size() / 2;
+              iotas       = std::vector<double>(variables.begin(), variables.begin() + mid_idx);
+              vs          = std::vector<double>(variables.begin() + mid_idx, variables.end());
+            } else {
+              std::cerr << "not implemented gp.integral_variable && gp.tci_shape combination" << std::endl;
+              std::cerr << "gp.integral_variable: " << gp.integral_variable << ", gp.tci_shape: " << gp.tci_shape << std::endl;
+              std::exit(EXIT_FAILURE);
+            } // end of splitting variables
+            // for bare mode, taus_left = taus_right = taus
+            std::tie(taus_left, taus_right, taus) = obtain_taus(vs, n_left, sp.tau_split, sp.tau_max, change_variable);
+
+            std::vector<int> phi_loop_list{0};
+            std::vector<std::pair<std::vector<int>, std::vector<int>>> phi_loop_pair_list{{phi_d_list, phi_d_dag_list}};
+            if (gp.integrand == "sum_phi") {
+              phi_loop_list      = phi_list;
+              phi_loop_pair_list = phi_pair_list;
+            }
+            for (auto phi_id : phi_loop_list) {
+              auto phi_d     = phi_loop_pair_list[phi_id].first;
+              auto phi_d_dag = phi_loop_pair_list[phi_id].second;
+              std::vector<int> iota_d{};
+              std::vector<int> iota_d_dag{};
+              if (gp.integral_variable == "v_iota") {
+                iota_d     = get_elements_int(phi_d, iotas);
+                iota_d_dag = get_elements_int(phi_d_dag, iotas);
+                // sanity check
+                std::vector<int> number_in_block_d     = generate_number_in_block(mp.gf_block_shape, iota_d);
+                std::vector<int> number_in_block_d_dag = generate_number_in_block(mp.gf_block_shape, iota_d_dag);
+                if (number_in_block_d != number_in_block_d_dag) { continue; }
+              } else if (gp.integral_variable == "v") {
+                iota_d     = iota_d_list;
+                iota_d_dag = iota_d_dag_list;
+              } else {
+                std::cerr << "not implemented" << std::endl;
+                std::exit(EXIT_FAILURE);
+              } // end of setting iota_d and iota_d_dag
+              auto tau_d     = get_elements(phi_d, taus);
+              auto tau_d_dag = get_elements(phi_d_dag, taus);
+              auto integrand_phi =
+                 evaluate_u_tau_max(sr.u_tau_zeroth_order, sp.tau_split, sp.tau_max, mp.all_d_ops, mp.all_d_dag_ops, mp.gf_block_shape, cp,
+                                    mp.Delta_tau, mp.ad_imp, sr.u_interpolator, tau_d, tau_d_dag, iota_d, iota_d_dag, sp.bl_index, sp.subspace_index);
+              double j = jacobian(taus_right, sp.tau_max, sp.tau_split);
+              if (sp.tau_split != 0.0) { j *= jacobian(taus_left, sp.tau_split, 0.0); }
+              integrand_val += integrand_phi * j;
+            } // end of loop over phi
+            return integrand_val;
+          };
+
+          //training
+          std::vector<std::vector<double>> input{};
+          std::vector<std::vector<double>> weight{};
+          std::vector<int> init_pivot{};
+          if (gp.integral_variable == "v") {
+            for (int i = 0; i < n; i++) {
+              input.push_back(tp.v_value);
+              weight.push_back(tp.v_weight);
+            }
+          } else if (gp.integral_variable == "v_iota" && gp.tci_shape == "vertex") {
+            std::vector<double> v_iota_value;
+            std::vector<double> v_iota_weight;
+            for (int i = 0; i < mp.n_phi; i++) {
+              for (int j = 0; j < tp.v_value.size(); j++) {
+                v_iota_value.push_back(i + tp.v_value[j]);
+                v_iota_weight.push_back(tp.v_weight[j]);
+              }
+            }
+            for (int i = 0; i < n; i++) {
+              input.push_back(v_iota_value);
+              weight.push_back(v_iota_weight);
+            }
+          } else if (gp.integral_variable == "v_iota" && gp.tci_shape == "partition") {
+            std::vector<double> iota_value{};
+            iota_value.resize(mp.n_phi);
+            std::iota(iota_value.begin(), iota_value.end(), 0);
+            std::vector<double> iota_weight(iota_value.size(), 1.0);
+            for (int i = 0; i < n; i++) {
+              input.push_back(iota_value);
+              weight.push_back(iota_weight);
+            }
+            for (int i = 0; i < n; i++) {
+              input.push_back(tp.v_value);
+              weight.push_back(tp.v_weight);
+            }
+          } else {
+            std::cerr << "not implemented" << std::endl;
+            std::exit(EXIT_FAILURE);
+          }
+
+          // set initial pivot
+          for (int i = 0; i < input.size(); i++) { init_pivot.push_back(0); }
+
+          std::vector<double> init_input{};
+          for (int i = 0; i < init_pivot.size(); i++) { 
+            init_input.push_back(input[i][init_pivot[i]]); }
+          double init_integrand = integrand(init_input);
+          if(sp.debug>1){std::cout << "init_integrand: " << init_integrand << std::endl;}
+          if (init_integrand == 0) {
+            std::cerr << "initial pivot is zero !!" << std::endl;
+            continue;
+          }
+          double integral = do_TCI<double, double>(integrand, input, weight, init_pivot, count, tp.sweep_bound, tp.bond_dim, tp.reltol, tp.fullPiv,
+                                                   tp.tci_prrlu, tp.error_type, tp.error_eval, tp.convergence_bound, tp.convergence_iter, sp.debug);
+          loop3.value += integral;
+        } // end of loop3
+        loop2.value += loop3.value;
+      } // end of loop2
+      loop1.value += loop2.value;
+    } // end of loop1
+    sr.integral_list.push_back(loop1.value);
+    auto end_time = std::chrono::high_resolution_clock::now();
+    sr.calculation_time_list.push_back(std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count() / 1e6);
+    sr.find_pivot_time_list.push_back(time_find_pivot);
+    sr.pretrain_time_list.push_back(time_pretrain);
+    sr.train_time_list.push_back(time_train);
+  } // end of order loop
+  std::cout << "completed" << std::endl;
+
+} // end of evaluate_propagator
+
+void ModeBase::evaluate_greens_function() {} // end of evaluate_green_function

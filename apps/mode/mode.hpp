@@ -89,6 +89,7 @@ struct simulation_results_t {
   interpolator_t<scalar_t> u_interpolator_ref{};
   frame_t u_tau_zeroth_order_ref{};
   frame_t u_tau_zeroth_order_bare{};
+  frame_t u_tau_zeroth_order{};
   double partition_function_zeroth_order_ref{};
 
   std::vector<double> integral_list         = {};
@@ -132,8 +133,8 @@ class ModeBase {
   virtual void print_summary();
   virtual void run() = 0;
   virtual void validate_input();
-  virtual void evaluate_propagator()      = 0;
-  virtual void evaluate_greens_function() = 0;
+  virtual void evaluate_propagator();
+  virtual void evaluate_greens_function();
   virtual ~ModeBase() {}
   std::string mode_name{};
 

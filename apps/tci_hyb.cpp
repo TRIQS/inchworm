@@ -24,7 +24,7 @@ int main(int argc, char *argv[]) {
     std::cout << "--- global parameters ---" << std::endl;
     std::cout << "target: propagator, green_function, both" << std::endl;
     std::cout << "integrand: plain, sum_phi" << std::endl;
-    std::cout << "integral_variable: v, v_iota, v_iota_id" << std::endl;
+    std::cout << "integral_variable: v, v_iota, v_id, v_iota_id" << std::endl;
     std::cout << "tci_shape: plain, partition, vertex" << std::endl;
     std::cout << "trick: none, scan_pivots, pretraining" << std::endl;
     std::cout << "model_type: 0 (discrete bath), 1 (read hybridization from file), 2(Bethe lattice)" << std::endl;
