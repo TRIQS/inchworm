@@ -5,6 +5,8 @@
 #include <numeric>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
+#include <Eigen/Eigen>
+#include <unsupported/Eigen/MatrixFunctions>
 
 using cv_func = std::function<std::vector<double>(const std::vector<double> &, double, double)>;
 using jb_func = std::function<double(const std::vector<double> &, double, double)>;
@@ -61,9 +63,10 @@ inline auto select_quadrature_GK(int n, double a = 0, double b = 1) {
     case 15: return quadrature_GK<15>(a, b);
     case 30: return quadrature_GK<30>(a, b);
     case 45: return quadrature_GK<45>(a, b);
+    case 50: return quadrature_GK<50>(a, b);
     default: {
-      std::cout << "Not supported\n";
-      return quadrature_GK<15>(a, b);
+      std::cerr << "select_quadrature_GK: value not supported\n";
+      std::exit(EXIT_FAILURE);
     };
   }
 }
@@ -196,33 +199,6 @@ template <typename T> std::vector<T> get_elements(const std::vector<int> &indice
   return result;
 }
 
-inline std::vector<double> change_variable1(const std::vector<double> &nus, double tau_max, double tau_min = 0.0) {
-  std::vector<double> taus(nus.size());
-  taus[nus.size() - 1] = tau_min + (tau_max - tau_min) * std::pow(nus[nus.size() - 1], (1.0 / nus.size()));
-  for (int i = nus.size() - 2; i >= 0; --i) { taus[i] = tau_min + (taus[i + 1] - tau_min) * std::pow(nus[i], (1.0 / static_cast<double>(i + 1))); }
-  // std::cout << "taus: ";
-  // print_vector(taus);
-  // std::cout << "nus: ";
-  // print_vector(nus);
-  return taus;
-}
-
-inline double jacobian1(const std::vector<double> &taus, double tau_max, double tau_min = 0.0) {
-  // std::cout << "jacobian1: " << std::pow(tau_max - tau_min, taus.size()) / factorial(taus.size()) << std::endl;
-  return std::pow(tau_max - tau_min, taus.size()) / factorial(taus.size());
-}
-
-inline std::vector<double> change_variable2(const std::vector<double> &nus, double tau_max, double tau_min = 0.0) {
-  std::vector<double> taus(nus.size());
-  taus[nus.size() - 1] = tau_max - (tau_max - tau_min) * std::pow(nus[nus.size() - 1], (1.0 / nus.size()));
-  for (int i = nus.size() - 2; i >= 0; --i) { taus[i] = tau_max - (tau_max - taus[i + 1]) * std::pow(nus[i], (1.0 / static_cast<double>(i + 1))); }
-  return taus;
-}
-
-inline double jacobian2(const std::vector<double> &taus, double tau_max, double tau_min = 0.0) {
-  return std::pow(tau_max - tau_min, taus.size()) / factorial(taus.size());
-}
-
 inline std::vector<double> change_variable0(const std::vector<double> &nus, double tau_max, double tau_min = 0.0) {
   std::vector<double> taus(nus.size());
   taus[0] = nus[0] * (tau_max - tau_min) + tau_min;
@@ -236,6 +212,71 @@ inline double jacobian0(const std::vector<double> &taus, double tau_max, double 
   double prod = tau_max - tau_min;
   for (size_t j = 1; j < taus.size(); ++j) { prod *= (tau_max - taus[j - 1]); }
   return std::abs(prod);
+}
+
+inline std::vector<double> change_variable1(const std::vector<double> &nus, double tau_max, double tau_min = 0.0) {
+  std::vector<double> taus(nus.size());
+  taus[nus.size() - 1] = tau_min + (tau_max - tau_min) * std::pow( (nus[nus.size() - 1]),  (1.0 / nus.size()));
+  for (int i = nus.size() - 2; i >= 0; --i) { taus[i] = tau_min + (taus[i + 1] - tau_min) * std::pow( (nus[i]),  (1.0 /(i + 1))); }
+  return taus;
+}
+
+inline double jacobian1(const std::vector<double> &taus, double tau_max, double tau_min = 0.0) {
+  return std::pow( (tau_max - tau_min),  (taus.size())) / factorial(taus.size());
+}
+
+inline std::vector<double> change_variable2(const std::vector<double> &nus, double tau_max, double tau_min = 0.0) {
+  std::vector<double> taus(nus.size());
+  taus[nus.size() - 1] = tau_max - (tau_max - tau_min) * std::pow( (nus[nus.size() - 1]),  (1.0 / nus.size()));
+  for (int i = nus.size() - 2; i >= 0; --i) { taus[i] = tau_max - (tau_max - taus[i + 1]) * std::pow( (nus[i]),  (1.0 / (i + 1))); }
+  return taus;
+}
+
+inline double jacobian2(const std::vector<double> &taus, double tau_max, double tau_min = 0.0) {
+  return std::pow( (tau_max - tau_min),  (taus.size())) / factorial(taus.size());
+}
+
+typedef Eigen::Matrix<double, -1, -1, Eigen::ColMajor> DColMatrix;
+typedef Eigen::Matrix<double, -1, 1, Eigen::ColMajor> DColVector;
+typedef Eigen::Matrix<double, -1, -1, Eigen::RowMajor> DMatrix;
+
+inline DMatrix get_P(unsigned k, double max_val, double min_val) {
+  DMatrix P = DColMatrix::Constant(k, k + 1, min_val);
+
+  for (auto i = 0u; i < k; i++) P(i, 0) = max_val;
+
+  for (auto j = 2u; j < k + 1; j++) {
+    for (auto i = j - 1; i < k; i++) { P(i, j) = max_val; }
+  }
+  return P;
+}
+
+inline std::vector<double> change_variable3(const std::vector<double> &vs, double max_val_target, double min_val_target = 0.0) {
+  double max_val_source = 1.0;
+  double min_val_source = 0.0;
+  double scale_source   = max_val_source - min_val_source;
+  auto P                = get_P(vs.size(), max_val_target, min_val_target);
+
+  auto t = P.col(0);
+  for (auto i = 1u; i <= vs.size(); i++) {
+    double x = (vs[i - 1] - min_val_source) / scale_source;
+    t        = std::pow( (x),  (1.0 / i)) * t + (1 - std::pow( (x),  (1.0 / i))) * P.col(i);
+  }
+
+  std::vector<double> result(t.size());
+  for (int i = 0; i < t.size(); ++i) { result[i] = t(i); }
+  return result;
+}
+
+inline double jacobian3(const std::vector<double> &vs, double max_val_target, double min_val_target = 0.0) {
+  double max_val_source = 1.0;
+  double min_val_source = 0.0;
+  double scale_source   = max_val_source - min_val_source;
+  double scale_target   = max_val_target - min_val_target;
+
+  int k = vs.size();
+
+  return std::pow( (scale_target / scale_source),  (k)) / std::tgamma(k + 1);
 }
 
 inline std::pair<int, int> findIndex(const std::vector<int> &block_shape, int iota) {
@@ -310,56 +351,121 @@ inline double evaluate_u_tau_max(frame_t &frame_zeroth_order, double tau_split, 
 }
 
 // tci helper
+// template <typename T_input, typename T_output>
+// T_output tci_error_integral(std::function<T_output(std::vector<T_input>)> f, xfac::TensorTrain<T_output> tt, std::vector<std::vector<T_input>> input,
+//                             size_t numEval = 1e3) {
+
+//   T_output e = 0; // Error
+//   T_output m = 0; // Magnitude
+//   std::random_device rd;
+//   std::mt19937 mt(rd());
+//   std::vector<int> idxs(input.size(), 0);
+//   std::vector<T_input> inputs(input.size(), 0);
+//   for (size_t sample = 0; sample < numEval; sample++) {
+//     for (auto i = 0u; i < idxs.size(); i++) {
+//       int local_dim = input[i].size();
+//       idxs[i]       = mt() % (local_dim);
+//       inputs[i]     = input[i][idxs[i]];
+//     }
+//     T_output tt_res    = tt.eval(idxs);
+//     T_output current_f = f(inputs);
+//     m += std::abs(current_f);
+//     e += std::abs(tt_res - current_f);
+//   }
+//   return e / m;
+// }
+
 template <typename T_input, typename T_output>
 T_output tci_error_integral(std::function<T_output(std::vector<T_input>)> f, xfac::TensorTrain<T_output> tt, std::vector<std::vector<T_input>> input,
                             size_t numEval = 1e3) {
 
   T_output e = 0; // Error
   T_output m = 0; // Magnitude
-  std::random_device rd;
-  std::mt19937 mt(rd());
-  std::vector<int> idxs(input.size(), 0);
-  std::vector<T_input> inputs(input.size(), 0);
-  for (size_t sample = 0; sample < numEval; sample++) {
-    for (auto i = 0u; i < idxs.size(); i++) {
-      int local_dim = input[i].size();
-      idxs[i]       = mt() % (local_dim);
-      inputs[i]     = input[i][idxs[i]];
+
+  // OpenMP for parallelization:
+  #pragma omp parallel reduction(+:e,m) 
+  {
+    std::random_device rd;
+    std::mt19937 mt(rd()); // Each thread should have its own random generator
+    std::vector<int> idxs(input.size(), 0);
+    std::vector<T_input> inputs(input.size(), 0);
+
+    #pragma omp for // Distribute iterations of the outer loop
+    for (size_t sample = 0; sample < numEval; sample++) {
+      for (auto i = 0u; i < idxs.size(); i++) {
+        int local_dim = input[i].size();
+        idxs[i]       = mt() % (local_dim);
+        inputs[i]     = input[i][idxs[i]];
+      }
+      T_output tt_res    = tt.eval(idxs);
+      T_output current_f = f(inputs);
+
+      // Accumulate e and m with local thread-safe updates
+      e += std::abs(tt_res - current_f);
+      m += std::abs(current_f);
     }
-    T_output tt_res    = tt.eval(idxs);
-    T_output current_f = f(inputs);
-    m += std::abs(current_f);
-    e += std::abs(tt_res - current_f);
-  }
+  } // End of OpenMP parallel region
+
   return e / m;
 }
+
+
+// template <typename T_input, typename T_output>
+// T_output tci_error_integrand(std::function<T_output(std::vector<T_input>)> f, xfac::TensorTrain<T_output> tt, std::vector<std::vector<T_input>> input,
+//                              size_t numEval = 1e3) {
+//   std::random_device rd;
+//   std::mt19937 mt(rd());
+//   std::vector<int> idxs(input.size(), 0);
+//   std::vector<T_input> inputs(input.size(), 0);
+//   double max_error = 0;
+//   for (size_t sample = 0; sample < numEval; sample++) {
+//     for (auto i = 0u; i < idxs.size(); i++) {
+//       int local_dim = input[i].size();
+//       idxs[i]       = mt() % (local_dim);
+//       inputs[i]     = input[i][idxs[i]];
+//     }
+//     T_output tt_res    = tt.eval(idxs);
+//     T_output current_f = f(inputs);
+//     max_error = std::max(max_error, std::abs(tt_res - current_f));
+//   }
+//   return max_error;
+// }
 
 template <typename T_input, typename T_output>
 T_output tci_error_integrand(std::function<T_output(std::vector<T_input>)> f, xfac::TensorTrain<T_output> tt, std::vector<std::vector<T_input>> input,
                              size_t numEval = 1e3) {
-  std::random_device rd;
-  std::mt19937 mt(rd());
-  std::vector<int> idxs(input.size(), 0);
-  std::vector<T_input> inputs(input.size(), 0);
+
   double max_error = 0;
-  for (size_t sample = 0; sample < numEval; sample++) {
-    for (auto i = 0u; i < idxs.size(); i++) {
-      int local_dim = input[i].size();
-      idxs[i]       = mt() % (local_dim);
-      inputs[i]     = input[i][idxs[i]];
+
+  // OpenMP for parallelization:
+  #pragma omp parallel
+  {
+    std::random_device rd;
+    std::mt19937 mt(rd()); // Each thread should have its own random generator
+    std::vector<int> idxs(input.size(), 0);
+    std::vector<T_input> inputs(input.size(), 0);
+    double thread_max_error = 0; // Local max_error for each thread
+
+    #pragma omp for // Distribute iterations of the outer loop
+    for (size_t sample = 0; sample < numEval; sample++) {
+      for (auto i = 0u; i < idxs.size(); i++) {
+        int local_dim = input[i].size();
+        idxs[i]       = mt() % (local_dim);
+        inputs[i]     = input[i][idxs[i]];
+      }
+      T_output tt_res    = tt.eval(idxs);
+      T_output current_f = f(inputs);
+      thread_max_error = std::max(thread_max_error, std::abs(tt_res - current_f)); 
     }
-    T_output tt_res    = tt.eval(idxs);
-    T_output current_f = f(inputs);
-    // if (current_f != 0) {
-    //   max_error = std::max(max_error, std::abs(tt_res - current_f) / std::abs(current_f));
-    // } else {
-    //   // avoid inf but may need to be handled differently later
-    //   max_error = std::max(max_error, 0.0);
-    // }
-    max_error = std::max(max_error, std::abs(tt_res - current_f));
-  }
+
+    // Critical section to update global max_error safely
+    #pragma omp critical 
+    max_error = std::max(max_error, thread_max_error);
+  } // End of OpenMP parallel region
+
   return max_error;
 }
+
 
 template <typename T_output, typename T_input>
 T_output do_TCI(std::function<T_output(std::vector<T_input>)> integrand, std::vector<std::vector<T_input>> &input,
@@ -400,12 +506,15 @@ T_output do_TCI(std::function<T_output(std::vector<T_input>)> integrand, std::ve
       std::cout << "iteration nEval error integral\n";
     }
     int bond_dim_init = bond_dim;
-    if(tci_prrlu == 2) { bond_dim_init = 1; }
-    auto ci = xfac::CTensorCI2<T_output, T_input>(integrand, input, {.bondDim = bond_dim_init, .reltol = reltol, .pivot1 = pivot1, .fullPiv = fullPiv});
+    if (tci_prrlu == 2) { bond_dim_init = 1; }
+    auto ci =
+       xfac::CTensorCI2<T_output, T_input>(integrand, input, {.bondDim = bond_dim_init, .reltol = reltol, .pivot1 = pivot1, .fullPiv = fullPiv});
     if (debug > 1) { std::cout << "bond_dim: " << ci.param.bondDim << std::endl; }
+    if (tci_prrlu == 2) { ci.param.bondDim++; }
     for (int i = 1; i <= sweep_bound; i++) {
       ci.iterate();
-      if(tci_prrlu == 2) { ci.param.bondDim++; }
+      // ci.makeCanonical();
+      if (tci_prrlu == 2) { ci.param.bondDim++; }
       integral = ci.tt.sum(weight);
       if (error_type == 0) {
         current_error = ci.pivotError[ci.pivotError.size() - 1];

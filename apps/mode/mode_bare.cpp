@@ -44,6 +44,10 @@ void ModeBare::evaluate_propagator() {
     change_variable = change_variable2;
     jacobian        = jacobian2;
   }
+  else if (tp.mapping_v == 3) {
+    change_variable = change_variable3;
+    jacobian        = jacobian3;
+  }
   else {
     std::cerr << "invalid mapping_v" << std::endl;
     std::exit(EXIT_FAILURE);
