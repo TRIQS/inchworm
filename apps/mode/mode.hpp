@@ -72,9 +72,11 @@ struct simulation_params_t {
   debug_t debug{};
   double tau_max{};
   double tau_split{};
+  double tau_split_ratio{};
   std::vector<int> order_list = {};
   int bl_index{};
   int subspace_index{};
+  bool use_bare_propagator{};
 };
 
 struct simulation_results_t {
@@ -149,6 +151,7 @@ class ModeBase {
   void read_json_parameters(std::string json_file_path);
   hyb_tau_t read_hyb_function(std::string hyb_file_path, model_params_t const & mp, constr_params_t const &cp);
   void prepare_input(std::string hyb_file_path);
+  void clear_tci_results();
 };
 
 class ModeDebug : public ModeBase {
@@ -164,6 +167,7 @@ class ModeInchworm : public ModeBase {
   public:
   ModeInchworm() : ModeBase() { mode_name = "inchworm"; }
   void run() override;
+  void validate_input() override;
   void evaluate_propagator() override;
   void evaluate_greens_function() override;
 };

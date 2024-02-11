@@ -3,6 +3,14 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <h5/h5.hpp>
 
+void ModeBase::clear_tci_results() {
+  sr.integral_list.clear();
+  sr.calculation_time_list.clear();
+  sr.find_pivot_time_list.clear();
+  sr.pretrain_time_list.clear();
+  sr.train_time_list.clear();
+} // end of clear_results
+
 void ModeBase::read_json_parameters(std::string json_file_path) {
   namespace pt = boost::property_tree;
   pt::ptree root;
@@ -59,7 +67,8 @@ void ModeBase::read_json_parameters(std::string json_file_path) {
 
   // Read simulation parameters
   sp.tau_max        = root.get<double>("sp.tau_max");
-  sp.tau_split      = root.get<double>("sp.tau_split_ratio") * sp.tau_max;
+  sp.tau_split_ratio = root.get<double>("sp.tau_split_ratio");
+  sp.tau_split      = sp.tau_split_ratio * sp.tau_max;
   sp.bl_index       = root.get<int>("sp.bl_index");
   sp.subspace_index = root.get<int>("sp.subspace_index");
 
@@ -297,7 +306,7 @@ void ModeBase::evaluate_propagator() {
     // generate valid n_left list
     std::vector<int> n_left_list(n - 1);
     std::iota(n_left_list.begin(), n_left_list.end(), 1);
-    if (mode_name == "bare") {
+    if (sp.use_bare_propagator) {
       n_left_list = {0}; // inchworm does not need n_left
     }
     // generate valid phi and iota pairs
@@ -422,6 +431,10 @@ void ModeBase::evaluate_propagator() {
             // for bare mode, taus_left = taus_right = taus
             std::tie(taus_left, taus_right, taus) = obtain_taus(vs, n_left, sp.tau_split, sp.tau_max, change_variable);
 
+            // if there exist duplicated element in taus, then the integrand is set to zero
+            //TODO: find a more precise approximation
+            if(is_duplicated(taus)){return 0.0;}
+
             std::vector<int> phi_loop_list{0};
             std::vector<std::pair<std::vector<int>, std::vector<int>>> phi_loop_pair_list{{phi_d_list, phi_d_dag_list}};
             if (gp.integrand == "sum_phi") {
@@ -451,7 +464,7 @@ void ModeBase::evaluate_propagator() {
               auto tau_d_dag = get_elements(phi_d_dag, taus);
               auto integrand_phi =
                  evaluate_u_tau_max(sr.u_tau_zeroth_order, sp.tau_split, sp.tau_max, mp.all_d_ops, mp.all_d_dag_ops, mp.gf_block_shape, cp,
-                                    mp.Delta_tau, mp.ad_imp, sr.u_interpolator, tau_d, tau_d_dag, iota_d, iota_d_dag, sp.bl_index, sp.subspace_index);
+                                    mp.Delta_tau, mp.ad_imp, sr.u_interpolator, tau_d, tau_d_dag, iota_d, iota_d_dag, sp.bl_index, sp.subspace_index, sp.use_bare_propagator);
               double j = jacobian(taus_right, sp.tau_max, sp.tau_split);
               if (sp.tau_split != 0.0) { j *= jacobian(taus_left, sp.tau_split, 0.0); }
               integrand_val += integrand_phi * j;

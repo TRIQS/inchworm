@@ -229,24 +229,24 @@ inline double jacobian0(const std::vector<double> &taus, double tau_max, double 
 
 inline std::vector<double> change_variable1(const std::vector<double> &nus, double tau_max, double tau_min = 0.0) {
   std::vector<double> taus(nus.size());
-  taus[nus.size() - 1] = tau_min + (tau_max - tau_min) * std::pow( (nus[nus.size() - 1]),  (1.0 / nus.size()));
-  for (int i = nus.size() - 2; i >= 0; --i) { taus[i] = tau_min + (taus[i + 1] - tau_min) * std::pow( (nus[i]),  (1.0 /(i + 1))); }
+  taus[nus.size() - 1] = tau_min + (tau_max - tau_min) * std::pow((nus[nus.size() - 1]), (1.0 / nus.size()));
+  for (int i = nus.size() - 2; i >= 0; --i) { taus[i] = tau_min + (taus[i + 1] - tau_min) * std::pow((nus[i]), (1.0 / (i + 1))); }
   return taus;
 }
 
 inline double jacobian1(const std::vector<double> &taus, double tau_max, double tau_min = 0.0) {
-  return std::pow( (tau_max - tau_min),  (taus.size())) / factorial(taus.size());
+  return std::pow((tau_max - tau_min), (taus.size())) / factorial(taus.size());
 }
 
 inline std::vector<double> change_variable2(const std::vector<double> &nus, double tau_max, double tau_min = 0.0) {
   std::vector<double> taus(nus.size());
-  taus[nus.size() - 1] = tau_max - (tau_max - tau_min) * std::pow( (nus[nus.size() - 1]),  (1.0 / nus.size()));
-  for (int i = nus.size() - 2; i >= 0; --i) { taus[i] = tau_max - (tau_max - taus[i + 1]) * std::pow( (nus[i]),  (1.0 / (i + 1))); }
+  taus[nus.size() - 1] = tau_max - (tau_max - tau_min) * std::pow((nus[nus.size() - 1]), (1.0 / nus.size()));
+  for (int i = nus.size() - 2; i >= 0; --i) { taus[i] = tau_max - (tau_max - taus[i + 1]) * std::pow((nus[i]), (1.0 / (i + 1))); }
   return taus;
 }
 
 inline double jacobian2(const std::vector<double> &taus, double tau_max, double tau_min = 0.0) {
-  return std::pow( (tau_max - tau_min),  (taus.size())) / factorial(taus.size());
+  return std::pow((tau_max - tau_min), (taus.size())) / factorial(taus.size());
 }
 
 typedef Eigen::Matrix<double, -1, -1, Eigen::ColMajor> DColMatrix;
@@ -273,7 +273,7 @@ inline std::vector<double> change_variable3(const std::vector<double> &vs, doubl
   auto t = P.col(0);
   for (auto i = 1u; i <= vs.size(); i++) {
     double x = (vs[i - 1] - min_val_source) / scale_source;
-    t        = std::pow( (x),  (1.0 / i)) * t + (1 - std::pow( (x),  (1.0 / i))) * P.col(i);
+    t        = std::pow((x), (1.0 / i)) * t + (1 - std::pow((x), (1.0 / i))) * P.col(i);
   }
 
   std::vector<double> result(t.size());
@@ -289,7 +289,7 @@ inline double jacobian3(const std::vector<double> &vs, double max_val_target, do
 
   int k = vs.size();
 
-  return std::pow( (scale_target / scale_source),  (k)) / std::tgamma(k + 1);
+  return std::pow((scale_target / scale_source), (k)) / std::tgamma(k + 1);
 }
 
 inline std::pair<int, int> findIndex(const std::vector<int> &block_shape, int iota) {
@@ -316,7 +316,7 @@ inline double evaluate_u_tau_max(frame_t &frame_zeroth_order, double tau_split, 
                                  std::vector<std::vector<fop_t>> const &all_d_dag_ops, std::vector<int> const &block_shape, constr_params_t const &cp,
                                  hyb_tau_t const &Delta_tau, atom_diag const &ad_imp, interpolator_t<scalar_t> const &u_interpolator,
                                  auto const &tau_d_list, auto const &tau_d_dag_list, auto const &iota_d_list, auto const &iota_d_dag_list,
-                                 int bl_indx, int subspace_indx) {
+                                 int bl_indx, int subspace_indx, bool use_bare_propagator) {
 
   auto config = config_t(frame_zeroth_order, cp.gf_struct, {0.0, tau_split});
   for (auto i : range(tau_d_list.size())) {
@@ -336,7 +336,7 @@ inline double evaluate_u_tau_max(frame_t &frame_zeroth_order, double tau_split, 
 
   auto diagram = diagram::time_diagram_t{config, {tau_split}};
   frame_t u_products;
-  if (tau_split != 0.0) {
+  if (!use_bare_propagator) {
     u_products = make_frame(impurity_product(ad_imp, diagram, tau_max, tau_split, &u_interpolator)
                             * impurity_product(ad_imp, diagram, tau_split, 0, &u_interpolator));
   } else {
@@ -344,13 +344,26 @@ inline double evaluate_u_tau_max(frame_t &frame_zeroth_order, double tau_split, 
   }
   int sign          = 0;
   double hyb_weight = 0.0;
-  if (bl_indx == -1) { //-1 is for returning the trace
-    if (has_zero_trace(ad_imp, diagram)) { return 0.0; }
-    auto hyb_mat = diagram::hyb_matrix_t(diagram, Delta_tau);
-    sign         = diagram.sign();
-    hyb_weight   = hyb_mat.det();
-    return hyb_weight * sign * trace(u_products);
-  } else if (u_products[bl_indx].size() != 0) {
+  if (use_bare_propagator) {
+    if (bl_indx == -1) { //-1 is for returning the trace
+      if (has_zero_trace(ad_imp, diagram)) { return 0.0; }
+      auto hyb_mat = diagram::hyb_matrix_t(diagram, Delta_tau);
+      sign         = diagram.sign();
+      hyb_weight   = hyb_mat.det();
+      return hyb_weight * sign * trace(u_products);
+    } else if (u_products[bl_indx].size() != 0) {
+      auto hyb_mat = diagram::hyb_matrix_t(diagram, Delta_tau);
+      sign         = diagram.sign();
+      hyb_weight   = hyb_mat.det();
+      int bl_size  = std::sqrt(u_products[bl_indx].size());
+      int i        = subspace_indx / bl_size;
+      int j        = subspace_indx % bl_size;
+      return u_products[bl_indx](i, j) * hyb_weight * sign;
+    } else {
+      return 0.0;
+    }
+  } // end of if (use_bare_propagator)
+  else if (u_products[bl_indx].size() != 0) {
     auto hyb_mat = diagram::hyb_matrix_t(diagram, Delta_tau);
     sign         = diagram.sign();
     hyb_weight   = inclusion_exclusion(diagram, hyb_mat);
@@ -364,6 +377,14 @@ inline double evaluate_u_tau_max(frame_t &frame_zeroth_order, double tau_split, 
 }
 
 // tci helper
+// check if there are identical elements in a vector
+inline bool is_duplicated(const std::vector<double> &taus) {
+  std::vector<double> taus_copy = taus;
+  std::sort(taus_copy.begin(), taus_copy.end());
+  auto last = std::unique(taus_copy.begin(), taus_copy.end());
+  return last != taus_copy.end();
+}
+
 // template <typename T_input, typename T_output>
 // T_output tci_error_integral(std::function<T_output(std::vector<T_input>)> f, xfac::TensorTrain<T_output> tt, std::vector<std::vector<T_input>> input,
 //                             size_t numEval = 1e3) {
@@ -395,15 +416,15 @@ T_output tci_error_integral(std::function<T_output(std::vector<T_input>)> f, xfa
   T_output e = 0; // Error
   T_output m = 0; // Magnitude
 
-  // OpenMP for parallelization:
-  #pragma omp parallel reduction(+:e,m) 
+// OpenMP for parallelization:
+#pragma omp parallel reduction(+ : e, m)
   {
     std::random_device rd;
     std::mt19937 mt(rd()); // Each thread should have its own random generator
     std::vector<int> idxs(input.size(), 0);
     std::vector<T_input> inputs(input.size(), 0);
 
-    #pragma omp for // Distribute iterations of the outer loop
+#pragma omp for // Distribute iterations of the outer loop
     for (size_t sample = 0; sample < numEval; sample++) {
       for (auto i = 0u; i < idxs.size(); i++) {
         int local_dim = input[i].size();
@@ -421,7 +442,6 @@ T_output tci_error_integral(std::function<T_output(std::vector<T_input>)> f, xfa
 
   return e / m;
 }
-
 
 // template <typename T_input, typename T_output>
 // T_output tci_error_integrand(std::function<T_output(std::vector<T_input>)> f, xfac::TensorTrain<T_output> tt, std::vector<std::vector<T_input>> input,
@@ -450,8 +470,8 @@ T_output tci_error_integrand(std::function<T_output(std::vector<T_input>)> f, xf
 
   double max_error = 0;
 
-  // OpenMP for parallelization:
-  #pragma omp parallel
+// OpenMP for parallelization:
+#pragma omp parallel
   {
     std::random_device rd;
     std::mt19937 mt(rd()); // Each thread should have its own random generator
@@ -459,7 +479,7 @@ T_output tci_error_integrand(std::function<T_output(std::vector<T_input>)> f, xf
     std::vector<T_input> inputs(input.size(), 0);
     double thread_max_error = 0; // Local max_error for each thread
 
-    #pragma omp for // Distribute iterations of the outer loop
+#pragma omp for // Distribute iterations of the outer loop
     for (size_t sample = 0; sample < numEval; sample++) {
       for (auto i = 0u; i < idxs.size(); i++) {
         int local_dim = input[i].size();
@@ -468,17 +488,16 @@ T_output tci_error_integrand(std::function<T_output(std::vector<T_input>)> f, xf
       }
       T_output tt_res    = tt.eval(idxs);
       T_output current_f = f(inputs);
-      thread_max_error = std::max(thread_max_error, std::abs(tt_res - current_f)); 
+      thread_max_error   = std::max(thread_max_error, std::abs(tt_res - current_f));
     }
 
-    // Critical section to update global max_error safely
-    #pragma omp critical 
+// Critical section to update global max_error safely
+#pragma omp critical
     max_error = std::max(max_error, thread_max_error);
   } // End of OpenMP parallel region
 
   return max_error;
 }
-
 
 template <typename T_output, typename T_input>
 T_output do_TCI(std::function<T_output(std::vector<T_input>)> integrand, std::vector<std::vector<T_input>> &input,

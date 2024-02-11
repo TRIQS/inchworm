@@ -43,6 +43,7 @@ void ModeDebug::evaluate_propagator() {
   // for debug mode, the discrete bath is used
     sr.u_tau_zeroth_order = sr.u_tau_zeroth_order_ref;
     sr.u_interpolator    = interpolator_t<scalar_t>(sr.u_tau_ref, sr.u_tau_ref[0].mesh().size());
+    sp.use_bare_propagator = false;
     ModeBase::evaluate_propagator();
 }
 
