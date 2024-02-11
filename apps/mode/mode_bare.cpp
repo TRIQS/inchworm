@@ -27,7 +27,7 @@ void ModeBare::evaluate_propagator() {
     sp.bl_index       = -1; // indicating doing trace instead of finding element
     sp.subspace_index = -1;
     sr.u_tau_zeroth_order = sr.u_tau_zeroth_order_bare;
-    sr.u_interpolator    = interpolator_t<scalar_t>(sr.u_tau_ref, sr.u_tau_ref[0].mesh().size());
+    // sr.u_interpolator    = interpolator_t<scalar_t>(sr.u_tau_ref, sr.u_tau_ref[0].mesh().size());
     ModeBase::evaluate_propagator();
 }
 
