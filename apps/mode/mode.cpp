@@ -23,6 +23,7 @@ void ModeBase::read_json_parameters(std::string json_file_path) {
   gp.tci_shape         = root.get<std::string>("gp.tci_shape");
   gp.trick             = root.get<std::string>("gp.trick");
   gp.model_type        = root.get<int>("gp.model_type");
+  gp.do_segment        = root.get<bool>("gp.do_segment");
 
   // Read construction parameters
   cp.beta        = root.get<double>("cp.beta");
@@ -307,7 +308,7 @@ void ModeBase::evaluate_propagator() {
     std::vector<int> n_left_list(n - 1);
     std::iota(n_left_list.begin(), n_left_list.end(), 1);
     if (sp.use_bare_propagator) {
-      n_left_list = {0}; // inchworm does not need n_left
+      n_left_list = {0}; // bare expansion does not need n_left
     }
     // generate valid phi and iota pairs
     std::vector<int> index_range(n);
@@ -437,7 +438,12 @@ void ModeBase::evaluate_propagator() {
 
             std::vector<int> phi_loop_list{0};
             std::vector<std::pair<std::vector<int>, std::vector<int>>> phi_loop_pair_list{{phi_d_list, phi_d_dag_list}};
-            if (gp.integrand == "sum_phi") {
+            if(gp.integrand == "sum_phi" && gp.do_segment){
+              phi_loop_pair_list = generate_phi_segment(iotas, mp.gf_block_shape);
+              phi_loop_list.resize(phi_loop_pair_list.size());
+              std::iota(phi_loop_list.begin(), phi_loop_list.end(), 0);
+            }
+            else if (gp.integrand == "sum_phi") {
               phi_loop_list      = phi_list;
               phi_loop_pair_list = phi_pair_list;
             }

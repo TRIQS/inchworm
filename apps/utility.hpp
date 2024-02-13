@@ -742,3 +742,86 @@ template <typename T> inline double linear_func_all(std::vector<T> const &iotas,
   // return (2.0* (x_val + std::pow(base, iotas.size())/2)-1.0)/2.0;
   return std::sin((x_val + std::pow(base, iotas.size()) / 2) * M_PI);
 }
+
+struct myOperator {
+  int iota{};
+  bool is_dagger{};
+};
+
+inline std::vector<std::vector<bool>> generate_all_wavefunctions(int N) {
+  std::vector<std::vector<bool>> all_vectors;
+  int num_vectors = 1 << N; // Calculate 2^N
+
+  for (int i = 0; i < num_vectors; ++i) {
+    std::vector<bool> current_vector(N);
+    for (int j = 0; j < N; ++j) { current_vector[j] = (i >> j) & 1; }
+    all_vectors.push_back(current_vector);
+  }
+
+  return all_vectors;
+}
+
+inline bool pairCompare(const std::pair<std::vector<int>, std::vector<int>>& a, const std::pair<std::vector<int>, std::vector<int>>& b) {
+    // Compare the two pairs
+    return a.first == b.first && a.second == b.second;
+}
+
+inline void removeDuplicates(std::vector<std::pair<std::vector<int>, std::vector<int>>>& vec) {
+    // Sort the vector to bring duplicates together
+    std::sort(vec.begin(), vec.end());
+    
+    // Use unique() function to remove duplicates
+    auto last = std::unique(vec.begin(), vec.end(), pairCompare);
+    
+    // Erase the duplicates
+    vec.erase(last, vec.end());
+}
+
+inline std::vector<std::pair<std::vector<int>, std::vector<int>>>  generate_phi_segment(std::vector<double> const &iotas,
+                                                                                       std::vector<int> const &gf_block_shape) {
+  // check if gf_block_shape is all ones
+  std::vector<std::pair<std::vector<int>, std::vector<int>>> phi_pair_list;
+  std::vector<int> ones(gf_block_shape.size(), 1);
+  if (gf_block_shape != ones) {
+    std::cerr << "generate_phi_segment: gf_block_shape is not all ones\n";
+    std::exit(EXIT_FAILURE);
+  }
+  int n_phi = gf_block_shape.size();
+  // generate all possible wavefunction configurations
+
+  auto all_wavefunctions = generate_all_wavefunctions(n_phi);
+  for (auto is_created : all_wavefunctions) {
+    std::vector<myOperator> operators{};
+    for (auto iota : iotas) {
+      int iota_int = static_cast<int>(iota);
+      if (is_created[iota_int]) {
+        operators.push_back({iota_int, false});
+        is_created[iota_int] = false;
+      } else {
+        operators.push_back({iota_int, true});
+        is_created[iota_int] = true;
+      }
+    }
+    std::vector<int> phi_d_list;
+    std::vector<int> phi_d_dag_list;
+    //collect the indices for c and c^dagger
+    for (size_t i = 0; i < operators.size(); ++i) {
+      if (operators[i].is_dagger) {
+        phi_d_dag_list.push_back(i);
+      } else {
+        phi_d_list.push_back(i);
+      }
+    }
+    phi_pair_list.push_back({phi_d_list, phi_d_dag_list});
+  }
+  removeDuplicates(phi_pair_list);
+  // std::cout << "iotas: ";
+  // print_vector(iotas);
+  // for(auto phi_pair: phi_pair_list){
+  //   std::cout << "phi_d_list: ";
+  //   print_vector(phi_pair.first);
+  //   std::cout << "phi_d_dag_list: ";
+  //   print_vector(phi_pair.second);
+  // }
+  return phi_pair_list;
+}

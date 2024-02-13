@@ -27,6 +27,7 @@ struct global_params_t {
   std::string tci_shape{};
   std::string trick{};
   int model_type{}; // 0 for discrete bath, 1 for continuous bath, 2 for bethe lattice
+  bool do_segment = false;
 };
 
 struct model_params_t {
