@@ -815,13 +815,5 @@ inline std::vector<std::pair<std::vector<int>, std::vector<int>>>  generate_phi_
     phi_pair_list.push_back({phi_d_list, phi_d_dag_list});
   }
   removeDuplicates(phi_pair_list);
-  // std::cout << "iotas: ";
-  // print_vector(iotas);
-  // for(auto phi_pair: phi_pair_list){
-  //   std::cout << "phi_d_list: ";
-  //   print_vector(phi_pair.first);
-  //   std::cout << "phi_d_dag_list: ";
-  //   print_vector(phi_pair.second);
-  // }
   return phi_pair_list;
 }

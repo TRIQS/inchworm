@@ -67,11 +67,11 @@ void ModeBase::read_json_parameters(std::string json_file_path) {
   }
 
   // Read simulation parameters
-  sp.tau_max        = root.get<double>("sp.tau_max");
+  sp.tau_max         = root.get<double>("sp.tau_max");
   sp.tau_split_ratio = root.get<double>("sp.tau_split_ratio");
-  sp.tau_split      = sp.tau_split_ratio * sp.tau_max;
-  sp.bl_index       = root.get<int>("sp.bl_index");
-  sp.subspace_index = root.get<int>("sp.subspace_index");
+  sp.tau_split       = sp.tau_split_ratio * sp.tau_max;
+  sp.bl_index        = root.get<int>("sp.bl_index");
+  sp.subspace_index  = root.get<int>("sp.subspace_index");
 
   int debug_level = root.get<int>("sp.debug");
   if (debug_level == 0) {
@@ -311,12 +311,18 @@ void ModeBase::evaluate_propagator() {
       n_left_list = {0}; // bare expansion does not need n_left
     }
     // generate valid phi and iota pairs
-    std::vector<int> index_range(n);
-    std::iota(index_range.begin(), index_range.end(), 0);
-    auto phi_pair_list = get_all_phi(index_range);
+    std::vector<std::pair<std::vector<int>, std::vector<int>>> phi_pair_list{};
+    if (gp.integrand != "sum_phi") {
+      std::vector<int> index_range(n);
+      std::iota(index_range.begin(), index_range.end(), 0);
+      phi_pair_list = get_all_phi(index_range);
+    }
     std::vector<int> phi_list(phi_pair_list.size()); // phi_list is an index list, phi_pair_list contains actual phi pairs
     std::iota(phi_list.begin(), phi_list.end(), 0);
-    auto iota_pair_list = get_all_iota(mp.gf_block_shape, order);
+    std::vector<std::pair<std::vector<int>, std::vector<int>>> iota_pair_list {};
+    if(gp.integral_variable != "v_iota"){
+      iota_pair_list = get_all_iota(mp.gf_block_shape, order);
+    }
     std::vector<int> iota_list(iota_pair_list.size());
     std::iota(iota_list.begin(), iota_list.end(), 0); // iota_list is an index list, iota_pair_list contains actual iota pairs
 
@@ -434,16 +440,15 @@ void ModeBase::evaluate_propagator() {
 
             // if there exist duplicated element in taus, then the integrand is set to zero
             //TODO: find a more precise approximation
-            if(is_duplicated(taus)){return 0.0;}
+            if (is_duplicated(taus)) { return 0.0; }
 
             std::vector<int> phi_loop_list{0};
             std::vector<std::pair<std::vector<int>, std::vector<int>>> phi_loop_pair_list{{phi_d_list, phi_d_dag_list}};
-            if(gp.integrand == "sum_phi" && gp.do_segment){
+            if (gp.integrand == "sum_phi" && gp.do_segment) {
               phi_loop_pair_list = generate_phi_segment(iotas, mp.gf_block_shape);
               phi_loop_list.resize(phi_loop_pair_list.size());
               std::iota(phi_loop_list.begin(), phi_loop_list.end(), 0);
-            }
-            else if (gp.integrand == "sum_phi") {
+            } else if (gp.integrand == "sum_phi") {
               phi_loop_list      = phi_list;
               phi_loop_pair_list = phi_pair_list;
             }
@@ -466,12 +471,12 @@ void ModeBase::evaluate_propagator() {
                 std::cerr << "not implemented" << std::endl;
                 std::exit(EXIT_FAILURE);
               } // end of setting iota_d and iota_d_dag
-              auto tau_d     = get_elements(phi_d, taus);
-              auto tau_d_dag = get_elements(phi_d_dag, taus);
-              auto integrand_phi =
-                 evaluate_u_tau_max(sr.u_tau_zeroth_order, sp.tau_split, sp.tau_max, mp.all_d_ops, mp.all_d_dag_ops, mp.gf_block_shape, cp,
-                                    mp.Delta_tau, mp.ad_imp, sr.u_interpolator, tau_d, tau_d_dag, iota_d, iota_d_dag, sp.bl_index, sp.subspace_index, sp.use_bare_propagator);
-              double j = jacobian(taus_right, sp.tau_max, sp.tau_split);
+              auto tau_d         = get_elements(phi_d, taus);
+              auto tau_d_dag     = get_elements(phi_d_dag, taus);
+              auto integrand_phi = evaluate_u_tau_max(sr.u_tau_zeroth_order, sp.tau_split, sp.tau_max, mp.all_d_ops, mp.all_d_dag_ops,
+                                                      mp.gf_block_shape, cp, mp.Delta_tau, mp.ad_imp, sr.u_interpolator, tau_d, tau_d_dag, iota_d,
+                                                      iota_d_dag, sp.bl_index, sp.subspace_index, sp.use_bare_propagator);
+              double j           = jacobian(taus_right, sp.tau_max, sp.tau_split);
               if (sp.tau_split != 0.0) { j *= jacobian(taus_left, sp.tau_split, 0.0); }
               integrand_val += integrand_phi * j;
             } // end of loop over phi
@@ -522,10 +527,9 @@ void ModeBase::evaluate_propagator() {
           for (int i = 0; i < input.size(); i++) { init_pivot.push_back(0); }
 
           std::vector<double> init_input{};
-          for (int i = 0; i < init_pivot.size(); i++) { 
-            init_input.push_back(input[i][init_pivot[i]]); }
+          for (int i = 0; i < init_pivot.size(); i++) { init_input.push_back(input[i][init_pivot[i]]); }
           double init_integrand = integrand(init_input);
-          if(sp.debug>1){std::cout << "init_integrand: " << init_integrand << std::endl;}
+          if (sp.debug > 1) { std::cout << "init_integrand: " << init_integrand << std::endl; }
           if (init_integrand == 0) {
             std::cerr << "initial pivot is zero !!" << std::endl;
             continue;
