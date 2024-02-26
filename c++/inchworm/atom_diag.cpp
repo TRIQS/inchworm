@@ -35,6 +35,7 @@ namespace inchworm {
   frame_t make_bare_u_frame(atom_diag const &ad, double tau) {
     auto u_frame = make_zero_frame(ad.get_subspace_dims());
     for (auto [bl, bl_size] : enumerate(ad.get_subspace_dims()))
+      // for (int i : range(bl_size)) u_frame[bl](i, i) = std::exp(-tau * (ad.get_eigenvalue(bl, i) + ad.get_gs_energy()));
       for (int i : range(bl_size)) u_frame[bl](i, i) = std::exp(-tau * ad.get_eigenvalue(bl, i));
     return u_frame;
   }
@@ -42,10 +43,10 @@ namespace inchworm {
   u_tau_t make_ED_propagator(atom_diag const &ad_tot, atom_diag const &ad_imp, atom_diag const &ad_bath, double beta, long n_tau) {
 
     auto u_tau = u_tau_t{{beta, Fermion, n_tau}, ad_imp.get_subspace_dims()};
-    u_tau() = 0.0;
+    u_tau()    = 0.0;
 
     double dtau = beta / (n_tau - 1.);
-    for (int i_tau: mpi::chunk(range(n_tau))) {
+    for (int i_tau : mpi::chunk(range(n_tau))) {
       auto u_frame = partial_trace_bath(ad_tot, ad_imp, ad_bath, beta, dtau * i_tau);
       set_frame(u_frame, u_tau, i_tau);
     }

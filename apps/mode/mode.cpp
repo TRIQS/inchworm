@@ -190,6 +190,7 @@ void ModeBase::prepare_input(std::string hyb_file_path) {
       for (auto bl : range(mp.ad_imp.n_subspaces())) { std::cout << "bl: " << bl << ", dim: " << mp.ad_imp.get_subspace_dim(bl) << std::endl; }
     }
   } else if (gp.model_type == 1) { //model_type 1: read hybridization function from input file
+    
     mp.ad_imp                              = imp_setup(mp.n_site, mp.n_spin, mp.U, mp.mu, mp.t, cp);
     mp.Delta_tau                           = read_hyb_function(hyb_file_path, mp, cp);
     sr.u_tau_zeroth_order_bare             = make_bare_u_frame(mp.ad_imp, cp.beta);
@@ -284,7 +285,7 @@ void ModeBase::evaluate_propagator() {
   // setup the mapping and jacobian functions for the transformation of time-ordered variables v->tau
   cv_func change_variable;
   jb_func jacobian;
-  if (tp.mapping_v == 0) {
+  if (tp.mapping_v == 0 || tp.mapping_v == 4) {
     change_variable = change_variable0;
     jacobian        = jacobian0;
   } else if (tp.mapping_v == 1) {
@@ -312,17 +313,19 @@ void ModeBase::evaluate_propagator() {
     }
     // generate valid phi and iota pairs
     std::vector<std::pair<std::vector<int>, std::vector<int>>> phi_pair_list{};
-    if (gp.integrand != "sum_phi") {
+    if (!gp.do_segment) {
       std::vector<int> index_range(n);
       std::iota(index_range.begin(), index_range.end(), 0);
       phi_pair_list = get_all_phi(index_range);
     }
+    // std::vector<int> index_range(n);
+    // std::iota(index_range.begin(), index_range.end(), 0);
+    // phi_pair_list = get_all_phi(index_range);
     std::vector<int> phi_list(phi_pair_list.size()); // phi_list is an index list, phi_pair_list contains actual phi pairs
     std::iota(phi_list.begin(), phi_list.end(), 0);
-    std::vector<std::pair<std::vector<int>, std::vector<int>>> iota_pair_list {};
-    if(gp.integral_variable != "v_iota"){
-      iota_pair_list = get_all_iota(mp.gf_block_shape, order);
-    }
+    std::vector<std::pair<std::vector<int>, std::vector<int>>> iota_pair_list{};
+    if (gp.integral_variable != "v_iota") { iota_pair_list = get_all_iota(mp.gf_block_shape, order); }
+    // iota_pair_list = get_all_iota(mp.gf_block_shape, order);
     std::vector<int> iota_list(iota_pair_list.size());
     std::iota(iota_list.begin(), iota_list.end(), 0); // iota_list is an index list, iota_pair_list contains actual iota pairs
 
@@ -409,6 +412,9 @@ void ModeBase::evaluate_propagator() {
             std::vector<double> taus_left{};
             std::vector<double> taus_right{};
             std::vector<double> taus{};
+            std::vector<double> taus_left_sym{};
+            std::vector<double> taus_right_sym{};
+            std::vector<double> taus_sym{};
             std::vector<double> vs{};
             std::vector<double> iotas{};
             count++;
@@ -430,6 +436,14 @@ void ModeBase::evaluate_propagator() {
               int mid_idx = variables.size() / 2;
               iotas       = std::vector<double>(variables.begin(), variables.begin() + mid_idx);
               vs          = std::vector<double>(variables.begin() + mid_idx, variables.end());
+            } else if (gp.integral_variable == "v_iota" && gp.tci_shape == "full") {
+              for (size_t i = 0; i < variables.size(); i++) {
+                if (i % 2 == 0) {
+                  iotas.push_back(variables[i]);
+                } else {
+                  vs.push_back(variables[i]);
+                }
+              }
             } else {
               std::cerr << "not implemented gp.integral_variable && gp.tci_shape combination" << std::endl;
               std::cerr << "gp.integral_variable: " << gp.integral_variable << ", gp.tci_shape: " << gp.tci_shape << std::endl;
@@ -440,7 +454,31 @@ void ModeBase::evaluate_propagator() {
 
             // if there exist duplicated element in taus, then the integrand is set to zero
             //TODO: find a more precise approximation
-            if (is_duplicated(taus)) { return 0.0; }
+            // if (is_duplicated(taus)) {
+            //   if (gp.trick == "random_auxi") { return tp.auxi_height * get_hash_random_number(variables); }
+            //   return 0.0;
+            // }
+            if (is_duplicated(taus)) {
+              for (size_t i = 0; i < taus.size(); i++) {
+                if (taus[i] == taus[i + 1]) {
+                  if (std::abs(taus[i] - 0) < 1e-16) {
+                    taus[i + 1] += 1e-16;
+                  } else {
+                    taus[i] -= 1e-16;
+                  }
+                }
+              }
+            }
+
+            if (tp.mapping_v == 4 && sp.tau_split != 0.0) {
+              for (int i = taus_left.size() - 1; i >= 0; i--) { taus_left_sym.push_back(sp.tau_split - taus_left[i]); }
+              for (int i = taus_right.size() - 1; i >= 0; i--) { taus_right_sym.push_back(sp.tau_max + sp.tau_split - taus_right[i]); }
+              taus_sym = taus_left_sym;
+              taus_sym.insert(taus_sym.end(), taus_right_sym.begin(), taus_right_sym.end());
+            }
+            else if (tp.mapping_v == 4 && sp.tau_split == 0.0) {
+              for(int i = taus.size() - 1; i >= 0; i--) { taus_sym.push_back(sp.tau_max - taus[i]); }
+            }
 
             std::vector<int> phi_loop_list{0};
             std::vector<std::pair<std::vector<int>, std::vector<int>>> phi_loop_pair_list{{phi_d_list, phi_d_dag_list}};
@@ -452,6 +490,7 @@ void ModeBase::evaluate_propagator() {
               phi_loop_list      = phi_list;
               phi_loop_pair_list = phi_pair_list;
             }
+
             for (auto phi_id : phi_loop_list) {
               auto phi_d     = phi_loop_pair_list[phi_id].first;
               auto phi_d_dag = phi_loop_pair_list[phi_id].second;
@@ -478,8 +517,19 @@ void ModeBase::evaluate_propagator() {
                                                       iota_d_dag, sp.bl_index, sp.subspace_index, sp.use_bare_propagator);
               double j           = jacobian(taus_right, sp.tau_max, sp.tau_split);
               if (sp.tau_split != 0.0) { j *= jacobian(taus_left, sp.tau_split, 0.0); }
-              integrand_val += integrand_phi * j;
+              if (tp.mapping_v == 4) {
+                auto tau_d_sym         = get_elements(phi_d, taus_sym);
+                auto tau_d_dag_sym     = get_elements(phi_d_dag, taus_sym);
+                auto integrand_phi_sym = evaluate_u_tau_max(
+                   sr.u_tau_zeroth_order, sp.tau_split, sp.tau_max, mp.all_d_ops, mp.all_d_dag_ops, mp.gf_block_shape, cp, mp.Delta_tau, mp.ad_imp,
+                   sr.u_interpolator, tau_d_sym, tau_d_dag_sym, iota_d, iota_d_dag, sp.bl_index, sp.subspace_index, sp.use_bare_propagator);
+                // j_sym should be the same as j
+                integrand_val += (integrand_phi_sym * j + integrand_phi * j) / 2;
+              } else {
+                integrand_val += integrand_phi * j;
+              }
             } // end of loop over phi
+            if (gp.trick == "random_auxi") { return tp.auxi_height * get_hash_random_number(variables) + integrand_val; }
             return integrand_val;
           };
 
@@ -518,12 +568,25 @@ void ModeBase::evaluate_propagator() {
               input.push_back(tp.v_value);
               weight.push_back(tp.v_weight);
             }
+          } else if (gp.integral_variable == "v_iota" && gp.tci_shape == "full") {
+            std::vector<double> iota_value{};
+            iota_value.resize(mp.n_phi);
+            std::iota(iota_value.begin(), iota_value.end(), 0);
+            std::vector<double> iota_weight(iota_value.size(), 1.0);
+            for (int i = 0; i < n; i++) {
+              input.push_back(iota_value);
+              input.push_back(tp.v_value);
+              weight.push_back(iota_weight);
+              weight.push_back(tp.v_weight);
+            }
           } else {
             std::cerr << "not implemented" << std::endl;
             std::exit(EXIT_FAILURE);
           }
 
           // set initial pivot
+          // smart initial pivot
+          // for (int i = 0; i < input.size(); i++) { init_pivot.push_back(int(input[i].size() / 2)); }
           for (int i = 0; i < input.size(); i++) { init_pivot.push_back(0); }
 
           std::vector<double> init_input{};
@@ -534,8 +597,20 @@ void ModeBase::evaluate_propagator() {
             std::cerr << "initial pivot is zero !!" << std::endl;
             continue;
           }
+          std::vector<std::vector<int>> init_global_pivots{};
+          if(gp.trick == "spin_pivot"&& gp.integral_variable == "v_iota"){
+            std::vector<int> pivot{};
+            if (gp.tci_shape == "vertex") {
+              for (int i = 0; i < input.size(); i++) { pivot.push_back(int(input[i].size() / 2));}
+            }
+            if (gp.tci_shape == "partition") {
+              for (int i = 0; i < input.size()/2; i++) { pivot.push_back(1);}
+              for (int i = input.size()/2; i < input.size(); i++) { pivot.push_back(0);}
+            }
+            init_global_pivots.push_back(pivot);
+          } 
           double integral = do_TCI<double, double>(integrand, input, weight, init_pivot, count, tp.sweep_bound, tp.bond_dim, tp.reltol, tp.fullPiv,
-                                                   tp.tci_prrlu, tp.error_type, tp.error_eval, tp.convergence_bound, tp.convergence_iter, sp.debug);
+                                                   tp.tci_prrlu, tp.error_type, tp.error_eval, tp.convergence_bound, tp.convergence_iter, sp.debug, init_global_pivots);
           loop3.value += integral;
         } // end of loop3
         loop2.value += loop3.value;

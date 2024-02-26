@@ -17,6 +17,28 @@ enum debug_t {
   high  //2, simulation level debug + TCI level debug
 };
 
+inline double get_random_number() {
+  // Create a random number generator
+  std::random_device rd;
+  std::mt19937 gen(rd());
+  std::uniform_real_distribution<double> dis(-1.0, 1.0); // Define the distribution between -1 and 1
+  // Generate and return a random number
+  return dis(gen);
+}
+
+inline double get_hash_random_number(const std::vector<double> &vec) {
+  std::size_t seed = 0;
+  for (double i : vec) {
+    // Hash individual double and combine
+    seed ^= std::hash<double>{}(i) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+  }
+
+  // Map the resulting hash to a double in [-1, 1]
+  // static_cast is used to convert size_t to double
+  // This mapping is a simple example, and there are many ways to do it.
+  return static_cast<double>(seed) / static_cast<double>(std::numeric_limits<std::size_t>::max()) * 2.0 - 1.0;
+}
+
 //printing helper
 template <typename T> void print_vector(const std::vector<T> &vec) {
   for (auto v : vec) std::cout << v << ' ';
@@ -500,9 +522,10 @@ T_output tci_error_integrand(std::function<T_output(std::vector<T_input>)> f, xf
 }
 
 template <typename T_output, typename T_input>
-T_output do_TCI(std::function<T_output(std::vector<T_input>)> integrand, std::vector<std::vector<T_input>> &input,
-                std::vector<std::vector<double>> &weight, std::vector<int> &pivot1, long &count, int sweep_bound, int bond_dim, double reltol,
-                bool fullPiv, int tci_prrlu, int error_type, size_t error_eval, double convergence_bound, int convergence_iter, debug_t debug) {
+T_output do_TCI(std::function<T_output(std::vector<T_input>)> integrand, std::vector<std::vector<T_input>> const &input,
+                std::vector<std::vector<double>> const &weight, std::vector<int> const &pivot1, long &count, int sweep_bound, int bond_dim,
+                double reltol, bool fullPiv, int tci_prrlu, int error_type, size_t error_eval, double convergence_bound, int convergence_iter,
+                debug_t debug, std::vector<std::vector<int>> const &init_global_pivots) {
   double last_error{0};
   double current_error{0};
   T_output integral{0};
@@ -543,6 +566,7 @@ T_output do_TCI(std::function<T_output(std::vector<T_input>)> integrand, std::ve
        xfac::CTensorCI2<T_output, T_input>(integrand, input, {.bondDim = bond_dim_init, .reltol = reltol, .pivot1 = pivot1, .fullPiv = fullPiv});
     if (debug > 1) { std::cout << "bond_dim: " << ci.param.bondDim << std::endl; }
     if (tci_prrlu == 2) { ci.param.bondDim++; }
+    if (init_global_pivots.size() != 0) { ci.myAddPivotsAllBonds(init_global_pivots); }
     for (int i = 1; i <= sweep_bound; i++) {
       ci.iterate();
       // ci.makeCanonical();
@@ -761,23 +785,23 @@ inline std::vector<std::vector<bool>> generate_all_wavefunctions(int N) {
   return all_vectors;
 }
 
-inline bool pairCompare(const std::pair<std::vector<int>, std::vector<int>>& a, const std::pair<std::vector<int>, std::vector<int>>& b) {
-    // Compare the two pairs
-    return a.first == b.first && a.second == b.second;
+inline bool pairCompare(const std::pair<std::vector<int>, std::vector<int>> &a, const std::pair<std::vector<int>, std::vector<int>> &b) {
+  // Compare the two pairs
+  return a.first == b.first && a.second == b.second;
 }
 
-inline void removeDuplicates(std::vector<std::pair<std::vector<int>, std::vector<int>>>& vec) {
-    // Sort the vector to bring duplicates together
-    std::sort(vec.begin(), vec.end());
-    
-    // Use unique() function to remove duplicates
-    auto last = std::unique(vec.begin(), vec.end(), pairCompare);
-    
-    // Erase the duplicates
-    vec.erase(last, vec.end());
+inline void removeDuplicates(std::vector<std::pair<std::vector<int>, std::vector<int>>> &vec) {
+  // Sort the vector to bring duplicates together
+  std::sort(vec.begin(), vec.end());
+
+  // Use unique() function to remove duplicates
+  auto last = std::unique(vec.begin(), vec.end(), pairCompare);
+
+  // Erase the duplicates
+  vec.erase(last, vec.end());
 }
 
-inline std::vector<std::pair<std::vector<int>, std::vector<int>>>  generate_phi_segment(std::vector<double> const &iotas,
+inline std::vector<std::pair<std::vector<int>, std::vector<int>>> generate_phi_segment(std::vector<double> const &iotas,
                                                                                        std::vector<int> const &gf_block_shape) {
   // check if gf_block_shape is all ones
   std::vector<std::pair<std::vector<int>, std::vector<int>>> phi_pair_list;

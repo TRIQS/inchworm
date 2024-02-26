@@ -37,6 +37,7 @@ namespace inchworm {
       } else { // cthyb case
         auto bl_size = ad.get_subspace_dim(bl);
         auto res     = matrix_t::zeros({bl_size, bl_size});
+        // for (auto j : range(bl_size)) res(j, j) = std::exp(-tau * (ad.get_eigenvalue(bl, j) + ad.get_gs_energy()));
         for (auto j : range(bl_size)) res(j, j) = std::exp(-tau * ad.get_eigenvalue(bl, j));
         return res;
       }

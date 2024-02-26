@@ -238,6 +238,7 @@ inline atom_diag imp_setup(int n_site, int n_spin, double U, double mu, double t
     h_imp -= mu * n("up", j);
 
     if (n_spin == 2) {
+      std::cout << "two spins" << std::endl;
       h_imp -= mu * n("dn", j);
       h_imp += U * n("up", j) * n("dn", j);
     }
@@ -251,7 +252,14 @@ inline atom_diag imp_setup(int n_site, int n_spin, double U, double mu, double t
 
   // === Define the 1 different atom_diag objects (ED calculation with Triqs)
 
-  auto ad_imp = inchworm::atom_diag(h_imp, fops_imp, create_effective_hyb(cp.gf_struct));
+  auto ad_imp = inchworm::atom_diag(h_imp, fops_imp);
+
+  // for (auto [bl, bl_size] : enumerate(ad_imp.get_subspace_dims())) {
+  //   for (int i : range(bl_size)) { 
+      
+  //     std::cout << "eigvalue:" << ad_imp.get_eigenvalue(bl, i) << std::endl; }
+  // }
+  // std::cout << " ground energy: " << ad_imp.get_gs_energy()<< std::endl;
 
   return ad_imp;
 }
