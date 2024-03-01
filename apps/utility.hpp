@@ -14,7 +14,7 @@ using jb_func = std::function<double(const std::vector<double> &, double, double
 enum debug_t {
   none, //0, no debug
   low,  //1, simulation level debug
-  high  //2, simulation level debug + TCI level debug
+  high  //2, simulation level debug + TCI level debug (print both pivot error and integral)
 };
 
 inline double get_random_number() {
@@ -338,7 +338,8 @@ inline double evaluate_u_tau_max(frame_t &frame_zeroth_order, double tau_split, 
                                  std::vector<std::vector<fop_t>> const &all_d_dag_ops, std::vector<int> const &block_shape, constr_params_t const &cp,
                                  hyb_tau_t const &Delta_tau, atom_diag const &ad_imp, interpolator_t<scalar_t> const &u_interpolator,
                                  auto const &tau_d_list, auto const &tau_d_dag_list, auto const &iota_d_list, auto const &iota_d_dag_list,
-                                 int bl_indx, int subspace_indx, bool use_bare_propagator) {
+                                 int bl_indx, int subspace_indx, bool use_bare_propagator, std::vector<int> const &gf_index,
+                                 gf_struct_t const &gf_struct) {
 
   auto config = config_t(frame_zeroth_order, cp.gf_struct, {0.0, tau_split});
   for (auto i : range(tau_d_list.size())) {
@@ -358,25 +359,38 @@ inline double evaluate_u_tau_max(frame_t &frame_zeroth_order, double tau_split, 
 
   auto diagram = diagram::time_diagram_t{config, {tau_split}};
   frame_t u_products;
-  if (!use_bare_propagator) {
-    u_products = make_frame(impurity_product(ad_imp, diagram, tau_max, tau_split, &u_interpolator)
-                            * impurity_product(ad_imp, diagram, tau_split, 0, &u_interpolator));
-  } else {
-    u_products = make_frame(impurity_product(ad_imp, diagram, tau_max, tau_split));
-  }
-  int sign          = 0;
-  double hyb_weight = 0.0;
-  if (use_bare_propagator) {
-    if (bl_indx == -1) { //-1 is for returning the trace
-      if (has_zero_trace(ad_imp, diagram)) { return 0.0; }
+  if (gf_index.size() == 0) { // partiion function or propagator
+    if (!use_bare_propagator) {
+      u_products = make_frame(impurity_product(ad_imp, diagram, tau_max, tau_split, &u_interpolator)
+                              * impurity_product(ad_imp, diagram, tau_split, 0, &u_interpolator));
+    } else {
+      u_products = make_frame(impurity_product(ad_imp, diagram, tau_max, tau_split));
+    }
+    int sign          = 0;
+    double hyb_weight = 0.0;
+    if (use_bare_propagator) {
+      if (bl_indx == -1) { //-1 is for returning the trace
+        if (has_zero_trace(ad_imp, diagram)) { return 0.0; }
+        auto hyb_mat = diagram::hyb_matrix_t(diagram, Delta_tau);
+        sign         = diagram.sign();
+        hyb_weight   = hyb_mat.det();
+        return hyb_weight * sign * trace(u_products);
+      } else if (u_products[bl_indx].size() != 0) {
+        auto hyb_mat = diagram::hyb_matrix_t(diagram, Delta_tau);
+        sign         = diagram.sign();
+        hyb_weight   = hyb_mat.det();
+        int bl_size  = std::sqrt(u_products[bl_indx].size());
+        int i        = subspace_indx / bl_size;
+        int j        = subspace_indx % bl_size;
+        return u_products[bl_indx](i, j) * hyb_weight * sign;
+      } else {
+        return 0.0;
+      }
+    } // end of if (use_bare_propagator)
+    else if (u_products[bl_indx].size() != 0) {
       auto hyb_mat = diagram::hyb_matrix_t(diagram, Delta_tau);
       sign         = diagram.sign();
-      hyb_weight   = hyb_mat.det();
-      return hyb_weight * sign * trace(u_products);
-    } else if (u_products[bl_indx].size() != 0) {
-      auto hyb_mat = diagram::hyb_matrix_t(diagram, Delta_tau);
-      sign         = diagram.sign();
-      hyb_weight   = hyb_mat.det();
+      hyb_weight   = inclusion_exclusion(diagram, hyb_mat);
       int bl_size  = std::sqrt(u_products[bl_indx].size());
       int i        = subspace_indx / bl_size;
       int j        = subspace_indx % bl_size;
@@ -384,21 +398,73 @@ inline double evaluate_u_tau_max(frame_t &frame_zeroth_order, double tau_split, 
     } else {
       return 0.0;
     }
-  } // end of if (use_bare_propagator)
-  else if (u_products[bl_indx].size() != 0) {
-    auto hyb_mat = diagram::hyb_matrix_t(diagram, Delta_tau);
-    sign         = diagram.sign();
-    hyb_weight   = inclusion_exclusion(diagram, hyb_mat);
-    int bl_size  = std::sqrt(u_products[bl_indx].size());
-    int i        = subspace_indx / bl_size;
-    int j        = subspace_indx % bl_size;
-    return u_products[bl_indx](i, j) * hyb_weight * sign;
-  } else {
-    return 0.0;
+  } else if (gf_index.size() == 2) { // greens function
+    if (has_zero_trace(ad_imp, diagram)) { return 0.0; }
+    auto l                          = impurity_product(ad_imp, diagram, tau_max, tau_split, &u_interpolator);
+    auto r                          = impurity_product(ad_imp, diagram, tau_split, 0, &u_interpolator);
+    auto [j, bl_dag]                = findIndex(block_shape, gf_index[0]);
+    auto [i, bl_d]                  = findIndex(block_shape, gf_index[1]);
+    auto [bl_name_d, bl_size_d]     = gf_struct[bl_d];
+    auto [bl_name_dag, bl_size_dag] = gf_struct[bl_dag];
+    auto l_x_di                     = l * get_op_block_matrix(ad_imp, bl_name_d, i, false);
+    auto r_x_djdag                  = r * get_op_block_matrix(ad_imp, bl_name_dag, j, true);
+    auto prod                       = make_frame(l_x_di * r_x_djdag);
+    auto hyb_mat                    = diagram::hyb_matrix_t(diagram, Delta_tau);
+    int sign                        = diagram.sign();
+    double hyb_weight               = inclusion_exclusion(diagram, hyb_mat);
+    return -1 * trace(prod) * hyb_weight * sign;
   }
+  return 0.0;
 }
 
 // tci helper
+
+inline void generateCombinationsHelper(const std::vector<int> &n_index_list, std::vector<int> &current_combination, int index,
+                                       std::vector<std::vector<int>> &result) {
+  if (index == n_index_list.size()) {
+    result.push_back(current_combination);
+    return;
+  }
+
+  for (int i = 0; i < n_index_list[index]; ++i) {
+    current_combination[index] = i;
+    generateCombinationsHelper(n_index_list, current_combination, index + 1, result);
+  }
+}
+
+inline std::vector<std::vector<int>> generateCombinations(const std::vector<int> &n_index_list) {
+  std::vector<std::vector<int>> result;
+  std::vector<int> current_combination(n_index_list.size(), 0);
+  generateCombinationsHelper(n_index_list, current_combination, 0, result);
+  return result;
+}
+
+template <class T> std::vector<T> partial_integral_tt(xfac::TensorTrain<T> const &tt, std::vector<std::vector<double>> const &weight, size_t n_skip) {
+  std::vector<T> res{};
+  if (n_skip > weight.size()) {
+    std::cerr << "n_skip is larger than the number of physical indices." << std::endl;
+    std::exit(EXIT_FAILURE);
+  }
+  auto tt_sum = xfac::TT_sum(tt, weight);
+  // index 0 to n_skip-1 are the physical indices that is not integrated over.
+  if (n_skip == 0) { return {arma::dot(tt_sum.L[1], tt_sum.R[0])}; }
+  auto right_integral = tt_sum.R[n_skip - 1];
+  std::vector<int> n_index_list;
+  for (size_t i = 0; i < n_skip; i++) { n_index_list.push_back(weight[i].size()); }
+  auto index_combinations = generateCombinations(n_index_list);
+  for (auto index_combination : index_combinations) {
+    auto partial_integral = right_integral;
+    for (size_t i = n_skip - 1; i > 0; i--) {
+      arma::Mat<T> current_mat = tt.M[i].col(index_combination[i]);
+      partial_integral         = current_mat * partial_integral;
+    }
+    arma::Mat<T> current_mat = tt.M[0].col(index_combination[0]);
+    partial_integral         = current_mat * partial_integral;
+    res.push_back(partial_integral.eval()(0));
+  }
+  return res;
+}
+
 // check if there are identical elements in a vector
 inline bool is_duplicated(const std::vector<double> &taus) {
   std::vector<double> taus_copy = taus;
@@ -529,6 +595,8 @@ T_output do_TCI(std::function<T_output(std::vector<T_input>)> integrand, std::ve
   double last_error{0};
   double current_error{0};
   T_output integral{0};
+  T_output previous_integral{0};
+  double first_error{0};
   if (tci_prrlu == 0) {
     if (debug > 1) {
       std::cout << "TCI 1" << std::endl;
@@ -537,7 +605,9 @@ T_output do_TCI(std::function<T_output(std::vector<T_input>)> integrand, std::ve
     auto ci = xfac::CTensorCI<T_output, T_input>(integrand, input, {.reltol = reltol, .pivot1 = pivot1, .fullPiv = fullPiv});
     for (int i = 1; i <= sweep_bound + 1; i++) {
       ci.iterate();
-      integral = ci.get_TensorTrain().sum(weight);
+      auto tt  = ci.get_TensorTrain();
+      integral = partial_integral_tt(tt, weight, 0)[0];
+      // integral = ci.get_TensorTrain().sum(weight);
       if (error_type == 0) {
         current_error = ci.pivotError[ci.pivotError.size() - 1];
       } else if (error_type == 1) {
@@ -550,9 +620,12 @@ T_output do_TCI(std::function<T_output(std::vector<T_input>)> integrand, std::ve
         std::cerr << "error_type not supported" << std::endl;
         std::exit(EXIT_FAILURE);
       }
+      if (i == 1) { first_error = current_error; }
       if (debug > 1) { std::cout << i - 1 << " " << count << " " << current_error << " " << integral << std::endl; }
-      if (std::abs(current_error - last_error) < convergence_bound && i > convergence_iter) { break; }
-      last_error = current_error;
+      // if (std::abs(current_error / first_error) < convergence_bound && i > convergence_iter) { break; }
+      if (std::abs(previous_integral - integral) < convergence_bound && i > convergence_iter) { break; }
+      last_error        = current_error;
+      previous_integral = integral;
       if (debug > 1) { print_rank(ci.get_TensorTrain()); }
     }
   } else if (tci_prrlu == 1 || tci_prrlu == 2) {
@@ -571,7 +644,8 @@ T_output do_TCI(std::function<T_output(std::vector<T_input>)> integrand, std::ve
       ci.iterate();
       // ci.makeCanonical();
       if (tci_prrlu == 2) { ci.param.bondDim++; }
-      integral = ci.tt.sum(weight);
+      integral = partial_integral_tt(ci.tt, weight, 0)[0];
+      // integral = ci.tt.sum(weight);
       if (error_type == 0) {
         current_error = ci.pivotError[ci.pivotError.size() - 1];
       } else if (error_type == 1) {
@@ -584,9 +658,12 @@ T_output do_TCI(std::function<T_output(std::vector<T_input>)> integrand, std::ve
         std::cerr << "error_type not supported" << std::endl;
         std::exit(EXIT_FAILURE);
       }
+      if (i == 1) { first_error = current_error; }
       if (debug > 1) { std::cout << i << " " << count << " " << current_error << " " << integral << std::endl; }
-      if (std::abs(current_error - last_error) < convergence_bound && i > convergence_iter) { break; }
-      last_error = current_error;
+      // if (std::abs(current_error / first_error) < convergence_bound && i > convergence_iter) { break; }
+      if (std::abs(previous_integral - integral) < convergence_bound && i > convergence_iter) { break; }
+      last_error        = current_error;
+      previous_integral = integral;
       if (debug > 1) { print_rank(ci.tt); }
     }
   } else {

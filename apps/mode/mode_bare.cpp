@@ -29,7 +29,7 @@ void ModeBare::evaluate_propagator() {
     sr.u_tau_zeroth_order = sr.u_tau_zeroth_order_bare;
     sp.use_bare_propagator = true;
     // sr.u_interpolator    = interpolator_t<scalar_t>(sr.u_tau_ref, sr.u_tau_ref[0].mesh().size());
-    ModeBase::evaluate_propagator();
+    ModeBase::evaluate();
 }
 
 // void ModeBare::evaluate_propagator() {

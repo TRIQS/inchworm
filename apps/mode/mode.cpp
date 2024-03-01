@@ -280,7 +280,7 @@ void ModeBase::validate_input() {
   }
 } // end of validate_input
 
-void ModeBase::evaluate_propagator() {
+void ModeBase::evaluate() {
 
   // setup the mapping and jacobian functions for the transformation of time-ordered variables v->tau
   cv_func change_variable;
@@ -514,7 +514,7 @@ void ModeBase::evaluate_propagator() {
               auto tau_d_dag     = get_elements(phi_d_dag, taus);
               auto integrand_phi = evaluate_u_tau_max(sr.u_tau_zeroth_order, sp.tau_split, sp.tau_max, mp.all_d_ops, mp.all_d_dag_ops,
                                                       mp.gf_block_shape, cp, mp.Delta_tau, mp.ad_imp, sr.u_interpolator, tau_d, tau_d_dag, iota_d,
-                                                      iota_d_dag, sp.bl_index, sp.subspace_index, sp.use_bare_propagator);
+                                                      iota_d_dag, sp.bl_index, sp.subspace_index, sp.use_bare_propagator,sp.gf_index,cp.gf_struct);
               double j           = jacobian(taus_right, sp.tau_max, sp.tau_split);
               if (sp.tau_split != 0.0) { j *= jacobian(taus_left, sp.tau_split, 0.0); }
               if (tp.mapping_v == 4) {
@@ -522,7 +522,7 @@ void ModeBase::evaluate_propagator() {
                 auto tau_d_dag_sym     = get_elements(phi_d_dag, taus_sym);
                 auto integrand_phi_sym = evaluate_u_tau_max(
                    sr.u_tau_zeroth_order, sp.tau_split, sp.tau_max, mp.all_d_ops, mp.all_d_dag_ops, mp.gf_block_shape, cp, mp.Delta_tau, mp.ad_imp,
-                   sr.u_interpolator, tau_d_sym, tau_d_dag_sym, iota_d, iota_d_dag, sp.bl_index, sp.subspace_index, sp.use_bare_propagator);
+                   sr.u_interpolator, tau_d_sym, tau_d_dag_sym, iota_d, iota_d_dag, sp.bl_index, sp.subspace_index, sp.use_bare_propagator,sp.gf_index,cp.gf_struct);
                 // j_sym should be the same as j
                 integrand_val += (integrand_phi_sym * j + integrand_phi * j) / 2;
               } else {

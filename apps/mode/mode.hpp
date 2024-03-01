@@ -78,6 +78,9 @@ struct simulation_params_t {
   int bl_index{};
   int subspace_index{};
   bool use_bare_propagator{};
+  int eval_type{0}; // 0 for propagator/partition function, 1 for greens function
+  int n_skip{0};
+  std::vector<int> gf_index{};
 };
 
 struct simulation_results_t {
@@ -136,8 +139,9 @@ class ModeBase {
   virtual void print_summary();
   virtual void run() = 0;
   virtual void validate_input();
-  virtual void evaluate_propagator();
-  virtual void evaluate_greens_function();
+  virtual void evaluate();
+  virtual void evaluate_propagator()      = 0;
+  virtual void evaluate_greens_function() = 0;
   virtual ~ModeBase() {}
   std::string mode_name{};
 
@@ -150,7 +154,7 @@ class ModeBase {
   simulation_params_t sp{};
   simulation_results_t sr{};
   void read_json_parameters(std::string json_file_path);
-  hyb_tau_t read_hyb_function(std::string hyb_file_path, model_params_t const & mp, constr_params_t const &cp);
+  hyb_tau_t read_hyb_function(std::string hyb_file_path, model_params_t const &mp, constr_params_t const &cp);
   void prepare_input(std::string hyb_file_path);
   void clear_tci_results();
 };

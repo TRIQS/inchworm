@@ -41,7 +41,7 @@ void ModeInchworm::evaluate_propagator() {
           ModeBase::clear_tci_results();
           sp.bl_index = bl;
           sp.subspace_index = i * mp.ad_imp.get_subspace_dim(bl) + j;
-          ModeBase::evaluate_propagator();
+          ModeBase::evaluate();
           u_frame[bl](i, j)  = sr.u_tau_zeroth_order[bl](i, j) + std::accumulate(sr.integral_list.begin(), sr.integral_list.end(), 0.0);
         } // end of j loop
       }   // end of j loop
