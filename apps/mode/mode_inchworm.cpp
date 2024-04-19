@@ -23,10 +23,11 @@ void ModeInchworm::evaluate_propagator() {
   for (auto &ubl : sr.u_tau) {
     for (int i = 0; i < ubl.target_shape()[0]; ++i) ubl[0](i, i) = 1;
   }
+  // 0 [0], 1 [dtau], ... , n_tau_inch-1 [beta]
   double dtau = cp.beta / (cp.n_tau_inch - 1.);
   for (size_t i_tau = 1; i_tau < cp.n_tau_inch; i_tau++) {
-    sp.tau_max             = sr.u_tau[0].mesh()(i_tau);
-    sp.tau_split           = sr.u_tau[0].mesh()(i_tau - 1);
+    sp.tau_max   = sr.u_tau[0].mesh()(i_tau);
+    sp.tau_split = sr.u_tau[0].mesh()(i_tau - 1);
     std::cout << "sp.tau_max = " << sp.tau_max << std::endl;
     std::cout << "sp.tau_split = " << sp.tau_split << std::endl;
     sp.use_bare_propagator = (i_tau == 1);
@@ -39,27 +40,39 @@ void ModeInchworm::evaluate_propagator() {
         for (auto j : range(mp.ad_imp.get_subspace_dim(bl))) {
           std::cout << "bl = " << bl << ", i = " << i << ", j = " << j << std::endl;
           ModeBase::clear_tci_results();
-          sp.bl_index = bl;
+          sp.bl_index       = bl;
           sp.subspace_index = i * mp.ad_imp.get_subspace_dim(bl) + j;
           ModeBase::evaluate();
-          u_frame[bl](i, j)  = sr.u_tau_zeroth_order[bl](i, j) + std::accumulate(sr.integral_list.begin(), sr.integral_list.end(), 0.0);
+          u_frame[bl](i, j) = sr.u_tau_zeroth_order[bl](i, j) + std::accumulate(sr.integral_list.begin(), sr.integral_list.end(), 0.0);
         } // end of j loop
       }   // end of j loop
     }     // end of bl loop
 
-  set_frame(u_frame, sr.u_tau, i_tau);
-  //print u_frame
-  std::cout << "u_frame at tau = " << i_tau*dtau << std::endl;
-      for (auto bl : range(mp.ad_imp.n_subspaces())) {
+    set_frame(u_frame, sr.u_tau, i_tau);
+    //print u_frame
+    std::cout << "u_frame at tau = " << i_tau * dtau << std::endl;
+    for (auto bl : range(mp.ad_imp.n_subspaces())) {
       for (auto i : range(mp.ad_imp.get_subspace_dim(bl))) {
         for (auto j : range(mp.ad_imp.get_subspace_dim(bl))) {
           std::cout << "u_frame[" << bl << "](" << i << "," << j << ") = " << u_frame[bl](i, j) << std::endl;
-          std::cout << "sr.u_tau_ref[" << bl << "](" << i << "," << j << ") = " << sr.u_tau_ref[bl](i_tau*dtau)(i, j) << std::endl;
+          std::cout << "sr.u_tau_ref[" << bl << "](" << i << "," << j << ") = " << sr.u_tau_ref[bl](i_tau * dtau)(i, j) << std::endl;
         } // end of j loop
       }   // end of j loop
     }     // end of bl loop
 
   } // end of i_tau loop
+  double partition_function     = 0.;
+  double partition_function_ref = 0.;
+  int i_tau_last                = cp.n_tau_inch - 1;
+  double tau_last               = i_tau_last * dtau;
+  for (auto bl : range(mp.ad_imp.n_subspaces())) {
+    for (auto i : range(mp.ad_imp.get_subspace_dim(bl))) {
+      partition_function += sr.u_tau[bl][i_tau_last](i, i);
+      partition_function_ref += sr.u_tau_ref[bl][i_tau_last](i, i);
+    }
+  }
+  std::cout << "partition_function = " << partition_function << std::endl;
+  std::cout << "partition_function_ref = " << partition_function_ref << std::endl;
 }
 
 void ModeInchworm::evaluate_greens_function() {}

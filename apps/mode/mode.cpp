@@ -148,6 +148,28 @@ hyb_tau_t ModeBase::read_hyb_function(std::string hyb_file_path, model_params_t 
 
 void ModeBase::prepare_input(std::string hyb_file_path) {
   std::tie(tp.v_value, tp.v_weight) = select_quadrature_GK(tp.n_GK, 0, 1);
+  // int n_grid_tanh_sinh  = 50;
+  // double h_tanh_sinh    = 4.0 / n_grid_tanh_sinh;
+  // auto [xi_old, wi_old] = tanh_sinh_quadrature(0, 1, h_tanh_sinh, n_grid_tanh_sinh);
+  // //find all 0 and 1 in xi and remove the corresponding xi and wi
+  // std::vector<double> xi, wi;
+  // for (int i = 0; i < xi_old.size(); i++) {
+  //   if (xi_old[i] != 0 && xi_old[i] != 1) {
+  //     tp.v_value.push_back(xi_old[i]);
+  //     tp.v_weight.push_back(wi_old[i]);
+  //   }
+  // }
+  // // uniform grid
+  // int N = 15;
+  // std::vector<double> xi(N), wi(N);
+  // for (int i = 0; i < N; i++) {
+  //   xi[i] = (i+1) / (N + 1.0);
+  //   wi[i] = 1.0 / (N + 1.0);
+  // }
+  // for(int i = 0; i < N; i++) {
+  //   tp.v_value.push_back(xi[i]);
+  //   tp.v_weight.push_back(wi[i]);
+  // }
   // structure information about Green's function
   int n_bl = cp.gf_struct.size();
   mp.all_d_ops.resize(n_bl, {});
@@ -190,7 +212,7 @@ void ModeBase::prepare_input(std::string hyb_file_path) {
       for (auto bl : range(mp.ad_imp.n_subspaces())) { std::cout << "bl: " << bl << ", dim: " << mp.ad_imp.get_subspace_dim(bl) << std::endl; }
     }
   } else if (gp.model_type == 1) { //model_type 1: read hybridization function from input file
-    
+
     mp.ad_imp                              = imp_setup(mp.n_site, mp.n_spin, mp.U, mp.mu, mp.t, cp);
     mp.Delta_tau                           = read_hyb_function(hyb_file_path, mp, cp);
     sr.u_tau_zeroth_order_bare             = make_bare_u_frame(mp.ad_imp, cp.beta);
@@ -368,12 +390,16 @@ void ModeBase::evaluate() {
           std::vector<int> iota_d_dag_list{};
           int id_phi  = -1;
           int id_iota = -1;
-          if (loop1.name == "n_left")
+          if (loop1.name == "n_left") {
             n_left = val1;
-          else if (loop2.name == "n_left")
+            std::cout << "n_left: " << n_left << std::endl;
+          } else if (loop2.name == "n_left") {
             n_left = val2;
-          else if (loop3.name == "n_left")
+            std::cout << "n_left: " << n_left << std::endl;
+          } else if (loop3.name == "n_left") {
             n_left = val3;
+            std::cout << "n_left: " << n_left << std::endl;
+          }
           if (loop1.name == "phi")
             id_phi = val1;
           else if (loop2.name == "phi")
@@ -454,30 +480,34 @@ void ModeBase::evaluate() {
 
             // if there exist duplicated element in taus, then the integrand is set to zero
             //TODO: find a more precise approximation
-            // if (is_duplicated(taus)) {
-            //   if (gp.trick == "random_auxi") { return tp.auxi_height * get_hash_random_number(variables); }
-            //   return 0.0;
-            // }
             if (is_duplicated(taus)) {
-              for (size_t i = 0; i < taus.size(); i++) {
-                if (taus[i] == taus[i + 1]) {
-                  if (std::abs(taus[i] - 0) < 1e-16) {
-                    taus[i + 1] += 1e-16;
-                  } else {
-                    taus[i] -= 1e-16;
-                  }
-                }
-              }
+              std::cout << "Warning: duplicated elements in taus" << std::endl;
+              if (gp.trick == "random_auxi") { return tp.auxi_height * get_hash_random_number(variables); }
+              return 0.0;
             }
+            // std::cout << "taus: " << std::endl;
+            // print_vector(taus);
+            // if (is_duplicated(taus)) {
+            //   for (size_t i = 0; i < taus.size(); i++) {
+            //     if (taus[i] == taus[i + 1]) {
+            //       if (std::abs(taus[i] - 0) < 1e-16) {
+            //         taus[i + 1] += 1e-16;
+            //       } else {
+            //         taus[i] -= 1e-16;
+            //       }
+            //     }
+            //   }
+            // }
+            // std::cout << "taus_new: " << std::endl;
+            // print_vector(taus);
 
-            if (tp.mapping_v == 4 && sp.tau_split != 0.0) {
+            if (tp.mapping_v == 4 && sp.use_bare_propagator == false) {
               for (int i = taus_left.size() - 1; i >= 0; i--) { taus_left_sym.push_back(sp.tau_split - taus_left[i]); }
               for (int i = taus_right.size() - 1; i >= 0; i--) { taus_right_sym.push_back(sp.tau_max + sp.tau_split - taus_right[i]); }
               taus_sym = taus_left_sym;
               taus_sym.insert(taus_sym.end(), taus_right_sym.begin(), taus_right_sym.end());
-            }
-            else if (tp.mapping_v == 4 && sp.tau_split == 0.0) {
-              for(int i = taus.size() - 1; i >= 0; i--) { taus_sym.push_back(sp.tau_max - taus[i]); }
+            } else if (tp.mapping_v == 4 && sp.tau_split == 0.0) {
+              for (int i = taus.size() - 1; i >= 0; i--) { taus_sym.push_back(sp.tau_max - taus[i]); }
             }
 
             std::vector<int> phi_loop_list{0};
@@ -514,18 +544,24 @@ void ModeBase::evaluate() {
               auto tau_d_dag     = get_elements(phi_d_dag, taus);
               auto integrand_phi = evaluate_u_tau_max(sr.u_tau_zeroth_order, sp.tau_split, sp.tau_max, mp.all_d_ops, mp.all_d_dag_ops,
                                                       mp.gf_block_shape, cp, mp.Delta_tau, mp.ad_imp, sr.u_interpolator, tau_d, tau_d_dag, iota_d,
-                                                      iota_d_dag, sp.bl_index, sp.subspace_index, sp.use_bare_propagator,sp.gf_index,cp.gf_struct);
+                                                      iota_d_dag, sp.bl_index, sp.subspace_index, sp.use_bare_propagator, sp.gf_index, cp.gf_struct);
               double j           = jacobian(taus_right, sp.tau_max, sp.tau_split);
-              if (sp.tau_split != 0.0) { j *= jacobian(taus_left, sp.tau_split, 0.0); }
+              if (sp.use_bare_propagator == false) { j *= jacobian(taus_left, sp.tau_split, 0.0); }
               if (tp.mapping_v == 4) {
-                auto tau_d_sym         = get_elements(phi_d, taus_sym);
-                auto tau_d_dag_sym     = get_elements(phi_d_dag, taus_sym);
-                auto integrand_phi_sym = evaluate_u_tau_max(
-                   sr.u_tau_zeroth_order, sp.tau_split, sp.tau_max, mp.all_d_ops, mp.all_d_dag_ops, mp.gf_block_shape, cp, mp.Delta_tau, mp.ad_imp,
-                   sr.u_interpolator, tau_d_sym, tau_d_dag_sym, iota_d, iota_d_dag, sp.bl_index, sp.subspace_index, sp.use_bare_propagator,sp.gf_index,cp.gf_struct);
+                auto tau_d_sym     = get_elements(phi_d, taus_sym);
+                auto tau_d_dag_sym = get_elements(phi_d_dag, taus_sym);
+                auto integrand_phi_sym =
+                   evaluate_u_tau_max(sr.u_tau_zeroth_order, sp.tau_split, sp.tau_max, mp.all_d_ops, mp.all_d_dag_ops, mp.gf_block_shape, cp,
+                                      mp.Delta_tau, mp.ad_imp, sr.u_interpolator, tau_d_sym, tau_d_dag_sym, iota_d, iota_d_dag, sp.bl_index,
+                                      sp.subspace_index, sp.use_bare_propagator, sp.gf_index, cp.gf_struct);
                 // j_sym should be the same as j
                 integrand_val += (integrand_phi_sym * j + integrand_phi * j) / 2;
               } else {
+                // if (tp.mapping_v == 1 || tp.mapping_v == 3) {
+                //   integrand_val += integrand_phi;
+                // } else {
+                //   integrand_val += integrand_phi * j;
+                // }
                 integrand_val += integrand_phi * j;
               }
             } // end of loop over phi
@@ -586,8 +622,21 @@ void ModeBase::evaluate() {
 
           // set initial pivot
           // smart initial pivot
-          // for (int i = 0; i < input.size(); i++) { init_pivot.push_back(int(input[i].size() / 2)); }
+          //           std::cout << "init_input: " << std::endl;
+          // for (int i = 0; i < input.size(); i++) { init_pivot.push_back(int(input[i].size() / 2));}
+          // std::cout << input[i][init_pivot[i]] << std::endl;
+          // }
+
           for (int i = 0; i < input.size(); i++) { init_pivot.push_back(0); }
+          // for (int i = 0; i < input.size(); i++) {
+          //   for (int j = 0; j < input[i].size(); j++) {
+          //     if (input[i][j] != 0) {
+          //       init_pivot.push_back(j);
+          //       break;
+          //     }
+          //     if(j == input[i].size() - 1) std::cerr << "input is all zero" << std::endl;
+          //   }
+          // }
 
           std::vector<double> init_input{};
           for (int i = 0; i < init_pivot.size(); i++) { init_input.push_back(input[i][init_pivot[i]]); }
@@ -598,19 +647,30 @@ void ModeBase::evaluate() {
             continue;
           }
           std::vector<std::vector<int>> init_global_pivots{};
-          if(gp.trick == "spin_pivot"&& gp.integral_variable == "v_iota"){
+          if (gp.trick == "spin_pivot" && gp.integral_variable == "v_iota") {
             std::vector<int> pivot{};
             if (gp.tci_shape == "vertex") {
-              for (int i = 0; i < input.size(); i++) { pivot.push_back(int(input[i].size() / 2));}
+              for (int i = 0; i < input.size(); i++) { pivot.push_back(int(input[i].size() / 2)); }
             }
             if (gp.tci_shape == "partition") {
-              for (int i = 0; i < input.size()/2; i++) { pivot.push_back(1);}
-              for (int i = input.size()/2; i < input.size(); i++) { pivot.push_back(0);}
+              for (int i = 0; i < input.size() / 2; i++) { pivot.push_back(1); }
+              for (int i = input.size() / 2; i < input.size(); i++) { pivot.push_back(0); }
             }
             init_global_pivots.push_back(pivot);
-          } 
+          }
+          // multiply jacobian for HS and AD's mapping
+          double const_jacobian = 1.0;
+          // if (tp.mapping_v == 1 || tp.mapping_v == 3) {
+          //   std::vector<double> taus_fake_right(n - n_left, 0.0);
+          //   const_jacobian = jacobian(taus_fake_right, sp.tau_max, sp.tau_split);
+          //   if (sp.use_bare_propagator == false) {
+          //     std::vector<double> taus_fake_left(n_left, 0.0);
+          //     const_jacobian *= jacobian(taus_fake_left, sp.tau_split, 0.0);
+          //   }
+          // }
           double integral = do_TCI<double, double>(integrand, input, weight, init_pivot, count, tp.sweep_bound, tp.bond_dim, tp.reltol, tp.fullPiv,
-                                                   tp.tci_prrlu, tp.error_type, tp.error_eval, tp.convergence_bound, tp.convergence_iter, sp.debug, init_global_pivots);
+                                                   tp.tci_prrlu, tp.error_type, tp.error_eval, tp.convergence_bound, tp.convergence_iter, sp.debug,
+                                                   init_global_pivots, const_jacobian);
           loop3.value += integral;
         } // end of loop3
         loop2.value += loop3.value;

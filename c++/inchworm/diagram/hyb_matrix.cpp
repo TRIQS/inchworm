@@ -24,6 +24,14 @@
 
 #include <iomanip>
 
+inline double one_fermion(double tau, double eps, double beta) {
+  if (eps >= 0) {
+    return -std::exp(-tau * eps) / (1. + std::exp(-beta * eps));
+  } else {
+    return -std::exp((beta - tau) * eps) / (1. + std::exp(beta * eps));
+  }
+}
+
 namespace inchworm::diagram {
 
   using itertools::enumerate;
@@ -46,10 +54,18 @@ namespace inchworm::diagram {
       if (cdag.bl != c.bl) return 0.;
 
       double dtau = cdag.tau - c.tau;
+      // if (dtau >= 0.) {
+      //   return Delta[c.bl](dtau)(cdag.idx, c.idx);
+      // } else {
+      //   return -Delta[c.bl](Delta[c.bl].mesh().beta() + dtau)(cdag.idx, c.idx);
+      // }
+
+      //test hybridization discretization
+      double coff = 1.0;
       if (dtau >= 0.) {
-        return Delta[c.bl](dtau)(cdag.idx, c.idx);
+        return coff*coff*one_fermion(dtau, 1, Delta[c.bl].mesh().beta());
       } else {
-        return -Delta[c.bl](Delta[c.bl].mesh().beta() + dtau)(cdag.idx, c.idx);
+        return - coff*coff*one_fermion(dtau+Delta[c.bl].mesh().beta(), 1, Delta[c.bl].mesh().beta());
       }
     };
 

@@ -1,5 +1,6 @@
 #pragma once
 #include <boost/math/quadrature/gauss_kronrod.hpp>
+#include <boost/math/quadrature/tanh_sinh.hpp>
 #include <fstream>
 #include <algorithm>
 #include <numeric>
@@ -86,6 +87,15 @@ inline auto select_quadrature_GK(int n, double a = 0, double b = 1) {
     case 30: return quadrature_GK<30>(a, b);
     case 45: return quadrature_GK<45>(a, b);
     case 50: return quadrature_GK<50>(a, b);
+    case 31: return quadrature_GK<31>(a, b);
+    case 29: return quadrature_GK<29>(a, b);
+    case 27: return quadrature_GK<27>(a, b);
+    case 25: return quadrature_GK<25>(a, b);
+    case 23: return quadrature_GK<23>(a, b);
+    case 21: return quadrature_GK<21>(a, b);
+    case 17: return quadrature_GK<17>(a, b);
+    case 19: return quadrature_GK<19>(a, b);
+    case 13: return quadrature_GK<13>(a, b);
     default: {
       std::cerr << "select_quadrature_GK: value not supported\n";
       std::exit(EXIT_FAILURE);
@@ -439,6 +449,85 @@ inline std::vector<std::vector<int>> generateCombinations(const std::vector<int>
   return result;
 }
 
+template <class T, class Index>
+double get_integral_ctt_GK(xfac::CTensorTrain<T, Index> const &ctt, std::vector<std::pair<double, double>> const &bounds, int max_depth = 3,
+                           double tol = 1e-14) {
+  auto M = ctt.M;
+  arma::Mat<T> prod(1, 1, arma::fill::eye);
+  for (int i = 0; i < M.size(); i++) {
+    auto M_i    = M[i];
+    auto M_i_0  = M_i(1.0);
+    auto [a, b] = bounds[i];
+    arma::mat M_i_int(M_i_0.n_rows, M_i_0.n_cols);
+#pragma omp parallel for collapse(2)
+    for (size_t ii = 0; ii < M_i_0.n_rows; ++ii) {
+      for (size_t jj = 0; jj < M_i_0.n_cols; ++jj) {
+        auto func = [&](double x) {
+          auto M_i_x = M_i(x);
+          return M_i_x.at(ii, jj);
+        };
+        double error;
+        auto integral      = boost::math::quadrature::gauss_kronrod<double, 15>::integrate(func, a, b, max_depth, tol, &error);
+        M_i_int.at(ii, jj) = integral;
+      }
+    }
+    prod = prod * M_i_int;
+  }
+  return prod.eval()(0, 0);
+}
+
+template <class T, class Index>
+double get_integral_ctt_tanh_sinh(xfac::CTensorTrain<T, Index> const &ctt, std::vector<std::pair<double, double>> const &bounds, double tol) {
+  auto M = ctt.M;
+  arma::Mat<T> prod(1, 1, arma::fill::eye);
+  for (int i = 0; i < M.size(); i++) {
+    auto M_i    = M[i];
+    auto M_i_0  = M_i(1.0);
+    auto [a, b] = bounds[i];
+    arma::mat M_i_int(M_i_0.n_rows, M_i_0.n_cols);
+#pragma omp parallel for collapse(2)
+    for (size_t ii = 0; ii < M_i_0.n_rows; ++ii) {
+      for (size_t jj = 0; jj < M_i_0.n_cols; ++jj) {
+        auto func = [&](double x) {
+          auto M_i_x = M_i(x);
+          return M_i_x.at(ii, jj);
+        };
+        boost::math::quadrature::tanh_sinh<double> integrator;
+        double termination = std::sqrt(tol);
+        auto integral      = integrator.integrate(func, a, b, termination);
+        M_i_int.at(ii, jj) = integral;
+      }
+    }
+    prod = prod * M_i_int;
+  }
+  return prod.eval()(0, 0);
+}
+
+inline std::pair<std::vector<double>, std::vector<double>> tanh_sinh_quadrature(double a, double b, double h, int k) {
+
+  std::vector<double> abscissas(2 * k + 1);
+  std::vector<double> weights(2 * k + 1);
+
+  // Calculate abscissas
+  for (int j = 0; j <= 2 * k; ++j) {
+    int i        = j - k;
+    double t     = i * h;
+    double z     = M_PI_2 * sinh(t); // M_PI_2 for pi/2
+    abscissas[j] = (b + a) / 2.0 + (b - a) / 2.0 * tanh(z);
+  }
+
+  // Calculate weights
+  double scaling_factor = (b - a) / 2.0 * M_PI_2 * h;
+  for (int j = 0; j <= 2 * k; ++j) {
+    int i      = j - k;
+    double t   = i * h;
+    double z   = M_PI_2 * sinh(t);
+    weights[j] = scaling_factor * cosh(t) / (cosh(z) * cosh(z));
+  }
+
+  return {abscissas, weights};
+}
+
 template <class T> std::vector<T> partial_integral_tt(xfac::TensorTrain<T> const &tt, std::vector<std::vector<double>> const &weight, size_t n_skip) {
   std::vector<T> res{};
   if (n_skip > weight.size()) {
@@ -587,11 +676,54 @@ T_output tci_error_integrand(std::function<T_output(std::vector<T_input>)> f, xf
   return max_error;
 }
 
+inline double quadrature_1D_ts(std::function<double(double)> const &func, double a, double b) {
+  int n_grid_tanh_sinh  = 15;
+  double h_tanh_sinh    = 4.0 / n_grid_tanh_sinh;
+  auto [xi_old, wi_old] = tanh_sinh_quadrature(a, b, h_tanh_sinh, n_grid_tanh_sinh);
+  // find all 0 and 1 in xi and remove the corresponding xi and wi
+  std::vector<double> xi, wi;
+  double tol = 1e-14;
+  for (int i = 0; i < xi_old.size(); i++) {
+    if (abs(xi_old[i]) > tol && abs(xi_old[i] - 1) > tol) {
+      xi.push_back(xi_old[i]);
+      wi.push_back(wi_old[i]);
+    }
+  }
+  double integral_val = 0.0;
+  for (int i = 0; i < xi.size(); i++) { integral_val += wi[i] * func(xi[i]); }
+  return integral_val;
+}
+
+template <class T, class Index>
+double get_integral_ctt_tanh_sinh_depth0(xfac::CTensorTrain<T, Index> const &ctt, std::vector<std::pair<double, double>> const &bounds) {
+  auto M = ctt.M;
+  arma::Mat<T> prod(1, 1, arma::fill::eye);
+  for (int i = 0; i < M.size(); i++) {
+    auto M_i    = M[i];
+    auto M_i_0  = M_i(1.0);
+    auto [a, b] = bounds[i];
+    arma::mat M_i_int(M_i_0.n_rows, M_i_0.n_cols);
+#pragma omp parallel for collapse(2)
+    for (size_t ii = 0; ii < M_i_0.n_rows; ++ii) {
+      for (size_t jj = 0; jj < M_i_0.n_cols; ++jj) {
+        auto func = [&](double x) {
+          auto M_i_x = M_i(x);
+          return M_i_x.at(ii, jj);
+        };
+        auto integral      = quadrature_1D_ts(func, a, b);
+        M_i_int.at(ii, jj) = integral;
+      }
+    }
+    prod = prod * M_i_int;
+  }
+  return prod.eval()(0, 0);
+}
+
 template <typename T_output, typename T_input>
 T_output do_TCI(std::function<T_output(std::vector<T_input>)> integrand, std::vector<std::vector<T_input>> const &input,
                 std::vector<std::vector<double>> const &weight, std::vector<int> const &pivot1, long &count, int sweep_bound, int bond_dim,
                 double reltol, bool fullPiv, int tci_prrlu, int error_type, size_t error_eval, double convergence_bound, int convergence_iter,
-                debug_t debug, std::vector<std::vector<int>> const &init_global_pivots) {
+                debug_t debug, std::vector<std::vector<int>> const &init_global_pivots, double const_jacobian) {
   double last_error{0};
   double current_error{0};
   T_output integral{0};
@@ -606,7 +738,7 @@ T_output do_TCI(std::function<T_output(std::vector<T_input>)> integrand, std::ve
     for (int i = 1; i <= sweep_bound + 1; i++) {
       ci.iterate();
       auto tt  = ci.get_TensorTrain();
-      integral = partial_integral_tt(tt, weight, 0)[0];
+      integral = partial_integral_tt(tt, weight, 0)[0] * const_jacobian;
       // integral = ci.get_TensorTrain().sum(weight);
       if (error_type == 0) {
         current_error = ci.pivotError[ci.pivotError.size() - 1];
@@ -644,7 +776,7 @@ T_output do_TCI(std::function<T_output(std::vector<T_input>)> integrand, std::ve
       ci.iterate();
       // ci.makeCanonical();
       if (tci_prrlu == 2) { ci.param.bondDim++; }
-      integral = partial_integral_tt(ci.tt, weight, 0)[0];
+      integral = partial_integral_tt(ci.tt, weight, 0)[0] * const_jacobian;
       // integral = ci.tt.sum(weight);
       if (error_type == 0) {
         current_error = ci.pivotError[ci.pivotError.size() - 1];
@@ -666,6 +798,15 @@ T_output do_TCI(std::function<T_output(std::vector<T_input>)> integrand, std::ve
       previous_integral = integral;
       if (debug > 1) { print_rank(ci.tt); }
     }
+    // ci.makeCanonical();
+    // auto ctt = ci.get_CTensorTrain();
+    // std::cout << "ctt obtained" << std::endl;
+    // std::vector<std::pair<double, double>> bounds;
+    // for (auto i = 0u; i < input.size(); i++) { bounds.push_back({0, 1}); }
+    // // double integral_val = get_integral_ctt_GK(ctt, bounds,2, 1e-14);
+    // double integral_val = get_integral_ctt_tanh_sinh_depth0(ctt, bounds);
+    // integral            = integral_val;
+    // std::cout << "integral_adaptive: " << integral << std::endl;
   } else {
     std::cerr << "tci_prrlu not supported" << std::endl;
     std::exit(EXIT_FAILURE);
@@ -674,52 +815,52 @@ T_output do_TCI(std::function<T_output(std::vector<T_input>)> integrand, std::ve
   return integral;
 }
 
-template <typename T_output, typename T_input>
-T_output do_TCI_add_pivots(std::function<T_output(std::vector<T_input>)> func, std::vector<std::vector<T_input>> &input,
-                           std::vector<std::vector<double>> &weight, std::vector<int> &pivot1, int sweep_bound, int bond_dim,
-                           double integral_error_bound, double pivot_error_bound, bool tci_prrlu, debug_t debug, long &count,
-                           std::vector<std::vector<int>> &valid_pivots) {
-  double current_integral{0};
-  double previous_integral{0};
-  double last_pivot_error{0};
-  if (debug > 1) { std::cout << "iteration nEval LastSweepPivotError integral\n"; }
-  if (tci_prrlu == 1 || tci_prrlu == 2) {
-    std::cout << "test" << std::endl;
-    auto ci = xfac::CTensorCI2<T_output, T_input>(func, input, {.bondDim = bond_dim, .reltol = 1e-18, .pivot1 = pivot1, .fullPiv = false});
-    std::cout << "bond_dim: " << ci.param.bondDim << std::endl;
-    ci.myAddPivotsAllBonds(valid_pivots);
-    if (debug > 1) { print_rank(ci.tt); }
-    // ci.tt.compressCI(ci.param.reltol, ci.param.bondDim);
-    ci.makeCanonical();
-    if (debug > 1) { print_rank(ci.tt); }
-    for (int i = 1; i <= sweep_bound; i++) {
-      ci.iterate();
-      ci.makeCanonical();
-      current_integral = ci.tt.sum(weight);
-      last_pivot_error = ci.pivotError[ci.pivotError.size() - 1];
-      if (debug > 1) { std::cout << i - 1 << " " << count << " " << last_pivot_error << " " << current_integral << std::endl; }
-      previous_integral = current_integral;
-      if (debug > 1) { print_rank(ci.tt); }
-    }
-  } else {
-    auto ci = xfac::CTensorCI<T_output, T_input>(func, input, {.reltol = 1e-18, .pivot1 = pivot1, .weight = weight});
-    for (int i = 1; i <= sweep_bound; i++) {
-      ci.iterate();
-      current_integral = ci.get_TensorTrain().sum(weight);
-      last_pivot_error = ci.pivotError[ci.pivotError.size() - 1];
-      if (debug > 1) { std::cout << i - 1 << " " << count << " " << last_pivot_error << " " << current_integral << std::endl; }
-      // if ( last_pivot_error < pivot_error_bound && i > 1) { break; }
-      // if (std::abs(current_integral - previous_integral) < integral_error_bound || last_pivot_error < pivot_error_bound && i > 1) { break; }
-      previous_integral = current_integral;
-    }
-    if (debug > 1) {
-      std::cout << "rank:" << std::endl;
-      print_rank(ci.get_TensorTrain());
-    }
-  }
-  if (debug > 1) { std::cout << std::endl; }
-  return current_integral;
-}
+// template <typename T_output, typename T_input>
+// T_output do_TCI_add_pivots(std::function<T_output(std::vector<T_input>)> func, std::vector<std::vector<T_input>> &input,
+//                            std::vector<std::vector<double>> &weight, std::vector<int> &pivot1, int sweep_bound, int bond_dim,
+//                            double integral_error_bound, double pivot_error_bound, bool tci_prrlu, debug_t debug, long &count,
+//                            std::vector<std::vector<int>> &valid_pivots) {
+//   double current_integral{0};
+//   double previous_integral{0};
+//   double last_pivot_error{0};
+//   if (debug > 1) { std::cout << "iteration nEval LastSweepPivotError integral\n"; }
+//   if (tci_prrlu == 1 || tci_prrlu == 2) {
+//     std::cout << "test" << std::endl;
+//     auto ci = xfac::CTensorCI2<T_output, T_input>(func, input, {.bondDim = bond_dim, .reltol = 1e-18, .pivot1 = pivot1, .fullPiv = false});
+//     std::cout << "bond_dim: " << ci.param.bondDim << std::endl;
+//     ci.myAddPivotsAllBonds(valid_pivots);
+//     if (debug > 1) { print_rank(ci.tt); }
+//     // ci.tt.compressCI(ci.param.reltol, ci.param.bondDim);
+//     ci.makeCanonical();
+//     if (debug > 1) { print_rank(ci.tt); }
+//     for (int i = 1; i <= sweep_bound; i++) {
+//       ci.iterate();
+//       ci.makeCanonical();
+//       current_integral = ci.tt.sum(weight);
+//       last_pivot_error = ci.pivotError[ci.pivotError.size() - 1];
+//       if (debug > 1) { std::cout << i - 1 << " " << count << " " << last_pivot_error << " " << current_integral << std::endl; }
+//       previous_integral = current_integral;
+//       if (debug > 1) { print_rank(ci.tt); }
+//     }
+//   } else {
+//     auto ci = xfac::CTensorCI<T_output, T_input>(func, input, {.reltol = 1e-18, .pivot1 = pivot1, .weight = weight});
+//     for (int i = 1; i <= sweep_bound; i++) {
+//       ci.iterate();
+//       current_integral = ci.get_TensorTrain().sum(weight);
+//       last_pivot_error = ci.pivotError[ci.pivotError.size() - 1];
+//       if (debug > 1) { std::cout << i - 1 << " " << count << " " << last_pivot_error << " " << current_integral << std::endl; }
+//       // if ( last_pivot_error < pivot_error_bound && i > 1) { break; }
+//       // if (std::abs(current_integral - previous_integral) < integral_error_bound || last_pivot_error < pivot_error_bound && i > 1) { break; }
+//       previous_integral = current_integral;
+//     }
+//     if (debug > 1) {
+//       std::cout << "rank:" << std::endl;
+//       print_rank(ci.get_TensorTrain());
+//     }
+//   }
+//   if (debug > 1) { std::cout << std::endl; }
+//   return current_integral;
+// }
 
 inline void print_pivot1(std::vector<int> const &iota_d_list, std::vector<int> const &iota_d_dag_list, std::vector<double> const &tau_d_list,
                          std::vector<double> const &tau_d_dag_list, double pivot_value) {

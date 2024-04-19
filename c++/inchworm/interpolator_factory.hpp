@@ -13,14 +13,14 @@ using namespace std::complex_literals;
 
 namespace inchworm {
 
-  template <typename S> class interpolator_t;
+  template <typename S> class interpolator_cb_t;
 
-  template <> class interpolator_t<double> {
+  template <> class interpolator_cb_t<double> {
 
     public:
-    interpolator_t() = default;
+    interpolator_cb_t() = default;
 
-    interpolator_t(u_tau_t::real_t const &u_tau, long n_tau)
+    interpolator_cb_t(u_tau_t::real_t const &u_tau, long n_tau)
        : n_blocks(u_tau.size()), datx(n_tau), daty(n_blocks), interp(n_blocks), accel_ptr(gsl_interp_accel_alloc()) {
       EXPECTS(n_tau >= 2);
 
@@ -39,14 +39,14 @@ namespace inchworm {
     }
 
     // This object holds raw pointers and can only be move-constructed
-    interpolator_t(interpolator_t const &) = delete;
-    interpolator_t(interpolator_t &&)      = default;
+    interpolator_cb_t(interpolator_cb_t const &) = delete;
+    interpolator_cb_t(interpolator_cb_t &&)      = default;
 
     // This object holds raw pointers and can only be move-assigned
-    interpolator_t &operator=(interpolator_t const &) = delete;
-    interpolator_t &operator=(interpolator_t &&)      = default;
+    interpolator_cb_t &operator=(interpolator_cb_t const &) = delete;
+    interpolator_cb_t &operator=(interpolator_cb_t &&)      = default;
 
-    ~interpolator_t() {
+    ~interpolator_cb_t() {
       for (auto bl : range(n_blocks)) {
         if (not interp.empty())
           for (auto *ptr : interp[bl]) gsl_interp_free(ptr);
@@ -99,21 +99,21 @@ namespace inchworm {
     inline static auto const default_error_handler = gsl_set_error_handler(custom_error_handler);
   };
 
-  template <> class interpolator_t<dcomplex> {
+  template <> class interpolator_cb_t<dcomplex> {
 
     public:
-    interpolator_t() = default;
+    interpolator_cb_t() = default;
 
-    interpolator_t(u_tau_t const &u_tau, long n_tau)
+    interpolator_cb_t(u_tau_t const &u_tau, long n_tau)
        : n_blocks(u_tau.size()), interpolator_real(real(u_tau), n_tau), interpolator_imag(imag(u_tau), n_tau) {}
 
     // This object can only be move-constructed as it has members that hold raw pointers
-    interpolator_t(interpolator_t const &) = delete;
-    interpolator_t(interpolator_t &&)      = default;
+    interpolator_cb_t(interpolator_cb_t const &) = delete;
+    interpolator_cb_t(interpolator_cb_t &&)      = default;
 
     // This object can only be move-assigned as it has members that hold raw pointers
-    interpolator_t &operator=(interpolator_t const &) = delete;
-    interpolator_t &operator=(interpolator_t &&)      = default;
+    interpolator_cb_t &operator=(interpolator_cb_t const &) = delete;
+    interpolator_cb_t &operator=(interpolator_cb_t &&)      = default;
 
     dcomplex operator()(int bl, double tau, int i, int j) const { return {interpolator_real(bl, tau, i, j), interpolator_imag(bl, tau, i, j)}; }
 
@@ -125,8 +125,8 @@ namespace inchworm {
 
     private:
     int n_blocks = 0;
-    interpolator_t<double> interpolator_real;
-    interpolator_t<double> interpolator_imag;
+    interpolator_cb_t<double> interpolator_real;
+    interpolator_cb_t<double> interpolator_imag;
   };
 
 } // namespace inchworm
