@@ -4,6 +4,7 @@
 
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_spline.h>
+#include <gsl/gsl_chebyshev.h>
 
 #include <nda/array_adapter.hpp>
 
@@ -13,14 +14,14 @@ using namespace std::complex_literals;
 
 namespace inchworm {
 
-  template <typename S> class interpolator_cb_t;
+  template <typename T> class interpolator_cspline_t;
 
-  template <> class interpolator_cb_t<double> {
+  template <> class interpolator_cspline_t<double> {
 
     public:
-    interpolator_cb_t() = default;
+    interpolator_cspline_t() = default;
 
-    interpolator_cb_t(u_tau_t::real_t const &u_tau, long n_tau)
+    interpolator_cspline_t(u_tau_t::real_t const &u_tau, long n_tau)
        : n_blocks(u_tau.size()), datx(n_tau), daty(n_blocks), interp(n_blocks), accel_ptr(gsl_interp_accel_alloc()) {
       EXPECTS(n_tau >= 2);
 
@@ -39,14 +40,14 @@ namespace inchworm {
     }
 
     // This object holds raw pointers and can only be move-constructed
-    interpolator_cb_t(interpolator_cb_t const &) = delete;
-    interpolator_cb_t(interpolator_cb_t &&)      = default;
+    interpolator_cspline_t(interpolator_cspline_t const &) = delete;
+    interpolator_cspline_t(interpolator_cspline_t &&)      = default;
 
     // This object holds raw pointers and can only be move-assigned
-    interpolator_cb_t &operator=(interpolator_cb_t const &) = delete;
-    interpolator_cb_t &operator=(interpolator_cb_t &&)      = default;
+    interpolator_cspline_t &operator=(interpolator_cspline_t const &) = delete;
+    interpolator_cspline_t &operator=(interpolator_cspline_t &&)      = default;
 
-    ~interpolator_cb_t() {
+    ~interpolator_cspline_t() {
       for (auto bl : range(n_blocks)) {
         if (not interp.empty())
           for (auto *ptr : interp[bl]) gsl_interp_free(ptr);
@@ -99,21 +100,21 @@ namespace inchworm {
     inline static auto const default_error_handler = gsl_set_error_handler(custom_error_handler);
   };
 
-  template <> class interpolator_cb_t<dcomplex> {
+  template <> class interpolator_cspline_t<dcomplex> {
 
     public:
-    interpolator_cb_t() = default;
+    interpolator_cspline_t() = default;
 
-    interpolator_cb_t(u_tau_t const &u_tau, long n_tau)
+    interpolator_cspline_t(u_tau_t const &u_tau, long n_tau)
        : n_blocks(u_tau.size()), interpolator_real(real(u_tau), n_tau), interpolator_imag(imag(u_tau), n_tau) {}
 
     // This object can only be move-constructed as it has members that hold raw pointers
-    interpolator_cb_t(interpolator_cb_t const &) = delete;
-    interpolator_cb_t(interpolator_cb_t &&)      = default;
+    interpolator_cspline_t(interpolator_cspline_t const &) = delete;
+    interpolator_cspline_t(interpolator_cspline_t &&)      = default;
 
     // This object can only be move-assigned as it has members that hold raw pointers
-    interpolator_cb_t &operator=(interpolator_cb_t const &) = delete;
-    interpolator_cb_t &operator=(interpolator_cb_t &&)      = default;
+    interpolator_cspline_t &operator=(interpolator_cspline_t const &) = delete;
+    interpolator_cspline_t &operator=(interpolator_cspline_t &&)      = default;
 
     dcomplex operator()(int bl, double tau, int i, int j) const { return {interpolator_real(bl, tau, i, j), interpolator_imag(bl, tau, i, j)}; }
 
@@ -125,8 +126,160 @@ namespace inchworm {
 
     private:
     int n_blocks = 0;
-    interpolator_cb_t<double> interpolator_real;
-    interpolator_cb_t<double> interpolator_imag;
+    interpolator_cspline_t<double> interpolator_real;
+    interpolator_cspline_t<double> interpolator_imag;
   };
 
+  struct my_f_params {
+    long bl;
+    long i;
+    long j;
+    interpolator_cspline_t<double> interp_cspline;
+  };
+  inline double my_f(double x, void *p) {
+    my_f_params *params = (my_f_params *)p;
+    std::cout << "x = " << x << std::endl;
+    return params->interp_cspline(params->bl, x, params->i, params->j);
+  }
+  template <typename T> class interpolator_linear_Chebyshev_t;
+
+  template <> class interpolator_linear_Chebyshev_t<double> {
+    public:
+    interpolator_linear_Chebyshev_t() = default;
+    // n_tau refers to the number of linear grid points, therefore n_tau-1 linear intervals.
+    // order refers to the Chebyshev order within each of the linear interval, i.e., order+1 points is needed within the interval.
+    // Therefore, the total number of interpolated points is n_tau + (n_tau-1) *(order+1)
+    interpolator_linear_Chebyshev_t(u_tau_t::real_t const &u_tau, long n_tau_linear, int order_Chebyshev)
+       : n_blocks(u_tau.size()),
+         n_tau(n_tau_linear),
+         order(order_Chebyshev),
+         datx_linear(n_tau),
+         //  datx_Chebyshev(n_tau - 1, order + 1),
+         interp(n_blocks) {
+      EXPECTS(n_tau >= 2);
+      EXPECTS(order >= 2);
+      for (auto n : range(n_tau)) {
+        datx_linear[n] = u_tau[0].mesh()[n * (order + 2)];
+        std::cout << "datx_linear[" << n << "] = " << datx_linear[n] << std::endl;
+      }
+      for (auto bl : range(n_blocks)) {
+        interp[bl] = nda::array<nda::array<gsl_cheb_series *, 2>, 1>(n_tau - 1);
+        for (auto n : range(n_tau - 1)) { interp[bl][n] = nda::array<gsl_cheb_series *, 2>{u_tau[bl].target_shape()}; }
+      }
+      for (auto n : range(n_tau - 1)) {
+        double a = datx_linear[n];
+        double b = datx_linear[n + 1];
+        if (a > b) throw std::runtime_error("The grid is not consistent with the linear_Chebyshev interpolation");
+        std::cout << "a = " << a << ", b = " << b << std::endl;
+        // for (auto i : range(order + 1)) { datx_Chebyshev(n, i) = (a + b) / 2 + (b - a) / 2 * std::cos(M_PI * (2 * i + 1) / (2 * (order + 1))); }
+        for (auto bl : range(n_blocks)) {
+          for (auto [i, j] : product_range(u_tau[bl].target_shape())) {
+            std::cout << "bl = " << bl << ", n = " << n << ", i = " << i << ", j = " << j << std::endl;
+            interpolator_cspline_t<double> interp_cspline(u_tau, n_tau + (n_tau - 1) * (order + 1));
+            my_f_params params;
+            params.bl             = bl;
+            params.i              = i;
+            params.j              = j;
+            params.interp_cspline = std::move(interp_cspline);
+            gsl_function F;
+            F.function          = &my_f;
+            F.params            = &params;
+            interp[bl][n](i, j) = gsl_cheb_alloc(order);
+            gsl_cheb_init(interp[bl][n](i, j), &F, a, b);
+            std::cout << "cspline a: " << params.interp_cspline(bl, a, i, j) << std::endl;
+            std::cout << "eval a: " << gsl_cheb_eval(interp[bl][n](i, j), a) << std::endl;
+            std::cout << "cspline b: " << params.interp_cspline(bl, b, i, j) << std::endl;
+            std::cout << "eval b: " << gsl_cheb_eval(interp[bl][n](i, j), b) << std::endl;
+          }
+        }
+      }
+      std::cout << "eval last a: " <<  (*this)(0, datx_linear[n_tau - 2], 0, 0) << std::endl;
+      std::cout << "eval last b: " << (*this)(0, datx_linear[n_tau - 1], 0, 0) << std::endl;
+      std::cout << "interpolator_linear_Chebyshev_t is constructed" << std::endl;
+    }
+
+    // This object holds raw pointers and can only be move-constructed
+    interpolator_linear_Chebyshev_t(interpolator_linear_Chebyshev_t const &) = delete;
+    interpolator_linear_Chebyshev_t(interpolator_linear_Chebyshev_t &&)      = default;
+
+    // This object holds raw pointers and can only be move-assigned
+    interpolator_linear_Chebyshev_t &operator=(interpolator_linear_Chebyshev_t const &) = delete;
+    interpolator_linear_Chebyshev_t &operator=(interpolator_linear_Chebyshev_t &&)      = default;
+
+    ~interpolator_linear_Chebyshev_t() {
+      for (auto bl : range(n_blocks)) {
+        for (auto n : range(n_tau - 1)) {
+          if(not interp.empty()){
+             for (auto *ptr : interp[bl][n]) gsl_cheb_free(ptr);
+          }
+        }
+      }
+    }
+
+    double operator()(int bl, double tau, int i, int j) const {
+      EXPECTS(0 <= tau && tau <= datx_linear[datx_linear.size() - 1]);
+      // find the interval
+      int n = 0;
+      while (n < n_tau - 1 && datx_linear[n + 1] < tau) {
+        n++;
+      }
+      if (datx_linear[n] == tau){
+
+      }
+      double res = gsl_cheb_eval(interp[bl][n](i, j), tau);
+      return res;
+    }
+
+    nda::matrix<double> operator()(int bl, double tau) const {
+      EXPECTS(0 <= tau && tau <= datx_linear[datx_linear.size() - 1]);
+      return nda::array_adapter{interp[bl][0].shape(), [&](int i, int j) { return (*this)(bl, tau, i, j); }};
+    }
+
+    nda::array<nda::matrix<double>, 1> operator()(double tau) const {
+      EXPECTS(0 <= tau && tau <= datx_linear[datx_linear.size() - 1]);
+      return nda::array_adapter{std::array{n_blocks}, [&](int bl) { return (*this)(bl, tau); }};
+    }
+
+    private:
+    int n_blocks = 0;
+    long n_tau   = 0; // number of linear grid points
+    int order    = 0; // Chebyshev order
+    nda::array<double, 1> datx_linear;
+    // nda::array
+    // nda::array<double, 2> datx_Chebyshev;
+    // block_index, linear_grid_index, block_sub_index
+    nda::array<nda::array<nda::array<gsl_cheb_series *, 2>, 1>, 1> interp;
+  };
+
+  template <> class interpolator_linear_Chebyshev_t<dcomplex> {
+    public:
+    interpolator_linear_Chebyshev_t() = default;
+    interpolator_linear_Chebyshev_t(u_tau_t const &u_tau, long n_tau_linear, int order_Chebyshev) : n_blocks(u_tau.size()) {
+      std::cout << "interpolator_linear_Chebyshev_t<dcomplex> is started" << std::endl;
+      interpolator_real = interpolator_linear_Chebyshev_t<double>(real(u_tau), n_tau_linear, order_Chebyshev);
+      interpolator_imag = interpolator_linear_Chebyshev_t<double>(imag(u_tau), n_tau_linear, order_Chebyshev);
+      std::cout << "interpolator_linear_Chebyshev_t<dcomplex> is constructed" << std::endl;
+    }
+
+    // This object can only be move-constructed as it has members that hold raw pointers
+    interpolator_linear_Chebyshev_t(interpolator_linear_Chebyshev_t const &) = delete;
+    interpolator_linear_Chebyshev_t(interpolator_linear_Chebyshev_t &&)      = default;
+
+    // This object can only be move-assigned as it has members that hold raw pointers
+    interpolator_linear_Chebyshev_t &operator=(interpolator_linear_Chebyshev_t const &) = delete;
+    interpolator_linear_Chebyshev_t &operator=(interpolator_linear_Chebyshev_t &&)      = default;
+
+    dcomplex operator()(int bl, double tau, int i, int j) const { return {interpolator_real(bl, tau, i, j), interpolator_imag(bl, tau, i, j)}; }
+
+    nda::matrix<dcomplex> operator()(int bl, double tau) const { return interpolator_real(bl, tau) + 1i * interpolator_imag(bl, tau); }
+
+    nda::array<nda::matrix<dcomplex>, 1> operator()(double tau) const {
+      return nda::array_adapter{std::array{n_blocks}, [&](int bl) { return (*this)(bl, tau); }};
+    }
+
+    private:
+    int n_blocks = 0;
+    interpolator_linear_Chebyshev_t<double> interpolator_real;
+    interpolator_linear_Chebyshev_t<double> interpolator_imag;
+  };
 } // namespace inchworm

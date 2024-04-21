@@ -196,7 +196,7 @@ void ModeBase::prepare_input(std::string hyb_file_path) {
     std::tie(mp.Delta_tau, mp.ad_imp, sr.u_tau_ref, sr.G_tau_ref) =
        discrete_setup(mp.n_site, mp.n_bath, mp.n_spin, mp.U, mp.mu, mp.t, cp, mp.theta, mp.epsilon);
 
-    sr.u_interpolator_ref                  = interpolator_t<scalar_t>(sr.u_tau_ref, sr.u_tau_ref[0].mesh().size());
+    sr.u_interpolator_ref                  = interpolator_t<scalar_t>(sr.u_tau_ref, sr.u_tau_ref[0].mesh().size(), 0, interpolation_type::cspline);
     sr.partition_function_ref              = trace(sr.u_interpolator_ref(cp.beta));
     sr.u_tau_zeroth_order_ref              = sr.u_interpolator_ref(sp.tau_max - sp.tau_split) * sr.u_interpolator_ref(sp.tau_split); //oder 0 result
     sr.u_tau_zeroth_order_bare             = make_bare_u_frame(mp.ad_imp, cp.beta);
