@@ -49,9 +49,6 @@ void ModeDebug::evaluate_propagator() {
   sr.u_tau_zeroth_order = sr.u_tau_zeroth_order_ref;
   // sr.u_interpolator      = interpolator_t<scalar_t>(sr.u_tau_ref, sr.u_tau_ref[0].mesh().size(), 0, interpolation_type::cspline);
   sr.u_interpolator      = interpolator_t<scalar_t>(sr.u_tau_ref, 5, 20, interpolation_type::linear_Chebyshev);
-
-  std::cout << "debug" << std::endl;
-  std::cout << "sr.u_interpolator(0, 0, 0, 0): " << sr.u_interpolator(0, 0, 0, 0) << std::endl;
   sp.use_bare_propagator = false;
   ModeBase::evaluate();
 }
