@@ -192,11 +192,14 @@ void ModeBase::prepare_input(std::string hyb_file_path) {
 
   if (gp.model_type == 0) { //model_type 0: discrete bath, where exact results (reference) are available
 
+    sp.order_Chebyshev = 9;
+    sp.n_tau_linear    = 5;
+    if (sp.order_Chebyshev == 0) { sp.n_tau_linear = cp.n_tau_inch; }
     // input parameters and exact results
     std::tie(mp.Delta_tau, mp.ad_imp, sr.u_tau_ref, sr.G_tau_ref) =
-       discrete_setup(mp.n_site, mp.n_bath, mp.n_spin, mp.U, mp.mu, mp.t, cp, mp.theta, mp.epsilon);
+       discrete_setup(mp.n_site, mp.n_bath, mp.n_spin, mp.U, mp.mu, mp.t, cp, mp.theta, mp.epsilon, sp.n_tau_linear, sp.order_Chebyshev);
 
-    sr.u_interpolator_ref                  = interpolator_t<scalar_t>(sr.u_tau_ref, sr.u_tau_ref[0].mesh().size(), 0, interpolation_type::cspline);
+    sr.u_interpolator_ref                  = interpolator_t<scalar_t>(sr.u_tau_ref, sr.u_tau_ref[0].mesh().size(), sp.n_tau_linear, sp.order_Chebyshev, interpolation_type::linear_Chebyshev);
     sr.partition_function_ref              = trace(sr.u_interpolator_ref(cp.beta));
     sr.u_tau_zeroth_order_ref              = sr.u_interpolator_ref(sp.tau_max - sp.tau_split) * sr.u_interpolator_ref(sp.tau_split); //oder 0 result
     sr.u_tau_zeroth_order_bare             = make_bare_u_frame(mp.ad_imp, cp.beta);

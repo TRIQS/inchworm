@@ -31,7 +31,7 @@ void ModeInchworm::evaluate_propagator() {
     std::cout << "sp.tau_max = " << sp.tau_max << std::endl;
     std::cout << "sp.tau_split = " << sp.tau_split << std::endl;
     sp.use_bare_propagator = (i_tau == 1);
-    if (!sp.use_bare_propagator) { sr.u_interpolator = interpolator_t<scalar_t>(sr.u_tau, i_tau, 0, interpolation_type::cspline); }
+    if (!sp.use_bare_propagator) { sr.u_interpolator = interpolator_t<scalar_t>(sr.u_tau, i_tau, 0, 0, interpolation_type::cspline); }
     sr.u_tau_zeroth_order = sp.use_bare_propagator ? make_bare_u_frame(mp.ad_imp, sp.tau_max) :
                                                      sr.u_interpolator(sp.tau_max - sp.tau_split) * sr.u_interpolator(sp.tau_split);
     auto u_frame          = make_zero_frame(mp.ad_imp.get_subspace_dims());

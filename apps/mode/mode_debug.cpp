@@ -47,8 +47,17 @@ void ModeDebug::run() {
 void ModeDebug::evaluate_propagator() {
   // for debug mode, the discrete bath is used
   sr.u_tau_zeroth_order = sr.u_tau_zeroth_order_ref;
-  // sr.u_interpolator      = interpolator_t<scalar_t>(sr.u_tau_ref, sr.u_tau_ref[0].mesh().size(), 0, interpolation_type::cspline);
-  sr.u_interpolator      = interpolator_t<scalar_t>(sr.u_tau_ref, 5, 20, interpolation_type::linear_Chebyshev);
+  // sr.u_interpolator      = interpolator_t<scalar_t>(sr.u_tau_ref, sr.u_tau_ref[0].mesh().size(), 0, 0, interpolation_type::cspline);
+  long n_tot = sr.u_tau_ref[0].mesh().size();
+  std::cout << "n_tot: " << n_tot << ", n_tau: " << sp.n_tau_linear << ", order: " << sp.order_Chebyshev << std::endl;
+  sr.u_interpolator      = interpolator_t<scalar_t>(sr.u_tau_ref, n_tot, sp.n_tau_linear, sp.order_Chebyshev, interpolation_type::linear_Chebyshev);
+  std::cout<<"grid u_tau_ref:"<<std::endl;
+  for(auto tau: sr.u_tau_ref[0].mesh()){
+    std::cout<<tau<<std::endl;
+  }
+  std::vector<double> grid= generate_linear_Chebyshev_grid(0, cp.beta, sp.n_tau_linear, sp.order_Chebyshev);
+  std::cout<<"grid: ";
+  print_vector(grid);
   sp.use_bare_propagator = false;
   ModeBase::evaluate();
 }
@@ -56,7 +65,7 @@ void ModeDebug::evaluate_propagator() {
 void ModeDebug::evaluate_greens_function() {
   // for debug mode, the discrete bath is used
   sr.u_tau_zeroth_order  = sr.u_tau_zeroth_order_ref;
-  sr.u_interpolator      = interpolator_t<scalar_t>(sr.u_tau_ref, sr.u_tau_ref[0].mesh().size(), 0, interpolation_type::cspline);
+  sr.u_interpolator      = interpolator_t<scalar_t>(sr.u_tau_ref, sr.u_tau_ref[0].mesh().size(), 0, 0, interpolation_type::cspline);
   sp.use_bare_propagator = false;
   sp.eval_type           = 1;
   sp.n_skip              = 0;

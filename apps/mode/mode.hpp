@@ -74,6 +74,8 @@ struct simulation_params_t {
   double tau_max{};
   double tau_split{};
   double tau_split_ratio{};
+  long n_tau_linear{};
+  int order_Chebyshev{};
   std::vector<int> order_list = {};
   int bl_index{};
   int subspace_index{};

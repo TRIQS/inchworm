@@ -39,20 +39,58 @@ namespace inchworm {
       for (int i : range(bl_size)) u_frame[bl](i, i) = std::exp(-tau * ad.get_eigenvalue(bl, i));
     return u_frame;
   }
-
-  u_tau_t make_ED_propagator(atom_diag const &ad_tot, atom_diag const &ad_imp, atom_diag const &ad_bath, double beta, long n_tau) {
-
-    auto u_tau = u_tau_t{{beta, Fermion, n_tau}, ad_imp.get_subspace_dims()};
-    u_tau()    = 0.0;
-
-    double dtau = beta / (n_tau - 1.);
-    for (int i_tau : mpi::chunk(range(n_tau))) {
-      auto u_frame = partial_trace_bath(ad_tot, ad_imp, ad_bath, beta, dtau * i_tau);
-      set_frame(u_frame, u_tau, i_tau);
+  
+  std::vector<double> generate_linear_Chebyshev_grid(double ti, double tf, long n_linear, int order_Chebyshev) {
+    // n_linear points are the inchworm grid, which has n_linear-1 intervals
+    // order_Chebyshev is the order of the Chebyshev approximation within each interval, i.e., order_Chebyshev+1 points are used in each interval
+    std::vector<double> grid_linear;
+    std::vector<double> grid;
+    double h = (tf - ti) / (n_linear - 1);
+    for (int i = 0; i < n_linear; i++) { grid_linear.push_back(ti + i * h); }
+    for (int i = 0; i < n_linear - 1; i++) {
+      double a = grid_linear[i];
+      double b = grid_linear[i + 1];
+      grid.push_back(a);
+      for (int j = order_Chebyshev; j >= 0; j--) {
+        double x = 0.5 * (a + b) + 0.5 * (b - a) * cos(M_PI * (2 * j + 1) / (2 * (order_Chebyshev + 1)));
+        grid.push_back(x);
+      }
     }
-    u_tau = mpi::all_reduce(u_tau);
+    grid.push_back(tf);
+    return grid;
+  }
 
-    return u_tau;
+  u_tau_t make_ED_propagator(atom_diag const &ad_tot, atom_diag const &ad_imp, atom_diag const &ad_bath, double beta, long n_tau, long n_tau_linear,
+                             int order_Chebyshev) {
+
+    if (order_Chebyshev == 0) {
+      auto u_tau  = u_tau_t{{beta, Fermion, n_tau}, ad_imp.get_subspace_dims()};
+      u_tau()     = 0.0;
+      double dtau = beta / (n_tau - 1.);
+      for (int i_tau : mpi::chunk(range(n_tau))) {
+        auto u_frame = partial_trace_bath(ad_tot, ad_imp, ad_bath, beta, dtau * i_tau);
+        set_frame(u_frame, u_tau, i_tau);
+      }
+      u_tau = mpi::all_reduce(u_tau);
+      return u_tau;
+    } else {
+      long n_tot               = n_tau_linear + (n_tau_linear - 1) * (order_Chebyshev + 1);
+      std::vector<double> grid = generate_linear_Chebyshev_grid(0, beta, n_tau_linear, order_Chebyshev);
+      auto u_tau               = u_tau_t{{beta, Fermion, n_tot}, ad_imp.get_subspace_dims()};
+      u_tau()                  = 0.0;
+      std::cout << "chebyshev grid: " <<std::endl;
+      for (int i = 0; i < n_tot; i++) {
+        std::cout << grid[i] << " ";
+      }
+      // UGLY WORK AROUND:
+      // note that the linear-Chebyshev grid does not match the u_tau[0].mesh() grid although they have a same number of points
+      for (int i_tau : mpi::chunk(range(n_tot))) {
+        auto u_frame = partial_trace_bath(ad_tot, ad_imp, ad_bath, beta, grid[i_tau]);
+        set_frame(u_frame, u_tau, i_tau);
+      }
+      u_tau = mpi::all_reduce(u_tau);
+      return u_tau;
+    }
   }
 
   frame_t make_bare_g_frame(atom_diag const &ad_imp, u_tau_t const &u_tau, gf_struct_t const &gf_struct, double tau_split, double beta) {
@@ -119,9 +157,9 @@ namespace inchworm {
     }
 
     // Given atom_diag object, calculate e^[-tau * H] in Fockstate Basis
-    auto calc_e_H_fs = [](atom_diag const &ad, double tau) {
+    auto calc_e_H_fs = [](atom_diag const &ad, double tt) {
       // e^[-tau * H] in eigenbasis
-      auto e_H_tau = make_bare_u_frame(ad, tau);
+      auto e_H_tau = make_bare_u_frame(ad, tt);
 
       // Rotate to Fockstate Basis
       auto e_H_tau_fs = e_H_tau;
