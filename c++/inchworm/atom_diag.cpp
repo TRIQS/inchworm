@@ -60,28 +60,23 @@ namespace inchworm {
     return grid;
   }
 
-  u_tau_t make_ED_propagator(atom_diag const &ad_tot, atom_diag const &ad_imp, atom_diag const &ad_bath, double beta, long n_tau, long n_tau_linear,
+  u_tau_t make_ED_propagator(atom_diag const &ad_tot, atom_diag const &ad_imp, atom_diag const &ad_bath, double beta, long n_tot, long n_tau_linear,
                              int order_Chebyshev) {
 
     if (order_Chebyshev == 0) {
-      auto u_tau  = u_tau_t{{beta, Fermion, n_tau}, ad_imp.get_subspace_dims()};
+      auto u_tau  = u_tau_t{{beta, Fermion, n_tot}, ad_imp.get_subspace_dims()};
       u_tau()     = 0.0;
-      double dtau = beta / (n_tau - 1.);
-      for (int i_tau : mpi::chunk(range(n_tau))) {
+      double dtau = beta / (n_tot - 1.);
+      for (int i_tau : mpi::chunk(range(n_tot))) {
         auto u_frame = partial_trace_bath(ad_tot, ad_imp, ad_bath, beta, dtau * i_tau);
         set_frame(u_frame, u_tau, i_tau);
       }
       u_tau = mpi::all_reduce(u_tau);
       return u_tau;
     } else {
-      long n_tot               = n_tau_linear + (n_tau_linear - 1) * (order_Chebyshev + 1);
       std::vector<double> grid = generate_linear_Chebyshev_grid(0, beta, n_tau_linear, order_Chebyshev);
       auto u_tau               = u_tau_t{{beta, Fermion, n_tot}, ad_imp.get_subspace_dims()};
       u_tau()                  = 0.0;
-      std::cout << "chebyshev grid: " <<std::endl;
-      for (int i = 0; i < n_tot; i++) {
-        std::cout << grid[i] << " ";
-      }
       // UGLY WORK AROUND:
       // note that the linear-Chebyshev grid does not match the u_tau[0].mesh() grid although they have a same number of points
       for (int i_tau : mpi::chunk(range(n_tot))) {

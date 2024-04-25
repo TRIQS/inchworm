@@ -2,6 +2,7 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <h5/h5.hpp>
+#include "../utility.hpp"
 
 void ModeBase::clear_tci_results() {
   sr.integral_list.clear();
@@ -192,14 +193,22 @@ void ModeBase::prepare_input(std::string hyb_file_path) {
 
   if (gp.model_type == 0) { //model_type 0: discrete bath, where exact results (reference) are available
 
-    sp.order_Chebyshev = 9;
-    sp.n_tau_linear    = 5;
-    if (sp.order_Chebyshev == 0) { sp.n_tau_linear = cp.n_tau_inch; }
+    sp.order_Chebyshev = 3;
+    sp.n_tau_linear    = cp.n_tau_inch; // we temporarily set n_tau_linear to be equal to n_tau_inch
+    if (sp.order_Chebyshev != 0) {
+      sp.interp_type = interpolation_type::linear_Chebyshev;
+      sp.n_tot       = sp.n_tau_linear + (sp.n_tau_linear - 1) * (sp.order_Chebyshev + 1);
+    } else {
+      sp.interp_type = interpolation_type::cspline;
+      sp.n_tot       = sp.n_tau_linear;
+    }
+    sp.grid = generate_inchworm_grid(0, cp.beta, sp.n_tau_linear, sp.order_Chebyshev);
     // input parameters and exact results
+    sp.grid_linear = generate_inchworm_grid(0, cp.beta, sp.n_tau_linear, 0);
     std::tie(mp.Delta_tau, mp.ad_imp, sr.u_tau_ref, sr.G_tau_ref) =
-       discrete_setup(mp.n_site, mp.n_bath, mp.n_spin, mp.U, mp.mu, mp.t, cp, mp.theta, mp.epsilon, sp.n_tau_linear, sp.order_Chebyshev);
+       discrete_setup(mp.n_site, mp.n_bath, mp.n_spin, mp.U, mp.mu, mp.t, cp, mp.theta, mp.epsilon, sp.n_tot, sp.n_tau_linear, sp.order_Chebyshev);
 
-    sr.u_interpolator_ref                  = interpolator_t<scalar_t>(sr.u_tau_ref, sr.u_tau_ref[0].mesh().size(), sp.n_tau_linear, sp.order_Chebyshev, interpolation_type::linear_Chebyshev);
+    sr.u_interpolator_ref                  = interpolator_t<scalar_t>(sr.u_tau_ref, sp.n_tot, sp.n_tau_linear, sp.order_Chebyshev, sp.interp_type);
     sr.partition_function_ref              = trace(sr.u_interpolator_ref(cp.beta));
     sr.u_tau_zeroth_order_ref              = sr.u_interpolator_ref(sp.tau_max - sp.tau_split) * sr.u_interpolator_ref(sp.tau_split); //oder 0 result
     sr.u_tau_zeroth_order_bare             = make_bare_u_frame(mp.ad_imp, cp.beta);

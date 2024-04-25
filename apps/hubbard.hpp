@@ -84,7 +84,7 @@ inline double one_fermion(double tau, double eps, double beta) {
 }
 
 inline std::tuple<hyb_tau_t, atom_diag, u_tau_t, g_tau_t> discrete_setup(int n_site, int n_bath, int n_spin, double U, double mu, double t,
-                                                                         constr_params_t const &cp, mat_t const &theta, vec_t const &eps, long n_tau_linear, int order_Chebyshev) {
+                                                                         constr_params_t const &cp, mat_t const &theta, vec_t const &eps, long n_tot, long n_tau_linear, int order_Chebyshev) {
 
   // === Define fundamental operator sets
 
@@ -142,7 +142,7 @@ inline std::tuple<hyb_tau_t, atom_diag, u_tau_t, g_tau_t> discrete_setup(int n_s
   auto ad_bath = inchworm::atom_diag(h_bath, fops_bath);
 
   // Calculate exact propagator
-  u_tau_t u_tau = make_ED_propagator(ad_tot, ad_imp, ad_bath, cp.beta, cp.n_tau_inch, n_tau_linear, order_Chebyshev);
+  u_tau_t u_tau = make_ED_propagator(ad_tot, ad_imp, ad_bath, cp.beta, n_tot, n_tau_linear, order_Chebyshev);
 
   // Calculate exact Green function
   g_tau_t g_tau = real(atomic_g_tau(ad_tot, cp.beta, cp.gf_struct, cp.n_tau_green));

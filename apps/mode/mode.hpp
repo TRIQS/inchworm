@@ -76,6 +76,10 @@ struct simulation_params_t {
   double tau_split_ratio{};
   long n_tau_linear{};
   int order_Chebyshev{};
+  long n_tot{};
+  interpolation_type interp_type{};
+  std::vector<double> grid{};
+  std::vector<double> grid_linear{};
   std::vector<int> order_list = {};
   int bl_index{};
   int subspace_index{};

@@ -202,7 +202,7 @@ namespace inchworm {
         for (auto n : range(n_tau_linear - 1)) { interp[bl][n] = nda::array<gsl_cheb_series *, 2>{u_tau[bl].target_shape()}; }
       }
       // UGLY WORK AROUND
-      std::vector<double> grid = generate_linear_Chebyshev_grid(0, u_tau[0].mesh().beta(), n_tau_linear, order_Chebyshev);
+      std::vector<double> grid = generate_linear_Chebyshev_grid(0,datx_linear[n_tau_linear-1], n_tau_linear, order_Chebyshev);
       std::cout << "linear-Chebyshev grid:"<< std::endl;
       for(auto x: grid) std::cout << x << std::endl;
       interpolator_cspline_t<double> interp_cspline(u_tau, grid);

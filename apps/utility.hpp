@@ -18,6 +18,29 @@ enum debug_t {
   high  //2, simulation level debug + TCI level debug (print both pivot error and integral)
 };
 
+inline std::vector<double> generate_inchworm_grid(double ti, double tf, long n_linear, int order_Chebyshev) {
+  // n_linear points are the inchworm grid, which has n_linear-1 intervals
+  // order_Chebyshev is the order of the Chebyshev approximation within each interval, i.e., order_Chebyshev+1 points are used in each interval
+  std::vector<double> grid_linear;
+  std::vector<double> grid;
+  double h = (tf - ti) / (n_linear - 1);
+  for (int i = 0; i < n_linear; i++) { grid_linear.push_back(ti + i * h); }
+  if(order_Chebyshev==0){
+    return grid_linear;
+  }
+  for (int i = 0; i < n_linear - 1; i++) {
+    double a = grid_linear[i];
+    double b = grid_linear[i + 1];
+    grid.push_back(a);
+    for (int j = order_Chebyshev; j >= 0; j--) {
+      double x = 0.5 * (a + b) + 0.5 * (b - a) * cos(M_PI * (2 * j + 1) / (2 * (order_Chebyshev + 1)));
+      grid.push_back(x);
+    }
+  }
+  grid.push_back(tf);
+  return grid;
+}
+
 inline double get_random_number() {
   // Create a random number generator
   std::random_device rd;
