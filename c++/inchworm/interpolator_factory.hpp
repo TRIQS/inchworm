@@ -45,7 +45,7 @@ namespace inchworm {
        : n_blocks(u_tau.size()), datx(_datx.size()), daty(n_blocks), interp(n_blocks), accel_ptr(gsl_interp_accel_alloc()) {
       long n_tau = datx.size();
       EXPECTS(n_tau >= 2);
-      for(auto n: range(n_tau)) datx[n] = _datx[n];
+      for (auto n : range(n_tau)) datx[n] = _datx[n];
       for (auto bl : range(n_blocks)) {
         daty[bl]   = u_tau[bl].data()(range(n_tau), nda::ellipsis());
         interp[bl] = nda::array<gsl_interp *, 2>{u_tau[bl].target_shape()};
@@ -97,7 +97,6 @@ namespace inchworm {
       EXPECTS(0 <= tau && tau <= datx[datx.size() - 1]);
       return nda::array_adapter{std::array{n_blocks}, [&](int bl) { return (*this)(bl, tau); }};
     }
-
 
     private:
     int n_blocks = 0;
@@ -158,7 +157,7 @@ namespace inchworm {
   };
   inline double my_f(double x, void *p) {
     my_f_params *params = (my_f_params *)p;
-    std::cout << "x = " << x << std::endl;
+    // std::cout << "x = " << x << std::endl;
 
     return params->interp_cspline->operator()(params->bl, x, params->i, params->j);
   }
@@ -184,12 +183,12 @@ namespace inchworm {
       EXPECTS(n_tot >= n_tau_linear);
       // UGLY WORK AROUND:
       // We assume when order_Chebyshev is non-zero, i.e., when we use the linear-Chebyshev grid, the grid points in u_tau are on the linear-Chebyshev grid. It will not match the points in the u_tau[0].mesh() which contains a uniform grid.
-      EXPECTS(n_tot == static_cast<long>(n_tau_linear+(n_tau_linear-1)*(order_Chebyshev+1)));
+      EXPECTS(n_tot == static_cast<long>(n_tau_linear + (n_tau_linear - 1) * (order_Chebyshev + 1)));
       n_inter = static_cast<long>((n_tot - n_tau_linear) / (n_tau_linear - 1));
       for (auto bl : range(n_blocks)) { daty[bl] = u_tau[bl].data()(range(n_tot), nda::ellipsis()); }
       for (auto n : range(n_tau_linear)) {
         datx_linear[n] = u_tau[0].mesh()[n * (n_inter + 1)];
-        std::cout << "datx_linear[" << n << "] = " << datx_linear[n] << std::endl;
+        // std::cout << "datx_linear[" << n << "] = " << datx_linear[n] << std::endl;
       }
       // if (datx_linear[n_tau_linear - 1] != u_tau[0].mesh()[n_tot - 1]) {
       //   std::cout << "datx_linear[" << n_tau_linear - 1 << "] = " << datx_linear[n_tau_linear - 1] << " != " << u_tau[0].mesh()[n_tot - 1]
@@ -202,15 +201,15 @@ namespace inchworm {
         for (auto n : range(n_tau_linear - 1)) { interp[bl][n] = nda::array<gsl_cheb_series *, 2>{u_tau[bl].target_shape()}; }
       }
       // UGLY WORK AROUND
-      std::vector<double> grid = generate_linear_Chebyshev_grid(0,datx_linear[n_tau_linear-1], n_tau_linear, order_Chebyshev);
-      std::cout << "linear-Chebyshev grid:"<< std::endl;
-      for(auto x: grid) std::cout << x << std::endl;
+      auto [grid_linear, grid] = generate_linear_Chebyshev_grid(0, datx_linear[n_tau_linear - 1], n_tau_linear, order_Chebyshev);
+      // std::cout << "linear-Chebyshev grid:" << std::endl;
+      // for (auto x : grid) std::cout << x << std::endl;
       interpolator_cspline_t<double> interp_cspline(u_tau, grid);
       for (auto n : range(n_tau_linear - 1)) {
         double a = datx_linear[n];
         double b = datx_linear[n + 1];
         if (a > b) throw std::runtime_error("The grid is not consistent with the linear_Chebyshev interpolation");
-        std::cout << "a = " << a << ", b = " << b << std::endl;
+        // std::cout << "a = " << a << ", b = " << b << std::endl;
         // for (auto i : range(order + 1)) { datx_Chebyshev(n, i) = (a + b) / 2 + (b - a) / 2 * std::cos(M_PI * (2 * i + 1) / (2 * (order + 1))); }
         for (auto bl : range(n_blocks)) {
           for (auto [i, j] : product_range(u_tau[bl].target_shape())) {
@@ -247,16 +246,18 @@ namespace inchworm {
       for (auto bl : range(n_blocks)) {
         for (auto n : range(n_tau_linear - 1)) {
           if (not interp.empty()) {
-            for (auto *ptr : interp[bl][n]) {
-              gsl_cheb_free(ptr);
-            }
+            for (auto *ptr : interp[bl][n]) { gsl_cheb_free(ptr); }
           }
         }
       }
     }
 
     double operator()(int bl, double tau, int i, int j) const {
-      EXPECTS(0 <= tau && tau <= datx_linear[datx_linear.size() - 1]);
+      if (0 > tau || tau > datx_linear[datx_linear.size() - 1]) {
+        std::cerr << "tau = " << tau << std::endl;
+        std::cerr << "datx_linear[datx_linear.size()-1]" << datx_linear[datx_linear.size() - 1] << std::endl;
+        throw std::runtime_error("tau is out of range");
+      }
       // find the interval
       int n = 0;
       while (n < n_tau_linear - 1 && datx_linear[n + 1] < tau) { n++; }
@@ -267,12 +268,20 @@ namespace inchworm {
     }
 
     nda::matrix<double> operator()(int bl, double tau) const {
-      EXPECTS(0 <= tau && tau <= datx_linear[datx_linear.size() - 1]);
+      if (0 > tau || tau > datx_linear[datx_linear.size() - 1]) {
+        std::cerr << "tau = " << tau << std::endl;
+        std::cerr << "datx_linear[datx_linear.size()-1]" << datx_linear[datx_linear.size() - 1] << std::endl;
+        throw std::runtime_error("tau is out of range");
+      }
       return nda::array_adapter{interp[bl][0].shape(), [&](int i, int j) { return (*this)(bl, tau, i, j); }};
     }
 
     nda::array<nda::matrix<double>, 1> operator()(double tau) const {
-      EXPECTS(0 <= tau && tau <= datx_linear[datx_linear.size() - 1]);
+      if (0 > tau || tau > datx_linear[datx_linear.size() - 1]) {
+        std::cerr << "tau = " << tau << std::endl;
+        std::cerr << "datx_linear[datx_linear.size()-1]" << datx_linear[datx_linear.size() - 1] << std::endl;
+        throw std::runtime_error("tau is out of range");
+      }
       return nda::array_adapter{std::array{n_blocks}, [&](int bl) { return (*this)(bl, tau); }};
     }
 

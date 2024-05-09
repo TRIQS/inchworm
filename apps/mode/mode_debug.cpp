@@ -55,9 +55,9 @@ void ModeDebug::evaluate_propagator() {
   for(auto tau: sr.u_tau_ref[0].mesh()){
     std::cout<<tau<<std::endl;
   }
-  std::vector<double> grid= generate_linear_Chebyshev_grid(0, cp.beta, sp.n_tau_linear, sp.order_Chebyshev);
-  std::cout<<"grid: ";
-  print_vector(grid);
+  // auto [grid_linear, grid] = generate_linear_Chebyshev_grid(0, cp.beta, sp.n_tau_linear, sp.order_Chebyshev);
+  // std::cout<<"grid: ";
+  // print_vector(grid);
   sp.use_bare_propagator = false;
   ModeBase::evaluate();
 }

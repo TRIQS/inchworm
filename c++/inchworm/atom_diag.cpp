@@ -40,13 +40,15 @@ namespace inchworm {
     return u_frame;
   }
   
-  std::vector<double> generate_linear_Chebyshev_grid(double ti, double tf, long n_linear, int order_Chebyshev) {
+  std::pair<std::vector<double>,std::vector<double>> generate_linear_Chebyshev_grid(double ti, double tf, long n_linear, int order_Chebyshev) {
     // n_linear points are the inchworm grid, which has n_linear-1 intervals
     // order_Chebyshev is the order of the Chebyshev approximation within each interval, i.e., order_Chebyshev+1 points are used in each interval
     std::vector<double> grid_linear;
     std::vector<double> grid;
-    double h = (tf - ti) / (n_linear - 1);
-    for (int i = 0; i < n_linear; i++) { grid_linear.push_back(ti + i * h); }
+    for (int i = 0; i < n_linear; i++) { 
+      double wr = static_cast<double>(i) / (n_linear - 1);
+      grid_linear.push_back(ti*(1 - wr) + tf*wr);
+    }
     for (int i = 0; i < n_linear - 1; i++) {
       double a = grid_linear[i];
       double b = grid_linear[i + 1];
@@ -57,11 +59,11 @@ namespace inchworm {
       }
     }
     grid.push_back(tf);
-    return grid;
+    return {grid_linear, grid};
   }
 
   u_tau_t make_ED_propagator(atom_diag const &ad_tot, atom_diag const &ad_imp, atom_diag const &ad_bath, double beta, long n_tot, long n_tau_linear,
-                             int order_Chebyshev) {
+                             int order_Chebyshev, std::vector<double> & grid_linear, std::vector<double> & grid) {
 
     if (order_Chebyshev == 0) {
       auto u_tau  = u_tau_t{{beta, Fermion, n_tot}, ad_imp.get_subspace_dims()};
@@ -74,7 +76,7 @@ namespace inchworm {
       u_tau = mpi::all_reduce(u_tau);
       return u_tau;
     } else {
-      std::vector<double> grid = generate_linear_Chebyshev_grid(0, beta, n_tau_linear, order_Chebyshev);
+      std::tie(grid_linear,grid) = generate_linear_Chebyshev_grid(0, beta, n_tau_linear, order_Chebyshev);
       auto u_tau               = u_tau_t{{beta, Fermion, n_tot}, ad_imp.get_subspace_dims()};
       u_tau()                  = 0.0;
       // UGLY WORK AROUND:
@@ -203,6 +205,7 @@ namespace inchworm {
     double factor = std::exp((ad_bath.get_gs_energy() + ad_imp.get_gs_energy() - ad_tot.get_gs_energy()) * tau);
 
     return factor * utau_imp;
+    // return utau_imp;
   }
 
 } // namespace inchworm

@@ -38,8 +38,8 @@ namespace inchworm {
   frame_t partial_trace_bath(atom_diag const &ad_tot, atom_diag const &ad_target, atom_diag const &ad_bath, double beta, double tau);
 
   // Make an exact diagonalization propagator U = Trace_B [exp(-H_bath *(beta-tau)) exp(-H_tot*tau)  ]  /  Trace_B [ exp(-H_bath*beta) ]
-  u_tau_t make_ED_propagator(atom_diag const &ad_tot, atom_diag const &ad_imp, atom_diag const &ad_bath, double beta, long n_tau, long n_tau_linear, int order_Chebyshev);
+  u_tau_t make_ED_propagator(atom_diag const &ad_tot, atom_diag const &ad_imp, atom_diag const &ad_bath, double beta, long n_tau, long n_tau_linear, int order_Chebyshev, std::vector<double>&grid_linear, std::vector<double> &grid);
 
-  std::vector<double> generate_linear_Chebyshev_grid(double ti, double tf, long n_linear, int order_Chebyshev);
+  std::pair<std::vector<double>,std::vector<double>> generate_linear_Chebyshev_grid(double ti, double tf, long n_linear, int order_Chebyshev);
 
 } // namespace inchworm

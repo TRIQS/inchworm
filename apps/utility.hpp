@@ -499,6 +499,9 @@ double get_integral_ctt_GK(xfac::CTensorTrain<T, Index> const &ctt, std::vector<
   return prod.eval()(0, 0);
 }
 
+
+
+
 template <class T, class Index>
 double get_integral_ctt_tanh_sinh(xfac::CTensorTrain<T, Index> const &ctt, std::vector<std::pair<double, double>> const &bounds, double tol) {
   auto M = ctt.M;
@@ -826,8 +829,8 @@ T_output do_TCI(std::function<T_output(std::vector<T_input>)> integrand, std::ve
     // std::cout << "ctt obtained" << std::endl;
     // std::vector<std::pair<double, double>> bounds;
     // for (auto i = 0u; i < input.size(); i++) { bounds.push_back({0, 1}); }
-    // // double integral_val = get_integral_ctt_GK(ctt, bounds,2, 1e-14);
-    // double integral_val = get_integral_ctt_tanh_sinh_depth0(ctt, bounds);
+    // double integral_val = get_integral_ctt_GK(ctt, bounds,2, 1e-14);
+    // // double integral_val = get_integral_ctt_tanh_sinh_depth0(ctt, bounds);
     // integral            = integral_val;
     // std::cout << "integral_adaptive: " << integral << std::endl;
   } else {

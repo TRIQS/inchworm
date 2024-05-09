@@ -83,8 +83,10 @@ inline double one_fermion(double tau, double eps, double beta) {
   }
 }
 
-inline std::tuple<hyb_tau_t, atom_diag, u_tau_t, g_tau_t> discrete_setup(int n_site, int n_bath, int n_spin, double U, double mu, double t,
-                                                                         constr_params_t const &cp, mat_t const &theta, vec_t const &eps, long n_tot, long n_tau_linear, int order_Chebyshev) {
+inline std::tuple<double, double, double, hyb_tau_t, atom_diag, u_tau_t, g_tau_t> discrete_setup(int n_site, int n_bath, int n_spin, double U, double mu, double t,
+                                                                         constr_params_t const &cp, mat_t const &theta, vec_t const &eps, long n_tot, long n_tau_linear, int order_Chebyshev,std::vector<double> & grid_linear, std::vector<double> & grid
+                                                                         
+                                                                         ) {
 
   // === Define fundamental operator sets
 
@@ -116,6 +118,13 @@ inline std::tuple<hyb_tau_t, atom_diag, u_tau_t, g_tau_t> discrete_setup(int n_s
     }
   }
 
+  //TEST: hidden fermion
+  double coeff = 1;
+  h_imp += coeff*c_dag("up", 0) * c("up", 2);
+  h_imp += coeff*c_dag("up", 2) * c("up", 0);
+  h_imp += coeff*c_dag("up", 1) * c("up", 2);
+  h_imp += coeff*c_dag("up", 2) * c("up", 1);
+
   // h_bath: Hamiltonian of the bath (n_site)
   for (int k = 0; k < n_bath; k++) {
     h_bath += eps(k) * n("up", k + n_site);
@@ -135,6 +144,7 @@ inline std::tuple<hyb_tau_t, atom_diag, u_tau_t, g_tau_t> discrete_setup(int n_s
     }
   }
 
+
   // === Define the 3 different atom_diag objects (ED calculation with Triqs)
 
   auto ad_tot  = inchworm::atom_diag(h_imp + h_bath + h_hyb, fops_tot);
@@ -142,7 +152,7 @@ inline std::tuple<hyb_tau_t, atom_diag, u_tau_t, g_tau_t> discrete_setup(int n_s
   auto ad_bath = inchworm::atom_diag(h_bath, fops_bath);
 
   // Calculate exact propagator
-  u_tau_t u_tau = make_ED_propagator(ad_tot, ad_imp, ad_bath, cp.beta, n_tot, n_tau_linear, order_Chebyshev);
+  u_tau_t u_tau = make_ED_propagator(ad_tot, ad_imp, ad_bath, cp.beta, n_tot, n_tau_linear, order_Chebyshev, grid_linear, grid);
 
   // Calculate exact Green function
   g_tau_t g_tau = real(atomic_g_tau(ad_tot, cp.beta, cp.gf_struct, cp.n_tau_green));
@@ -159,7 +169,38 @@ inline std::tuple<hyb_tau_t, atom_diag, u_tau_t, g_tau_t> discrete_setup(int n_s
     }
   }
 
-  return {Delta_tau, ad_imp, u_tau, g_tau};
+  auto Z_bath = partition_function(ad_bath, cp.beta);
+  double Z_bath_correction = std::exp(-(ad_bath.get_gs_energy()) * cp.beta);
+  double Z_imp_correction = std::exp(-(ad_imp.get_gs_energy()) * cp.beta);
+  std::cout << "ad_bath.get_gs_energy() " << ad_bath.get_gs_energy() << std::endl;
+  std::cout << "ad_imp.get_gs_energy() " << ad_imp.get_gs_energy() << std::endl;
+  //TEST: hidden fermion
+  for (auto tau : Delta_tau[0].mesh()) {
+    for (int block = 0; block < cp.gf_struct.size(); block++) {
+      for (auto [i, j] : product_range(2, 2)) {
+        Delta_tau[block][tau](i, j) -= coeff*coeff*one_fermion(tau, mu, cp.beta);
+      }
+    }
+  }
+
+  // std::cout << "Delta_tau[0](0,0) " << Delta_tau[0](0)(1, 0) << std::endl;
+  // std::cout << "Delta_tau[0](0,0) " << Delta_tau[0](0)(0, 1) << std::endl;
+  // //TEST: artificial off-diagonal hybridization
+  // for (auto tau : Delta_tau[0].mesh()) {
+  //   for (int block = 0; block < cp.gf_struct.size(); block++) {
+  //     for (auto [i, j] : product_range(n_site, n_site)) {
+  //       if (i > j){
+  //       Delta_tau[block][tau](i, j)  += 100;
+  //       }
+  //       if(i < j){
+  //       Delta_tau[block][tau](i, j)  -= 100;
+  //       }
+  //     }
+  //   }
+  // }
+  // std::cout << "new Delta_tau[0](0,0) " << Delta_tau[0](0)(1, 0) << std::endl;
+  // std::cout << "new Delta_tau[0](0,0) " << Delta_tau[0](0)(0, 1) << std::endl;
+  return {Z_bath_correction, Z_imp_correction, Z_bath, Delta_tau, ad_imp, u_tau, g_tau};
 }
 
 inline std::tuple<hyb_tau_t, atom_diag> bethe_setup(int n_site, int n_spin, double U, double mu, double t, constr_params_t const &cp,

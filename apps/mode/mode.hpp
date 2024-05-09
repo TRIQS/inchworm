@@ -90,6 +90,9 @@ struct simulation_params_t {
 };
 
 struct simulation_results_t {
+  double Z_bath=0;
+  double Z_bath_correction=0;
+  double Z_imp_correction=0;
   double partition_function{};
   u_tau_t u_tau{};
   g_tau_t G_tau{};

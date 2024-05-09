@@ -54,19 +54,20 @@ namespace inchworm::diagram {
       if (cdag.bl != c.bl) return 0.;
 
       double dtau = cdag.tau - c.tau;
-      // if (dtau >= 0.) {
-      //   return Delta[c.bl](dtau)(cdag.idx, c.idx);
-      // } else {
-      //   return -Delta[c.bl](Delta[c.bl].mesh().beta() + dtau)(cdag.idx, c.idx);
-      // }
+      if (dtau >= 0.) {
+        return Delta[c.bl](dtau)(cdag.idx, c.idx);
+      } else {
+        return -Delta[c.bl](Delta[c.bl].mesh().beta() + dtau)(cdag.idx, c.idx);
+      }
 
       //test hybridization discretization
-      double coff = 1.0;
-      if (dtau >= 0.) {
-        return coff*coff*one_fermion(dtau, 1, Delta[c.bl].mesh().beta());
-      } else {
-        return - coff*coff*one_fermion(dtau+Delta[c.bl].mesh().beta(), 1, Delta[c.bl].mesh().beta());
-      }
+      // double coff = 1.0;
+      // if (dtau >= 0.) {
+      //   return coff*coff*one_fermion(dtau, 1, Delta[c.bl].mesh().beta());
+      // } else {
+      //   return - coff*coff*one_fermion(dtau+Delta[c.bl].mesh().beta(), 1, Delta[c.bl].mesh().beta());
+      // }
+
     };
 
     for (auto [i, d] : enumerate(diagram.d_list)) {
