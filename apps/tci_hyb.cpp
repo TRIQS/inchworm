@@ -33,6 +33,7 @@ int main(int argc, char *argv[]) {
   ModeBase *mode = create_mode(mode_name);
   if (mode) {
     std::cout << std::setprecision(18) << "###### Tensor Train Based Hybridization Expansion Algorithm ######" << std::endl;
+    std::cerr << std::setprecision(18);
     mode->init(json_file_path,hyb_file_path);
     mode->run();
     mode->print_summary();

@@ -149,18 +149,39 @@ namespace inchworm {
     interpolator_cspline_t<double> interpolator_imag;
   };
 
-  struct my_f_params {
+
+  struct my_f_params_new{
     long bl;
     long i;
     long j;
-    interpolator_cspline_t<double> *interp_cspline;
+    std::vector<double> grid;
+    u_tau_t::real_t const * u_tau;
   };
-  inline double my_f(double x, void *p) {
-    my_f_params *params = (my_f_params *)p;
-    // std::cout << "x = " << x << std::endl;
-
-    return params->interp_cspline->operator()(params->bl, x, params->i, params->j);
+  inline double my_f_new (double x, void*p){
+    my_f_params_new *params = (my_f_params_new *)p;
+    //check the location of x in grid, x should be exact in the grid otherwise gives error output
+    long n = 0;
+    while (n < params->grid.size() && params->grid[n] < x) { n++; }
+    if (params->grid[n] == x) { return params->u_tau->operator[](params->bl)[n](params->i, params->j); }
+    else{
+      std::cerr << "x = " << x << std::endl;
+      std::cerr << "params->grid[n] = " << params->grid[n] << std::endl;
+      throw std::runtime_error("x is not in the grid");
+    }
   }
+  // struct my_f_params {
+  //   long bl;
+  //   long i;
+  //   long j;
+  //   interpolator_cspline_t<double> *interp_cspline;
+  // };
+  // inline double my_f(double x, void *p) {
+  //   my_f_params *params = (my_f_params *)p;
+  //   // std::cout << "x = " << x << std::endl;
+
+  //   return params->interp_cspline->operator()(params->bl, x, params->i, params->j);
+  // }
+
   template <typename T> class interpolator_linear_Chebyshev_t;
 
   template <> class interpolator_linear_Chebyshev_t<double> {
@@ -204,7 +225,8 @@ namespace inchworm {
       auto [grid_linear, grid] = generate_linear_Chebyshev_grid(0, datx_linear[n_tau_linear - 1], n_tau_linear, order_Chebyshev);
       // std::cout << "linear-Chebyshev grid:" << std::endl;
       // for (auto x : grid) std::cout << x << std::endl;
-      interpolator_cspline_t<double> interp_cspline(u_tau, grid);
+      // interpolator_cspline_t<double> interp_cspline(u_tau, grid);
+
       for (auto n : range(n_tau_linear - 1)) {
         double a = datx_linear[n];
         double b = datx_linear[n + 1];
@@ -214,16 +236,28 @@ namespace inchworm {
         for (auto bl : range(n_blocks)) {
           for (auto [i, j] : product_range(u_tau[bl].target_shape())) {
             // std::cout << "bl = " << bl << ", n = " << n << ", i = " << i << ", j = " << j << std::endl;
-            my_f_params params;
-            params.bl             = bl;
-            params.i              = i;
-            params.j              = j;
-            params.interp_cspline = &interp_cspline;
+            // my_f_params params;
+            // params.bl             = bl;
+            // params.i              = i;
+            // params.j              = j;
+            // params.interp_cspline = &interp_cspline;
+            // gsl_function F;
+            // F.function          = &my_f;
+            // F.params            = &params;
+            // interp[bl][n](i, j) = gsl_cheb_alloc(order_Chebyshev);
+            // gsl_cheb_init(interp[bl][n](i, j), &F, a, b);
+            my_f_params_new params;
+            params.bl = bl;
+            params.i  = i;
+            params.j  = j;
+            params.grid = grid;
+            params.u_tau = &u_tau;
             gsl_function F;
-            F.function          = &my_f;
-            F.params            = &params;
+            F.function = &my_f_new;
+            F.params   = &params;
             interp[bl][n](i, j) = gsl_cheb_alloc(order_Chebyshev);
             gsl_cheb_init(interp[bl][n](i, j), &F, a, b);
+
             // std::cout << "cspline a: "<< params.interp_cspline(bl, a, i, j) << std::endl;
             // std::cout << "cspline b: "<< params.interp_cspline(bl, b, i, j) << std::endl;
             // std::cout << "chebyshev a: "<< (*this)(bl, a, i, j) << std::endl;
@@ -255,7 +289,7 @@ namespace inchworm {
     double operator()(int bl, double tau, int i, int j) const {
       if (0 > tau || tau > datx_linear[datx_linear.size() - 1]) {
         std::cerr << "tau = " << tau << std::endl;
-        std::cerr << "datx_linear[datx_linear.size()-1]" << datx_linear[datx_linear.size() - 1] << std::endl;
+        std::cerr << "datx_linear[datx_linear.size()-1]: " << datx_linear[datx_linear.size() - 1] << std::endl;
         throw std::runtime_error("tau is out of range");
       }
       // find the interval
@@ -283,6 +317,24 @@ namespace inchworm {
         throw std::runtime_error("tau is out of range");
       }
       return nda::array_adapter{std::array{n_blocks}, [&](int bl) { return (*this)(bl, tau); }};
+    }
+
+    nda::array<nda::array<nda::array<nda::array<double,1>, 2>, 1>, 1>  get_cheb_coeffs() const{
+      nda::array<nda::array<nda::array<nda::array<double,1>, 2>, 1>, 1> res(n_blocks);
+      for (auto bl : range(n_blocks)) {
+        res[bl] = nda::array<nda::array<nda::array<double,1>, 2>, 1>(n_tau_linear - 1);
+        for (auto n : range(n_tau_linear - 1)) {
+          res[bl][n] = nda::array<nda::array<double,1>, 2>(interp[bl][n].shape());
+          for (auto [i, j] : product_range(interp[bl][n].shape())) {
+            double *coeffs = gsl_cheb_coeffs(interp[bl][n](i, j));
+            res[bl][n](i, j) = nda::array<double,1>(order_Chebyshev + 1);
+            for (auto k : range(order_Chebyshev + 1)) {
+              res[bl][n](i, j)(k) = coeffs[k];
+            }
+          }
+        }
+      }
+      return res;
     }
 
     private:

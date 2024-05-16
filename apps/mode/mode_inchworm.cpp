@@ -4,6 +4,7 @@
 #include <numeric>
 #include <chrono>
 #include "./mode.hpp"
+#include "../save.hpp"
 
 using namespace inchworm;
 
@@ -33,7 +34,7 @@ void ModeInchworm::evaluate_propagator() {
     EXPECTS(sp.grid[i_grid_tau_split] == sp.grid_linear[i_tau - 1]);
     EXPECTS(sp.grid[i_grid_tau_next_split] == sp.grid_linear[i_tau]);
     if (!sp.use_bare_propagator) {
-      sr.u_interpolator = interpolator_t<scalar_t>(sr.u_tau, i_grid_tau_split+1, i_tau, sp.order_Chebyshev, interpolation_type::linear_Chebyshev);
+      sr.u_interpolator = interpolator_t<scalar_t>(sr.u_tau, i_grid_tau_split + 1, i_tau, sp.order_Chebyshev, interpolation_type::linear_Chebyshev);
     }
     sp.tau_split = sp.grid_linear[i_tau - 1];
     // evaluate points from sp.grid[i_tau+(i_tau-1)*(order_Chebyshev+1)] to sp.grid[i_tau+1+(i_tau)*(order_Chebyshev+1)-1]
@@ -54,32 +55,44 @@ void ModeInchworm::evaluate_propagator() {
             ModeBase::evaluate();
             u_frame[bl](i, j) = sr.u_tau_zeroth_order[bl](i, j) + std::accumulate(sr.integral_list.begin(), sr.integral_list.end(), 0.0);
           } // end of j loop
-        }   // end of j loop
-      }     // end of bl loop
+        } // end of j loop
+      } // end of bl loop
       set_frame(u_frame, sr.u_tau, i_grid_tau_split + 1 + i_Chebyshev_tau);
       //print u_frame
-      std::cout << "u_frame at tau = " << sp.tau_max<< std::endl;
+      std::cout << "u_frame at tau = " << sp.tau_max << std::endl;
       for (auto bl : range(mp.ad_imp.n_subspaces())) {
         for (auto i : range(mp.ad_imp.get_subspace_dim(bl))) {
           for (auto j : range(mp.ad_imp.get_subspace_dim(bl))) {
             std::cout << "u_frame[" << bl << "](" << i << "," << j << ") = " << u_frame[bl](i, j) << std::endl;
-            std::cout << "sr.u_tau_ref[" << bl << "](" << i << "," << j << ") = " << sr.u_interpolator_ref(sp.tau_max)[bl](i, j) << std::endl;
+            if (gp.model_type == 0) {
+              std::cout << "sr.u_tau_ref[" << bl << "](" << i << "," << j << ") = " << sr.u_interpolator_ref(sp.tau_max)[bl](i, j) << std::endl;
+            }
           } // end of j loop
-        }   // end of j loop
-      }     // end of bl loop
+        } // end of j loop
+      } // end of bl loop
     }
   } // end of i_tau loop
-  std::cout<<"---- partition function ----"<<std::endl;
+  std::cout << "---- partition function ----" << std::endl;
   double partition_function     = 0.;
   double partition_function_ref = 0.;
   for (auto bl : range(mp.ad_imp.n_subspaces())) {
     for (auto i : range(mp.ad_imp.get_subspace_dim(bl))) {
-      partition_function += sr.u_tau[bl][sp.n_tot-1](i, i);
-      partition_function_ref += sr.u_tau_ref[bl][sp.n_tot-1](i, i);
+      partition_function += sr.u_tau[bl][sp.n_tot - 1](i, i);
+      if (gp.model_type == 0) { partition_function_ref += sr.u_tau_ref[bl][sp.n_tot - 1](i, i); }
     }
   }
   std::cout << "partition_function = " << partition_function << std::endl;
   std::cout << "partition_function_ref = " << partition_function_ref << std::endl;
+
+  sr.u_interpolator = interpolator_t<scalar_t>(sr.u_tau, sp.n_tot, sp.n_tau_linear, sp.order_Chebyshev, interpolation_type::linear_Chebyshev);
+
+  auto file_name = gp.output_prefix + ".h5";
+  h5::file file{file_name, 'w'};
+  h5::group group{file};
+  h5_save_params(this, group, "params");
+  h5_save_propagator(this, group, "propagator");
+  h5_save_cheb_coeff(this, group, "cheb_coeff");
+
 }
 
 void ModeInchworm::evaluate_greens_function() {}

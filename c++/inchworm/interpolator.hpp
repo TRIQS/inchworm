@@ -25,7 +25,7 @@ namespace inchworm {
         if (order != -1) throw std::runtime_error("order must be -1 for cubic spline interpolation");
         interpolator = interpolator_cspline_t<T>(u_tau, n_tot);
       } else if (type == interpolation_type::linear_Chebyshev) {
-        if (order <0) throw std::runtime_error("order must be positive integer for linear-Chebyshev interpolation");
+        if (order < 0) throw std::runtime_error("order must be positive integer for linear-Chebyshev interpolation");
         interpolator = interpolator_linear_Chebyshev_t<T>(u_tau, n_tot, n_tau, order);
       } else {
         throw std::runtime_error("Only cspline and linear-Chebyshev interpolation are supported");
@@ -68,6 +68,13 @@ namespace inchworm {
         return std::get<interpolator_linear_Chebyshev_t<T>>(interpolator)(tau);
       } else
         throw std::runtime_error("Only cspline and linear-Chebyshev interpolation are supported");
+    }
+
+    nda::array<nda::array<nda::array<nda::array<double, 1>, 2>, 1>, 1> get_cheb_coeffs() const {
+      if (type == interpolation_type::linear_Chebyshev) {
+        return std::get<interpolator_linear_Chebyshev_t<T>>(interpolator).get_cheb_coeffs();
+      } else
+        throw std::runtime_error("Only linear-Chebyshev interpolation has Chebyshev coefficients");
     }
 
     private:

@@ -25,6 +25,11 @@ void ModeBase::read_json_parameters(std::string json_file_path) {
   gp.trick             = root.get<std::string>("gp.trick");
   gp.model_type        = root.get<int>("gp.model_type");
   gp.do_segment        = root.get<bool>("gp.do_segment");
+  try {
+    gp.output_prefix = root.get<std::string>("gp.output_prefix");
+  } catch (const std::exception &e) {
+    gp.output_prefix = "sim"; 
+  }
 
   // Read construction parameters
   cp.beta        = root.get<double>("cp.beta");
@@ -191,22 +196,23 @@ void ModeBase::prepare_input(std::string hyb_file_path) {
     }
   }
 
-  if (gp.model_type == 0) { //model_type 0: discrete bath, where exact results (reference) are available
+  sp.order_Chebyshev = 20;
+  sp.n_tau_linear    = cp.n_tau_inch; // we temporarily set n_tau_linear to be equal to n_tau_inch
+  if (sp.order_Chebyshev != 0) {
+    sp.interp_type = interpolation_type::linear_Chebyshev;
+    sp.n_tot       = sp.n_tau_linear + (sp.n_tau_linear - 1) * (sp.order_Chebyshev + 1);
+  } else {
+    sp.interp_type = interpolation_type::cspline;
+    sp.n_tot       = sp.n_tau_linear;
+  }
 
-    sp.order_Chebyshev = 5;
-    sp.n_tau_linear    = cp.n_tau_inch; // we temporarily set n_tau_linear to be equal to n_tau_inch
-    if (sp.order_Chebyshev != 0) {
-      sp.interp_type = interpolation_type::linear_Chebyshev;
-      sp.n_tot       = sp.n_tau_linear + (sp.n_tau_linear - 1) * (sp.order_Chebyshev + 1);
-    } else {
-      sp.interp_type = interpolation_type::cspline;
-      sp.n_tot       = sp.n_tau_linear;
-    }
+  if (gp.model_type == 0) { //model_type 0: discrete bath, where exact results (reference) are available
     // sp.grid = generate_inchworm_grid(0, cp.beta, sp.n_tau_linear, sp.order_Chebyshev);
     // // input parameters and exact results
     // sp.grid_linear = generate_inchworm_grid(0, cp.beta, sp.n_tau_linear, 0);
     std::tie(sr.Z_bath_correction, sr.Z_imp_correction, sr.Z_bath, mp.Delta_tau, mp.ad_imp, sr.u_tau_ref, sr.G_tau_ref) =
-       discrete_setup(mp.n_site, mp.n_bath, mp.n_spin, mp.U, mp.mu, mp.t, cp, mp.theta, mp.epsilon, sp.n_tot, sp.n_tau_linear, sp.order_Chebyshev, sp.grid_linear,sp.grid);
+       discrete_setup(mp.n_site, mp.n_bath, mp.n_spin, mp.U, mp.mu, mp.t, cp, mp.theta, mp.epsilon, sp.n_tot, sp.n_tau_linear, sp.order_Chebyshev,
+                      sp.grid_linear, sp.grid);
 
     sr.u_interpolator_ref                  = interpolator_t<scalar_t>(sr.u_tau_ref, sp.n_tot, sp.n_tau_linear, sp.order_Chebyshev, sp.interp_type);
     sr.partition_function_ref              = trace(sr.u_interpolator_ref(cp.beta));
@@ -230,6 +236,7 @@ void ModeBase::prepare_input(std::string hyb_file_path) {
     sr.u_tau_zeroth_order_bare             = make_bare_u_frame(mp.ad_imp, cp.beta);
     sr.partition_function_zeroth_order_ref = trace(sr.u_tau_zeroth_order_bare);
     sr.partition_function_ref              = 0.0;
+    std::tie(sp.grid_linear, sp.grid)      = generate_inchworm_grid(0, cp.beta, sp.n_tau_linear, sp.order_Chebyshev);
 
   } else if (gp.model_type == 2) { //model_type 2: bethe lattice
     std::tie(mp.Delta_tau, mp.ad_imp)      = bethe_setup(mp.n_site, mp.n_spin, mp.U, mp.mu, mp.t, cp, mp.theta, mp.n_omega_bethe);
@@ -262,12 +269,13 @@ void ModeBase::print_summary() {
     // debug mode now only work on evaluating a single element of the propagator
     int i = sp.subspace_index / sr.u_tau_ref[sp.bl_index].target_shape()[0];
     int j = sp.subspace_index % sr.u_tau_ref[sp.bl_index].target_shape()[0];
-    std::cout << "element index: "
-              << "(" << i << ", " << j << ")" << std::endl;
+    std::cout << "element index: " << "(" << i << ", " << j << ")" << std::endl;
     std::cout << "u_tau_max exact: " << std::setw(10) << sr.u_interpolator_ref(sp.tau_max)[sp.bl_index](i, j) << std::endl;
-    std::cout << "u_tau_max exact * Z_imp_correction: " << std::setw(10) << sr.u_interpolator_ref(sp.tau_max)[sp.bl_index](i, j) * sr.Z_imp_correction << std::endl;
-    std::cout << "u_tau_max exact * Z_bath: " << std::setw(10) << sr.u_interpolator_ref(sp.tau_max)[sp.bl_index](i, j) *sr.Z_bath << std::endl;
-    std::cout << "u_tau_max exact * Z_bath * Z_imp_correction*Z_bath_correction: " << std::setw(10) << sr.u_interpolator_ref(sp.tau_max)[sp.bl_index](i, j) * sr.Z_bath * sr.Z_imp_correction * sr.Z_bath_correction << std::endl;
+    std::cout << "u_tau_max exact * Z_imp_correction: " << std::setw(10) << sr.u_interpolator_ref(sp.tau_max)[sp.bl_index](i, j) * sr.Z_imp_correction
+              << std::endl;
+    std::cout << "u_tau_max exact * Z_bath: " << std::setw(10) << sr.u_interpolator_ref(sp.tau_max)[sp.bl_index](i, j) * sr.Z_bath << std::endl;
+    std::cout << "u_tau_max exact * Z_bath * Z_imp_correction*Z_bath_correction: " << std::setw(10)
+              << sr.u_interpolator_ref(sp.tau_max)[sp.bl_index](i, j) * sr.Z_bath * sr.Z_imp_correction * sr.Z_bath_correction << std::endl;
     std::cout << std::left << std::setw(10) << "order" << std::setw(30) << "value" << std::setw(30) << "time(s)" << std::setw(30)
               << "time_find_pivot(s)" << std::setw(30) << "time_pretrain(s)" << std::setw(30) << "time_train(s)" << std::endl;
     std::cout << std::setw(10) << "0" << std::setw(30) << sr.u_tau_zeroth_order_ref[sp.bl_index](i, j) << std::endl;
@@ -285,7 +293,8 @@ void ModeBase::print_summary() {
               << std::setw(30) << sum_time_pretrain << std::setw(30) << sum_time_train << std::endl;
     std::cout << "sum * Z_imp_correction: " << std::setw(10) << sum_value * sr.Z_imp_correction << std::endl;
     std::cout << "sum * Z_bath: " << std::setw(10) << sum_value * sr.Z_bath << std::endl;
-    std::cout << "sum * Z_bath * Z_imp_correction * Z_bath_correction: " << std::setw(10) << sum_value * sr.Z_bath * sr.Z_imp_correction * sr.Z_bath_correction << std::endl;
+    std::cout << "sum * Z_bath * Z_imp_correction * Z_bath_correction: " << std::setw(10)
+              << sum_value * sr.Z_bath * sr.Z_imp_correction * sr.Z_bath_correction << std::endl;
   } else if (mode_name == "bare") {
     std::cout << "partition function exact: " << std::setw(10) << sr.partition_function_ref << std::endl;
     std::cout << "partition function exact * Z_imp_correction: " << std::setw(10) << sr.partition_function_ref * sr.Z_imp_correction << std::endl;
@@ -663,11 +672,11 @@ void ModeBase::evaluate() {
           double init_integrand = integrand(init_input);
           if (sp.debug > 1) { std::cout << "init_integrand: " << init_integrand << std::endl; }
           if (init_integrand == 0) {
-            std::cerr << "initial pivot is zero !!" << std::endl;
-            std::cerr << "phi_d_list: ";
-            print_vector(phi_d_list);
-            std::cerr << "phi_d_dag_list: ";
-            print_vector(phi_d_dag_list);
+            std::cerr << "Warning: initial pivot is zero !!" << std::endl;
+            std::cerr << "tau_max: " << sp.tau_max << ", tau_split: " << sp.tau_split << std::endl;
+            std::cerr << "loop1.name: " << loop1.name << ", loop1.value: " << val1 << std::endl;
+            std::cerr << "loop2.name: " << loop2.name << ", loop2.value: " << val2 << std::endl;
+            std::cerr << "loop3.name: " << loop3.name << ", loop3.value: " << val3 << std::endl;
             continue;
           }
           std::vector<std::vector<int>> init_global_pivots{};
@@ -692,9 +701,10 @@ void ModeBase::evaluate() {
           //     const_jacobian *= jacobian(taus_fake_left, sp.tau_split, 0.0);
           //   }
           // }
-          double integral = do_TCI<double, double>(integrand, input, weight, init_pivot, count, tp.sweep_bound, tp.bond_dim, tp.reltol, tp.fullPiv,
-                                                   tp.tci_prrlu, tp.error_type, tp.error_eval, tp.convergence_bound, tp.convergence_iter, sp.debug,
-                                                   init_global_pivots, const_jacobian);
+          // double integral = do_TCI<double, double>(integrand, input, weight, init_pivot, count, tp.sweep_bound, tp.bond_dim, tp.reltol, tp.fullPiv,
+          //                                          tp.tci_prrlu, tp.error_type, tp.error_eval, tp.convergence_bound, tp.convergence_iter, sp.debug,
+          //                                          init_global_pivots, const_jacobian);
+          double integral = calculate_sum<double, double>(integrand, input, weight,const_jacobian);
           loop3.value += integral;
         } // end of loop3
         loop2.value += loop3.value;

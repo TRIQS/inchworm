@@ -119,11 +119,11 @@ inline std::tuple<double, double, double, hyb_tau_t, atom_diag, u_tau_t, g_tau_t
   }
 
   //TEST: hidden fermion
-  double coeff = 1;
-  h_imp += coeff*c_dag("up", 0) * c("up", 2);
-  h_imp += coeff*c_dag("up", 2) * c("up", 0);
-  h_imp += coeff*c_dag("up", 1) * c("up", 2);
-  h_imp += coeff*c_dag("up", 2) * c("up", 1);
+  // double coeff = 1;
+  // h_imp += coeff*c_dag("up", 0) * c("up", 2);
+  // h_imp += coeff*c_dag("up", 2) * c("up", 0);
+  // h_imp += coeff*c_dag("up", 1) * c("up", 2);
+  // h_imp += coeff*c_dag("up", 2) * c("up", 1);
 
   // h_bath: Hamiltonian of the bath (n_site)
   for (int k = 0; k < n_bath; k++) {
@@ -175,13 +175,13 @@ inline std::tuple<double, double, double, hyb_tau_t, atom_diag, u_tau_t, g_tau_t
   std::cout << "ad_bath.get_gs_energy() " << ad_bath.get_gs_energy() << std::endl;
   std::cout << "ad_imp.get_gs_energy() " << ad_imp.get_gs_energy() << std::endl;
   //TEST: hidden fermion
-  for (auto tau : Delta_tau[0].mesh()) {
-    for (int block = 0; block < cp.gf_struct.size(); block++) {
-      for (auto [i, j] : product_range(2, 2)) {
-        Delta_tau[block][tau](i, j) -= coeff*coeff*one_fermion(tau, mu, cp.beta);
-      }
-    }
-  }
+  // for (auto tau : Delta_tau[0].mesh()) {
+  //   for (int block = 0; block < cp.gf_struct.size(); block++) {
+  //     for (auto [i, j] : product_range(2, 2)) {
+  //       Delta_tau[block][tau](i, j) -= coeff*coeff*one_fermion(tau, mu, cp.beta);
+  //     }
+  //   }
+  // }
 
   // std::cout << "Delta_tau[0](0,0) " << Delta_tau[0](0)(1, 0) << std::endl;
   // std::cout << "Delta_tau[0](0,0) " << Delta_tau[0](0)(0, 1) << std::endl;

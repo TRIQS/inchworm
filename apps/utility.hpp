@@ -18,15 +18,14 @@ enum debug_t {
   high  //2, simulation level debug + TCI level debug (print both pivot error and integral)
 };
 
-inline std::vector<double> generate_inchworm_grid(double ti, double tf, long n_linear, int order_Chebyshev) {
+inline std::pair<std::vector<double>, std::vector<double>> generate_inchworm_grid(double ti, double tf, long n_linear, int order_Chebyshev) {
   // n_linear points are the inchworm grid, which has n_linear-1 intervals
   // order_Chebyshev is the order of the Chebyshev approximation within each interval, i.e., order_Chebyshev+1 points are used in each interval
   std::vector<double> grid_linear;
   std::vector<double> grid;
-  double h = (tf - ti) / (n_linear - 1);
-  for (int i = 0; i < n_linear; i++) { grid_linear.push_back(ti + i * h); }
-  if(order_Chebyshev==0){
-    return grid_linear;
+  for (int i = 0; i < n_linear; i++) {
+    double wr = static_cast<double>(i) / (n_linear - 1);
+    grid_linear.push_back(ti * (1 - wr) + tf * wr);
   }
   for (int i = 0; i < n_linear - 1; i++) {
     double a = grid_linear[i];
@@ -38,7 +37,7 @@ inline std::vector<double> generate_inchworm_grid(double ti, double tf, long n_l
     }
   }
   grid.push_back(tf);
-  return grid;
+  return {grid_linear, grid};
 }
 
 inline double get_random_number() {
@@ -499,9 +498,6 @@ double get_integral_ctt_GK(xfac::CTensorTrain<T, Index> const &ctt, std::vector<
   return prod.eval()(0, 0);
 }
 
-
-
-
 template <class T, class Index>
 double get_integral_ctt_tanh_sinh(xfac::CTensorTrain<T, Index> const &ctt, std::vector<std::pair<double, double>> const &bounds, double tol) {
   auto M = ctt.M;
@@ -746,6 +742,39 @@ double get_integral_ctt_tanh_sinh_depth0(xfac::CTensorTrain<T, Index> const &ctt
 }
 
 template <typename T_output, typename T_input>
+T_output calculate_sum(std::function<T_output(std::vector<T_input>)> integrand, const std::vector<std::vector<T_input>> &choices,
+                       const std::vector<std::vector<double>> &weights, double const_jacobian) {
+  T_output sum = 0.0;
+  std::vector<int> indices(choices.size(), 0);
+  std::vector<T_input> currentChoice(choices.size());
+  std::function<void(size_t)> iterateChoices = [&](size_t index) {
+    if (index == choices.size()) {
+      double product = 1.0;
+      for (size_t i = 0; i < choices.size(); ++i) {
+        currentChoice[i] = choices[i][indices[i]];
+        product *= weights[i][indices[i]];
+      }
+      // #pragma omp atomic
+      sum += integrand(currentChoice) * product;
+      return;
+    }
+
+    for (size_t i = 0; i < choices[index].size(); ++i) {
+      indices[index] = static_cast<int>(i);
+      iterateChoices(index + 1);
+    }
+  };
+
+  // #pragma omp parallel
+  {
+    // #pragma omp single
+    iterateChoices(0);
+  }
+
+  return sum * const_jacobian;
+}
+
+template <typename T_output, typename T_input>
 T_output do_TCI(std::function<T_output(std::vector<T_input>)> integrand, std::vector<std::vector<T_input>> const &input,
                 std::vector<std::vector<double>> const &weight, std::vector<int> const &pivot1, long &count, int sweep_bound, int bond_dim,
                 double reltol, bool fullPiv, int tci_prrlu, int error_type, size_t error_eval, double convergence_bound, int convergence_iter,
@@ -840,53 +869,6 @@ T_output do_TCI(std::function<T_output(std::vector<T_input>)> integrand, std::ve
   if (debug > 1) { std::cout << std::endl; }
   return integral;
 }
-
-// template <typename T_output, typename T_input>
-// T_output do_TCI_add_pivots(std::function<T_output(std::vector<T_input>)> func, std::vector<std::vector<T_input>> &input,
-//                            std::vector<std::vector<double>> &weight, std::vector<int> &pivot1, int sweep_bound, int bond_dim,
-//                            double integral_error_bound, double pivot_error_bound, bool tci_prrlu, debug_t debug, long &count,
-//                            std::vector<std::vector<int>> &valid_pivots) {
-//   double current_integral{0};
-//   double previous_integral{0};
-//   double last_pivot_error{0};
-//   if (debug > 1) { std::cout << "iteration nEval LastSweepPivotError integral\n"; }
-//   if (tci_prrlu == 1 || tci_prrlu == 2) {
-//     std::cout << "test" << std::endl;
-//     auto ci = xfac::CTensorCI2<T_output, T_input>(func, input, {.bondDim = bond_dim, .reltol = 1e-18, .pivot1 = pivot1, .fullPiv = false});
-//     std::cout << "bond_dim: " << ci.param.bondDim << std::endl;
-//     ci.myAddPivotsAllBonds(valid_pivots);
-//     if (debug > 1) { print_rank(ci.tt); }
-//     // ci.tt.compressCI(ci.param.reltol, ci.param.bondDim);
-//     ci.makeCanonical();
-//     if (debug > 1) { print_rank(ci.tt); }
-//     for (int i = 1; i <= sweep_bound; i++) {
-//       ci.iterate();
-//       ci.makeCanonical();
-//       current_integral = ci.tt.sum(weight);
-//       last_pivot_error = ci.pivotError[ci.pivotError.size() - 1];
-//       if (debug > 1) { std::cout << i - 1 << " " << count << " " << last_pivot_error << " " << current_integral << std::endl; }
-//       previous_integral = current_integral;
-//       if (debug > 1) { print_rank(ci.tt); }
-//     }
-//   } else {
-//     auto ci = xfac::CTensorCI<T_output, T_input>(func, input, {.reltol = 1e-18, .pivot1 = pivot1, .weight = weight});
-//     for (int i = 1; i <= sweep_bound; i++) {
-//       ci.iterate();
-//       current_integral = ci.get_TensorTrain().sum(weight);
-//       last_pivot_error = ci.pivotError[ci.pivotError.size() - 1];
-//       if (debug > 1) { std::cout << i - 1 << " " << count << " " << last_pivot_error << " " << current_integral << std::endl; }
-//       // if ( last_pivot_error < pivot_error_bound && i > 1) { break; }
-//       // if (std::abs(current_integral - previous_integral) < integral_error_bound || last_pivot_error < pivot_error_bound && i > 1) { break; }
-//       previous_integral = current_integral;
-//     }
-//     if (debug > 1) {
-//       std::cout << "rank:" << std::endl;
-//       print_rank(ci.get_TensorTrain());
-//     }
-//   }
-//   if (debug > 1) { std::cout << std::endl; }
-//   return current_integral;
-// }
 
 inline void print_pivot1(std::vector<int> const &iota_d_list, std::vector<int> const &iota_d_dag_list, std::vector<double> const &tau_d_list,
                          std::vector<double> const &tau_d_dag_list, double pivot_value) {

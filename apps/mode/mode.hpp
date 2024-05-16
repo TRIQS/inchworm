@@ -28,6 +28,7 @@ struct global_params_t {
   std::string trick{};
   int model_type{}; // 0 for discrete bath, 1 for continuous bath, 2 for bethe lattice
   bool do_segment = false;
+  std::string output_prefix{};
 };
 
 struct model_params_t {
@@ -90,9 +91,9 @@ struct simulation_params_t {
 };
 
 struct simulation_results_t {
-  double Z_bath=0;
-  double Z_bath_correction=0;
-  double Z_imp_correction=0;
+  double Z_bath            = 0;
+  double Z_bath_correction = 0;
+  double Z_imp_correction  = 0;
   double partition_function{};
   u_tau_t u_tau{};
   g_tau_t G_tau{};
@@ -153,6 +154,11 @@ class ModeBase {
   virtual void evaluate_greens_function() = 0;
   virtual ~ModeBase() {}
   std::string mode_name{};
+
+  // friend function (saving files->save.hpp)
+  friend void h5_save_params(const ModeBase *mode, h5::group h5group, std::string subgroup_name);
+  friend void h5_save_propagator(const ModeBase *mode, h5::group h5group, std::string subgroup_name);
+  friend void h5_save_cheb_coeff(const ModeBase *mode, h5::group h5group, std::string subgroup_name);
 
   protected:
   // parameters for all modes
