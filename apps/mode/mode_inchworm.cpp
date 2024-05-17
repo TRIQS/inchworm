@@ -17,6 +17,17 @@ void ModeInchworm::run() {
 }
 
 void ModeInchworm::evaluate_propagator() {
+  // direct sum tests
+  // auto [input_order1, weight_order1] = generate_combination_at_fixed_order(1, tp.v_value, tp.v_weight);
+  // auto [input_order2, weight_order2] = generate_combination_at_fixed_order(2, tp.v_value, tp.v_weight);
+  // std::vector<std::vector<std::vector<double>>> all_input{input_order1, input_order2};
+  // std::vector<std::vector<double>> all_weight{weight_order1, weight_order2};
+  // input_order1.clear();
+  // input_order2.clear();
+  // weight_order1.clear();
+  // weight_order2.clear();
+
+
 
   auto u_tau_zero = u_tau_t{{cp.beta, Fermion, sp.n_tot}, mp.ad_imp.get_subspace_dims()};
   u_tau_zero()    = 0.;
@@ -34,7 +45,8 @@ void ModeInchworm::evaluate_propagator() {
     EXPECTS(sp.grid[i_grid_tau_split] == sp.grid_linear[i_tau - 1]);
     EXPECTS(sp.grid[i_grid_tau_next_split] == sp.grid_linear[i_tau]);
     if (!sp.use_bare_propagator) {
-      sr.u_interpolator = interpolator_t<scalar_t>(sr.u_tau, i_grid_tau_split + 1, i_tau, sp.order_Chebyshev, interpolation_type::linear_Chebyshev);
+      std::vector<double> grid_tau_split(sp.grid.begin(), sp.grid.begin() + i_grid_tau_split + 1);
+      sr.u_interpolator = interpolator_t<scalar_t>(sr.u_tau, i_grid_tau_split + 1, i_tau, sp.order_Chebyshev, interpolation_type::linear_Chebyshev, grid_tau_split);
     }
     sp.tau_split = sp.grid_linear[i_tau - 1];
     // evaluate points from sp.grid[i_tau+(i_tau-1)*(order_Chebyshev+1)] to sp.grid[i_tau+1+(i_tau)*(order_Chebyshev+1)-1]
@@ -52,6 +64,7 @@ void ModeInchworm::evaluate_propagator() {
             ModeBase::clear_tci_results();
             sp.bl_index       = bl;
             sp.subspace_index = i * mp.ad_imp.get_subspace_dim(bl) + j;
+            // ModeBase::evaluate(all_input,all_weight);
             ModeBase::evaluate();
             u_frame[bl](i, j) = sr.u_tau_zeroth_order[bl](i, j) + std::accumulate(sr.integral_list.begin(), sr.integral_list.end(), 0.0);
           } // end of j loop
@@ -84,7 +97,7 @@ void ModeInchworm::evaluate_propagator() {
   std::cout << "partition_function = " << partition_function << std::endl;
   std::cout << "partition_function_ref = " << partition_function_ref << std::endl;
 
-  sr.u_interpolator = interpolator_t<scalar_t>(sr.u_tau, sp.n_tot, sp.n_tau_linear, sp.order_Chebyshev, interpolation_type::linear_Chebyshev);
+  sr.u_interpolator = interpolator_t<scalar_t>(sr.u_tau, sp.n_tot, sp.n_tau_linear, sp.order_Chebyshev, interpolation_type::linear_Chebyshev, sp.grid);
 
   auto file_name = gp.output_prefix + ".h5";
   h5::file file{file_name, 'w'};

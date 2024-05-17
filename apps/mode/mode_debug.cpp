@@ -50,7 +50,7 @@ void ModeDebug::evaluate_propagator() {
   // sr.u_interpolator      = interpolator_t<scalar_t>(sr.u_tau_ref, sr.u_tau_ref[0].mesh().size(), 0, 0, interpolation_type::cspline);
   long n_tot = sr.u_tau_ref[0].mesh().size();
   std::cout << "n_tot: " << n_tot << ", n_tau: " << sp.n_tau_linear << ", order: " << sp.order_Chebyshev << std::endl;
-  sr.u_interpolator      = interpolator_t<scalar_t>(sr.u_tau_ref, n_tot, sp.n_tau_linear, sp.order_Chebyshev, interpolation_type::linear_Chebyshev);
+  sr.u_interpolator      = interpolator_t<scalar_t>(sr.u_tau_ref, n_tot, sp.n_tau_linear, sp.order_Chebyshev, interpolation_type::linear_Chebyshev, sp.grid);
   std::cout<<"grid u_tau_ref:"<<std::endl;
   for(auto tau: sr.u_tau_ref[0].mesh()){
     std::cout<<tau<<std::endl;

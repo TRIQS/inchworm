@@ -149,7 +149,7 @@ class ModeBase {
   virtual void print_summary();
   virtual void run() = 0;
   virtual void validate_input();
-  virtual void evaluate();
+  virtual void evaluate(std::vector<std::vector<std::vector<double>>> const & all_input = std::vector<std::vector<std::vector<double>>>(), std::vector<std::vector<double>> const & all_weight = std::vector<std::vector<double>>());
   virtual void evaluate_propagator()      = 0;
   virtual void evaluate_greens_function() = 0;
   virtual ~ModeBase() {}

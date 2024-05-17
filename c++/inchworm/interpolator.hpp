@@ -20,13 +20,14 @@ namespace inchworm {
     public:
     interpolator_t() = default;
     // order is 0 for cubic spline, non-zero for linear-Chebyshev
-    interpolator_t(u_tau_t const &u_tau, long n_tot, long n_tau, int order, interpolation_type type) : type(type) {
+    interpolator_t(u_tau_t const &u_tau, long n_tot, long n_tau, int order, interpolation_type type, std::vector<double> const & grid = std::vector<double>()) : type(type) {
       if (type == interpolation_type::cspline) {
         if (order != -1) throw std::runtime_error("order must be -1 for cubic spline interpolation");
         interpolator = interpolator_cspline_t<T>(u_tau, n_tot);
       } else if (type == interpolation_type::linear_Chebyshev) {
         if (order < 0) throw std::runtime_error("order must be positive integer for linear-Chebyshev interpolation");
-        interpolator = interpolator_linear_Chebyshev_t<T>(u_tau, n_tot, n_tau, order);
+        if (grid.size() != n_tot) throw std::runtime_error("grid size must be equal to n_tot");
+        interpolator = interpolator_linear_Chebyshev_t<T>(u_tau, n_tot, n_tau, order, grid);
       } else {
         throw std::runtime_error("Only cspline and linear-Chebyshev interpolation are supported");
       }

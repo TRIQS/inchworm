@@ -742,8 +742,8 @@ double get_integral_ctt_tanh_sinh_depth0(xfac::CTensorTrain<T, Index> const &ctt
 }
 
 template <typename T_output, typename T_input>
-T_output calculate_sum(std::function<T_output(std::vector<T_input>)> integrand, const std::vector<std::vector<T_input>> &choices,
-                       const std::vector<std::vector<double>> &weights, double const_jacobian) {
+T_output calculate_sum_recursion(std::function<T_output(std::vector<T_input>)> integrand, const std::vector<std::vector<T_input>> &choices,
+                                 const std::vector<std::vector<double>> &weights, double const_jacobian) {
   T_output sum = 0.0;
   std::vector<int> indices(choices.size(), 0);
   std::vector<T_input> currentChoice(choices.size());
@@ -771,6 +771,44 @@ T_output calculate_sum(std::function<T_output(std::vector<T_input>)> integrand, 
     iterateChoices(0);
   }
 
+  return sum * const_jacobian;
+}
+
+template <typename T_input>
+std::pair<std::vector<std::vector<T_input>>, std::vector<double>> generate_combination_at_fixed_order(int order, std::vector<T_input> const &choices,
+                                                                                                      std::vector<double> const &weights) {
+  std::vector<std::vector<T_input>> res;
+  std::vector<double> res_weights;
+  std::vector<int> indices(2 * order, 0);
+  std::vector<T_input> currentChoice(2 * order);
+  std::function<void(size_t)> iterateChoices = [&](size_t index) {
+    if (index == 2 * order) {
+      double product = 1.0;
+      for (size_t i = 0; i < 2 * order; ++i) {
+        currentChoice[i] = choices[indices[i]];
+        product *= weights[indices[i]];
+      }
+      res.push_back(currentChoice);
+      res_weights.push_back(product);
+      return;
+    }
+
+    for (size_t i = 0; i < choices.size(); ++i) {
+      indices[index] = static_cast<int>(i);
+      iterateChoices(index + 1);
+    }
+  };
+
+  iterateChoices(0);
+  return {res, res_weights};
+}
+
+template <typename T_output, typename T_input>
+T_output calculate_sum(std::function<T_output(std::vector<T_input>)> integrand, const std::vector<std::vector<T_input>> &inputs,
+                       const std::vector<double> &weights, double const_jacobian) {
+  T_output sum = 0.0;
+#pragma omp parallel for reduction(+ : sum)
+  for (size_t i = 0; i < inputs.size(); i++) { sum += integrand(inputs[i]) * weights[i]; }
   return sum * const_jacobian;
 }
 

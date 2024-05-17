@@ -196,7 +196,7 @@ void ModeBase::prepare_input(std::string hyb_file_path) {
     }
   }
 
-  sp.order_Chebyshev = 20;
+  sp.order_Chebyshev = 10;
   sp.n_tau_linear    = cp.n_tau_inch; // we temporarily set n_tau_linear to be equal to n_tau_inch
   if (sp.order_Chebyshev != 0) {
     sp.interp_type = interpolation_type::linear_Chebyshev;
@@ -211,10 +211,9 @@ void ModeBase::prepare_input(std::string hyb_file_path) {
     // // input parameters and exact results
     // sp.grid_linear = generate_inchworm_grid(0, cp.beta, sp.n_tau_linear, 0);
     std::tie(sr.Z_bath_correction, sr.Z_imp_correction, sr.Z_bath, mp.Delta_tau, mp.ad_imp, sr.u_tau_ref, sr.G_tau_ref) =
-       discrete_setup(mp.n_site, mp.n_bath, mp.n_spin, mp.U, mp.mu, mp.t, cp, mp.theta, mp.epsilon, sp.n_tot, sp.n_tau_linear, sp.order_Chebyshev,
-                      sp.grid_linear, sp.grid);
+       discrete_setup(mp.n_site, mp.n_bath, mp.n_spin, mp.U, mp.mu, mp.t, cp, mp.theta, mp.epsilon, sp.n_tot, sp.n_tau_linear, sp.order_Chebyshev, sp.grid_linear, sp.grid);
 
-    sr.u_interpolator_ref                  = interpolator_t<scalar_t>(sr.u_tau_ref, sp.n_tot, sp.n_tau_linear, sp.order_Chebyshev, sp.interp_type);
+    sr.u_interpolator_ref                  = interpolator_t<scalar_t>(sr.u_tau_ref, sp.n_tot, sp.n_tau_linear, sp.order_Chebyshev, sp.interp_type,sp.grid);
     sr.partition_function_ref              = trace(sr.u_interpolator_ref(cp.beta));
     sr.u_tau_zeroth_order_ref              = sr.u_interpolator_ref(sp.tau_max - sp.tau_split) * sr.u_interpolator_ref(sp.tau_split); //oder 0 result
     sr.u_tau_zeroth_order_bare             = make_bare_u_frame(mp.ad_imp, cp.beta);
@@ -331,8 +330,13 @@ void ModeBase::validate_input() {
   }
 } // end of validate_input
 
-void ModeBase::evaluate() {
-
+void ModeBase::evaluate(std::vector<std::vector<std::vector<double>>> const & all_input, std::vector<std::vector<double>> const & all_weight) {
+  
+  //direct sum tests
+  // const std::vector<std::vector<double>>& input_order1 = all_input[0];
+  // const std::vector<std::vector<double>>& input_order2 = all_input[1];
+  // const std::vector<double>& weight_order1 = all_weight[0];
+  // const std::vector<double>& weight_order2 = all_weight[1];
   // setup the mapping and jacobian functions for the transformation of time-ordered variables v->tau
   cv_func change_variable;
   jb_func jacobian;
@@ -701,10 +705,16 @@ void ModeBase::evaluate() {
           //     const_jacobian *= jacobian(taus_fake_left, sp.tau_split, 0.0);
           //   }
           // }
-          // double integral = do_TCI<double, double>(integrand, input, weight, init_pivot, count, tp.sweep_bound, tp.bond_dim, tp.reltol, tp.fullPiv,
-          //                                          tp.tci_prrlu, tp.error_type, tp.error_eval, tp.convergence_bound, tp.convergence_iter, sp.debug,
-          //                                          init_global_pivots, const_jacobian);
-          double integral = calculate_sum<double, double>(integrand, input, weight,const_jacobian);
+          double integral = do_TCI<double, double>(integrand, input, weight, init_pivot, count, tp.sweep_bound, tp.bond_dim, tp.reltol, tp.fullPiv,
+                                                   tp.tci_prrlu, tp.error_type, tp.error_eval, tp.convergence_bound, tp.convergence_iter, sp.debug,
+                                                   init_global_pivots, const_jacobian);
+          // double integral = calculate_sum_recursion<double, double>(integrand, input, weight,const_jacobian);
+          // double integral = 0;
+          // if (order==1){
+          //   integral = calculate_sum<double, double>(integrand, input_order1, weight_order1,const_jacobian);
+          // } else if (order==2){
+          //   integral = calculate_sum<double, double>(integrand, input_order2, weight_order2,const_jacobian);
+          // }
           loop3.value += integral;
         } // end of loop3
         loop2.value += loop3.value;

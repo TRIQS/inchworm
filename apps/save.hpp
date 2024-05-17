@@ -30,7 +30,6 @@ inline void h5_save_cheb_coeff(const ModeBase *mode, h5::group h5group, std::str
     for (auto i : range(mode->mp.ad_imp.get_subspace_dim(bl))) {
       for (auto j : range(mode->mp.ad_imp.get_subspace_dim(bl))) {
         for (auto tau_interval : range(mode->sp.n_tau_linear - 1)) {
-          std::cout << "chebyshov_coefficients[" << bl << "][" << tau_interval << "](" << i << "," << j << ")" << std::endl;
           auto coeffs              = chebyshov_coefficients[bl][tau_interval](i, j);
           std::string dataset_name = fmt::format("cheb_coeff_{}_{}_{}_{}", bl, i, j, tau_interval);
           h5_write(grp, dataset_name, coeffs);

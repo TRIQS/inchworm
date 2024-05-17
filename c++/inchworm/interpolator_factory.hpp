@@ -190,7 +190,7 @@ namespace inchworm {
     // n_tau_linear refers to the number of linear grid points, therefore n_tau_linear-1 linear intervals.
     // order_Chebyshev refers to the Chebyshev order within each of the linear interval, i.e., order_Chebyshev+1 points is needed within the interval.
     // n_tot refers to the total number of grid points. Therefore, each linear interval has (n_tot-n_tau_linear)/(n_tau_linear-1) cbspline points.
-    interpolator_linear_Chebyshev_t(u_tau_t::real_t const &u_tau, long n_tot, long n_tau_linear, int order_Chebyshev)
+    interpolator_linear_Chebyshev_t(u_tau_t::real_t const &u_tau, long n_tot, long n_tau_linear, int order_Chebyshev, std::vector<double> const &grid)
        : n_blocks(u_tau.size()),
          n_tot(n_tot),
          n_tau_linear(n_tau_linear),
@@ -205,10 +205,12 @@ namespace inchworm {
       // UGLY WORK AROUND:
       // We assume when order_Chebyshev is non-zero, i.e., when we use the linear-Chebyshev grid, the grid points in u_tau are on the linear-Chebyshev grid. It will not match the points in the u_tau[0].mesh() which contains a uniform grid.
       EXPECTS(n_tot == static_cast<long>(n_tau_linear + (n_tau_linear - 1) * (order_Chebyshev + 1)));
-      n_inter = static_cast<long>((n_tot - n_tau_linear) / (n_tau_linear - 1));
+      // n_inter = static_cast<long>((n_tot - n_tau_linear) / (n_tau_linear - 1));
+      n_inter=order_Chebyshev+1;
+      EXPECTS(n_inter == order_Chebyshev+1);
       for (auto bl : range(n_blocks)) { daty[bl] = u_tau[bl].data()(range(n_tot), nda::ellipsis()); }
       for (auto n : range(n_tau_linear)) {
-        datx_linear[n] = u_tau[0].mesh()[n * (n_inter + 1)];
+        datx_linear[n] = grid[n * (n_inter + 1)];
         // std::cout << "datx_linear[" << n << "] = " << datx_linear[n] << std::endl;
       }
       // if (datx_linear[n_tau_linear - 1] != u_tau[0].mesh()[n_tot - 1]) {
@@ -222,7 +224,6 @@ namespace inchworm {
         for (auto n : range(n_tau_linear - 1)) { interp[bl][n] = nda::array<gsl_cheb_series *, 2>{u_tau[bl].target_shape()}; }
       }
       // UGLY WORK AROUND
-      auto [grid_linear, grid] = generate_linear_Chebyshev_grid(0, datx_linear[n_tau_linear - 1], n_tau_linear, order_Chebyshev);
       // std::cout << "linear-Chebyshev grid:" << std::endl;
       // for (auto x : grid) std::cout << x << std::endl;
       // interpolator_cspline_t<double> interp_cspline(u_tau, grid);
@@ -354,10 +355,10 @@ namespace inchworm {
   template <> class interpolator_linear_Chebyshev_t<dcomplex> {
     public:
     interpolator_linear_Chebyshev_t() = default;
-    interpolator_linear_Chebyshev_t(u_tau_t const &u_tau, long n_tot, long n_tau_linear, int order_Chebyshev) : n_blocks(u_tau.size()) {
+    interpolator_linear_Chebyshev_t(u_tau_t const &u_tau, long n_tot, long n_tau_linear, int order_Chebyshev, std::vector<double> const & grid) : n_blocks(u_tau.size()) {
       std::cout << "interpolator_linear_Chebyshev_t<dcomplex> is started" << std::endl;
-      interpolator_real = interpolator_linear_Chebyshev_t<double>(real(u_tau), n_tot, n_tau_linear, order_Chebyshev);
-      interpolator_imag = interpolator_linear_Chebyshev_t<double>(imag(u_tau), n_tot, n_tau_linear, order_Chebyshev);
+      interpolator_real = interpolator_linear_Chebyshev_t<double>(real(u_tau), n_tot, n_tau_linear, order_Chebyshev, grid);
+      interpolator_imag = interpolator_linear_Chebyshev_t<double>(imag(u_tau), n_tot, n_tau_linear, order_Chebyshev, grid);
       std::cout << "interpolator_linear_Chebyshev_t<dcomplex> is constructed" << std::endl;
     }
 
