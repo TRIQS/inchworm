@@ -18,6 +18,56 @@ enum debug_t {
   high  //2, simulation level debug + TCI level debug (print both pivot error and integral)
 };
 
+inline std::tuple<int, int, int> bl1_to_bl3(int index, const std::vector<int> &block_shape) {
+  int running_sum = 0;
+  int bl_indx     = 0;
+  int i           = 0;
+  int j           = 0;
+  for (int bl = 0; bl < block_shape.size(); ++bl) {
+    int new_sum = running_sum + block_shape[bl];
+    if (new_sum > index) {
+      bl_indx            = bl;
+      int subspace_index = index - running_sum;
+      i                  = subspace_index / block_shape[bl];
+      j                  = subspace_index % block_shape[bl];
+      return std::make_tuple(bl_indx, i, j);
+    }
+    running_sum = new_sum;
+  }
+  std::cerr << "bl1_to_bl3: index out of range\n";
+  std::exit(EXIT_FAILURE);
+  return std::make_tuple(bl_indx, i, j);
+}
+
+inline std::pair<int, int> bl1_to_bl2(int index, const std::vector<int> &block_shape) {
+  int running_sum = 0;
+  int bl_indx     = 0;
+  for (int bl = 0; bl < block_shape.size(); ++bl) {
+    int new_sum = running_sum + block_shape[bl];
+    if (new_sum > index) {
+      int subspace_index = index - running_sum;
+      return std::make_pair(bl, subspace_index);
+    }
+    running_sum = new_sum;
+  }
+  std::cerr << "bl1_to_bl2: index out of range\n";
+  std::exit(EXIT_FAILURE);
+  return std::make_pair(bl_indx, index);
+}
+
+inline std::tuple<int, int, int> bl2_to_bl3(int bl_indx, int subspace_index, const std::vector<int> &block_shape) {
+  int i = subspace_index / block_shape[bl_indx];
+  int j = subspace_index % block_shape[bl_indx];
+  return std::make_tuple(bl_indx, i, j);
+}
+
+inline std::tuple<int, int> bl3_to_bl1(int bl_indx, int i, int j, const std::vector<int> &block_shape) {
+  int index = 0;
+  for (int bl = 0; bl < bl_indx; ++bl) { index += block_shape[bl]; }
+  index += i * block_shape[bl_indx] + j;
+  return std::make_tuple(bl_indx, index);
+}
+
 inline std::pair<std::vector<double>, std::vector<double>> generate_inchworm_grid(double ti, double tf, long n_linear, int order_Chebyshev) {
   // n_linear points are the inchworm grid, which has n_linear-1 intervals
   // order_Chebyshev is the order of the Chebyshev approximation within each interval, i.e., order_Chebyshev+1 points are used in each interval
@@ -412,8 +462,9 @@ inline double evaluate_u_tau_max(frame_t &frame_zeroth_order, double tau_split, 
         sign         = diagram.sign();
         hyb_weight   = hyb_mat.det();
         int bl_size  = std::sqrt(u_products[bl_indx].size());
-        int i        = subspace_indx / bl_size;
-        int j        = subspace_indx % bl_size;
+        EXPECTS(bl_size == ad_imp.get_subspace_dim(bl_indx))
+        int i = subspace_indx / bl_size;
+        int j = subspace_indx % bl_size;
         return u_products[bl_indx](i, j) * hyb_weight * sign;
       } else {
         return 0.0;
@@ -804,34 +855,50 @@ std::pair<std::vector<std::vector<T_input>>, std::vector<double>> generate_combi
 }
 
 template <typename T_output, typename T_input>
-T_output calculate_sum(std::function<T_output(std::vector<T_input>)> integrand, const std::vector<std::vector<T_input>> &inputs,
-                       const std::vector<double> &weights, double const_jacobian) {
+std::vector<T_output> calculate_sum(std::function<T_output(std::vector<T_input>)> integrand, const std::vector<std::vector<T_input>> &inputs,
+                                    const std::vector<double> &weights, double const_jacobian) {
   T_output sum = 0.0;
 #pragma omp parallel for reduction(+ : sum)
   for (size_t i = 0; i < inputs.size(); i++) { sum += integrand(inputs[i]) * weights[i]; }
-  return sum * const_jacobian;
+  return {sum * const_jacobian};
 }
 
 template <typename T_output, typename T_input>
-T_output do_TCI(std::function<T_output(std::vector<T_input>)> integrand, std::vector<std::vector<T_input>> const &input,
-                std::vector<std::vector<double>> const &weight, std::vector<int> const &pivot1, long &count, int sweep_bound, int bond_dim,
-                double reltol, bool fullPiv, int tci_prrlu, int error_type, size_t error_eval, double convergence_bound, int convergence_iter,
-                debug_t debug, std::vector<std::vector<int>> const &init_global_pivots, double const_jacobian) {
+std::vector<T_output> do_TCI(std::function<T_output(std::vector<T_input>)> integrand, std::vector<std::vector<T_input>> const &input,
+                             std::vector<std::vector<double>> const &weight, std::vector<int> const &pivot1, long &count, int sweep_bound,
+                             int bond_dim, double reltol, bool fullPiv, int tci_prrlu, int error_type, size_t error_eval, double convergence_bound,
+                             int convergence_iter, debug_t debug, std::vector<std::vector<int>> const &init_global_pivots, double const_jacobian,
+                             bool unsummed_tci, int unsummed_tot_size) {
   double last_error{0};
   double current_error{0};
-  T_output integral{0};
-  T_output previous_integral{0};
+  std::vector<T_output> integral{};
+  std::vector<T_output> previous_integral{};
+  if (unsummed_tci) {
+    integral = std::vector<T_output>(unsummed_tot_size, 0);
+    previous_integral = std::vector<T_output>(unsummed_tot_size, 0);
+  }
+  else{
+    integral = std::vector<T_output>(1, 0);
+    previous_integral = std::vector<T_output>(1, 0);
+  }
   double first_error{0};
   if (tci_prrlu == 0) {
     if (debug > 1) {
       std::cout << "TCI 1" << std::endl;
-      std::cout << "iteration nEval error integral\n";
+      std::cout << "iteration nEval error integral[0]\n";
     }
     auto ci = xfac::CTensorCI<T_output, T_input>(integrand, input, {.reltol = reltol, .pivot1 = pivot1, .fullPiv = fullPiv});
     for (int i = 1; i <= sweep_bound + 1; i++) {
       ci.iterate();
       auto tt  = ci.get_TensorTrain();
-      integral = partial_integral_tt(tt, weight, 0)[0] * const_jacobian;
+      if(unsummed_tci){
+      integral = partial_integral_tt(tt, weight, 1);
+      std::cout << "integral size: " << integral.size() << std::endl;
+      }
+      else{
+      integral = partial_integral_tt(tt, weight, 0);
+      }
+      for (auto i = 0; i < integral.size(); i++) { integral[i] *= const_jacobian; }
       // integral = ci.get_TensorTrain().sum(weight);
       if (error_type == 0) {
         current_error = ci.pivotError[ci.pivotError.size() - 1];
@@ -846,9 +913,11 @@ T_output do_TCI(std::function<T_output(std::vector<T_input>)> integrand, std::ve
         std::exit(EXIT_FAILURE);
       }
       if (i == 1) { first_error = current_error; }
-      if (debug > 1) { std::cout << i - 1 << " " << count << " " << current_error << " " << integral << std::endl; }
+      if (debug > 1) { std::cout << i - 1 << " " << count << " " << current_error << " " << integral[0] << std::endl; }
       // if (std::abs(current_error / first_error) < convergence_bound && i > convergence_iter) { break; }
-      if (std::abs(previous_integral - integral) < convergence_bound && i > convergence_iter) { break; }
+      T_output diff = 0;
+      for (auto i = 0u; i < integral.size(); i++) { diff += std::abs(previous_integral[i] - integral[i]); }
+      if (diff < convergence_bound && i > convergence_iter) { break; }
       last_error        = current_error;
       previous_integral = integral;
       if (debug > 1) { print_rank(ci.get_TensorTrain()); }
@@ -868,8 +937,15 @@ T_output do_TCI(std::function<T_output(std::vector<T_input>)> integrand, std::ve
     for (int i = 1; i <= sweep_bound; i++) {
       ci.iterate();
       // ci.makeCanonical();
+      auto tt  = ci.tt;
       if (tci_prrlu == 2) { ci.param.bondDim++; }
-      integral = partial_integral_tt(ci.tt, weight, 0)[0] * const_jacobian;
+      if(unsummed_tci){
+      integral = partial_integral_tt(tt, weight, 1);
+      }
+      else{
+      integral = partial_integral_tt(tt, weight, 0);
+      }
+      for (auto i = 0; i < integral.size(); i++) { integral[i] *= const_jacobian; }
       // integral = ci.tt.sum(weight);
       if (error_type == 0) {
         current_error = ci.pivotError[ci.pivotError.size() - 1];
@@ -884,9 +960,11 @@ T_output do_TCI(std::function<T_output(std::vector<T_input>)> integrand, std::ve
         std::exit(EXIT_FAILURE);
       }
       if (i == 1) { first_error = current_error; }
-      if (debug > 1) { std::cout << i << " " << count << " " << current_error << " " << integral << std::endl; }
+      if (debug > 1) { std::cout << i << " " << count << " " << current_error << " " << integral[0] << std::endl; }
       // if (std::abs(current_error / first_error) < convergence_bound && i > convergence_iter) { break; }
-      if (std::abs(previous_integral - integral) < convergence_bound && i > convergence_iter) { break; }
+      T_output diff = 0;
+      for (auto i = 0u; i < integral.size(); i++) { diff += std::abs(previous_integral[i] - integral[i]); }
+      if (diff < convergence_bound && i > convergence_iter) { break; }
       last_error        = current_error;
       previous_integral = integral;
       if (debug > 1) { print_rank(ci.tt); }

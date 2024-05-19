@@ -29,6 +29,8 @@ struct global_params_t {
   int model_type{}; // 0 for discrete bath, 1 for continuous bath, 2 for bethe lattice
   bool do_segment = false;
   std::string output_prefix{};
+  bool exact_sum = false;
+  bool unsummed_tci = false;
 };
 
 struct model_params_t {
@@ -108,7 +110,7 @@ struct simulation_results_t {
   frame_t u_tau_zeroth_order{};
   double partition_function_zeroth_order_ref{};
 
-  std::vector<double> integral_list         = {};
+  std::vector<std::vector<double>> integral_list         = {};
   std::vector<double> calculation_time_list = {};
   std::vector<double> pretrain_time_list    = {};
   std::vector<double> find_pivot_time_list  = {};
@@ -118,7 +120,7 @@ struct simulation_results_t {
 template <typename T> struct Loop {
   std::string name;
   T container;
-  double value = 0;
+  std::vector<double> value = {};
   Loop(std::string name, T container) : name(name), container(container) {}
   Loop &operator=(const Loop &other) {
     if (this != &other) { // protect against self-assignment
@@ -149,7 +151,7 @@ class ModeBase {
   virtual void print_summary();
   virtual void run() = 0;
   virtual void validate_input();
-  virtual void evaluate(std::vector<std::vector<std::vector<double>>> const & all_input = std::vector<std::vector<std::vector<double>>>(), std::vector<std::vector<double>> const & all_weight = std::vector<std::vector<double>>());
+  virtual void evaluate(std::vector<std::vector<double>> const & unsummed_input = std::vector<std::vector<double>>(),std::vector<std::vector<std::vector<double>>> const & all_input = std::vector<std::vector<std::vector<double>>>(), std::vector<std::vector<double>> const & all_weight = std::vector<std::vector<double>>());
   virtual void evaluate_propagator()      = 0;
   virtual void evaluate_greens_function() = 0;
   virtual ~ModeBase() {}

@@ -92,7 +92,9 @@ void ModeDebug::evaluate_greens_function() {
   sp.gf_index.push_back(0);
   ModeBase::evaluate();
   auto frame_zeroth_order = make_bare_g_frame(mp.ad_imp, sr.u_tau_ref, cp.gf_struct, sp.tau_split, cp.beta);
-  double tci_result       = (frame_zeroth_order[0](0, 0) + std::accumulate(sr.integral_list.begin(), sr.integral_list.end(), 0.0)) / Tr_Ubeta;
+  double total_integral = 0.0;
+  for(auto integral: sr.integral_list) total_integral += std::accumulate(integral.begin(), integral.end(), 0.0);
+  double tci_result       = (frame_zeroth_order[0](0, 0) + total_integral) / Tr_Ubeta;
   std::cout << "G(tau_split): " << sr.G_tau_ref[0][1](0, 0) << std::endl;
   std::cout << "tci_result: " << tci_result << std::endl;
 }
