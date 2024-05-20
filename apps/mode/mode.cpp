@@ -37,6 +37,10 @@ void ModeBase::read_json_parameters(std::string json_file_path) {
     gp.unsummed_tci = root.get<bool>("gp.unsummed_tci");
   } catch (const std::exception &e) { gp.unsummed_tci = false; }
 
+  try {
+    gp.energy_shift = root.get<double>("gp.energy_shift");
+  } catch (const std::exception &e) { gp.energy_shift = 0.0; }
+
   // Read construction parameters
   cp.beta        = root.get<double>("cp.beta");
   cp.n_tau_green = root.get<int>("cp.n_tau_green");
@@ -223,7 +227,7 @@ void ModeBase::prepare_input(std::string hyb_file_path) {
     sr.u_interpolator_ref      = interpolator_t<scalar_t>(sr.u_tau_ref, sp.n_tot, sp.n_tau_linear, sp.order_Chebyshev, sp.interp_type, sp.grid);
     sr.partition_function_ref  = trace(sr.u_interpolator_ref(cp.beta));
     sr.u_tau_zeroth_order_ref  = sr.u_interpolator_ref(sp.tau_max - sp.tau_split) * sr.u_interpolator_ref(sp.tau_split); //oder 0 result
-    sr.u_tau_zeroth_order_bare = make_bare_u_frame(mp.ad_imp, cp.beta);
+    sr.u_tau_zeroth_order_bare = make_bare_u_frame(mp.ad_imp, cp.beta, gp.energy_shift);
     sr.partition_function_zeroth_order_ref = trace(sr.u_tau_zeroth_order_bare);
     if (sp.debug > 1) {
       std::cout << "Delta_tau shape:" << std::endl;
@@ -239,14 +243,14 @@ void ModeBase::prepare_input(std::string hyb_file_path) {
 
     mp.ad_imp                              = imp_setup(mp.n_site, mp.n_spin, mp.U, mp.mu, mp.t, cp);
     mp.Delta_tau                           = read_hyb_function(hyb_file_path, mp, cp);
-    sr.u_tau_zeroth_order_bare             = make_bare_u_frame(mp.ad_imp, cp.beta);
+    sr.u_tau_zeroth_order_bare             = make_bare_u_frame(mp.ad_imp, cp.beta, gp.energy_shift);
     sr.partition_function_zeroth_order_ref = trace(sr.u_tau_zeroth_order_bare);
     sr.partition_function_ref              = 0.0;
     std::tie(sp.grid_linear, sp.grid)      = generate_inchworm_grid(0, cp.beta, sp.n_tau_linear, sp.order_Chebyshev);
 
   } else if (gp.model_type == 2) { //model_type 2: bethe lattice
     std::tie(mp.Delta_tau, mp.ad_imp)      = bethe_setup(mp.n_site, mp.n_spin, mp.U, mp.mu, mp.t, cp, mp.theta, mp.n_omega_bethe);
-    sr.u_tau_zeroth_order_bare             = make_bare_u_frame(mp.ad_imp, cp.beta);
+    sr.u_tau_zeroth_order_bare             = make_bare_u_frame(mp.ad_imp, cp.beta, gp.energy_shift);
     sr.partition_function_zeroth_order_ref = trace(sr.u_tau_zeroth_order_bare);
     sr.partition_function_ref              = 0.0;
   } else {
@@ -271,6 +275,10 @@ void ModeBase::print_summary() {
     std::cout << "model_type: bethe lattice" << std::endl;
   }
 
+  gp.Z_energy_shift_correction = std::exp(gp.energy_shift * cp.beta);
+  std::cout << "energy_shift: " << gp.energy_shift << std::endl;
+  std::cout << "gp.Z_energy_shift_correction: " << gp.Z_energy_shift_correction << std::endl;
+
   if (mode_name == "debug") {
     // debug mode now only work on evaluating a single element of the propagator
 
@@ -281,8 +289,7 @@ void ModeBase::print_summary() {
     std::cout << "u_tau_max exact: " << std::setw(10) << sr.u_interpolator_ref(sp.tau_max)[sp.bl_index](i, j) << std::endl;
     std::cout << "u_tau_max exact * Z_imp_correction: " << std::setw(10) << sr.u_interpolator_ref(sp.tau_max)[sp.bl_index](i, j) * sr.Z_imp_correction
               << std::endl;
-    std::cout << "u_tau_max exact * Z_bath: " << std::setw(10) << sr.u_interpolator_ref(sp.tau_max)[sp.bl_index](i, j) * sr.Z_bath << std::endl;
-    std::cout << "u_tau_max exact * Z_bath * Z_imp_correction*Z_bath_correction: " << std::setw(10)
+    std::cout << "u_tau_max exact * Z_bath * Z_imp_correction * Z_bath_correction: " << std::setw(10)
               << sr.u_interpolator_ref(sp.tau_max)[sp.bl_index](i, j) * sr.Z_bath * sr.Z_imp_correction * sr.Z_bath_correction << std::endl;
     std::cout << std::left << std::setw(10) << "order" << std::setw(30) << "value" << std::setw(30) << "time(s)" << std::setw(30)
               << "time_find_pivot(s)" << std::setw(30) << "time_pretrain(s)" << std::setw(30) << "time_train(s)" << std::endl;
@@ -301,13 +308,16 @@ void ModeBase::print_summary() {
     double sum_time_train      = std::accumulate(sr.train_time_list.begin(), sr.train_time_list.end(), 0.0);
     std::cout << std::setw(10) << "sum:" << std::setw(30) << sum_value << std::setw(30) << sum_time << std::setw(30) << sum_time_find_pivot
               << std::setw(30) << sum_time_pretrain << std::setw(30) << sum_time_train << std::endl;
-    std::cout << "sum * Z_imp_correction: " << std::setw(10) << sum_value * sr.Z_imp_correction << std::endl;
-    std::cout << "sum * Z_bath: " << std::setw(10) << sum_value * sr.Z_bath << std::endl;
-    std::cout << "sum * Z_bath * Z_imp_correction * Z_bath_correction: " << std::setw(10)
-              << sum_value * sr.Z_bath * sr.Z_imp_correction * sr.Z_bath_correction << std::endl;
+    std::cout << "sum * gp.Z_energy_shift_correction: " << std::setw(10) << sum_value * gp.Z_energy_shift_correction << std::endl;
+    std::cout << "sum * Z_imp_correction * gp.Z_energy_shift_correction: " << std::setw(10)
+              << sum_value * sr.Z_imp_correction * gp.Z_energy_shift_correction << std::endl;
+    std::cout << "sum * Z_bath * Z_imp_correction * Z_bath_correction * gp.Z_energy_shift_correction: " << std::setw(10)
+              << sum_value * sr.Z_bath * sr.Z_imp_correction * sr.Z_bath_correction * gp.Z_energy_shift_correction << std::endl;
   } else if (mode_name == "bare") {
     std::cout << "partition function exact: " << std::setw(10) << sr.partition_function_ref << std::endl;
-    std::cout << "partition function exact * Z_imp_correction: " << std::setw(10) << sr.partition_function_ref * sr.Z_imp_correction << std::endl;
+    std::cout << "partition function exact * Z_imp_correction : " << std::setw(10) << sr.partition_function_ref * sr.Z_imp_correction << std::endl;
+    std::cout << "partition function exact * Z_bath * Z_imp_correction * Z_bath_correction : " << std::setw(10)
+              << sr.partition_function_ref * sr.Z_bath * sr.Z_imp_correction * sr.Z_bath_correction << std::endl;
     std::cout << std::left << std::setw(10) << "order" << std::setw(30) << "value" << std::setw(30) << "time(s)" << std::setw(30)
               << "time_find_pivot(s)" << std::setw(30) << "time_pretrain(s)" << std::setw(30) << "time_train(s)" << std::endl;
     std::cout << std::setw(10) << "0" << std::setw(30) << sr.partition_function_zeroth_order_ref << std::endl;
@@ -325,7 +335,11 @@ void ModeBase::print_summary() {
     double sum_time_train      = std::accumulate(sr.train_time_list.begin(), sr.train_time_list.end(), 0.0);
     std::cout << std::setw(10) << "sum:" << std::setw(30) << sum_value << std::setw(30) << sum_time << std::setw(30) << sum_time_find_pivot
               << std::setw(30) << sum_time_pretrain << std::setw(30) << sum_time_train << std::endl;
-    std::cout << "sum * Z_imp_correction: " << std::setw(10) << sum_value * sr.Z_imp_correction << std::endl;
+    std::cout << "sum * gp.Z_energy_shift_correction: " << std::setw(10) << sum_value * gp.Z_energy_shift_correction << std::endl;
+    std::cout << "sum * Z_imp_correction * gp.Z_energy_shift_correction: " << std::setw(10)
+              << sum_value * sr.Z_imp_correction * gp.Z_energy_shift_correction << std::endl;
+    std::cout << "sum * Z_bath * Z_imp_correction * Z_bath_correction * gp.Z_energy_shift_correction: " << std::setw(10)
+              << sum_value * sr.Z_bath * sr.Z_imp_correction * sr.Z_bath_correction * gp.Z_energy_shift_correction << std::endl;
   } else if (mode_name == "inchworm") {
     std::cerr << "not implemented yet" << std::endl;
     std::exit(EXIT_FAILURE);
@@ -347,8 +361,8 @@ void ModeBase::validate_input() {
   }
 } // end of validate_input
 
-void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input,
-                        std::vector<std::vector<std::vector<double>>> const &all_input, std::vector<std::vector<double>> const &all_weight) {
+void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, std::vector<std::vector<std::vector<double>>> const &all_input,
+                        std::vector<std::vector<double>> const &all_weight) {
 
   size_t unsummed_tot_size = 0;
   for (auto const &v : unsummed_input) { unsummed_tot_size += v.size(); }
@@ -599,12 +613,13 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input,
                 std::cerr << "not implemented" << std::endl;
                 std::exit(EXIT_FAILURE);
               } // end of setting iota_d and iota_d_dag
-              auto tau_d         = get_elements(phi_d, taus);
-              auto tau_d_dag     = get_elements(phi_d_dag, taus);
-              auto integrand_phi = evaluate_u_tau_max(sr.u_tau_zeroth_order, sp.tau_split, sp.tau_max, mp.all_d_ops, mp.all_d_dag_ops,
-                                                      mp.gf_block_shape, cp, mp.Delta_tau, mp.ad_imp, sr.u_interpolator, tau_d, tau_d_dag, iota_d,
-                                                      iota_d_dag, bl_index, subspace_index, sp.use_bare_propagator, sp.gf_index, cp.gf_struct);
-              double j           = jacobian(taus_right, sp.tau_max, sp.tau_split);
+              auto tau_d     = get_elements(phi_d, taus);
+              auto tau_d_dag = get_elements(phi_d_dag, taus);
+              auto integrand_phi =
+                 evaluate_u_tau_max(sr.u_tau_zeroth_order, sp.tau_split, sp.tau_max, mp.all_d_ops, mp.all_d_dag_ops, mp.gf_block_shape, cp,
+                                    mp.Delta_tau, mp.ad_imp, sr.u_interpolator, tau_d, tau_d_dag, iota_d, iota_d_dag, bl_index, subspace_index,
+                                    sp.use_bare_propagator, sp.gf_index, cp.gf_struct, gp.energy_shift);
+              double j = jacobian(taus_right, sp.tau_max, sp.tau_split);
               if (sp.use_bare_propagator == false) { j *= jacobian(taus_left, sp.tau_split, 0.0); }
               if (tp.mapping_v == 4) {
                 auto tau_d_sym     = get_elements(phi_d, taus_sym);
@@ -612,7 +627,7 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input,
                 auto integrand_phi_sym =
                    evaluate_u_tau_max(sr.u_tau_zeroth_order, sp.tau_split, sp.tau_max, mp.all_d_ops, mp.all_d_dag_ops, mp.gf_block_shape, cp,
                                       mp.Delta_tau, mp.ad_imp, sr.u_interpolator, tau_d_sym, tau_d_dag_sym, iota_d, iota_d_dag, bl_index,
-                                      subspace_index, sp.use_bare_propagator, sp.gf_index, cp.gf_struct);
+                                      subspace_index, sp.use_bare_propagator, sp.gf_index, cp.gf_struct, gp.energy_shift);
                 // j_sym should be the same as j
                 integrand_val += (integrand_phi_sym * j + integrand_phi * j) / 2;
               } else {
@@ -678,8 +693,8 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input,
             std::cerr << "not implemented" << std::endl;
             std::exit(EXIT_FAILURE);
           }
-          
-          if(gp.unsummed_tci && mode_name == "inchworm") {
+
+          if (gp.unsummed_tci && mode_name == "inchworm") {
             input.insert(input.begin(), unsummed_input[0]);
             weight.insert(weight.begin(), std::vector<double>(unsummed_input[0].size(), 1.0));
           }

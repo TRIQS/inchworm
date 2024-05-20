@@ -428,7 +428,7 @@ inline double evaluate_u_tau_max(frame_t &frame_zeroth_order, double tau_split, 
                                  hyb_tau_t const &Delta_tau, atom_diag const &ad_imp, interpolator_t<scalar_t> const &u_interpolator,
                                  auto const &tau_d_list, auto const &tau_d_dag_list, auto const &iota_d_list, auto const &iota_d_dag_list,
                                  int bl_indx, int subspace_indx, bool use_bare_propagator, std::vector<int> const &gf_index,
-                                 gf_struct_t const &gf_struct) {
+                                 gf_struct_t const &gf_struct, double energy_shift = 0.0) {
 
   auto config = config_t(frame_zeroth_order, cp.gf_struct, {0.0, tau_split});
   for (auto i : range(tau_d_list.size())) {
@@ -450,10 +450,10 @@ inline double evaluate_u_tau_max(frame_t &frame_zeroth_order, double tau_split, 
   frame_t u_products;
   if (gf_index.size() == 0) { // partiion function or propagator
     if (!use_bare_propagator) {
-      u_products = make_frame(impurity_product(ad_imp, diagram, tau_max, tau_split, &u_interpolator)
-                              * impurity_product(ad_imp, diagram, tau_split, 0, &u_interpolator));
+      u_products = make_frame(impurity_product(ad_imp, diagram, tau_max, tau_split,energy_shift, &u_interpolator)
+                              * impurity_product(ad_imp, diagram, tau_split, 0,energy_shift, &u_interpolator));
     } else {
-      u_products = make_frame(impurity_product(ad_imp, diagram, tau_max, tau_split));
+      u_products = make_frame(impurity_product(ad_imp, diagram, tau_max, tau_split,energy_shift));
     }
     int sign          = 0;
     double hyb_weight = 0.0;
@@ -490,8 +490,8 @@ inline double evaluate_u_tau_max(frame_t &frame_zeroth_order, double tau_split, 
     }
   } else if (gf_index.size() == 2) { // greens function
     // if (has_zero_trace(ad_imp, diagram)) { return 0.0; }
-    auto l                          = impurity_product(ad_imp, diagram, tau_max, tau_split, &u_interpolator);
-    auto r                          = impurity_product(ad_imp, diagram, tau_split, 0, &u_interpolator);
+    auto l                          = impurity_product(ad_imp, diagram, tau_max, tau_split,energy_shift, &u_interpolator);
+    auto r                          = impurity_product(ad_imp, diagram, tau_split, 0,energy_shift, &u_interpolator);
     auto [i, bl_d]                  = findIndex(block_shape, gf_index[0]);
     auto [j, bl_dag]                = findIndex(block_shape, gf_index[1]);
     auto [bl_name_d, bl_size_d]     = gf_struct[bl_d];

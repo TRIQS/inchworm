@@ -83,10 +83,10 @@ inline double one_fermion(double tau, double eps, double beta) {
   }
 }
 
-inline std::tuple<double, double, double, hyb_tau_t, atom_diag, u_tau_t, g_tau_t> discrete_setup(int n_site, int n_bath, int n_spin, double U, double mu, double t,
-                                                                         constr_params_t const &cp, mat_t const &theta, vec_t const &eps, long n_tot, long n_tau_linear, int order_Chebyshev,std::vector<double> & grid_linear, std::vector<double> & grid
-                                                                         
-                                                                         ) {
+inline std::tuple<double, double, double, hyb_tau_t, atom_diag, u_tau_t, g_tau_t>
+discrete_setup(int n_site, int n_bath, int n_spin, double U, double mu, double t, constr_params_t const &cp, mat_t const &theta, vec_t const &eps,
+               long n_tot, long n_tau_linear, int order_Chebyshev, std::vector<double> &grid_linear, std::vector<double> &grid,
+               double energy_shift = 0.0) {
 
   // === Define fundamental operator sets
 
@@ -144,7 +144,6 @@ inline std::tuple<double, double, double, hyb_tau_t, atom_diag, u_tau_t, g_tau_t
     }
   }
 
-
   // === Define the 3 different atom_diag objects (ED calculation with Triqs)
 
   auto ad_tot  = inchworm::atom_diag(h_imp + h_bath + h_hyb, fops_tot);
@@ -169,9 +168,9 @@ inline std::tuple<double, double, double, hyb_tau_t, atom_diag, u_tau_t, g_tau_t
     }
   }
 
-  auto Z_bath = partition_function(ad_bath, cp.beta);
+  auto Z_bath              = partition_function(ad_bath, cp.beta);
   double Z_bath_correction = std::exp(-(ad_bath.get_gs_energy()) * cp.beta);
-  double Z_imp_correction = std::exp(-(ad_imp.get_gs_energy()) * cp.beta);
+  double Z_imp_correction  = std::exp(-(ad_imp.get_gs_energy()) * cp.beta);
   std::cout << "ad_bath.get_gs_energy() " << ad_bath.get_gs_energy() << std::endl;
   std::cout << "ad_imp.get_gs_energy() " << ad_imp.get_gs_energy() << std::endl;
   //TEST: hidden fermion
@@ -296,8 +295,8 @@ inline atom_diag imp_setup(int n_site, int n_spin, double U, double mu, double t
   auto ad_imp = inchworm::atom_diag(h_imp, fops_imp);
 
   // for (auto [bl, bl_size] : enumerate(ad_imp.get_subspace_dims())) {
-  //   for (int i : range(bl_size)) { 
-      
+  //   for (int i : range(bl_size)) {
+
   //     std::cout << "eigvalue:" << ad_imp.get_eigenvalue(bl, i) << std::endl; }
   // }
   // std::cout << " ground energy: " << ad_imp.get_gs_energy()<< std::endl;

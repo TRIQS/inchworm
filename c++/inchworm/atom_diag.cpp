@@ -31,22 +31,23 @@ namespace inchworm {
     return g_frame;
   }
 
-  frame_t make_bare_u_frame(atom_diag const &ad, double tau) {
+  frame_t make_bare_u_frame(atom_diag const &ad, double tau, double energy_shift) {
     auto u_frame = make_zero_frame(ad.get_subspace_dims());
     for (auto [bl, bl_size] : enumerate(ad.get_subspace_dims()))
       // for (int i : range(bl_size)) u_frame[bl](i, i) = std::exp(-tau * (ad.get_eigenvalue(bl, i) + ad.get_gs_energy()));
-      for (int i : range(bl_size)) u_frame[bl](i, i) = std::exp(-tau * ad.get_eigenvalue(bl, i));
+      for (int i : range(bl_size)) u_frame[bl](i, i) = std::exp(-tau * (ad.get_eigenvalue(bl, i) + energy_shift)); // note that the lowest eigenvalue in triqs has already been moved to zero; energy shift is addtionally applied
+    // for (int i : range(bl_size)) u_frame[bl](i, i) = std::exp(-tau * ad.get_eigenvalue(bl, i));
     return u_frame;
   }
-  
-  std::pair<std::vector<double>,std::vector<double>> generate_linear_Chebyshev_grid(double ti, double tf, long n_linear, int order_Chebyshev) {
+
+  std::pair<std::vector<double>, std::vector<double>> generate_linear_Chebyshev_grid(double ti, double tf, long n_linear, int order_Chebyshev) {
     // n_linear points are the inchworm grid, which has n_linear-1 intervals
     // order_Chebyshev is the order of the Chebyshev approximation within each interval, i.e., order_Chebyshev+1 points are used in each interval
     std::vector<double> grid_linear;
     std::vector<double> grid;
-    for (int i = 0; i < n_linear; i++) { 
+    for (int i = 0; i < n_linear; i++) {
       double wr = static_cast<double>(i) / (n_linear - 1);
-      grid_linear.push_back(ti*(1 - wr) + tf*wr);
+      grid_linear.push_back(ti * (1 - wr) + tf * wr);
     }
     for (int i = 0; i < n_linear - 1; i++) {
       double a = grid_linear[i];
@@ -62,7 +63,7 @@ namespace inchworm {
   }
 
   u_tau_t make_ED_propagator(atom_diag const &ad_tot, atom_diag const &ad_imp, atom_diag const &ad_bath, double beta, long n_tot, long n_tau_linear,
-                             int order_Chebyshev, std::vector<double> & grid_linear, std::vector<double> & grid) {
+                             int order_Chebyshev, std::vector<double> &grid_linear, std::vector<double> &grid) {
 
     if (order_Chebyshev == 0) {
       auto u_tau  = u_tau_t{{beta, Fermion, n_tot}, ad_imp.get_subspace_dims()};
@@ -75,9 +76,9 @@ namespace inchworm {
       u_tau = mpi::all_reduce(u_tau);
       return u_tau;
     } else {
-      std::tie(grid_linear,grid) = generate_linear_Chebyshev_grid(0, beta, n_tau_linear, order_Chebyshev);
-      auto u_tau               = u_tau_t{{beta, Fermion, n_tot}, ad_imp.get_subspace_dims()};
-      u_tau()                  = 0.0;
+      std::tie(grid_linear, grid) = generate_linear_Chebyshev_grid(0, beta, n_tau_linear, order_Chebyshev);
+      auto u_tau                  = u_tau_t{{beta, Fermion, n_tot}, ad_imp.get_subspace_dims()};
+      u_tau()                     = 0.0;
       // UGLY WORK AROUND:
       // note that the linear-Chebyshev grid does not match the u_tau[0].mesh() grid although they have a same number of points
       for (int i_tau : mpi::chunk(range(n_tot))) {

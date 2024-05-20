@@ -30,7 +30,7 @@ namespace inchworm {
    * @param u_interpolator_p Pointer to the propagator interpolator. Must allow evaluation for all 0 < tau < tau_max - tau_min
    * @return The operator product
    */
-  u_partial_t impurity_product(atom_diag const &ad, diagram::time_diagram_t const &diagram, double tau_max, double tau_min,
+  u_partial_t impurity_product(atom_diag const &ad, diagram::time_diagram_t const &diagram, double tau_max, double tau_min, double energy_shift = 0.0,
                                interpolator_t<scalar_t> const *const u_interpolator_p = nullptr);
 
 } // namespace inchworm

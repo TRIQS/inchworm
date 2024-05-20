@@ -64,7 +64,7 @@ void ModeInchworm::evaluate_propagator() {
       sp.tau_max = sp.grid[i_grid_tau_split + 1 + i_Chebyshev_tau];
       std::cout << "sp.tau_max = " << sp.tau_max << std::endl;
       std::cout << "sp.tau_split = " << sp.tau_split << std::endl;
-      sr.u_tau_zeroth_order = sp.use_bare_propagator ? make_bare_u_frame(mp.ad_imp, sp.tau_max) :
+      sr.u_tau_zeroth_order = sp.use_bare_propagator ? make_bare_u_frame(mp.ad_imp, sp.tau_max, gp.energy_shift) :
                                                        sr.u_interpolator(sp.tau_max - sp.tau_split) * sr.u_interpolator(sp.tau_split);
       auto u_frame          = make_zero_frame(mp.ad_imp.get_subspace_dims());
 
@@ -106,7 +106,7 @@ void ModeInchworm::evaluate_propagator() {
       for (auto bl : range(mp.ad_imp.n_subspaces())) {
         for (auto i : range(mp.ad_imp.get_subspace_dim(bl))) {
           for (auto j : range(mp.ad_imp.get_subspace_dim(bl))) {
-            std::cout << "u_frame[" << bl << "](" << i << "," << j << ") = " << u_frame[bl](i, j) << std::endl;
+            std::cout << "u_frame[" << bl << "](" << i << "," << j << ")*gp.Z_energy_shift_correction  = " << u_frame[bl](i, j)*gp.Z_energy_shift_correction << std::endl;
             if (gp.model_type == 0) {
               std::cout << "sr.u_tau_ref[" << bl << "](" << i << "," << j << ") = " << sr.u_interpolator_ref(sp.tau_max)[bl](i, j) << std::endl;
             }
@@ -115,6 +115,8 @@ void ModeInchworm::evaluate_propagator() {
       } // end of bl loop
     }
   } // end of i_tau loop
+  gp.Z_energy_shift_correction = std::exp(gp.energy_shift * cp.beta);
+  std::cout << "gp.Z_energy_shift_correction = " << gp.Z_energy_shift_correction << std::endl;
   std::cout << "---- partition function ----" << std::endl;
   double partition_function     = 0.;
   double partition_function_ref = 0.;
@@ -124,7 +126,7 @@ void ModeInchworm::evaluate_propagator() {
       if (gp.model_type == 0) { partition_function_ref += sr.u_tau_ref[bl][sp.n_tot - 1](i, i); }
     }
   }
-  std::cout << "partition_function = " << partition_function << std::endl;
+  std::cout << "partition_function*gp.Z_energy_shift_correction  = " << partition_function*gp.Z_energy_shift_correction  << std::endl;
   std::cout << "partition_function_ref = " << partition_function_ref << std::endl;
 
   sr.u_interpolator =

@@ -20,7 +20,7 @@ namespace inchworm {
     return true;
   }
 
-  u_partial_t impurity_product(atom_diag const &ad, diagram::time_diagram_t const &diagram, double tau_max, double tau_min,
+  u_partial_t impurity_product(atom_diag const &ad, diagram::time_diagram_t const &diagram, double tau_max, double tau_min, double energy_shift,
                                interpolator_t<scalar_t> const *const u_interpolator_p) {
     EXPECTS(tau_max > tau_min);
 
@@ -38,7 +38,8 @@ namespace inchworm {
         auto bl_size = ad.get_subspace_dim(bl);
         auto res     = matrix_t::zeros({bl_size, bl_size});
         // for (auto j : range(bl_size)) res(j, j) = std::exp(-tau * (ad.get_eigenvalue(bl, j) + ad.get_gs_energy()));
-        for (auto j : range(bl_size)) res(j, j) = std::exp(-tau * ad.get_eigenvalue(bl, j));
+        // for (auto j : range(bl_size)) res(j, j) = std::exp(-tau * ad.get_eigenvalue(bl, j));
+        for (auto j : range(bl_size)) res(j, j) = std::exp(-tau * (ad.get_eigenvalue(bl, j) + energy_shift));
         return res;
       }
     };

@@ -31,6 +31,8 @@ struct global_params_t {
   std::string output_prefix{};
   bool exact_sum    = false;
   bool unsummed_tci = false;
+  double energy_shift = 0.0;
+  double Z_energy_shift_correction = 1.0;
 };
 
 struct model_params_t {
