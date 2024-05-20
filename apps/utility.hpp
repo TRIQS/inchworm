@@ -55,6 +55,13 @@ inline std::pair<int, int> bl1_to_bl2(int index, const std::vector<int> &block_s
   return std::make_pair(bl_indx, index);
 }
 
+inline int bl2_to_bl1(int bl_indx, int subspace_index, const std::vector<int> &block_shape) {
+  int index = 0;
+  for (int bl = 0; bl < bl_indx; ++bl) { index += block_shape[bl]; }
+  index += subspace_index;
+  return index;
+}
+
 inline std::tuple<int, int, int> bl2_to_bl3(int bl_indx, int subspace_index, const std::vector<int> &block_shape) {
   int i = subspace_index / block_shape[bl_indx];
   int j = subspace_index % block_shape[bl_indx];
@@ -482,11 +489,11 @@ inline double evaluate_u_tau_max(frame_t &frame_zeroth_order, double tau_split, 
       return 0.0;
     }
   } else if (gf_index.size() == 2) { // greens function
-    if (has_zero_trace(ad_imp, diagram)) { return 0.0; }
+    // if (has_zero_trace(ad_imp, diagram)) { return 0.0; }
     auto l                          = impurity_product(ad_imp, diagram, tau_max, tau_split, &u_interpolator);
     auto r                          = impurity_product(ad_imp, diagram, tau_split, 0, &u_interpolator);
-    auto [j, bl_dag]                = findIndex(block_shape, gf_index[0]);
-    auto [i, bl_d]                  = findIndex(block_shape, gf_index[1]);
+    auto [i, bl_d]                  = findIndex(block_shape, gf_index[0]);
+    auto [j, bl_dag]                = findIndex(block_shape, gf_index[1]);
     auto [bl_name_d, bl_size_d]     = gf_struct[bl_d];
     auto [bl_name_dag, bl_size_dag] = gf_struct[bl_dag];
     auto l_x_di                     = l * get_op_block_matrix(ad_imp, bl_name_d, i, false);
@@ -495,6 +502,10 @@ inline double evaluate_u_tau_max(frame_t &frame_zeroth_order, double tau_split, 
     auto hyb_mat                    = diagram::hyb_matrix_t(diagram, Delta_tau);
     int sign                        = diagram.sign();
     double hyb_weight               = inclusion_exclusion(diagram, hyb_mat);
+    // std::cout << "hyb_weight: " << hyb_weight << std::endl;
+    // std::cout << "sign: " << sign << std::endl;
+    // std::cout << "trace: " << trace(prod) << std::endl;
+    // std::cout << "trace without ds: " << trace(make_frame(l * r)) << std::endl;
     return -1 * trace(prod) * hyb_weight * sign;
   }
   return 0.0;
@@ -874,11 +885,10 @@ std::vector<T_output> do_TCI(std::function<T_output(std::vector<T_input>)> integ
   std::vector<T_output> integral{};
   std::vector<T_output> previous_integral{};
   if (unsummed_tci) {
-    integral = std::vector<T_output>(unsummed_tot_size, 0);
+    integral          = std::vector<T_output>(unsummed_tot_size, 0);
     previous_integral = std::vector<T_output>(unsummed_tot_size, 0);
-  }
-  else{
-    integral = std::vector<T_output>(1, 0);
+  } else {
+    integral          = std::vector<T_output>(1, 0);
     previous_integral = std::vector<T_output>(1, 0);
   }
   double first_error{0};
@@ -890,13 +900,12 @@ std::vector<T_output> do_TCI(std::function<T_output(std::vector<T_input>)> integ
     auto ci = xfac::CTensorCI<T_output, T_input>(integrand, input, {.reltol = reltol, .pivot1 = pivot1, .fullPiv = fullPiv});
     for (int i = 1; i <= sweep_bound + 1; i++) {
       ci.iterate();
-      auto tt  = ci.get_TensorTrain();
-      if(unsummed_tci){
-      integral = partial_integral_tt(tt, weight, 1);
-      std::cout << "integral size: " << integral.size() << std::endl;
-      }
-      else{
-      integral = partial_integral_tt(tt, weight, 0);
+      auto tt = ci.get_TensorTrain();
+      if (unsummed_tci) {
+        integral = partial_integral_tt(tt, weight, 1);
+        std::cout << "integral size: " << integral.size() << std::endl;
+      } else {
+        integral = partial_integral_tt(tt, weight, 0);
       }
       for (auto i = 0; i < integral.size(); i++) { integral[i] *= const_jacobian; }
       // integral = ci.get_TensorTrain().sum(weight);
@@ -937,13 +946,12 @@ std::vector<T_output> do_TCI(std::function<T_output(std::vector<T_input>)> integ
     for (int i = 1; i <= sweep_bound; i++) {
       ci.iterate();
       // ci.makeCanonical();
-      auto tt  = ci.tt;
+      auto tt = ci.tt;
       if (tci_prrlu == 2) { ci.param.bondDim++; }
-      if(unsummed_tci){
-      integral = partial_integral_tt(tt, weight, 1);
-      }
-      else{
-      integral = partial_integral_tt(tt, weight, 0);
+      if (unsummed_tci) {
+        integral = partial_integral_tt(tt, weight, 1);
+      } else {
+        integral = partial_integral_tt(tt, weight, 0);
       }
       for (auto i = 0; i < integral.size(); i++) { integral[i] *= const_jacobian; }
       // integral = ci.tt.sum(weight);

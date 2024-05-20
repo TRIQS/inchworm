@@ -540,7 +540,7 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input,
             // if there exist duplicated element in taus, then the integrand is set to zero
             //TODO: find a more precise approximation
             if (is_duplicated(taus)) {
-              std::cout << "Warning: duplicated elements in taus" << std::endl;
+              std::cerr << "Warning: duplicated elements in taus" << std::endl;
               if (gp.trick == "random_auxi") { return tp.auxi_height * get_hash_random_number(variables); }
               return 0.0;
             }
@@ -712,6 +712,7 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input,
             std::cerr << "loop1.name: " << loop1.name << ", loop1.name->val: " << val1 << std::endl;
             std::cerr << "loop2.name: " << loop2.name << ", loop2.name->val: " << val2 << std::endl;
             std::cerr << "loop3.name: " << loop3.name << ", loop3.name->val: " << val3 << std::endl;
+            std::cerr << std::endl;
             continue;
           }
           std::vector<std::vector<int>> init_global_pivots{};

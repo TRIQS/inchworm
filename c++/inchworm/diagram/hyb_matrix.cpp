@@ -103,4 +103,6 @@ namespace inchworm::diagram {
       std::printf("\n");
     }
   }
+
+  
 } // namespace inchworm::diagram

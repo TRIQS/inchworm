@@ -20,7 +20,6 @@ namespace inchworm {
       auto const &[bl_name, bl_size] = gf_struct[bl];
 
       for (auto [i, j] : product_range(bl_size, bl_size)) {
-
         auto l_x_di    = l * get_op_block_matrix(ad_imp, bl_name, i, false);
         auto r_x_djdag = r * get_op_block_matrix(ad_imp, bl_name, j, true);
         auto prod      = make_frame(l_x_di * r_x_djdag);

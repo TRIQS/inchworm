@@ -4,6 +4,7 @@
 #include <numeric>
 #include <chrono>
 #include "./mode.hpp"
+#include "../save.hpp"
 
 using namespace inchworm;
 
@@ -50,11 +51,10 @@ void ModeDebug::evaluate_propagator() {
   // sr.u_interpolator      = interpolator_t<scalar_t>(sr.u_tau_ref, sr.u_tau_ref[0].mesh().size(), 0, 0, interpolation_type::cspline);
   long n_tot = sr.u_tau_ref[0].mesh().size();
   std::cout << "n_tot: " << n_tot << ", n_tau: " << sp.n_tau_linear << ", order: " << sp.order_Chebyshev << std::endl;
-  sr.u_interpolator      = interpolator_t<scalar_t>(sr.u_tau_ref, n_tot, sp.n_tau_linear, sp.order_Chebyshev, interpolation_type::linear_Chebyshev, sp.grid);
-  std::cout<<"grid u_tau_ref:"<<std::endl;
-  for(auto tau: sr.u_tau_ref[0].mesh()){
-    std::cout<<tau<<std::endl;
-  }
+  sr.u_interpolator =
+     interpolator_t<scalar_t>(sr.u_tau_ref, n_tot, sp.n_tau_linear, sp.order_Chebyshev, interpolation_type::linear_Chebyshev, sp.grid);
+  std::cout << "grid u_tau_ref:" << std::endl;
+  for (auto tau : sr.u_tau_ref[0].mesh()) { std::cout << tau << std::endl; }
   // auto [grid_linear, grid] = generate_linear_Chebyshev_grid(0, cp.beta, sp.n_tau_linear, sp.order_Chebyshev);
   // std::cout<<"grid: ";
   // print_vector(grid);
@@ -63,38 +63,68 @@ void ModeDebug::evaluate_propagator() {
 }
 
 void ModeDebug::evaluate_greens_function() {
-  // for debug mode, the discrete bath is used
-  sr.u_tau_zeroth_order  = sr.u_tau_zeroth_order_ref;
-  sr.u_interpolator      = interpolator_t<scalar_t>(sr.u_tau_ref, sr.u_tau_ref[0].mesh().size(), 0, 0, interpolation_type::cspline);
+  // for debug mode, the discrete bath is used, so that we get u_interpolator from u_tau_ref
+  sr.u_interpolator      = interpolator_t<scalar_t>(sr.u_tau_ref, sp.n_tot, sp.n_tau_linear, sp.order_Chebyshev, sp.interp_type, sp.grid);
   sp.use_bare_propagator = false;
-  sp.eval_type           = 1;
-  sp.n_skip              = 0;
-
-  sr.G_tau = g_tau_t{{cp.beta, Fermion, cp.n_tau_green}, cp.gf_struct};
   // Calculate Tr U(beta)
   scalar_t Tr_Ubeta = 0.0;
-  for (int bl = 0; bl < sr.u_tau_ref.size(); bl++) Tr_Ubeta += trace(sr.u_tau_ref[bl](cp.beta));
+  for (int bl = 0; bl < sr.u_tau_ref.size(); bl++) Tr_Ubeta += trace(sr.u_tau_ref[bl][sp.n_tot - 1]);
+  std::cout << "Z = Tr[U(beta)]: " << Tr_Ubeta << std::endl;
 
-  // Treat n == 0 and n == n_tau -1 seperately
-  frame_t g_frame_n0 = make_bare_g_frame(mp.ad_imp, sr.u_tau_ref, cp.gf_struct, 0.0, cp.beta) / Tr_Ubeta;
-  frame_t g_frame_nB = make_bare_g_frame(mp.ad_imp, sr.u_tau_ref, cp.gf_struct, cp.beta, cp.beta) / Tr_Ubeta;
-  set_frame(g_frame_n0, sr.G_tau, 0);
-  set_frame(g_frame_nB, sr.G_tau, cp.n_tau_green - 1);
-  std::cout << "sr.G_tau[0][0](0,0): " << sr.G_tau[0][0](0, 0) << std::endl;
-  std::cout << "sr.G_tau[0][beta](0,0): " << sr.G_tau[0][cp.n_tau_green - 1](0, 0) << std::endl;
+  sr.G_tau     = g_tau_t{{cp.beta, Fermion, cp.n_tau_green}, cp.gf_struct};
+  int tot_dims = 0;
+  for (auto subspace_dim : mp.gf_block_shape) { tot_dims += subspace_dim * subspace_dim; }
   for (size_t n = 0; n < cp.n_tau_green; n++) {
-    std::cout << "n: " << n << std::endl;
-    std::cout << "tau[n]: " << sr.G_tau[0].mesh()[n] << std::endl;
-    std::cout << "sr.G_tau[0][n](0,0): " << sr.G_tau[0][n](0, 0) << std::endl;
+    std::cout << "evaluating tau[" << n << "] = " << sr.G_tau[0].mesh()[n] << std::endl;
+    // treat the first and last point separately
+    if (n == 0) {
+      EXPECTS(sr.G_tau[0].mesh()[0] == 0.0);
+      frame_t g_frame = make_bare_g_frame(mp.ad_imp, sr.u_tau_ref, cp.gf_struct, 0.0, cp.beta) / Tr_Ubeta;
+      set_frame(g_frame, sr.G_tau, 0);
+    } else if (n == cp.n_tau_green - 1) {
+      EXPECTS(sr.G_tau[0].mesh()[cp.n_tau_green - 1] == cp.beta);
+      frame_t g_frame = make_bare_g_frame(mp.ad_imp, sr.u_tau_ref, cp.gf_struct, cp.beta, cp.beta) / Tr_Ubeta;
+      set_frame(g_frame, sr.G_tau, cp.n_tau_green - 1);
+    } else { // other points
+      sp.tau_split            = sr.G_tau[0].mesh()[n];
+      sp.tau_max              = cp.beta;
+      auto frame_zeroth_order = make_bare_g_frame(mp.ad_imp, sr.u_tau_ref, cp.gf_struct, sp.tau_split, cp.beta);
+      for (int bl = 0; bl < mp.gf_block_shape.size(); bl++) {
+        for (auto orb_d : range(mp.gf_block_shape[bl])) {
+          for (auto orb_ddag : range(mp.gf_block_shape[bl])) {
+            int orb_d_index    = bl2_to_bl1(orb_d, bl, mp.gf_block_shape);
+            int orb_ddag_index = bl2_to_bl1(orb_ddag, bl, mp.gf_block_shape);
+            sp.gf_index.clear();
+            sp.gf_index.push_back(orb_d_index);
+            sp.gf_index.push_back(orb_ddag_index);
+            ModeBase::clear_tci_results();
+            ModeBase::evaluate();
+            double total_integral = 0.0;
+            for (auto integral : sr.integral_list) total_integral += std::accumulate(integral.begin(), integral.end(), 0.0);
+            double tci_result                = (frame_zeroth_order[bl](orb_d, orb_ddag) + total_integral) / Tr_Ubeta;
+            sr.G_tau[bl][n](orb_d, orb_ddag) = tci_result;
+          }
+        }
+      }
+    }
   }
-  sp.tau_split = 0.5 * cp.beta;
-  sp.gf_index.push_back(0);
-  sp.gf_index.push_back(0);
-  ModeBase::evaluate();
-  auto frame_zeroth_order = make_bare_g_frame(mp.ad_imp, sr.u_tau_ref, cp.gf_struct, sp.tau_split, cp.beta);
-  double total_integral = 0.0;
-  for(auto integral: sr.integral_list) total_integral += std::accumulate(integral.begin(), integral.end(), 0.0);
-  double tci_result       = (frame_zeroth_order[0](0, 0) + total_integral) / Tr_Ubeta;
-  std::cout << "G(tau_split): " << sr.G_tau_ref[0][1](0, 0) << std::endl;
-  std::cout << "tci_result: " << tci_result << std::endl;
+  // print the result
+  for (size_t n = 0; n < cp.n_tau_green; n++) {
+    for (int bl = 0; bl <  mp.gf_block_shape.size(); bl++) {
+      for (auto orb_d : range(mp.gf_block_shape[bl])) {
+        for (auto orb_ddag : range(mp.gf_block_shape[bl])) {
+          std::cout << "G[" << n << "][" << bl << "][" << orb_d << "][" << orb_ddag << "] = " << sr.G_tau[bl][n](orb_d, orb_ddag) << std::endl;
+          std::cout << "G_ref[" << n << "][" << bl << "][" << orb_d << "][" << orb_ddag << "] = " << sr.G_tau_ref[bl][n](orb_d, orb_ddag)
+                    << std::endl;
+        }
+      }
+    }
+  }
+  
+  auto file_name = gp.output_prefix + ".h5";
+  h5::file file{file_name, 'w'};
+  h5::group group{file};
+  h5_save_params(this, group, "params");
+  h5_save_gf(this, group, "gf", sr.G_tau);
+  h5_save_gf(this, group, "gf_ref", sr.G_tau_ref);
 }
