@@ -24,7 +24,7 @@ inline std::tuple<int, int, int> bl1_to_bl3(int index, const std::vector<int> &b
   int i           = 0;
   int j           = 0;
   for (int bl = 0; bl < block_shape.size(); ++bl) {
-    int new_sum = running_sum + block_shape[bl];
+    int new_sum = running_sum + block_shape[bl]*block_shape[bl];
     if (new_sum > index) {
       bl_indx            = bl;
       int subspace_index = index - running_sum;
@@ -43,7 +43,7 @@ inline std::pair<int, int> bl1_to_bl2(int index, const std::vector<int> &block_s
   int running_sum = 0;
   int bl_indx     = 0;
   for (int bl = 0; bl < block_shape.size(); ++bl) {
-    int new_sum = running_sum + block_shape[bl];
+    int new_sum = running_sum + block_shape[bl]*block_shape[bl];
     if (new_sum > index) {
       int subspace_index = index - running_sum;
       return std::make_pair(bl, subspace_index);
@@ -57,7 +57,7 @@ inline std::pair<int, int> bl1_to_bl2(int index, const std::vector<int> &block_s
 
 inline int bl2_to_bl1(int bl_indx, int subspace_index, const std::vector<int> &block_shape) {
   int index = 0;
-  for (int bl = 0; bl < bl_indx; ++bl) { index += block_shape[bl]; }
+  for (int bl = 0; bl < bl_indx; ++bl) { index += block_shape[bl]*block_shape[bl]; }
   index += subspace_index;
   return index;
 }
@@ -70,7 +70,7 @@ inline std::tuple<int, int, int> bl2_to_bl3(int bl_indx, int subspace_index, con
 
 inline std::tuple<int, int> bl3_to_bl1(int bl_indx, int i, int j, const std::vector<int> &block_shape) {
   int index = 0;
-  for (int bl = 0; bl < bl_indx; ++bl) { index += block_shape[bl]; }
+  for (int bl = 0; bl < bl_indx; ++bl) { index += block_shape[bl]* block_shape[bl]; }
   index += i * block_shape[bl_indx] + j;
   return std::make_tuple(bl_indx, index);
 }
@@ -450,10 +450,10 @@ inline double evaluate_u_tau_max(frame_t &frame_zeroth_order, double tau_split, 
   frame_t u_products;
   if (gf_index.size() == 0) { // partiion function or propagator
     if (!use_bare_propagator) {
-      u_products = make_frame(impurity_product(ad_imp, diagram, tau_max, tau_split,energy_shift, &u_interpolator)
-                              * impurity_product(ad_imp, diagram, tau_split, 0,energy_shift, &u_interpolator));
+      u_products = make_frame(impurity_product(ad_imp, diagram, tau_max, tau_split, energy_shift, &u_interpolator)
+                              * impurity_product(ad_imp, diagram, tau_split, 0, energy_shift, &u_interpolator));
     } else {
-      u_products = make_frame(impurity_product(ad_imp, diagram, tau_max, tau_split,energy_shift));
+      u_products = make_frame(impurity_product(ad_imp, diagram, tau_max, tau_split, energy_shift));
     }
     int sign          = 0;
     double hyb_weight = 0.0;
@@ -490,8 +490,8 @@ inline double evaluate_u_tau_max(frame_t &frame_zeroth_order, double tau_split, 
     }
   } else if (gf_index.size() == 2) { // greens function
     // if (has_zero_trace(ad_imp, diagram)) { return 0.0; }
-    auto l                          = impurity_product(ad_imp, diagram, tau_max, tau_split,energy_shift, &u_interpolator);
-    auto r                          = impurity_product(ad_imp, diagram, tau_split, 0,energy_shift, &u_interpolator);
+    auto l                          = impurity_product(ad_imp, diagram, tau_max, tau_split, energy_shift, &u_interpolator);
+    auto r                          = impurity_product(ad_imp, diagram, tau_split, 0, energy_shift, &u_interpolator);
     auto [i, bl_d]                  = findIndex(block_shape, gf_index[0]);
     auto [j, bl_dag]                = findIndex(block_shape, gf_index[1]);
     auto [bl_name_d, bl_size_d]     = gf_struct[bl_d];
@@ -624,7 +624,13 @@ template <class T> std::vector<T> partial_integral_tt(xfac::TensorTrain<T> const
   auto right_integral = tt_sum.R[n_skip - 1];
   std::vector<int> n_index_list;
   for (size_t i = 0; i < n_skip; i++) { n_index_list.push_back(weight[i].size()); }
+  // std::cout<<"n_index_list: ";
+  // print_vector(n_index_list);
   auto index_combinations = generateCombinations(n_index_list);
+  // std::cout<<"index_combinations: ";
+  // for (auto index_combination : index_combinations) {
+  //   print_vector(index_combination);
+  // }
   for (auto index_combination : index_combinations) {
     auto partial_integral = right_integral;
     for (size_t i = n_skip - 1; i > 0; i--) {
@@ -644,6 +650,10 @@ inline bool is_duplicated(const std::vector<double> &taus) {
   std::sort(taus_copy.begin(), taus_copy.end());
   auto last = std::unique(taus_copy.begin(), taus_copy.end());
   return last != taus_copy.end();
+}
+
+inline bool if_contains(const std::vector<double> &taus, double tau) {
+  return std::find(taus.begin(), taus.end(), tau) != taus.end();
 }
 
 // template <typename T_input, typename T_output>
@@ -879,12 +889,14 @@ std::vector<T_output> do_TCI(std::function<T_output(std::vector<T_input>)> integ
                              std::vector<std::vector<double>> const &weight, std::vector<int> const &pivot1, long &count, int sweep_bound,
                              int bond_dim, double reltol, bool fullPiv, int tci_prrlu, int error_type, size_t error_eval, double convergence_bound,
                              int convergence_iter, debug_t debug, std::vector<std::vector<int>> const &init_global_pivots, double const_jacobian,
-                             bool unsummed_tci, int unsummed_tot_size) {
+                             int unsummed_tci, int unsummed_tot_size, bool adaptive_error, double decay_rate, double *auxi_height = nullptr) {
   double last_error{0};
   double current_error{0};
   std::vector<T_output> integral{};
   std::vector<T_output> previous_integral{};
-  if (unsummed_tci) {
+  std::vector<std::vector<std::vector<int>>> pivots{};
+  std::vector<int> valid_init_global_pivot{};
+  if (unsummed_tci !=0 ) {
     integral          = std::vector<T_output>(unsummed_tot_size, 0);
     previous_integral = std::vector<T_output>(unsummed_tot_size, 0);
   } else {
@@ -900,10 +912,15 @@ std::vector<T_output> do_TCI(std::function<T_output(std::vector<T_input>)> integ
     auto ci = xfac::CTensorCI<T_output, T_input>(integrand, input, {.reltol = reltol, .pivot1 = pivot1, .fullPiv = fullPiv});
     for (int i = 1; i <= sweep_bound + 1; i++) {
       ci.iterate();
+      if (adaptive_error) {
+        //only support TCI2, exit
+        std::cerr << "adaptive_error only supported for TCI2" << std::endl;
+        std::exit(EXIT_FAILURE);
+      }
       auto tt = ci.get_TensorTrain();
-      if (unsummed_tci) {
-        integral = partial_integral_tt(tt, weight, 1);
-        std::cout << "integral size: " << integral.size() << std::endl;
+      if (unsummed_tci !=0) {
+        integral = partial_integral_tt(tt, weight, unsummed_tci);
+        // std::cout << "integral size: " << integral.size() << std::endl;
       } else {
         integral = partial_integral_tt(tt, weight, 0);
       }
@@ -938,18 +955,25 @@ std::vector<T_output> do_TCI(std::function<T_output(std::vector<T_input>)> integ
     }
     int bond_dim_init = bond_dim;
     if (tci_prrlu == 2) { bond_dim_init = 1; }
-    auto ci =
-       xfac::CTensorCI2<T_output, T_input>(integrand, input, {.bondDim = bond_dim_init, .reltol = reltol, .pivot1 = pivot1, .fullPiv = fullPiv});
-    if (debug > 1) { std::cout << "bond_dim: " << ci.param.bondDim << std::endl; }
-    if (tci_prrlu == 2) { ci.param.bondDim++; }
-    if (init_global_pivots.size() != 0) { ci.myAddPivotsAllBonds(init_global_pivots); }
     for (int i = 1; i <= sweep_bound; i++) {
+      auto ci =
+         xfac::CTensorCI2<T_output, T_input>(integrand, input, {.bondDim = bond_dim_init, .reltol = reltol, .pivot1 = pivot1, .fullPiv = fullPiv});
+      if (tci_prrlu == 2) {
+        ci.param.bondDim = bond_dim_init + i;
+        if (ci.param.bondDim > bond_dim) { ci.param.bondDim = bond_dim; }
+      }
+      if (i > 1) {
+        for (auto b = 0u; b < ci.len() - 1; b++) ci.addPivotsAt(pivots[b], b);
+        // ci.iterate(1, 0);
+        ci.makeCanonical();
+      }
+      if (init_global_pivots.size() != 0 && i == 1) { ci.myAddPivotsAllBonds(init_global_pivots); }
       ci.iterate();
+      if (i == 1) { *auxi_height = ci.pivotError[ci.pivotError.size() - 1]; }
       // ci.makeCanonical();
       auto tt = ci.tt;
-      if (tci_prrlu == 2) { ci.param.bondDim++; }
-      if (unsummed_tci) {
-        integral = partial_integral_tt(tt, weight, 1);
+      if (unsummed_tci != 0) {
+        integral = partial_integral_tt(tt, weight, unsummed_tci);
       } else {
         integral = partial_integral_tt(tt, weight, 0);
       }
@@ -972,11 +996,60 @@ std::vector<T_output> do_TCI(std::function<T_output(std::vector<T_input>)> integ
       // if (std::abs(current_error / first_error) < convergence_bound && i > convergence_iter) { break; }
       T_output diff = 0;
       for (auto i = 0u; i < integral.size(); i++) { diff += std::abs(previous_integral[i] - integral[i]); }
+      if (adaptive_error) {
+        std::cout << "auxi_height: " << *auxi_height << std::endl;
+        // *auxi_height = *auxi_height * decay_rate;
+        // if (last_error < current_error) { *auxi_height = current_error * decay_rate; }
+        *auxi_height = ci.pivotError[ci.pivotError.size() - 1] * decay_rate;
+      }
       if (diff < convergence_bound && i > convergence_iter) { break; }
       last_error        = current_error;
       previous_integral = integral;
       if (debug > 1) { print_rank(ci.tt); }
+      pivots.clear();
+      for (auto b = 0u; b < ci.len() - 1; b++) {
+        auto pivots_at_b = ci.getPivotsAt(b);
+        pivots.push_back(pivots_at_b);
+        if (valid_init_global_pivot.size() == 0) {
+          // temporaliy change auxi_height to 0
+          double current_auxi_height = *auxi_height;
+          *auxi_height               = 0;
+          for (auto pivot : pivots_at_b) {
+            std::vector<T_input> inputs;
+            for (auto i = 0u; i < input.size(); i++) { inputs.push_back(input[i][pivot[i]]); }
+            if (integrand(inputs) != 0) { valid_init_global_pivot = pivot; }
+          }
+          *auxi_height = current_auxi_height;
+        }
+      }
+      if (adaptive_error && *auxi_height > convergence_bound && i == sweep_bound) {
+        std::cout << "Warning: the last auxiliary height is larger than the convergence bound." << std::endl;
+        std::cout << "auxi_height: " << *auxi_height << std::endl;
+      }
     }
+    if (valid_init_global_pivot.size() == 0) {
+      if (unsummed_tci != 0) {
+        integral = std::vector<T_output>(unsummed_tot_size, 0);
+      } else {
+        integral = std::vector<T_output>(1, 0);
+      }
+      std::cout << "Warning: no valid initial global pivot found." << std::endl;
+      return integral;
+    }
+    *auxi_height = 0;
+    auto ci      = xfac::CTensorCI2<T_output, T_input>(
+       integrand, input, {.bondDim = bond_dim_init + sweep_bound, .reltol = reltol, .pivot1 = valid_init_global_pivot, .fullPiv = fullPiv});
+    for (auto b = 0u; b < ci.len() - 1; b++) ci.addPivotsAt(pivots[b], b);
+    // ci.iterate(1, 0);
+    ci.makeCanonical();
+    auto tt = ci.tt;
+    if (unsummed_tci != 0) {
+      integral = partial_integral_tt(tt, weight, unsummed_tci);
+    } else {
+      integral = partial_integral_tt(tt, weight, 0);
+    }
+    for (auto i = 0; i < integral.size(); i++) { integral[i] *= const_jacobian; }
+
     // ci.makeCanonical();
     // auto ctt = ci.get_CTensorTrain();
     // std::cout << "ctt obtained" << std::endl;

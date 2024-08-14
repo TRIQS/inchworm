@@ -29,9 +29,9 @@ struct global_params_t {
   int model_type{}; // 0 for discrete bath, 1 for continuous bath, 2 for bethe lattice
   bool do_segment = false;
   std::string output_prefix{};
-  bool exact_sum    = false;
-  bool unsummed_tci = false;
-  double energy_shift = 0.0;
+  bool exact_sum                   = false;
+  int unsummed_tci                = 0; // 0: all indices are summed; 1: the first index is not summed; 2: the first two indices are not summed ... 
+  double energy_shift              = 0.0;
   double Z_energy_shift_correction = 1.0;
 };
 
@@ -72,6 +72,7 @@ struct tci_params_t {
   double convergence_bound{};
   int convergence_iter{};
   double integral_lower_bound{};
+  double decay_rate{};
 };
 
 struct simulation_params_t {
@@ -85,7 +86,8 @@ struct simulation_params_t {
   interpolation_type interp_type{};
   std::vector<double> grid{};
   std::vector<double> grid_linear{};
-  std::vector<int> order_list = {};
+  std::vector<int> order_list {};
+  std::vector<int> order_list_first {};
   int bl_index{};
   int subspace_index{};
   bool use_bare_propagator{};
@@ -117,6 +119,7 @@ struct simulation_results_t {
   std::vector<double> pretrain_time_list         = {};
   std::vector<double> find_pivot_time_list       = {};
   std::vector<double> train_time_list            = {};
+  double total_time=0;
 };
 
 template <typename T> struct Loop {
@@ -155,7 +158,8 @@ class ModeBase {
   virtual void validate_input();
   virtual void evaluate(std::vector<std::vector<double>> const &unsummed_input         = std::vector<std::vector<double>>(),
                         std::vector<std::vector<std::vector<double>>> const &all_input = std::vector<std::vector<std::vector<double>>>(),
-                        std::vector<std::vector<double>> const &all_weight             = std::vector<std::vector<double>>());
+                        std::vector<std::vector<double>> const &all_weight             = std::vector<std::vector<double>>(),
+                        bool is_first_interval = false);
   virtual void evaluate_propagator()      = 0;
   virtual void evaluate_greens_function() = 0;
   virtual ~ModeBase() {}
@@ -165,7 +169,9 @@ class ModeBase {
   friend void h5_save_params(const ModeBase *mode, h5::group h5group, std::string subgroup_name);
   friend void h5_save_propagator(const ModeBase *mode, h5::group h5group, std::string subgroup_name);
   friend void h5_save_cheb_coeff(const ModeBase *mode, h5::group h5group, std::string subgroup_name);
-  friend void h5_save_gf(const ModeBase *mode, h5::group h5group, std::string subgroup_name,  g_tau_t const & G_tau);
+  friend void h5_save_propagator_ref(const ModeBase *mode, h5::group h5group, std::string subgroup_name);
+  friend void h5_save_cheb_coeff_ref(const ModeBase *mode, h5::group h5group, std::string subgroup_name);
+  friend void h5_save_gf(const ModeBase *mode, h5::group h5group, std::string subgroup_name, g_tau_t const &G_tau);
 
   protected:
   // parameters for all modes
