@@ -1,9 +1,10 @@
-file(GLOB MODE_FILES "mode/*.cpp")
+file(GLOB TCI_HYB_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
 
-add_executable(tci_hyb tci_hyb.cpp ${MODE_FILES})
-# target_compile_options(tci_hyb PRIVATE -g -pg)
-# target_link_options(tci_hyb PRIVATE -pg)
-target_link_libraries(tci_hyb xfac::xfac)
-target_link_libraries(tci_hyb ${PROJECT_NAME}_c)
-target_link_libraries(tci_hyb OpenMP::OpenMP_CXX)
+add_executable(tci_hyb ${TCI_HYB_FILES})
+target_link_libraries(tci_hyb PRIVATE xfac::xfac)
+target_link_libraries(tci_hyb PRIVATE ${PROJECT_NAME}_c)
+target_link_libraries(tci_hyb PRIVATE OpenMP::OpenMP_CXX)
+target_link_libraries(tci_hyb PRIVATE nvtx3-cpp)
+
+target_include_directories(tci_hyb PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
 

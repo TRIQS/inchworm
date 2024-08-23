@@ -2,7 +2,7 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <h5/h5.hpp>
-#include "../utility.hpp"
+#include "utility.hpp"
 
 void ModeBase::clear_tci_results() {
   sr.integral_list.clear();
@@ -381,7 +381,7 @@ void ModeBase::validate_input() {
 
 void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, std::vector<std::vector<std::vector<double>>> const &all_input,
                         std::vector<std::vector<double>> const &all_weight, bool is_first_interval) {
-
+  NVTX_RANGE("evaluate", 0);
   size_t unsummed_tot_size = 1;
   for (auto const &v : unsummed_input) { unsummed_tot_size *= v.size(); }
   if (unsummed_tot_size == 0) { unsummed_tot_size = 1; }
@@ -518,6 +518,7 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
           auto integrand = [this, &count, &phi_d_list = phi_d_list, &phi_d_dag_list = phi_d_dag_list, &iota_d_list = iota_d_list,
                             &iota_d_dag_list = iota_d_dag_list, &n_left, &change_variable, &jacobian, &phi_list, &phi_pair_list,
                             &auxi_height](std::vector<double> variables) -> double {
+            NVTX_RANGE("integrand", 0);
             std::vector<double> taus_left{};
             std::vector<double> taus_right{};
             std::vector<double> taus{};

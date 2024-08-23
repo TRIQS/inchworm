@@ -8,6 +8,8 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <Eigen/Eigen>
 #include <unsupported/Eigen/MatrixFunctions>
+#include <nvtx3/nvtx3.hpp>
+#include "nvtx.hpp"
 
 using cv_func = std::function<std::vector<double>(const std::vector<double> &, double, double)>;
 using jb_func = std::function<double(const std::vector<double> &, double, double)>;
@@ -429,7 +431,8 @@ inline double evaluate_u_tau_max(frame_t &frame_zeroth_order, double tau_split, 
                                  auto const &tau_d_list, auto const &tau_d_dag_list, auto const &iota_d_list, auto const &iota_d_dag_list,
                                  int bl_indx, int subspace_indx, bool use_bare_propagator, std::vector<int> const &gf_index,
                                  gf_struct_t const &gf_struct, double energy_shift = 0.0) {
-
+  
+  NVTX_RANGE("evaluate_u_tau_max", 0);
   auto config = config_t(frame_zeroth_order, cp.gf_struct, {0.0, tau_split});
   for (auto i : range(tau_d_list.size())) {
     auto [bl, subspace_d_index]       = findIndex(block_shape, iota_d_list[i]);
@@ -890,6 +893,7 @@ std::vector<T_output> do_TCI(std::function<T_output(std::vector<T_input>)> integ
                              int bond_dim, double reltol, bool fullPiv, int tci_prrlu, int error_type, size_t error_eval, double convergence_bound,
                              int convergence_iter, debug_t debug, std::vector<std::vector<int>> const &init_global_pivots, double const_jacobian,
                              int unsummed_tci, int unsummed_tot_size, bool adaptive_error, double decay_rate, double *auxi_height = nullptr) {
+  NVTX_RANGE("do_TCI", 1);
   double last_error{0};
   double current_error{0};
   std::vector<T_output> integral{};

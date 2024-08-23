@@ -129,9 +129,21 @@ target_compile_options(${PROJECT_NAME}_warnings
 
 # Find / Build dependencies
 add_subdirectory(deps)
+add_subdirectory(deps/NVTX) ### NVTX is a header-only copy
 
 # Build and install the library
 add_subdirectory(c++/${PROJECT_NAME})
+
+# Add an option to enable or disable NVTX
+option(ENABLE_NVTX "Enable NVTX support" OFF)
+
+# Check if NVTX should be enabled
+if(ENABLE_NVTX)
+    add_definitions(-DUSE_NVTX)
+    message(STATUS "NVTX support enabled")
+else()
+    message(STATUS "NVTX support disabled")
+endif()
 
 # Build the application
 add_subdirectory(apps)

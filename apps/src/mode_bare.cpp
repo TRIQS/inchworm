@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <numeric>
 #include <chrono>
-#include "./mode.hpp"
+#include "mode.hpp"
 
 using namespace inchworm;
 

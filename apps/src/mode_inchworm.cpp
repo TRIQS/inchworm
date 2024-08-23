@@ -3,14 +3,15 @@
 #include <algorithm>
 #include <numeric>
 #include <chrono>
-#include "./mode.hpp"
-#include "../save.hpp"
+#include "mode.hpp"
+#include "save.hpp"
 
 using namespace inchworm;
 
 void ModeInchworm::validate_input() { ModeBase::validate_input(); }
 
 void ModeInchworm::run() {
+  NVTX_RANGE("inchworm run", 3);
   std::cout << "### Inchworm mode: start running ###" << std::endl;
   validate_input();
   evaluate_propagator();

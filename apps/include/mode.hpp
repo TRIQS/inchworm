@@ -17,8 +17,8 @@
 #include <inchworm/impurity_product.hpp>
 #include <inchworm/util.hpp>
 #include <inchworm/interpolator.hpp>
-#include "../hubbard.hpp"
-#include "../utility.hpp"
+#include "hubbard.hpp"
+#include "utility.hpp"
 
 struct global_params_t {
   std::string target{};
@@ -140,13 +140,16 @@ class ModeBase {
   public:
   ModeBase() {}
   virtual void init(std::string json_file_path, std::string hyb_file_path) {
+    NVTX_RANGE("init", 0);
     try {
+      NVTX_RANGE("read params", 0);
       read_json_parameters(json_file_path);
     } catch (std::exception &e) {
       std::cerr << "Error in reading json file: " << e.what() << std::endl;
       std::exit(EXIT_FAILURE);
     }
     try {
+      NVTX_RANGE("prepare input", 0);
       prepare_input(hyb_file_path);
     } catch (std::exception &e) {
       std::cerr << "Error in preparing input: " << e.what() << std::endl;

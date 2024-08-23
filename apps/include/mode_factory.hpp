@@ -1,5 +1,5 @@
 #pragma once
-#include "./mode.hpp"
+#include "mode.hpp"
 
 inline ModeBase *create_mode(const std::string &mode_name) {
   if (mode_name == "debug") return new ModeDebug();
