@@ -312,8 +312,7 @@ void ModeBase::prepare_eval() {
     for (int order : order_list_union) {
       std::vector<int> index_range(2 * order);
       std::iota(index_range.begin(), index_range.end(), 0);
-      ep.phi_pair_order_list.push_back(get_all_phi(index_range));
-      ep.phi_pair_order_list_auxi.push_back(order);
+      ep.phi_pair_order_cache[order] = get_all_phi(index_range);
     }
   }
 }
@@ -334,28 +333,23 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
     if (sp.use_bare_propagator) {
       n_left_list = {0}; // bare expansion does not need n_left
     }
-    // according to order, find the index of  ep.phi_pair_order_list_auxi that matches the order
-    const std::vector<std::pair<std::vector<int>, std::vector<int>>> * phi_pair_list = nullptr;
-    std::vector<int> phi_list = {};
+
+
+    //For the case of no segment: according to order, read the corresponding phi_pair_list from phi_pair_order_cache
+    const std::vector<std::pair<std::vector<int>, std::vector<int>>> * phi_pair_list = nullptr; 
+    std::vector<int> phi_list = {}; // phi_list is an index list, phi_pair_list holds actual phi pairs
     if (!gp.do_segment) {
-      int idx_auxi = -1;
-      for (auto [idx, order_] : enumerate(ep.phi_pair_order_list_auxi)) {
-        if (order_ == order) {
-          idx_auxi = idx;
-          break;
-        }
-      }
-      if (idx_auxi == -1) {
-        std::cerr << "invalid order" << std::endl;
+      auto it = ep.phi_pair_order_cache.find(order);
+      if (it == ep.phi_pair_order_cache.end()) {
+        std::cerr << "phi_pair_order_cache does not have the order: " << order << std::endl;
         std::exit(EXIT_FAILURE);
       }
-      phi_pair_list = &ep.phi_pair_order_list[idx_auxi];
+      phi_pair_list = &(it->second);
       phi_list      = std::vector<int>(phi_pair_list->size());
-      // phi_list is an index list, phi_pair_list contains actual phi pairs
       std::iota(phi_list.begin(), phi_list.end(), 0);    
     }
 
-    //discrete index that needed to be looped over: n_left, phi, iota (i.e., at most 3 loops); here sp.bl_index and sp.subspace_index are assumed to be fixed. In inchworm mode, these two indices are either performed with an outer loop or add to tci as an physical index
+    //discrete index that needed to be looped over: n_left, phi; iota is assumed to be in the tensor train as physical indices 
     auto loop1 = Loop("empty", std::vector<int>{0});
     auto loop2 = Loop("empty", std::vector<int>{0});
     auto loop3 = Loop("empty", std::vector<int>{0});
@@ -523,7 +517,14 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
             std::vector<std::pair<std::vector<int>, std::vector<int>>> phi_loop_pair_list{{phi_d_list, phi_d_dag_list}};
             if (gp.integrand == "sum_phi" && gp.do_segment) {
               NVTX_RANGE("segment", 5);
-              phi_loop_pair_list = generate_phi_segment(iotas, mp.gf_block_shape);
+              auto it = ep.phi_pair_iota_cache.find(iotas);
+              if (it == ep.phi_pair_iota_cache.end()) {
+                phi_loop_pair_list = generate_phi_segment(iotas, mp.gf_block_shape);
+                ep.phi_pair_iota_cache[iotas] = phi_loop_pair_list;
+              }
+              else{
+                phi_loop_pair_list = it->second;
+              }
               phi_loop_list.resize(phi_loop_pair_list.size());
               std::iota(phi_loop_list.begin(), phi_loop_list.end(), 0);
             } else if (gp.integrand == "sum_phi") {

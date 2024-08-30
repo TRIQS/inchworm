@@ -934,7 +934,7 @@ std::vector<T_output> do_TCI(std::function<T_output(std::vector<T_input>)> integ
     if (tci_prrlu == 2) { bond_dim_init = 1; }
     for (int i = 1; i <= sweep_bound; i++) {
       auto ci =
-         xfac::CTensorCI2<T_output, T_input>(integrand, input, {.bondDim = bond_dim_init, .reltol = reltol, .pivot1 = pivot1, .fullPiv = fullPiv});
+         xfac::CTensorCI2<T_output, T_input>(integrand, input, {.bondDim = bond_dim_init, .reltol = reltol, .pivot1 = pivot1, .fullPiv = fullPiv, .useCachedFunction=true});
       if (tci_prrlu == 2) {
         ci.param.bondDim = bond_dim_init + i;
         if (ci.param.bondDim > bond_dim) { ci.param.bondDim = bond_dim; }
@@ -1030,7 +1030,7 @@ std::vector<T_output> do_TCI(std::function<T_output(std::vector<T_input>)> integ
     }
     *auxi_height = 0;
     auto ci      = xfac::CTensorCI2<T_output, T_input>(
-       integrand, input, {.bondDim = bond_dim_init + sweep_bound, .reltol = reltol, .pivot1 = valid_init_global_pivot, .fullPiv = fullPiv});
+       integrand, input, {.bondDim = bond_dim_init + sweep_bound, .reltol = reltol, .pivot1 = valid_init_global_pivot, .fullPiv = fullPiv, .useCachedFunction=true});
     for (auto b = 0u; b < ci.len() - 1; b++) ci.addPivotsAt(pivots[b], b);
     // ci.iterate(1, 0);
     ci.makeCanonical();

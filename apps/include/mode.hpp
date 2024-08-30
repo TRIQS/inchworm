@@ -93,11 +93,22 @@ struct simulation_params_t {
   std::vector<int> gf_index{};
 };
 
+struct VectorHash {
+    std::size_t operator()(const std::vector<double>& v) const {
+        std::size_t hash = v.size();
+        for (const auto& i : v) {
+            hash ^= std::hash<double>()(i) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
+        }
+        return hash;
+    }
+};
+
+
 struct eval_params_t {
   cv_func change_variable;
   jb_func jacobian; 
-  std::vector<std::vector<std::pair<std::vector<int>, std::vector<int>>>> phi_pair_order_list{}; //phi_pair for each order
-  std::vector<int> phi_pair_order_list_auxi{}; // store which order the phi_pair_list belongs to, for example, if the second element of phi_pair_order_list is for order 3, then phi_pair_order_list_auxi[1] = 3
+  std::unordered_map<int, std::vector<std::pair<std::vector<int>, std::vector<int>>>> phi_pair_order_cache;
+  std::unordered_map<std::vector<double>, std::vector<std::pair<std::vector<int>, std::vector<int>>>,VectorHash> phi_pair_iota_cache;
 };
 
 struct simulation_results_t {
