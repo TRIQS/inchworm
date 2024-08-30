@@ -25,7 +25,7 @@ namespace inchworm {
 
   void h5_write(h5::group h5group, std::string subgroup_name, constr_params_t const &cp) {
     auto grp = h5group.create_group(subgroup_name);
-    h5_write(grp, "n_tau", cp.n_tau);
+    h5_write(grp, "n_tau", cp.n_tau_hyb);
     h5_write(grp, "n_tau_inch", cp.n_tau_inch);
     h5_write(grp, "n_tau_green", cp.n_tau_green);
     h5_write(grp, "n_iw", cp.n_iw);
@@ -35,7 +35,7 @@ namespace inchworm {
 
   void h5_read(h5::group h5group, std::string subgroup_name, constr_params_t &cp) {
     auto grp = h5group.open_group(subgroup_name);
-    h5_read(grp, "n_tau", cp.n_tau);
+    h5_read(grp, "n_tau", cp.n_tau_hyb);
     h5_read(grp, "n_tau_inch", cp.n_tau_inch);
     h5_read(grp, "n_tau_green", cp.n_tau_green);
     h5_read(grp, "n_iw", cp.n_iw);

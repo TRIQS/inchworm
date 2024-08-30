@@ -34,9 +34,57 @@ void ModeDebug::validate_input() {
   }
 }
 
+void ModeDebug::print_summary() {
+  if (sp.debug <= 0) return;
+  ModeBase::print_summary();
+
+
+  auto [bl, i, j] = bl2_to_bl3(sp.bl_index, sp.subspace_index, mp.ad_imp.get_subspace_dims());
+  std::cout << "#### debug results ####" << std::endl;
+  std::cout << "---- order contribution ----" << std::endl;
+  std::cout << std::left << std::setw(10) << "order" << std::setw(30) << "value" << std::setw(30) << "time(s)" << std::setw(30) << std::endl;
+  std::cout << std::setw(10) << "0" << std::setw(30) << sr.u_tau_zeroth_order[sp.bl_index](i, j) << std::endl;
+  for (int i = 0; i < sp.order_list.size(); i++) {
+    std::cout << std::setw(10) << sp.order_list[i] << std::setw(30) << sr.integral_list[i][0] << std::setw(30) << sr.calculation_time_list[i]
+              << std::endl;
+  }
+  double total_integral = 0.0;
+  for (const auto &inner_vec : sr.integral_list) { total_integral += std::accumulate(inner_vec.begin(), inner_vec.end(), 0.0); }
+  double sum_value = sr.u_tau_zeroth_order[sp.bl_index](i, j) + total_integral;
+  double sum_time  = std::accumulate(sr.calculation_time_list.begin(), sr.calculation_time_list.end(), 0.0);
+  std::cout << std::setw(10) << "sum:" << std::setw(30) << sum_value << std::setw(30) << sum_time << std::endl;
+  
+  if(gp.target == "propagator"){
+  std::cout << "---- results comparision ----" << std::endl;
+  std::cout << "u_tau_max at tau=" << sp.tau_max << " for bl_index=" << sp.bl_index << ", subspace_index=" << sp.subspace_index << std::endl;
+
+  // Table headers
+  std::cout << std::setw(40) << std::left << "Description" 
+            << std::setw(30) << "Exact" 
+            << std::setw(30) << "Hyb" << std::endl;
+
+  // u values
+  std::cout << std::setw(40) << std::left << "u" 
+            << std::setw(30) << sr.u_interpolator_ref(sp.tau_max)[sp.bl_index](i, j) 
+            << std::setw(30) << sum_value * gp.Z_energy_shift_correction << std::endl;
+
+  // u * Z_imp_correction values
+  std::cout << std::setw(40) << std::left << "u*Z_imp_correction" 
+            << std::setw(30) << sr.u_interpolator_ref(sp.tau_max)[sp.bl_index](i, j) * sr.Z_imp_correction 
+            << std::setw(30) << sum_value * sr.Z_imp_correction * gp.Z_energy_shift_correction << std::endl;
+
+  // u * Z_imp_correction * Z_bath * Z_bath_correction values
+  std::cout << std::setw(40) << std::left << "u*Z_imp_correction*Z_bath_(correction)" 
+            << std::setw(30) << sr.u_interpolator_ref(sp.tau_max)[sp.bl_index](i, j) * sr.Z_bath * sr.Z_imp_correction * sr.Z_bath_correction 
+            << std::setw(30) << sum_value * sr.Z_bath * sr.Z_imp_correction * sr.Z_bath_correction * gp.Z_energy_shift_correction << std::endl;
+  
+  }
+}
+
 void ModeDebug::run() {
   std::cout << "### debug mode: start running ###" << std::endl;
   validate_input();
+  ModeBase::prepare_eval();
   if (gp.target == "propagator")
     evaluate_propagator();
   else if (gp.target == "greens_function")
@@ -47,14 +95,14 @@ void ModeDebug::run() {
 
 void ModeDebug::evaluate_propagator() {
   // for debug mode, the discrete bath is used
-  sr.u_tau_zeroth_order = sr.u_tau_zeroth_order_ref;
+  sr.u_tau_zeroth_order = sr.u_interpolator_ref(sp.tau_max - sp.tau_split) * sr.u_interpolator_ref(sp.tau_split);
   // sr.u_interpolator      = interpolator_t<scalar_t>(sr.u_tau_ref, sr.u_tau_ref[0].mesh().size(), 0, 0, interpolation_type::cspline);
   long n_tot = sr.u_tau_ref[0].mesh().size();
   std::cout << "n_tot: " << n_tot << ", n_tau: " << sp.n_tau_linear << ", order: " << sp.order_Chebyshev << std::endl;
   sr.u_interpolator =
      interpolator_t<scalar_t>(sr.u_tau_ref, n_tot, sp.n_tau_linear, sp.order_Chebyshev, interpolation_type::linear_Chebyshev, sp.grid);
-  std::cout << "grid u_tau_ref:" << std::endl;
-  for (auto tau : sr.u_tau_ref[0].mesh()) { std::cout << tau << std::endl; }
+  // std::cout << "grid u_tau_ref:" << std::endl;
+  // for (auto tau : sr.u_tau_ref[0].mesh()) { std::cout << tau << std::endl; }
   // auto [grid_linear, grid] = generate_linear_Chebyshev_grid(0, cp.beta, sp.n_tau_linear, sp.order_Chebyshev);
   // std::cout<<"grid: ";
   // print_vector(grid);
@@ -110,7 +158,7 @@ void ModeDebug::evaluate_greens_function() {
   }
   // print the result
   for (size_t n = 0; n < cp.n_tau_green; n++) {
-    for (int bl = 0; bl <  mp.gf_block_shape.size(); bl++) {
+    for (int bl = 0; bl < mp.gf_block_shape.size(); bl++) {
       for (auto orb_d : range(mp.gf_block_shape[bl])) {
         for (auto orb_ddag : range(mp.gf_block_shape[bl])) {
           std::cout << "G[" << n << "][" << bl << "][" << orb_d << "][" << orb_ddag << "] = " << sr.G_tau[bl][n](orb_d, orb_ddag) << std::endl;
@@ -120,7 +168,7 @@ void ModeDebug::evaluate_greens_function() {
       }
     }
   }
-  
+
   auto file_name = gp.output_prefix + ".h5";
   h5::file file{file_name, 'w'};
   h5::group group{file};

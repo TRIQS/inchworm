@@ -5,6 +5,8 @@ add_library(${PROJECT_NAME}::${PROJECT_NAME}_c ALIAS ${PROJECT_NAME}_c)
 # Link against triqs and enable warnings
 target_link_libraries(${PROJECT_NAME}_c PUBLIC triqs fmt::fmt PRIVATE $<BUILD_INTERFACE:${PROJECT_NAME}_warnings>)
 
+target_link_libraries(${PROJECT_NAME}_c PRIVATE nvtx_wrapper)
+
 # Configure target and compilation
 set_target_properties(${PROJECT_NAME}_c PROPERTIES
   POSITION_INDEPENDENT_CODE ON

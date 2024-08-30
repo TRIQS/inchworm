@@ -1,4 +1,6 @@
 #pragma once
+#define ARMA_DONT_USE_OPENMP
+#include <armadillo>
 #include <boost/math/quadrature/gauss_kronrod.hpp>
 #include <boost/math/quadrature/tanh_sinh.hpp>
 #include <fstream>
@@ -8,8 +10,23 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <Eigen/Eigen>
 #include <unsupported/Eigen/MatrixFunctions>
-#include <nvtx3/nvtx3.hpp>
 #include "nvtx.hpp"
+#include <random>  
+#include <xfac/grid.h>
+#include <xfac/tensor/tensor_ci.h>
+#include <xfac/tensor/tensor_ci_2.h>
+#include <xfac/tensor/tensor_train.h>
+#include <inchworm/diagram/diagram.hpp>
+#include <inchworm/diagram/inclusion_exclusion.hpp>
+#include <inchworm/diagram/print.hpp>
+#include <inchworm/atom_diag.hpp>
+#include <inchworm/u_frame.hpp>
+#include <inchworm/impurity_product.hpp>
+#include <inchworm/util.hpp>
+#include <inchworm/interpolator.hpp>
+#include <inchworm/params.hpp>
+
+using namespace inchworm;
 
 using cv_func = std::function<std::vector<double>(const std::vector<double> &, double, double)>;
 using jb_func = std::function<double(const std::vector<double> &, double, double)>;
@@ -435,6 +452,7 @@ inline double evaluate_u_tau_max(frame_t &frame_zeroth_order, double tau_split, 
   NVTX_RANGE("evaluate_u_tau_max", 0);
   auto config = config_t(frame_zeroth_order, cp.gf_struct, {0.0, tau_split});
   for (auto i : range(tau_d_list.size())) {
+    NVTX_RANGE("evaluate construction", 3);
     auto [bl, subspace_d_index]       = findIndex(block_shape, iota_d_list[i]);
     auto d                            = all_d_ops[bl][subspace_d_index];
     d.tau                             = tau_d_list[i];
@@ -453,6 +471,7 @@ inline double evaluate_u_tau_max(frame_t &frame_zeroth_order, double tau_split, 
   frame_t u_products;
   if (gf_index.size() == 0) { // partiion function or propagator
     if (!use_bare_propagator) {
+      NVTX_RANGE("impurity product", 5);
       u_products = make_frame(impurity_product(ad_imp, diagram, tau_max, tau_split, energy_shift, &u_interpolator)
                               * impurity_product(ad_imp, diagram, tau_split, 0, energy_shift, &u_interpolator));
     } else {
@@ -468,6 +487,7 @@ inline double evaluate_u_tau_max(frame_t &frame_zeroth_order, double tau_split, 
         hyb_weight   = hyb_mat.det();
         return hyb_weight * sign * trace(u_products);
       } else if (u_products[bl_indx].size() != 0) {
+        NVTX_RANGE("hyb det", 6);
         auto hyb_mat = diagram::hyb_matrix_t(diagram, Delta_tau);
         sign         = diagram.sign();
         hyb_weight   = hyb_mat.det();
@@ -546,7 +566,7 @@ double get_integral_ctt_GK(xfac::CTensorTrain<T, Index> const &ctt, std::vector<
     auto M_i_0  = M_i(1.0);
     auto [a, b] = bounds[i];
     arma::mat M_i_int(M_i_0.n_rows, M_i_0.n_cols);
-#pragma omp parallel for collapse(2)
+// #pragma omp parallel for collapse(2)
     for (size_t ii = 0; ii < M_i_0.n_rows; ++ii) {
       for (size_t jj = 0; jj < M_i_0.n_cols; ++jj) {
         auto func = [&](double x) {
@@ -572,7 +592,7 @@ double get_integral_ctt_tanh_sinh(xfac::CTensorTrain<T, Index> const &ctt, std::
     auto M_i_0  = M_i(1.0);
     auto [a, b] = bounds[i];
     arma::mat M_i_int(M_i_0.n_rows, M_i_0.n_cols);
-#pragma omp parallel for collapse(2)
+// #pragma omp parallel for collapse(2)
     for (size_t ii = 0; ii < M_i_0.n_rows; ++ii) {
       for (size_t jj = 0; jj < M_i_0.n_cols; ++jj) {
         auto func = [&](double x) {
@@ -691,14 +711,14 @@ T_output tci_error_integral(std::function<T_output(std::vector<T_input>)> f, xfa
   T_output m = 0; // Magnitude
 
 // OpenMP for parallelization:
-#pragma omp parallel reduction(+ : e, m)
+// #pragma omp parallel reduction(+ : e, m)
   {
     std::random_device rd;
     std::mt19937 mt(rd()); // Each thread should have its own random generator
     std::vector<int> idxs(input.size(), 0);
     std::vector<T_input> inputs(input.size(), 0);
 
-#pragma omp for // Distribute iterations of the outer loop
+// #pragma omp for // Distribute iterations of the outer loop
     for (size_t sample = 0; sample < numEval; sample++) {
       for (auto i = 0u; i < idxs.size(); i++) {
         int local_dim = input[i].size();
@@ -745,7 +765,7 @@ T_output tci_error_integrand(std::function<T_output(std::vector<T_input>)> f, xf
   double max_error = 0;
 
 // OpenMP for parallelization:
-#pragma omp parallel
+// #pragma omp parallel
   {
     std::random_device rd;
     std::mt19937 mt(rd()); // Each thread should have its own random generator
@@ -753,7 +773,7 @@ T_output tci_error_integrand(std::function<T_output(std::vector<T_input>)> f, xf
     std::vector<T_input> inputs(input.size(), 0);
     double thread_max_error = 0; // Local max_error for each thread
 
-#pragma omp for // Distribute iterations of the outer loop
+// #pragma omp for // Distribute iterations of the outer loop
     for (size_t sample = 0; sample < numEval; sample++) {
       for (auto i = 0u; i < idxs.size(); i++) {
         int local_dim = input[i].size();
@@ -766,7 +786,7 @@ T_output tci_error_integrand(std::function<T_output(std::vector<T_input>)> f, xf
     }
 
 // Critical section to update global max_error safely
-#pragma omp critical
+// #pragma omp critical
     max_error = std::max(max_error, thread_max_error);
   } // End of OpenMP parallel region
 
@@ -800,7 +820,7 @@ double get_integral_ctt_tanh_sinh_depth0(xfac::CTensorTrain<T, Index> const &ctt
     auto M_i_0  = M_i(1.0);
     auto [a, b] = bounds[i];
     arma::mat M_i_int(M_i_0.n_rows, M_i_0.n_cols);
-#pragma omp parallel for collapse(2)
+// #pragma omp parallel for collapse(2)
     for (size_t ii = 0; ii < M_i_0.n_rows; ++ii) {
       for (size_t jj = 0; jj < M_i_0.n_cols; ++jj) {
         auto func = [&](double x) {
@@ -829,7 +849,6 @@ T_output calculate_sum_recursion(std::function<T_output(std::vector<T_input>)> i
         currentChoice[i] = choices[i][indices[i]];
         product *= weights[i][indices[i]];
       }
-      // #pragma omp atomic
       sum += integrand(currentChoice) * product;
       return;
     }
@@ -840,9 +859,7 @@ T_output calculate_sum_recursion(std::function<T_output(std::vector<T_input>)> i
     }
   };
 
-  // #pragma omp parallel
   {
-    // #pragma omp single
     iterateChoices(0);
   }
 
@@ -882,7 +899,7 @@ template <typename T_output, typename T_input>
 std::vector<T_output> calculate_sum(std::function<T_output(std::vector<T_input>)> integrand, const std::vector<std::vector<T_input>> &inputs,
                                     const std::vector<double> &weights, double const_jacobian) {
   T_output sum = 0.0;
-#pragma omp parallel for reduction(+ : sum)
+// #pragma omp parallel for reduction(+ : sum)
   for (size_t i = 0; i < inputs.size(); i++) { sum += integrand(inputs[i]) * weights[i]; }
   return {sum * const_jacobian};
 }
@@ -908,51 +925,7 @@ std::vector<T_output> do_TCI(std::function<T_output(std::vector<T_input>)> integ
     previous_integral = std::vector<T_output>(1, 0);
   }
   double first_error{0};
-  if (tci_prrlu == 0) {
-    if (debug > 1) {
-      std::cout << "TCI 1" << std::endl;
-      std::cout << "iteration nEval error integral[0]\n";
-    }
-    auto ci = xfac::CTensorCI<T_output, T_input>(integrand, input, {.reltol = reltol, .pivot1 = pivot1, .fullPiv = fullPiv});
-    for (int i = 1; i <= sweep_bound + 1; i++) {
-      ci.iterate();
-      if (adaptive_error) {
-        //only support TCI2, exit
-        std::cerr << "adaptive_error only supported for TCI2" << std::endl;
-        std::exit(EXIT_FAILURE);
-      }
-      auto tt = ci.get_TensorTrain();
-      if (unsummed_tci !=0) {
-        integral = partial_integral_tt(tt, weight, unsummed_tci);
-        // std::cout << "integral size: " << integral.size() << std::endl;
-      } else {
-        integral = partial_integral_tt(tt, weight, 0);
-      }
-      for (auto i = 0; i < integral.size(); i++) { integral[i] *= const_jacobian; }
-      // integral = ci.get_TensorTrain().sum(weight);
-      if (error_type == 0) {
-        current_error = ci.pivotError[ci.pivotError.size() - 1];
-      } else if (error_type == 1) {
-        current_error = ci.trueError(error_eval);
-      } else if (error_type == 2) {
-        current_error = tci_error_integral(integrand, ci.get_TensorTrain(), input, error_eval);
-      } else if (error_type == 3) {
-        current_error = tci_error_integrand(integrand, ci.get_TensorTrain(), input, error_eval);
-      } else {
-        std::cerr << "error_type not supported" << std::endl;
-        std::exit(EXIT_FAILURE);
-      }
-      if (i == 1) { first_error = current_error; }
-      if (debug > 1) { std::cout << i - 1 << " " << count << " " << current_error << " " << integral[0] << std::endl; }
-      // if (std::abs(current_error / first_error) < convergence_bound && i > convergence_iter) { break; }
-      T_output diff = 0;
-      for (auto i = 0u; i < integral.size(); i++) { diff += std::abs(previous_integral[i] - integral[i]); }
-      if (diff < convergence_bound && i > convergence_iter) { break; }
-      last_error        = current_error;
-      previous_integral = integral;
-      if (debug > 1) { print_rank(ci.get_TensorTrain()); }
-    }
-  } else if (tci_prrlu == 1 || tci_prrlu == 2) {
+  if (tci_prrlu == 1 || tci_prrlu == 2) {
     if (debug > 1) {
       std::cout << "TCI 2" << std::endl;
       std::cout << "iteration nEval error integral\n";
@@ -966,23 +939,34 @@ std::vector<T_output> do_TCI(std::function<T_output(std::vector<T_input>)> integ
         ci.param.bondDim = bond_dim_init + i;
         if (ci.param.bondDim > bond_dim) { ci.param.bondDim = bond_dim; }
       }
+      {
+        NVTX_RANGE("ci: paste pivots", 6);
       if (i > 1) {
         for (auto b = 0u; b < ci.len() - 1; b++) ci.addPivotsAt(pivots[b], b);
         // ci.iterate(1, 0);
         ci.makeCanonical();
       }
-      if (init_global_pivots.size() != 0 && i == 1) { ci.myAddPivotsAllBonds(init_global_pivots); }
+      }
+      if (init_global_pivots.size() != 0 && i == 1) { ci.addPivotsAllBonds(init_global_pivots); }
+      {
+        NVTX_RANGE("ci: iterate", 7);
       ci.iterate();
+      }
       if (i == 1) { *auxi_height = ci.pivotError[ci.pivotError.size() - 1]; }
       // ci.makeCanonical();
       auto tt = ci.tt;
+      {
+        NVTX_RANGE("ci: obtain integral", 9);
       if (unsummed_tci != 0) {
         integral = partial_integral_tt(tt, weight, unsummed_tci);
       } else {
         integral = partial_integral_tt(tt, weight, 0);
       }
+      }
       for (auto i = 0; i < integral.size(); i++) { integral[i] *= const_jacobian; }
       // integral = ci.tt.sum(weight);
+      {
+        NVTX_RANGE("ci: error calculation", 8);
       if (error_type == 0) {
         current_error = ci.pivotError[ci.pivotError.size() - 1];
       } else if (error_type == 1) {
@@ -994,6 +978,7 @@ std::vector<T_output> do_TCI(std::function<T_output(std::vector<T_input>)> integ
       } else {
         std::cerr << "error_type not supported" << std::endl;
         std::exit(EXIT_FAILURE);
+      }
       }
       if (i == 1) { first_error = current_error; }
       if (debug > 1) { std::cout << i << " " << count << " " << current_error << " " << integral[0] << std::endl; }
@@ -1011,6 +996,8 @@ std::vector<T_output> do_TCI(std::function<T_output(std::vector<T_input>)> integ
       previous_integral = integral;
       if (debug > 1) { print_rank(ci.tt); }
       pivots.clear();
+      {
+        NVTX_RANGE("ci: copy pivots", 8);
       for (auto b = 0u; b < ci.len() - 1; b++) {
         auto pivots_at_b = ci.getPivotsAt(b);
         pivots.push_back(pivots_at_b);
@@ -1026,6 +1013,7 @@ std::vector<T_output> do_TCI(std::function<T_output(std::vector<T_input>)> integ
           *auxi_height = current_auxi_height;
         }
       }
+    }
       if (adaptive_error && *auxi_height > convergence_bound && i == sweep_bound) {
         std::cout << "Warning: the last auxiliary height is larger than the convergence bound." << std::endl;
         std::cout << "auxi_height: " << *auxi_height << std::endl;

@@ -4,7 +4,7 @@
         "integrand": "plain",
         "integral_variable": "v",
         "tci_shape": "plain",
-        "trick": "none",
+        "ergodicity": "none",
         "model_type": 0
     },
     "cp": {
@@ -87,7 +87,6 @@
     },
     "tp":{
         "n_GK": 15,
-        "mapping_v": 0,
         "tci_prrlu": 1,
         "bond_dim": 100,
         "sweep_bound": 3,

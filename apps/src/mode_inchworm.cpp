@@ -10,25 +10,20 @@ using namespace inchworm;
 
 void ModeInchworm::validate_input() { ModeBase::validate_input(); }
 
+void ModeInchworm::print_summary() {
+  if (sp.debug <= 0) return;
+  ModeBase::print_summary();
+}
+
 void ModeInchworm::run() {
   NVTX_RANGE("inchworm run", 3);
   std::cout << "### Inchworm mode: start running ###" << std::endl;
   validate_input();
+  ModeBase::prepare_eval();
   evaluate_propagator();
 }
 
 void ModeInchworm::evaluate_propagator() {
-  // direct sum tests; the first layer is for different order, the second layer is for different index in TT, the third layer is for different indices for a given index in TT
-  std::vector<std::vector<std::vector<double>>> all_input{};
-  std::vector<std::vector<double>> all_weight{};
-  if (gp.exact_sum) {
-    auto [input_order1, weight_order1] = generate_combination_at_fixed_order(1, tp.v_value, tp.v_weight);
-    auto [input_order2, weight_order2] = generate_combination_at_fixed_order(2, tp.v_value, tp.v_weight);
-    all_input.push_back(input_order1);
-    all_input.push_back(input_order2);
-    all_weight.push_back(weight_order1);
-    all_weight.push_back(weight_order2);
-  }
 
   std::vector<std::vector<double>> unsummed_input{};
   if (gp.unsummed_tci == 1 || gp.unsummed_tci == 2) {
@@ -74,7 +69,7 @@ void ModeInchworm::evaluate_propagator() {
 
         if (gp.unsummed_tci == 1) {
           ModeBase::clear_tci_results();
-          ModeBase::evaluate(unsummed_input, all_input, all_weight, is_first_interval);
+          ModeBase::evaluate(unsummed_input, is_first_interval);
           int total_dims = 0;
           for (auto bl : range(mp.ad_imp.n_subspaces())) { total_dims += mp.ad_imp.get_subspace_dim(bl) * mp.ad_imp.get_subspace_dim(bl); }
           std::vector<double> integrals(total_dims, 0.0);
@@ -93,7 +88,7 @@ void ModeInchworm::evaluate_propagator() {
                 ModeBase::clear_tci_results();
                 sp.bl_index       = bl;
                 sp.subspace_index = i * mp.ad_imp.get_subspace_dim(bl) + j;
-                ModeBase::evaluate(unsummed_input, all_input, all_weight, is_first_interval);
+                ModeBase::evaluate(unsummed_input, is_first_interval);
                 // ModeBase::evaluate();
                 double total_integral = 0.;
                 for (auto integral : sr.integral_list) { total_integral += std::accumulate(integral.begin(), integral.end(), 0.0); }
@@ -131,7 +126,7 @@ void ModeInchworm::evaluate_propagator() {
       unsummed_input.push_back(input);
       assert(unsummed_input.size() == 2);
       ModeBase::clear_tci_results();
-      ModeBase::evaluate(unsummed_input, all_input, all_weight, is_first_interval);
+      ModeBase::evaluate(unsummed_input, is_first_interval);
       // print the shape of sr.integral_list
       std::cout << "sr.integral_list.size() = " << sr.integral_list.size() << std::endl;
       int dims_orb = 0;

@@ -1,3 +1,5 @@
+#pragma once
+
 #ifdef USE_NVTX
 #include "nvtx3/nvToolsExt.h"
 #endif

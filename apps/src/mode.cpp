@@ -1,51 +1,50 @@
-#include "./mode.hpp"
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <h5/h5.hpp>
 #include "utility.hpp"
+#include "mode.hpp"
 
 void ModeBase::clear_tci_results() {
   sr.integral_list.clear();
   sr.calculation_time_list.clear();
-  sr.find_pivot_time_list.clear();
-  sr.pretrain_time_list.clear();
-  sr.train_time_list.clear();
 } // end of clear_results
 
 void ModeBase::read_json_parameters(std::string json_file_path) {
+  NVTX_RANGE("read params", 0);
   namespace pt = boost::property_tree;
   pt::ptree root;
   pt::read_json(json_file_path, root);
 
   // Read global parameters
+  //// required parameters
   gp.target            = root.get<std::string>("gp.target");
   gp.integrand         = root.get<std::string>("gp.integrand");
   gp.integral_variable = root.get<std::string>("gp.integral_variable");
   gp.tci_shape         = root.get<std::string>("gp.tci_shape");
-  gp.trick             = root.get<std::string>("gp.trick");
   gp.model_type        = root.get<int>("gp.model_type");
-  gp.do_segment        = root.get<bool>("gp.do_segment");
+  //// optional parameters
+  try {
+    gp.ergodicity = root.get<std::string>("gp.ergodicity");
+  } catch (const std::exception &e) { gp.ergodicity = "none"; }
+  try {
+    gp.do_segment = root.get<bool>("gp.do_segment");
+  } catch (const std::exception &e) { gp.do_segment = false; }
   try {
     gp.output_prefix = root.get<std::string>("gp.output_prefix");
   } catch (const std::exception &e) { gp.output_prefix = "sim"; }
-
-  try {
-    gp.exact_sum = root.get<bool>("gp.exact_sum");
-  } catch (const std::exception &e) { gp.exact_sum = false; }
-
   try {
     gp.unsummed_tci = root.get<int>("gp.unsummed_tci");
   } catch (const std::exception &e) { gp.unsummed_tci = 0; }
-
   try {
     gp.energy_shift = root.get<double>("gp.energy_shift");
   } catch (const std::exception &e) { gp.energy_shift = 0.0; }
 
   // Read construction parameters
+  //// required parameters
   cp.beta        = root.get<double>("cp.beta");
   cp.n_tau_green = root.get<int>("cp.n_tau_green");
   cp.n_tau_inch  = root.get<int>("cp.n_tau_inch");
-  cp.n_tau       = root.get<int>("cp.n_tau");
+  cp.n_tau_hyb   = root.get<int>("cp.n_tau_hyb");
   for (pt::ptree::value_type &g_s : root.get_child("cp.gf_struct")) {
     std::string name = g_s.first;
     int size         = g_s.second.get_value<int>();
@@ -53,22 +52,20 @@ void ModeBase::read_json_parameters(std::string json_file_path) {
   }
 
   // Read model parameters
-  mp.n_site        = root.get<int>("mp.n_site");
-  mp.n_bath        = root.get<int>("mp.n_bath");
-  mp.n_spin        = root.get<int>("mp.n_spin");
-  mp.U             = root.get<double>("mp.U");
-  mp.mu            = root.get<double>("mp.mu");
-  mp.t             = root.get<double>("mp.t");
-  mp.n_omega_bethe = root.get<int>("mp.n_omega_bethe");
-
-  int size = root.get_child("mp.epsilon").size();
+  //// required parameters
+  mp.n_site = root.get<int>("mp.n_site");
+  mp.n_bath = root.get<int>("mp.n_bath");
+  mp.n_spin = root.get<int>("mp.n_spin");
+  mp.U      = root.get<double>("mp.U");
+  mp.mu     = root.get<double>("mp.mu");
+  mp.t      = root.get<double>("mp.t");
+  int size  = root.get_child("mp.epsilon").size();
   mp.epsilon.resize(size);
   int i = 0;
   for (pt::ptree::value_type &ep : root.get_child("mp.epsilon")) {
     mp.epsilon[i] = ep.second.get_value<double>();
     i++;
   }
-
   int sizex = root.get_child("mp.theta").size();
   int sizey = root.get_child("mp.theta").begin()->second.size();
   mp.theta.resize(sizex, sizey);
@@ -83,16 +80,9 @@ void ModeBase::read_json_parameters(std::string json_file_path) {
   }
 
   // Read simulation parameters
-  sp.tau_max         = root.get<double>("sp.tau_max");
-  sp.tau_split_ratio = root.get<double>("sp.tau_split_ratio");
-  sp.tau_split       = sp.tau_split_ratio * sp.tau_max;
-  sp.bl_index        = root.get<int>("sp.bl_index");
-  sp.subspace_index  = root.get<int>("sp.subspace_index");
-  try {
-    sp.order_Chebyshev = root.get<int>("sp.order_Chebyshev");
-  } catch (const std::exception &e) { sp.order_Chebyshev = 5; }
-
-  int debug_level = root.get<int>("sp.debug");
+  //// required parameters
+  sp.order_Chebyshev = root.get<int>("sp.order_Chebyshev");
+  int debug_level    = root.get<int>("sp.debug");
   if (debug_level == 0) {
     sp.debug = debug_t::none;
   } else if (debug_level == 1) {
@@ -102,7 +92,6 @@ void ModeBase::read_json_parameters(std::string json_file_path) {
   } else {
     throw std::runtime_error("Invalid debug level");
   }
-
   size = root.get_child("sp.order_list").size();
   sp.order_list.resize(size);
   i = 0;
@@ -110,20 +99,31 @@ void ModeBase::read_json_parameters(std::string json_file_path) {
     sp.order_list[i] = order.second.get_value<int>();
     i++;
   }
-
+  size = root.get_child("sp.order_list_first").size();
+  sp.order_list_first.resize(size);
+  i = 0;
+  for (pt::ptree::value_type &order : root.get_child("sp.order_list_first")) {
+    sp.order_list_first[i] = order.second.get_value<int>();
+    i++;
+  }
+  //// optional parameters
   try {
-    size = root.get_child("sp.order_list_first").size();
-    sp.order_list_first.resize(size);
-    i = 0;
-    for (pt::ptree::value_type &order : root.get_child("sp.order_list_first")) {
-      sp.order_list_first[i] = order.second.get_value<int>();
-      i++;
-    }
-  } catch (const std::exception &e) { sp.order_list_first = sp.order_list; }
+    sp.tau_max         = root.get<double>("sp.tau_max");
+    sp.tau_split_ratio = root.get<double>("sp.tau_split_ratio");
+    sp.tau_split       = sp.tau_split_ratio * sp.tau_max;
+    sp.bl_index        = root.get<int>("sp.bl_index");
+    sp.subspace_index  = root.get<int>("sp.subspace_index");
+  } catch (const std::exception &e) {
+    sp.tau_max         = -1.0;
+    sp.tau_split_ratio = -1.0;
+    sp.tau_split       = -1.0;
+    sp.bl_index        = -1.0;
+    sp.subspace_index  = -1.0;
+  }
 
   // Read TCI parameters
+  //// required parameters
   tp.n_GK                 = root.get<int>("tp.n_GK");
-  tp.mapping_v            = root.get<int>("tp.mapping_v");
   tp.tci_prrlu            = root.get<int>("tp.tci_prrlu");
   tp.bond_dim             = root.get<int>("tp.bond_dim");
   tp.sweep_bound          = root.get<int>("tp.sweep_bound");
@@ -135,17 +135,22 @@ void ModeBase::read_json_parameters(std::string json_file_path) {
   tp.convergence_bound    = root.get<double>("tp.convergence_bound");
   tp.convergence_iter     = root.get<int>("tp.convergence_iter");
   tp.integral_lower_bound = root.get<double>("tp.integral_lower_bound");
+  //// optional parameters
   try {
     tp.decay_rate = root.get<double>("tp.decay_rate");
   } catch (const std::exception &e) { tp.decay_rate = 1.0; }
-  std::cout << "json parameter file read successfully" << std::endl;
+
+  if (sp.debug > 0) { std::cout << "json parameter file read successfully" << std::endl; }
 } // end of read_json_parameters
 
 hyb_tau_t ModeBase::read_hyb_function(std::string hyb_file_path, model_params_t const &mp, constr_params_t const &cp) {
+
+  const double TOL = 1e-14;
   if (hyb_file_path.empty()) {
     std::cerr << "hyb_file_path is empty" << std::endl;
     std::exit(EXIT_FAILURE);
   }
+
   std::vector<int> block_shape{};
   h5::file file{hyb_file_path, 'r'};
   h5::group grp{file};
@@ -154,14 +159,14 @@ hyb_tau_t ModeBase::read_hyb_function(std::string hyb_file_path, model_params_t 
     std::cerr << "block shape in hyb_file_path does not match the gf_block_shape in json parameter file" << std::endl;
     std::exit(EXIT_FAILURE);
   }
+
   std::vector<double> tau_grid{};
   h5_read(grp, "tau_grid", tau_grid);
-  auto Delta_tau = hyb_tau_t{{cp.beta, Fermion, static_cast<long>(tau_grid.size())}, cp.gf_struct};
-
+  auto Delta_tau      = hyb_tau_t{{cp.beta, Fermion, static_cast<long>(tau_grid.size())}, cp.gf_struct};
   auto Delta_tau_grid = Delta_tau[0].mesh();
   for (int i = 0; i < Delta_tau_grid.size(); i++) {
-    if (std::abs(Delta_tau_grid[i] - tau_grid[i]) > 1e-10) {
-      std::cerr << "tau_grid in hyb_file_path does not match the tau_grid in json parameter file" << std::endl;
+    if (std::abs(Delta_tau_grid[i] - tau_grid[i]) > TOL) {
+      std::cerr << "tau_grid in hyb_file_path does not match the tau_grid generated by the code" << std::endl;
       std::exit(EXIT_FAILURE);
     }
   }
@@ -171,7 +176,12 @@ hyb_tau_t ModeBase::read_hyb_function(std::string hyb_file_path, model_params_t 
       std::vector<double> Delta_tau_ij{};
       Delta_tau_ij.reserve(tau_grid.size());
       h5_read(grp, "data/" + std::to_string(block) + '_' + std::to_string(i) + std::to_string(j), Delta_tau_ij);
-      for (int k = 0; k < Delta_tau_grid.size(); k++) { Delta_tau[block][Delta_tau_grid[k]](i, j) = Delta_tau_ij[k]; }
+      for (int k = 0; k < Delta_tau_grid.size(); k++) {
+        Delta_tau[block][Delta_tau_grid[k]](i, j) = Delta_tau_ij[k];
+        if (std::abs(Delta_tau[block](Delta_tau_grid[k])(i, j) - Delta_tau[block][Delta_tau_grid[k]](i, j)) > TOL) {
+          std::cerr << "inconsistency in Delta_tau" << std::endl;
+        }
+      }
     }
   }
 
@@ -179,30 +189,12 @@ hyb_tau_t ModeBase::read_hyb_function(std::string hyb_file_path, model_params_t 
 }
 
 void ModeBase::prepare_input(std::string hyb_file_path) {
+  NVTX_RANGE("prepare input", 0);
+
+  // TCI setup
   std::tie(tp.v_value, tp.v_weight) = select_quadrature_GK(tp.n_GK, 0, 1);
-  // int n_grid_tanh_sinh  = 50;
-  // double h_tanh_sinh    = 4.0 / n_grid_tanh_sinh;
-  // auto [xi_old, wi_old] = tanh_sinh_quadrature(0, 1, h_tanh_sinh, n_grid_tanh_sinh);
-  // //find all 0 and 1 in xi and remove the corresponding xi and wi
-  // std::vector<double> xi, wi;
-  // for (int i = 0; i < xi_old.size(); i++) {
-  //   if (xi_old[i] != 0 && xi_old[i] != 1) {
-  //     tp.v_value.push_back(xi_old[i]);
-  //     tp.v_weight.push_back(wi_old[i]);
-  //   }
-  // }
-  // // uniform grid
-  // int N = 15;
-  // std::vector<double> xi(N), wi(N);
-  // for (int i = 0; i < N; i++) {
-  //   xi[i] = (i+1) / (N + 1.0);
-  //   wi[i] = 1.0 / (N + 1.0);
-  // }
-  // for(int i = 0; i < N; i++) {
-  //   tp.v_value.push_back(xi[i]);
-  //   tp.v_weight.push_back(wi[i]);
-  // }
-  // structure information about Green's function
+
+  // operators setup
   int n_bl = cp.gf_struct.size();
   mp.all_d_ops.resize(n_bl, {});
   mp.all_d_dag_ops.resize(n_bl, {});
@@ -222,8 +214,8 @@ void ModeBase::prepare_input(std::string hyb_file_path) {
     }
   }
 
-  // sp.order_Chebyshev = 5;
-  sp.n_tau_linear = cp.n_tau_inch; // we temporarily set n_tau_linear to be equal to n_tau_inch
+  // grid setup
+  sp.n_tau_linear = cp.n_tau_inch;
   if (sp.order_Chebyshev != 0) {
     sp.interp_type = interpolation_type::linear_Chebyshev;
     sp.n_tot       = sp.n_tau_linear + (sp.n_tau_linear - 1) * (sp.order_Chebyshev + 1);
@@ -232,20 +224,15 @@ void ModeBase::prepare_input(std::string hyb_file_path) {
     sp.n_tot       = sp.n_tau_linear;
   }
 
+  // model setup
   if (gp.model_type == 0) { //model_type 0: discrete bath, where exact results (reference) are available
-    // sp.grid = generate_inchworm_grid(0, cp.beta, sp.n_tau_linear, sp.order_Chebyshev);
-    // // input parameters and exact results
-    // sp.grid_linear = generate_inchworm_grid(0, cp.beta, sp.n_tau_linear, 0);
     std::tie(sr.Z_bath_correction, sr.Z_imp_correction, sr.Z_bath, mp.Delta_tau, mp.ad_imp, sr.u_tau_ref, sr.G_tau_ref) =
        discrete_setup(mp.n_site, mp.n_bath, mp.n_spin, mp.U, mp.mu, mp.t, cp, mp.theta, mp.epsilon, sp.n_tot, sp.n_tau_linear, sp.order_Chebyshev,
                       sp.grid_linear, sp.grid);
 
-    sr.u_interpolator_ref      = interpolator_t<scalar_t>(sr.u_tau_ref, sp.n_tot, sp.n_tau_linear, sp.order_Chebyshev, sp.interp_type, sp.grid);
-    sr.partition_function_ref  = trace(sr.u_interpolator_ref(cp.beta));
-    sr.u_tau_zeroth_order_ref  = sr.u_interpolator_ref(sp.tau_max - sp.tau_split) * sr.u_interpolator_ref(sp.tau_split); //oder 0 result
-    sr.u_tau_zeroth_order_bare = make_bare_u_frame(mp.ad_imp, cp.beta, gp.energy_shift);
-    sr.partition_function_zeroth_order_ref = trace(sr.u_tau_zeroth_order_bare);
-    if (sp.debug > 1) {
+    sr.u_interpolator_ref     = interpolator_t<scalar_t>(sr.u_tau_ref, sp.n_tot, sp.n_tau_linear, sp.order_Chebyshev, sp.interp_type, sp.grid);
+    sr.partition_function_ref = trace(sr.u_interpolator_ref(cp.beta));
+    if (sp.debug > 0) {
       std::cout << "Delta_tau shape:" << std::endl;
       print_block_shape(mp.Delta_tau);
       std::cout << "G_tau shape:" << std::endl;
@@ -256,20 +243,16 @@ void ModeBase::prepare_input(std::string hyb_file_path) {
       for (auto bl : range(mp.ad_imp.n_subspaces())) { std::cout << "bl: " << bl << ", dim: " << mp.ad_imp.get_subspace_dim(bl) << std::endl; }
     }
   } else if (gp.model_type == 1) { //model_type 1: read hybridization function from input file
-
-    mp.ad_imp                              = imp_setup(mp.n_site, mp.n_spin, mp.U, mp.mu, mp.t, cp);
-    sr.Z_imp_correction                    = std::exp(-(mp.ad_imp.get_gs_energy()) * cp.beta);
-    mp.Delta_tau                           = read_hyb_function(hyb_file_path, mp, cp);
-    sr.u_tau_zeroth_order_bare             = make_bare_u_frame(mp.ad_imp, cp.beta, gp.energy_shift);
-    sr.partition_function_zeroth_order_ref = trace(sr.u_tau_zeroth_order_bare);
-    sr.partition_function_ref              = 0.0;
-    std::tie(sp.grid_linear, sp.grid)      = generate_inchworm_grid(0, cp.beta, sp.n_tau_linear, sp.order_Chebyshev);
-
-  } else if (gp.model_type == 2) { //model_type 2: bethe lattice
-    std::tie(mp.Delta_tau, mp.ad_imp)      = bethe_setup(mp.n_site, mp.n_spin, mp.U, mp.mu, mp.t, cp, mp.theta, mp.n_omega_bethe);
-    sr.u_tau_zeroth_order_bare             = make_bare_u_frame(mp.ad_imp, cp.beta, gp.energy_shift);
-    sr.partition_function_zeroth_order_ref = trace(sr.u_tau_zeroth_order_bare);
-    sr.partition_function_ref              = 0.0;
+    mp.ad_imp                         = imp_setup(mp.n_site, mp.n_spin, mp.U, mp.mu, mp.t, cp);
+    sr.Z_imp_correction               = std::exp(-(mp.ad_imp.get_gs_energy()) * cp.beta);
+    mp.Delta_tau                      = read_hyb_function(hyb_file_path, mp, cp);
+    std::tie(sp.grid_linear, sp.grid) = generate_inchworm_grid(0, cp.beta, sp.n_tau_linear, sp.order_Chebyshev);
+    //// params that does not have analytical reference
+    // sr.Z_bath = 0;
+    // sr.Z_bath_correction = 0;
+    // sr.u_tau_ref = {};
+    // sr.G_tau_ref = {};
+    // sr.partition_function_ref              = 0.0;
   } else {
     std::cerr << "invalid model_type" << std::endl;
     std::exit(EXIT_FAILURE);
@@ -277,161 +260,100 @@ void ModeBase::prepare_input(std::string hyb_file_path) {
 } // end of prepare_input
 
 void ModeBase::print_summary() {
+  if (sp.debug <= 0) return;
   // global parameters
+  std::cout << "#### global params summary ####" << std::endl;
   std::cout << "mode_name: " << mode_name << std::endl;
   std::cout << "target: " << gp.target << std::endl;
   std::cout << "integrand: " << gp.integrand << std::endl;
   std::cout << "integral_variable: " << gp.integral_variable << std::endl;
   std::cout << "tci_shape: " << gp.tci_shape << std::endl;
-  std::cout << "trick: " << gp.trick << std::endl;
-  std::cout << "total_time (s): " << sr.total_time << std::endl;
+  std::cout << "ergodicity: " << gp.ergodicity << std::endl;
+  std::cout << "do_segment: " << gp.do_segment << std::endl;
+  std::cout << "unsummed_tci: " << gp.unsummed_tci << std::endl;
+  std::cout << "output_prefix: " << gp.output_prefix << std::endl;
   if (gp.model_type == 0) {
     std::cout << "model_type: discrete bath" << std::endl;
   } else if (gp.model_type == 1) {
     std::cout << "model_type: continuous bath" << std::endl;
-  } else if (gp.model_type == 2) {
-    std::cout << "model_type: bethe lattice" << std::endl;
-  }
-
-  gp.Z_energy_shift_correction = std::exp(gp.energy_shift * cp.beta);
-  std::cout << "energy_shift: " << gp.energy_shift << std::endl;
-  std::cout << "gp.Z_energy_shift_correction: " << gp.Z_energy_shift_correction << std::endl;
-
-  if (mode_name == "debug") {
-    // debug mode now only work on evaluating a single element of the propagator
-
-    auto [bl, i, j] = bl2_to_bl3(sp.bl_index, sp.subspace_index, mp.ad_imp.get_subspace_dims());
-    // int i = sp.subspace_index / sr.u_tau_ref[sp.bl_index].target_shape()[0];
-    // int j = sp.subspace_index % sr.u_tau_ref[sp.bl_index].target_shape()[0];
-    std::cout << "element index: " << "(" << i << ", " << j << ")" << std::endl;
-    std::cout << "u_tau_max exact: " << std::setw(10) << sr.u_interpolator_ref(sp.tau_max)[sp.bl_index](i, j) << std::endl;
-    std::cout << "u_tau_max exact * Z_imp_correction: " << std::setw(10) << sr.u_interpolator_ref(sp.tau_max)[sp.bl_index](i, j) * sr.Z_imp_correction
-              << std::endl;
-    std::cout << "u_tau_max exact * Z_bath * Z_imp_correction * Z_bath_correction: " << std::setw(10)
-              << sr.u_interpolator_ref(sp.tau_max)[sp.bl_index](i, j) * sr.Z_bath * sr.Z_imp_correction * sr.Z_bath_correction << std::endl;
-    std::cout << std::left << std::setw(10) << "order" << std::setw(30) << "value" << std::setw(30) << "time(s)" << std::setw(30)
-              << "time_find_pivot(s)" << std::setw(30) << "time_pretrain(s)" << std::setw(30) << "time_train(s)" << std::endl;
-    std::cout << std::setw(10) << "0" << std::setw(30) << sr.u_tau_zeroth_order_ref[sp.bl_index](i, j) << std::endl;
-    for (int i = 0; i < sp.order_list.size(); i++) {
-      std::cout << std::setw(10) << sp.order_list[i] << std::setw(30) << sr.integral_list[i][0] << std::setw(30) << sr.calculation_time_list[i]
-                << std::setw(30) << sr.find_pivot_time_list[i] << std::setw(30) << sr.pretrain_time_list[i] << std::setw(30) << sr.train_time_list[i]
-                << std::endl;
-    }
-    double total_integral = 0.0;
-    for (const auto &inner_vec : sr.integral_list) { total_integral += std::accumulate(inner_vec.begin(), inner_vec.end(), 0.0); }
-    double sum_value           = sr.u_tau_zeroth_order_ref[sp.bl_index](i, j) + total_integral;
-    double sum_time            = std::accumulate(sr.calculation_time_list.begin(), sr.calculation_time_list.end(), 0.0);
-    double sum_time_find_pivot = std::accumulate(sr.find_pivot_time_list.begin(), sr.find_pivot_time_list.end(), 0.0);
-    double sum_time_pretrain   = std::accumulate(sr.pretrain_time_list.begin(), sr.pretrain_time_list.end(), 0.0);
-    double sum_time_train      = std::accumulate(sr.train_time_list.begin(), sr.train_time_list.end(), 0.0);
-    std::cout << std::setw(10) << "sum:" << std::setw(30) << sum_value << std::setw(30) << sum_time << std::setw(30) << sum_time_find_pivot
-              << std::setw(30) << sum_time_pretrain << std::setw(30) << sum_time_train << std::endl;
-    std::cout << "sum * gp.Z_energy_shift_correction: " << std::setw(10) << sum_value * gp.Z_energy_shift_correction << std::endl;
-    std::cout << "sum * Z_imp_correction * gp.Z_energy_shift_correction: " << std::setw(10)
-              << sum_value * sr.Z_imp_correction * gp.Z_energy_shift_correction << std::endl;
-    std::cout << "sum * Z_bath * Z_imp_correction * Z_bath_correction * gp.Z_energy_shift_correction: " << std::setw(10)
-              << sum_value * sr.Z_bath * sr.Z_imp_correction * sr.Z_bath_correction * gp.Z_energy_shift_correction << std::endl;
-  } else if (mode_name == "bare") {
-    std::cout << "partition function exact: " << std::setw(10) << sr.partition_function_ref << std::endl;
-    std::cout << "partition function exact * Z_imp_correction : " << std::setw(10) << sr.partition_function_ref * sr.Z_imp_correction << std::endl;
-    std::cout << "partition function exact * Z_bath * Z_imp_correction * Z_bath_correction : " << std::setw(10)
-              << sr.partition_function_ref * sr.Z_bath * sr.Z_imp_correction * sr.Z_bath_correction << std::endl;
-    std::cout << std::left << std::setw(10) << "order" << std::setw(30) << "value" << std::setw(30) << "time(s)" << std::setw(30)
-              << "time_find_pivot(s)" << std::setw(30) << "time_pretrain(s)" << std::setw(30) << "time_train(s)" << std::endl;
-    std::cout << std::setw(10) << "0" << std::setw(30) << sr.partition_function_zeroth_order_ref << std::endl;
-    for (int i = 0; i < sp.order_list.size(); i++) {
-      std::cout << std::setw(10) << sp.order_list[i] << std::setw(30) << sr.integral_list[i][0] << std::setw(30) << sr.calculation_time_list[i]
-                << std::setw(30) << sr.find_pivot_time_list[i] << std::setw(30) << sr.pretrain_time_list[i] << std::setw(30) << sr.train_time_list[i]
-                << std::endl;
-    }
-    double total_integral = 0.0;
-    for (const auto &inner_vec : sr.integral_list) { total_integral += std::accumulate(inner_vec.begin(), inner_vec.end(), 0.0); }
-    double sum_value           = sr.partition_function_zeroth_order_ref + total_integral;
-    double sum_time            = std::accumulate(sr.calculation_time_list.begin(), sr.calculation_time_list.end(), 0.0);
-    double sum_time_find_pivot = std::accumulate(sr.find_pivot_time_list.begin(), sr.find_pivot_time_list.end(), 0.0);
-    double sum_time_pretrain   = std::accumulate(sr.pretrain_time_list.begin(), sr.pretrain_time_list.end(), 0.0);
-    double sum_time_train      = std::accumulate(sr.train_time_list.begin(), sr.train_time_list.end(), 0.0);
-    std::cout << std::setw(10) << "sum:" << std::setw(30) << sum_value << std::setw(30) << sum_time << std::setw(30) << sum_time_find_pivot
-              << std::setw(30) << sum_time_pretrain << std::setw(30) << sum_time_train << std::endl;
-    std::cout << "sum * gp.Z_energy_shift_correction: " << std::setw(10) << sum_value * gp.Z_energy_shift_correction << std::endl;
-    std::cout << "sum * Z_imp_correction * gp.Z_energy_shift_correction: " << std::setw(10)
-              << sum_value * sr.Z_imp_correction * gp.Z_energy_shift_correction << std::endl;
-    std::cout << "sum * Z_bath * Z_imp_correction * Z_bath_correction * gp.Z_energy_shift_correction: " << std::setw(10)
-              << sum_value * sr.Z_bath * sr.Z_imp_correction * sr.Z_bath_correction * gp.Z_energy_shift_correction << std::endl;
-  } else if (mode_name == "inchworm") {
-    std::cerr << "not implemented yet" << std::endl;
-    std::exit(EXIT_FAILURE);
   } else {
-    std::cerr << "invalid mode_name" << std::endl;
+    std::cerr << "invalid model_type" << std::endl;
     std::exit(EXIT_FAILURE);
   }
+  std::cout << "energy_shift: " << gp.energy_shift << std::endl;
+  std::cout << "#### total_time (s) ####" << std::endl;
+  std::cout << sr.total_time << std::endl;
 } // end of print_summary
 
 void ModeBase::validate_input() {
-  if (gp.integral_variable == "v" && gp.tci_shape != "plain" || gp.integral_variable != "v" && gp.tci_shape == "plain") {
-    std::cerr << "invalid combination of integral_variable and tci_shape" << std::endl;
-    std::cerr << "integral_variable: " << gp.integral_variable << ", tci_shape: " << gp.tci_shape << std::endl;
-    std::exit(EXIT_FAILURE);
-  }
-  if (gp.exact_sum && mp.n_phi != 1) {
-    std::cerr << "exact_sum is only valid for single spin-single orbital now" << std::endl;
+  bool valid_integral_variable      = (gp.integral_variable == "v_iota");
+  bool valid_tci_shape              = (gp.tci_shape == "partition");
+  bool valid_integrand_plus_segment = (gp.integrand == "sum_phi" && gp.do_segment) || (gp.integrand == "plain" && !gp.do_segment);
+
+  if (!valid_integral_variable || !valid_tci_shape || !valid_integrand_plus_segment) {
+    std::cerr << "invalid combination of integral_variable, tci_shape, integrand, do_segment" << std::endl;
     std::exit(EXIT_FAILURE);
   }
 } // end of validate_input
 
-void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, std::vector<std::vector<std::vector<double>>> const &all_input,
-                        std::vector<std::vector<double>> const &all_weight, bool is_first_interval) {
+void ModeBase::prepare_eval() {
+  NVTX_RANGE("prepare eval", 0);
+  // set up quantities that are valid for all calls of evaluate, i.e., those does not depend on tau and propagator
+  // setup the mapping and jacobian functions for the transformation of time-ordered variables v->tau
+  ep.change_variable = change_variable0;
+  ep.jacobian        = jacobian0;
+  if (!gp.do_segment) {
+    // generate the union set elements in sp.order_list_first and sp.order_list, only store each element once
+    std::vector<int> order_list_union(sp.order_list_first.size() + sp.order_list.size());
+    auto it =
+       std::set_union(sp.order_list_first.begin(), sp.order_list_first.end(), sp.order_list.begin(), sp.order_list.end(), order_list_union.begin());
+    order_list_union.resize(it - order_list_union.begin());
+    // generate phi_pair for each order
+    for (int order : order_list_union) {
+      std::vector<int> index_range(2 * order);
+      std::iota(index_range.begin(), index_range.end(), 0);
+      ep.phi_pair_order_list.push_back(get_all_phi(index_range));
+      ep.phi_pair_order_list_auxi.push_back(order);
+    }
+  }
+}
+
+void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, bool is_first_interval) {
   NVTX_RANGE("evaluate", 0);
+  //// set up before the order loop
   size_t unsummed_tot_size = 1;
   for (auto const &v : unsummed_input) { unsummed_tot_size *= v.size(); }
-  if (unsummed_tot_size == 0) { unsummed_tot_size = 1; }
 
-  // setup the mapping and jacobian functions for the transformation of time-ordered variables v->tau
-  cv_func change_variable;
-  jb_func jacobian;
-  if (tp.mapping_v == 0 || tp.mapping_v == 4) {
-    change_variable = change_variable0;
-    jacobian        = jacobian0;
-  } else if (tp.mapping_v == 1) {
-    change_variable = change_variable1;
-    jacobian        = jacobian1;
-  } else if (tp.mapping_v == 2) {
-    change_variable = change_variable2;
-    jacobian        = jacobian2;
-  } else if (tp.mapping_v == 3) {
-    change_variable = change_variable3;
-    jacobian        = jacobian3;
-  } else {
-    std::cerr << "invalid mapping_v" << std::endl;
-    std::exit(EXIT_FAILURE);
-  }
   std::vector<int> order_list = is_first_interval ? sp.order_list_first : sp.order_list;
+
   for (int order : order_list) {
-    if (sp.debug > 0) std::cout << "order: " << order << std::endl;
-    int n = 2 * order; // number of operators
-    // generate valid n_left list
-    std::vector<int> n_left_list(n - 1);
+    if (sp.debug >= 1) std::cout << "order: " << order << std::endl;
+    int n_opt = 2 * order;                   // number of operators is 2*order as there are equal number of creation and annihilation operators
+    std::vector<int> n_left_list(n_opt - 1); // generate valid n_left list: 1, 2, ..., n_opt-1; 0 and n_opt will not give inchworm proper diagram
     std::iota(n_left_list.begin(), n_left_list.end(), 1);
     if (sp.use_bare_propagator) {
       n_left_list = {0}; // bare expansion does not need n_left
     }
-    // generate valid phi and iota pairs
-    std::vector<std::pair<std::vector<int>, std::vector<int>>> phi_pair_list{};
+    // according to order, find the index of  ep.phi_pair_order_list_auxi that matches the order
+    const std::vector<std::pair<std::vector<int>, std::vector<int>>> * phi_pair_list = nullptr;
+    std::vector<int> phi_list = {};
     if (!gp.do_segment) {
-      std::vector<int> index_range(n);
-      std::iota(index_range.begin(), index_range.end(), 0);
-      phi_pair_list = get_all_phi(index_range);
+      int idx_auxi = -1;
+      for (auto [idx, order_] : enumerate(ep.phi_pair_order_list_auxi)) {
+        if (order_ == order) {
+          idx_auxi = idx;
+          break;
+        }
+      }
+      if (idx_auxi == -1) {
+        std::cerr << "invalid order" << std::endl;
+        std::exit(EXIT_FAILURE);
+      }
+      phi_pair_list = &ep.phi_pair_order_list[idx_auxi];
+      phi_list      = std::vector<int>(phi_pair_list->size());
+      // phi_list is an index list, phi_pair_list contains actual phi pairs
+      std::iota(phi_list.begin(), phi_list.end(), 0);    
     }
-    // std::vector<int> index_range(n);
-    // std::iota(index_range.begin(), index_range.end(), 0);
-    // phi_pair_list = get_all_phi(index_range);
-    std::vector<int> phi_list(phi_pair_list.size()); // phi_list is an index list, phi_pair_list contains actual phi pairs
-    std::iota(phi_list.begin(), phi_list.end(), 0);
-    std::vector<std::pair<std::vector<int>, std::vector<int>>> iota_pair_list{};
-    if (gp.integral_variable != "v_iota") { iota_pair_list = get_all_iota(mp.gf_block_shape, order); }
-    // iota_pair_list = get_all_iota(mp.gf_block_shape, order);
-    std::vector<int> iota_list(iota_pair_list.size());
-    std::iota(iota_list.begin(), iota_list.end(), 0); // iota_list is an index list, iota_pair_list contains actual iota pairs
 
     //discrete index that needed to be looped over: n_left, phi, iota (i.e., at most 3 loops); here sp.bl_index and sp.subspace_index are assumed to be fixed. In inchworm mode, these two indices are either performed with an outer loop or add to tci as an physical index
     auto loop1 = Loop("empty", std::vector<int>{0});
@@ -440,13 +362,11 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
     if (gp.integrand == "plain" && gp.integral_variable == "v") {
       loop1 = Loop("n_left", n_left_list);
       loop2 = Loop("phi", phi_list);
-      loop3 = Loop("iota", iota_list);
     } else if (gp.integrand == "plain" && gp.integral_variable == "v_iota") {
       loop1 = Loop("n_left", n_left_list);
       loop2 = Loop("phi", phi_list);
     } else if (gp.integrand == "sum_phi" && gp.integral_variable == "v") {
       loop1 = Loop("n_left", n_left_list);
-      loop2 = Loop("iota", iota_list);
     } else if (gp.integrand == "sum_phi" && gp.integral_variable == "v_iota") {
       loop1 = Loop("n_left", n_left_list);
     } else {
@@ -454,11 +374,9 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
       std::exit(EXIT_FAILURE);
     }
 
-    auto start_time        = std::chrono::high_resolution_clock::now();
-    double time_find_pivot = 0.0;
-    double time_pretrain   = 0.0;
-    double time_train      = 0.0;
-    loop1.value            = std::vector<double>(unsummed_tot_size, 0);
+    auto start_time = std::chrono::high_resolution_clock::now();
+
+    loop1.value = std::vector<double>(unsummed_tot_size, 0);
 
     for (auto val1 : loop1.container) {
       loop2.value = std::vector<double>(unsummed_tot_size, 0);
@@ -496,15 +414,13 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
           else if (loop3.name == "iota")
             id_iota = val3;
           if (id_phi != -1) {
-            std::tie(phi_d_list, phi_d_dag_list) = phi_pair_list[id_phi];
+            std::tie(phi_d_list, phi_d_dag_list) = (*phi_pair_list)[id_phi];
           } else if (gp.integrand == "sum_phi") {
           } else {
             std::cerr << "invalid combination of integrand, integral_variable, and tci_shape" << std::endl;
             std::exit(EXIT_FAILURE);
           }
-          if (id_iota != -1) {
-            std::tie(iota_d_list, iota_d_dag_list) = iota_pair_list[id_iota];
-          } else if (gp.integral_variable == "v_iota") {
+          if (gp.integral_variable == "v_iota") {
           } else {
             std::cerr << "invalid combination of integrand, integral_variable, and tci_shape" << std::endl;
             std::exit(EXIT_FAILURE);
@@ -516,15 +432,12 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
 
           long count     = 0;
           auto integrand = [this, &count, &phi_d_list = phi_d_list, &phi_d_dag_list = phi_d_dag_list, &iota_d_list = iota_d_list,
-                            &iota_d_dag_list = iota_d_dag_list, &n_left, &change_variable, &jacobian, &phi_list, &phi_pair_list,
+                            &iota_d_dag_list = iota_d_dag_list, &n_left, &phi_list, &phi_pair_list,
                             &auxi_height](std::vector<double> variables) -> double {
             NVTX_RANGE("integrand", 0);
             std::vector<double> taus_left{};
             std::vector<double> taus_right{};
             std::vector<double> taus{};
-            std::vector<double> taus_left_sym{};
-            std::vector<double> taus_right_sym{};
-            std::vector<double> taus_sym{};
             std::vector<double> vs{};
             std::vector<double> iotas{};
             count++;
@@ -575,18 +488,18 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
               std::exit(EXIT_FAILURE);
             } // end of splitting variables
             // for bare mode, taus_left = taus_right = taus
-            std::tie(taus_left, taus_right, taus) = obtain_taus(vs, n_left, sp.tau_split, tau_max, change_variable);
+            std::tie(taus_left, taus_right, taus) = obtain_taus(vs, n_left, sp.tau_split, tau_max, ep.change_variable);
 
             // if there exist duplicated element in taus, then the integrand is set to zero
             //TODO: find a more precise approximation
             if (is_duplicated(taus)) {
               std::cerr << "Warning: duplicated elements in taus" << std::endl;
-              if (gp.trick == "random_auxi" || gp.trick == "random_auxi_adaptive") { return auxi_height * get_random_number(); }
+              if (gp.ergodicity == "random_auxi" || gp.ergodicity == "random_auxi_adaptive") { return auxi_height * get_random_number(); }
               return 0.0;
             }
-            if (if_contains(taus,sp.tau_split)){
+            if (if_contains(taus, sp.tau_split)) {
               std::cerr << "Warning: tau_split is in taus" << std::endl;
-              if (gp.trick == "random_auxi" || gp.trick == "random_auxi_adaptive") { return auxi_height * get_random_number(); }
+              if (gp.ergodicity == "random_auxi" || gp.ergodicity == "random_auxi_adaptive") { return auxi_height * get_random_number(); }
               return 0.0;
             }
 
@@ -606,24 +519,16 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
             // std::cout << "taus_new: " << std::endl;
             // print_vector(taus);
 
-            if (tp.mapping_v == 4 && sp.use_bare_propagator == false) {
-              for (int i = taus_left.size() - 1; i >= 0; i--) { taus_left_sym.push_back(sp.tau_split - taus_left[i]); }
-              for (int i = taus_right.size() - 1; i >= 0; i--) { taus_right_sym.push_back(tau_max + sp.tau_split - taus_right[i]); }
-              taus_sym = taus_left_sym;
-              taus_sym.insert(taus_sym.end(), taus_right_sym.begin(), taus_right_sym.end());
-            } else if (tp.mapping_v == 4 && sp.tau_split == 0.0) {
-              for (int i = taus.size() - 1; i >= 0; i--) { taus_sym.push_back(tau_max - taus[i]); }
-            }
-
             std::vector<int> phi_loop_list{0};
             std::vector<std::pair<std::vector<int>, std::vector<int>>> phi_loop_pair_list{{phi_d_list, phi_d_dag_list}};
             if (gp.integrand == "sum_phi" && gp.do_segment) {
+              NVTX_RANGE("segment", 5);
               phi_loop_pair_list = generate_phi_segment(iotas, mp.gf_block_shape);
               phi_loop_list.resize(phi_loop_pair_list.size());
               std::iota(phi_loop_list.begin(), phi_loop_list.end(), 0);
             } else if (gp.integrand == "sum_phi") {
               phi_loop_list      = phi_list;
-              phi_loop_pair_list = phi_pair_list;
+              phi_loop_pair_list = *phi_pair_list;
             }
 
             for (auto phi_id : phi_loop_list) {
@@ -650,27 +555,11 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
               auto integrand_phi = evaluate_u_tau_max(sr.u_tau_zeroth_order, sp.tau_split, tau_max, mp.all_d_ops, mp.all_d_dag_ops, mp.gf_block_shape,
                                                       cp, mp.Delta_tau, mp.ad_imp, sr.u_interpolator, tau_d, tau_d_dag, iota_d, iota_d_dag, bl_index,
                                                       subspace_index, sp.use_bare_propagator, sp.gf_index, cp.gf_struct, gp.energy_shift);
-              double j           = jacobian(taus_right, tau_max, sp.tau_split);
-              if (sp.use_bare_propagator == false) { j *= jacobian(taus_left, sp.tau_split, 0.0); }
-              if (tp.mapping_v == 4) {
-                auto tau_d_sym     = get_elements(phi_d, taus_sym);
-                auto tau_d_dag_sym = get_elements(phi_d_dag, taus_sym);
-                auto integrand_phi_sym =
-                   evaluate_u_tau_max(sr.u_tau_zeroth_order, sp.tau_split, tau_max, mp.all_d_ops, mp.all_d_dag_ops, mp.gf_block_shape, cp,
-                                      mp.Delta_tau, mp.ad_imp, sr.u_interpolator, tau_d_sym, tau_d_dag_sym, iota_d, iota_d_dag, bl_index,
-                                      subspace_index, sp.use_bare_propagator, sp.gf_index, cp.gf_struct, gp.energy_shift);
-                // j_sym should be the same as j
-                integrand_val += (integrand_phi_sym * j + integrand_phi * j) / 2;
-              } else {
-                // if (tp.mapping_v == 1 || tp.mapping_v == 3) {
-                //   integrand_val += integrand_phi;
-                // } else {
-                //   integrand_val += integrand_phi * j;
-                // }
-                integrand_val += integrand_phi * j;
-              }
+              double j           = ep.jacobian(taus_right, tau_max, sp.tau_split);
+              if (sp.use_bare_propagator == false) { j *= ep.jacobian(taus_left, sp.tau_split, 0.0); }
+              integrand_val += integrand_phi * j;
             } // end of loop over phi
-            if (gp.trick == "random_auxi" || gp.trick == "random_auxi_adaptive") {
+            if (gp.ergodicity == "random_auxi" || gp.ergodicity == "random_auxi_adaptive") {
               //  std::cout << "tp.auxi_height: " << tp.auxi_height << std::endl;
               return auxi_height * get_random_number() + integrand_val;
             }
@@ -682,7 +571,7 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
           std::vector<std::vector<double>> weight{};
           std::vector<int> init_pivot{};
           if (gp.integral_variable == "v") {
-            for (int i = 0; i < n; i++) {
+            for (int i = 0; i < n_opt; i++) {
               input.push_back(tp.v_value);
               weight.push_back(tp.v_weight);
             }
@@ -695,7 +584,7 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
                 v_iota_weight.push_back(tp.v_weight[j]);
               }
             }
-            for (int i = 0; i < n; i++) {
+            for (int i = 0; i < n_opt; i++) {
               input.push_back(v_iota_value);
               weight.push_back(v_iota_weight);
             }
@@ -704,11 +593,11 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
             iota_value.resize(mp.n_phi);
             std::iota(iota_value.begin(), iota_value.end(), 0);
             std::vector<double> iota_weight(iota_value.size(), 1.0);
-            for (int i = 0; i < n; i++) {
+            for (int i = 0; i < n_opt; i++) {
               input.push_back(iota_value);
               weight.push_back(iota_weight);
             }
-            for (int i = 0; i < n; i++) {
+            for (int i = 0; i < n_opt; i++) {
               input.push_back(tp.v_value);
               weight.push_back(tp.v_weight);
             }
@@ -716,8 +605,8 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
             std::vector<double> iota_value{};
             iota_value.resize(mp.n_phi);
             std::iota(iota_value.begin(), iota_value.end(), 0);
-            std::vector<double> iota_weight(iota_value.size(), 1.0);
-            for (int i = 0; i < n; i++) {
+            std::vector<double> iota_weight(mp.n_phi, 1.0);
+            for (int i = 0; i < n_opt; i++) {
               input.push_back(iota_value);
               input.push_back(tp.v_value);
               weight.push_back(iota_weight);
@@ -767,7 +656,7 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
             continue;
           }
           std::vector<std::vector<int>> init_global_pivots{};
-          if (gp.trick == "spin_pivot" && gp.integral_variable == "v_iota") {
+          if (gp.ergodicity == "spin_pivot" && gp.integral_variable == "v_iota") {
             std::vector<int> pivot{};
             if (gp.tci_shape == "vertex") {
               for (int i = 0; i < input.size(); i++) { pivot.push_back(int(input[i].size() / 2)); }
@@ -778,38 +667,16 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
             }
             init_global_pivots.push_back(pivot);
           }
-          // multiply jacobian for HS and AD's mapping
           double const_jacobian = 1.0;
-          // if (tp.mapping_v == 1 || tp.mapping_v == 3) {
-          //   std::vector<double> taus_fake_right(n - n_left, 0.0);
-          //   const_jacobian = jacobian(taus_fake_right, sp.tau_max, sp.tau_split);
-          //   if (sp.use_bare_propagator == false) {
-          //     std::vector<double> taus_fake_left(n_left, 0.0);
-          //     const_jacobian *= jacobian(taus_fake_left, sp.tau_split, 0.0);
-          //   }
-          // }
           std::vector<double> integral(unsummed_tot_size, 0.0);
-          if (gp.exact_sum) {
-            if (order == 1) {
-              const std::vector<std::vector<double>> &input_order1 = all_input[0];
-              const std::vector<double> &weight_order1             = all_weight[0];
-              integral = calculate_sum<double, double>(integrand, input_order1, weight_order1, const_jacobian);
-            } else if (order == 2) {
-              const std::vector<std::vector<double>> &input_order2 = all_input[1];
-              const std::vector<double> &weight_order2             = all_weight[1];
-              integral = calculate_sum<double, double>(integrand, input_order2, weight_order2, const_jacobian);
-            } else {
-              std::cerr << "exact_sum is only valid for order 1 and 2" << std::endl;
-              std::exit(EXIT_FAILURE);
-            }
-          } else { // tci
-            bool adaptive_error = false;
-            if (gp.trick == "random_auxi_adaptive") { adaptive_error = true; }
-            integral =
-               do_TCI<double, double>(integrand, input, weight, init_pivot, count, tp.sweep_bound, tp.bond_dim, tp.reltol, tp.fullPiv, tp.tci_prrlu,
-                                      tp.error_type, tp.error_eval, tp.convergence_bound, tp.convergence_iter, sp.debug, init_global_pivots,
-                                      const_jacobian, gp.unsummed_tci, unsummed_tot_size, adaptive_error, tp.decay_rate, &auxi_height);
-          }
+
+          bool adaptive_error = false;
+          if (gp.ergodicity == "random_auxi_adaptive") { adaptive_error = true; }
+          integral =
+             do_TCI<double, double>(integrand, input, weight, init_pivot, count, tp.sweep_bound, tp.bond_dim, tp.reltol, tp.fullPiv, tp.tci_prrlu,
+                                    tp.error_type, tp.error_eval, tp.convergence_bound, tp.convergence_iter, sp.debug, init_global_pivots,
+                                    const_jacobian, gp.unsummed_tci, unsummed_tot_size, adaptive_error, tp.decay_rate, &auxi_height);
+
           for (size_t i = 0; i < unsummed_tot_size; i++) { loop3.value[i] += integral[i]; }
         } // end of loop3
         for (size_t i = 0; i < unsummed_tot_size; i++) { loop2.value[i] += loop3.value[i]; }
@@ -819,9 +686,6 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
     sr.integral_list.push_back(loop1.value);
     auto end_time = std::chrono::high_resolution_clock::now();
     sr.calculation_time_list.push_back(std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count() / 1e6);
-    sr.find_pivot_time_list.push_back(time_find_pivot);
-    sr.pretrain_time_list.push_back(time_pretrain);
-    sr.train_time_list.push_back(time_train);
   } // end of order loop
   sr.total_time += std::accumulate(sr.calculation_time_list.begin(), sr.calculation_time_list.end(), 0.0);
   std::cout << "completed" << std::endl;

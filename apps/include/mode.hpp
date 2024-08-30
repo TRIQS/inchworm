@@ -25,11 +25,10 @@ struct global_params_t {
   std::string integrand{};
   std::string integral_variable{};
   std::string tci_shape{};
-  std::string trick{};
+  std::string ergodicity{};
   int model_type{}; // 0 for discrete bath, 1 for continuous bath, 2 for bethe lattice
   bool do_segment = false;
   std::string output_prefix{};
-  bool exact_sum                   = false;
   int unsummed_tci                = 0; // 0: all indices are summed; 1: the first index is not summed; 2: the first two indices are not summed ... 
   double energy_shift              = 0.0;
   double Z_energy_shift_correction = 1.0;
@@ -53,12 +52,10 @@ struct model_params_t {
   long n_bl{};
   fundamental_operator_set fops{};
   int n_phi{};
-  int n_omega_bethe{};
 };
 
 struct tci_params_t {
   int n_GK{};
-  int mapping_v{}; //0 for the mapping in Phys. Rev. B 107, 245135, 1 for the mapping in 	arXiv:2310.16957
   int tci_prrlu{};
   int bond_dim{};
   int sweep_bound{};
@@ -96,6 +93,13 @@ struct simulation_params_t {
   std::vector<int> gf_index{};
 };
 
+struct eval_params_t {
+  cv_func change_variable;
+  jb_func jacobian; 
+  std::vector<std::vector<std::pair<std::vector<int>, std::vector<int>>>> phi_pair_order_list{}; //phi_pair for each order
+  std::vector<int> phi_pair_order_list_auxi{}; // store which order the phi_pair_list belongs to, for example, if the second element of phi_pair_order_list is for order 3, then phi_pair_order_list_auxi[1] = 3
+};
+
 struct simulation_results_t {
   double Z_bath            = 0;
   double Z_bath_correction = 0;
@@ -109,16 +113,10 @@ struct simulation_results_t {
   u_tau_t u_tau_ref{};
   g_tau_t G_tau_ref{};
   interpolator_t<scalar_t> u_interpolator_ref{};
-  frame_t u_tau_zeroth_order_ref{};
-  frame_t u_tau_zeroth_order_bare{};
   frame_t u_tau_zeroth_order{};
-  double partition_function_zeroth_order_ref{};
 
   std::vector<std::vector<double>> integral_list = {};
   std::vector<double> calculation_time_list      = {};
-  std::vector<double> pretrain_time_list         = {};
-  std::vector<double> find_pivot_time_list       = {};
-  std::vector<double> train_time_list            = {};
   double total_time=0;
 };
 
@@ -142,26 +140,23 @@ class ModeBase {
   virtual void init(std::string json_file_path, std::string hyb_file_path) {
     NVTX_RANGE("init", 0);
     try {
-      NVTX_RANGE("read params", 0);
       read_json_parameters(json_file_path);
     } catch (std::exception &e) {
       std::cerr << "Error in reading json file: " << e.what() << std::endl;
       std::exit(EXIT_FAILURE);
     }
     try {
-      NVTX_RANGE("prepare input", 0);
       prepare_input(hyb_file_path);
     } catch (std::exception &e) {
       std::cerr << "Error in preparing input: " << e.what() << std::endl;
       std::exit(EXIT_FAILURE);
     }
   }
-  virtual void print_summary();
   virtual void run() = 0;
   virtual void validate_input();
+  virtual void print_summary();
+  virtual void prepare_eval();
   virtual void evaluate(std::vector<std::vector<double>> const &unsummed_input         = std::vector<std::vector<double>>(),
-                        std::vector<std::vector<std::vector<double>>> const &all_input = std::vector<std::vector<std::vector<double>>>(),
-                        std::vector<std::vector<double>> const &all_weight             = std::vector<std::vector<double>>(),
                         bool is_first_interval = false);
   virtual void evaluate_propagator()      = 0;
   virtual void evaluate_greens_function() = 0;
@@ -184,6 +179,7 @@ class ModeBase {
   tci_params_t tp{};
   simulation_params_t sp{};
   simulation_results_t sr{};
+  eval_params_t ep{};
   void read_json_parameters(std::string json_file_path);
   hyb_tau_t read_hyb_function(std::string hyb_file_path, model_params_t const &mp, constr_params_t const &cp);
   void prepare_input(std::string hyb_file_path);
@@ -197,6 +193,7 @@ class ModeDebug : public ModeBase {
   void validate_input() override;
   void evaluate_propagator() override;
   void evaluate_greens_function() override;
+  void print_summary() override;
 };
 
 class ModeInchworm : public ModeBase {
@@ -206,6 +203,7 @@ class ModeInchworm : public ModeBase {
   void validate_input() override;
   void evaluate_propagator() override;
   void evaluate_greens_function() override;
+  void print_summary() override;
 };
 
 class ModeBare : public ModeBase {
@@ -215,4 +213,5 @@ class ModeBare : public ModeBase {
   void validate_input() override;
   void evaluate_propagator() override;
   void evaluate_greens_function() override;
+  void print_summary() override;
 };

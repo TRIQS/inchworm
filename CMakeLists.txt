@@ -32,7 +32,13 @@ find_package(TRIQS 3.2 REQUIRED)
 
 # Load xfac
 find_package(xfac REQUIRED)
+if (xfac_FOUND)
+    message(STATUS "xfac found at: ${xfac_DIR}")
+endif()
 find_package(OpenMP)
+if (OpenMP_FOUND)
+    message(STATUS "OpenMP found at: ${OpenMP_CXX_LIBRARIES}")
+endif()
 
 # Get the git hash & print status
 triqs_get_git_hash_of_source_dir(PROJECT_GIT_HASH)
@@ -129,14 +135,9 @@ target_compile_options(${PROJECT_NAME}_warnings
 
 # Find / Build dependencies
 add_subdirectory(deps)
-add_subdirectory(deps/NVTX) ### NVTX is a header-only copy
-
-# Build and install the library
-add_subdirectory(c++/${PROJECT_NAME})
 
 # Add an option to enable or disable NVTX
 option(ENABLE_NVTX "Enable NVTX support" OFF)
-
 # Check if NVTX should be enabled
 if(ENABLE_NVTX)
     add_definitions(-DUSE_NVTX)
@@ -144,6 +145,10 @@ if(ENABLE_NVTX)
 else()
     message(STATUS "NVTX support disabled")
 endif()
+add_subdirectory(nvtx) ### NVTX inside is a header-only copy
+
+# Build and install the library
+add_subdirectory(c++/${PROJECT_NAME})
 
 # Build the application
 add_subdirectory(apps)

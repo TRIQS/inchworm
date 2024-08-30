@@ -15,7 +15,7 @@ function compute_delta(tau_grid, beta, t)
 
     for itau in 1:length(tau_grid)
         tau = tau_grid[itau]
-        delta_values[itau] = quadgk(omega->integrand(omega,tau,beta,t), -2*t, 2*t)[1]
+        delta_values[itau] = quadgk(omega->integrand(omega,tau,beta,t), -2*t, 2*t, atol=1e-15, rtol=1e-12)[1]
     end
 
     return delta_values
@@ -31,11 +31,26 @@ function save_to_hdf5(file_path, bl_structure, tau_grid, data, spin_orb)
 end
 end
 
+function save_to_txt(txt_file_path, tau_grid, data, spin_orb)
+    open(txt_file_path, "w") do file
+        for i in 1:length(tau_grid)
+            # Repeat the data value spin_orb times, separated by spaces
+            data_row = join([data[i] for _ in 1:spin_orb], " ")
+            println(file, "$(tau_grid[i]) $data_row")
+        end
+    end
+end
+
+
 function main(args)
     tau_grid = range(start=0., stop=args["beta"], length=Int(args["Nt"])) |> collect
     delta_values = compute_delta(tau_grid, args["beta"], args["t"])
     bl_structure = ones(Int,args["spin_orb"])
     save_to_hdf5(args["output_file"], bl_structure, tau_grid, delta_values, args["spin_orb"])
+    if args["save_txt"]
+        txt_file_path = replace(args["output_file"], ".h5" => ".txt")
+        save_to_txt(txt_file_path, tau_grid, delta_values, args["spin_orb"])
+    end
 end
 
 function parse_commandline()
@@ -61,6 +76,10 @@ function parse_commandline()
             help = "Output file path"
             arg_type = String
             default = "Delta_Bethe.h5"
+        "save_txt"
+            help = "Flag to save data to a .txt file"
+            arg_type = Bool
+            default = false
     end
     return parse_args(s)
 end

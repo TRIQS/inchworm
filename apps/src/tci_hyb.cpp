@@ -24,14 +24,10 @@ int main(int argc, char *argv[]) {
   ModeBase *mode = create_mode(mode_name);
   if (mode) {
     std::cout << "###### Tensor Train Based Hybridization Expansion Algorithm ######" << std::endl;
-    std::cerr << std::setprecision(18);
+    std::cout << std::fixed << std::setprecision(18);
+    std::cerr << std::fixed << std::setprecision(18);
     mode->init(json_file_path, hyb_file_path);
-    double start_time = omp_get_wtime();
     mode->run();
-    std::cout << "time: ";
-    double end_time     = omp_get_wtime();
-    double elapsed_time = end_time - start_time;
-    std::cout << elapsed_time << " sec" << std::endl;
     mode->print_summary();
     delete mode;
   } else {

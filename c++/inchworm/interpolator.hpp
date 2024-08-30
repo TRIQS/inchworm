@@ -1,14 +1,11 @@
 #pragma once
 
 #include "./types.hpp"
-
 #include <nda/array_adapter.hpp>
-
 #include <fmt/core.h>
-
 #include <variant>
-
 #include "interpolator_factory.hpp"
+#include "nvtx.hpp"
 
 using namespace std::complex_literals;
 
@@ -44,6 +41,7 @@ namespace inchworm {
     ~interpolator_t() = default;
 
     T operator()(int bl, double tau, int i, int j) const {
+      NVTX_RANGE("obtain interpolated points", 0);
       std::cout << "interpolator_t::operator() called" << std::endl;
       if (type == interpolation_type::cspline) {
         return std::get<interpolator_cspline_t<T>>(interpolator)(bl, tau, i, j);

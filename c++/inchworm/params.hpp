@@ -29,7 +29,7 @@ namespace inchworm {
   struct constr_params_t {
 
     /// Number of tau points for the hybridization function
-    int n_tau = 10001;
+    int n_tau_hyb = 10001;
 
     /// Number of tau points for the propagator
     int n_tau_inch = 101;
