@@ -57,7 +57,9 @@ struct model_params_t {
 struct tci_params_t {
   int n_GK{};
   int tci_prrlu{};
-  int bond_dim{};
+  int bond_dim_init{};
+  int bond_dim_increase{};
+  int bond_dim_max{};
   int sweep_bound{};
   std::vector<double> v_value{};
   std::vector<double> v_weight{};
