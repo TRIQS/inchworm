@@ -38,13 +38,13 @@ namespace inchworm::diagram {
 
   hyb_matrix_t::hyb_matrix_t(time_diagram_t const &diagram) : diagram{diagram}, size{diagram.perturbation_order()}, mat{size, size} {
 
-    auto hyb_function_dummy = [](double dtau) { return (1.0 / (0.8 * (dtau - 0.5))); };
-    for (auto [i, d] : enumerate(diagram.d_list)) {
-      for (auto [j, d_dag] : enumerate(diagram.d_dag_list)) {
-        mat(i, j) = (0.5 + j - i) * hyb_function_dummy(d_dag.tau - d.tau);
-        if (i < j) mat(i, j) = -mat(i, j);
-      }
-    }
+    // auto hyb_function_dummy = [](double dtau) { return (1.0 / (0.8 * (dtau - 0.5))); };
+    // for (auto [i, d] : enumerate(diagram.d_list)) {
+    //   for (auto [j, d_dag] : enumerate(diagram.d_dag_list)) {
+    //     mat(i, j) = (0.5 + j - i) * hyb_function_dummy(d_dag.tau - d.tau);
+    //     if (i < j) mat(i, j) = -mat(i, j);
+    //   }
+    // }
   }
 
   hyb_matrix_t::hyb_matrix_t(time_diagram_t const &diagram, hyb_tau_t const &Delta)
@@ -60,13 +60,34 @@ namespace inchworm::diagram {
         return -Delta[c.bl](Delta[c.bl].mesh().beta() + dtau)(cdag.idx, c.idx);
       }
 
-      //test hybridization discretization
-      // double coff = 1.0;
-      // if (dtau >= 0.) {
-      //   return coff*coff*one_fermion(dtau, 1, Delta[c.bl].mesh().beta());
-      // } else {
-      //   return - coff*coff*one_fermion(dtau+Delta[c.bl].mesh().beta(), 1, Delta[c.bl].mesh().beta());
-      // }
+    };
+
+    for (auto [i, d] : enumerate(diagram.d_list)) {
+      for (auto [j, d_dag] : enumerate(diagram.d_dag_list)) { mat(i, j) = eval_Delta(d_dag, d); }
+    }
+  }
+
+  hyb_matrix_t::hyb_matrix_t(time_diagram_t const &diagram, mat_t const &theta, vec_t const &eps, double beta, int n_bath)
+     : diagram{diagram}, size{diagram.perturbation_order()}, mat{size, size} {
+
+    auto eval_Delta = [&theta, &eps, &n_bath, &beta](fop_t const &cdag, fop_t const &c) -> hyb_scalar_t {
+      if (cdag.bl != c.bl) return 0.;
+
+      double dtau = cdag.tau - c.tau;
+      int i = cdag.idx;
+      int j = c.idx;
+      double result=0.0;
+      if (dtau >=0.){
+        for (auto n : range(n_bath)) {
+          result += theta(i, n) * dagger(theta)(n, j) * one_fermion(dtau, eps(n), beta);
+        }
+      }
+      else{
+       for (auto n : range(n_bath)) {
+          result += -1.0 * theta(i, n) * dagger(theta)(n, j) * one_fermion(dtau + beta, eps(n), beta);
+        }
+      }
+      return result;
 
     };
 

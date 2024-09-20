@@ -30,6 +30,8 @@ get_directory_property(IS_SUBPROJECT PARENT_DIRECTORY)
 # Load TRIQS and CPP2PY
 find_package(TRIQS 3.2 REQUIRED)
 
+find_package(MPI REQUIRED)
+
 # Load xfac
 find_package(xfac REQUIRED)
 if (xfac_FOUND)

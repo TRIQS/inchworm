@@ -26,15 +26,21 @@
 #include "../types.hpp"
 #include "../config.hpp"
 
+using mat_t = nda::matrix<double>;
+using vec_t = nda::array<double, 1>;
+
 namespace inchworm::diagram {
 
   struct hyb_matrix_t {
-
+     
     /// Construct hybridization matrix using dummy function (for test purposes only)
     hyb_matrix_t(time_diagram_t const &diagram);
 
     /// Construct hybridization matrix using a hyb_adaptor_t
     hyb_matrix_t(time_diagram_t const &diagram, hyb_tau_t const &Delta);
+
+    /// Construct hybridization matrix using exact energy levels and hoppings
+    hyb_matrix_t(time_diagram_t const &diagram, mat_t const &theta, vec_t const &eps, double beta, int n_bath);
 
     /// Optimization for segments of length 2:
     ///   Set the value of adjacent vertices to zero in the matrix.
@@ -49,13 +55,16 @@ namespace inchworm::diagram {
     void print() const;
 
     /// The associated diagram
-    time_diagram_t const &diagram;
+    time_diagram_t diagram;
 
     /// The linear size of the matrix
     int size;
 
     /// The matrix
     matrix<hyb_scalar_t> mat;
+    
+    void copy_from(hyb_matrix_t const &other) { mat = other.mat; 
+    size = other.size; }
   };
 
   template <typename R> hyb_scalar_t hyb_matrix_t::extract_det(R const &list_of_indices) const {

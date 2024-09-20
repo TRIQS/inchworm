@@ -149,7 +149,10 @@ template <typename T> struct Loop {
 
 class ModeBase {
   public:
-  ModeBase() {}
+  ModeBase() {
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+  }
   virtual void init(std::string json_file_path, std::string hyb_file_path) {
     NVTX_RANGE("init", 0);
     try {
@@ -175,6 +178,8 @@ class ModeBase {
   virtual void evaluate_greens_function() = 0;
   virtual ~ModeBase() {}
   std::string mode_name{};
+  int rank;
+  int size;
 
   // friend function (saving files->save.hpp)
   friend void h5_save_params(const ModeBase *mode, h5::group h5group, std::string subgroup_name);

@@ -23,6 +23,7 @@
 
 #include "../types.hpp"
 #include "../config.hpp"
+#include "nvtx.hpp"
 
 #include <vector>
 
@@ -65,7 +66,7 @@ namespace inchworm::diagram {
     time_diagram_t(std::vector<fop_t> const &d_list_, std::vector<fop_t> const &d_dag_list_, std::vector<double> const &split_times, int verbose = 0);
 
     time_diagram_t(config_t const &config, std::vector<double> const &split_times, int verbose = 0)
-       : time_diagram_t(config.d_list, config.d_dag_list, split_times, verbose) {}
+       : time_diagram_t(config.d_list, config.d_dag_list, split_times, verbose) {NVTX_RANGE("build diagram", 0);}
 
     private:
     int _sign = 1; // Order zero default

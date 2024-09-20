@@ -18,6 +18,7 @@ namespace inchworm {
     interpolator_t() = default;
     // order is 0 for cubic spline, non-zero for linear-Chebyshev
     interpolator_t(u_tau_t const &u_tau, long n_tot, long n_tau, int order, interpolation_type type, std::vector<double> const & grid = std::vector<double>()) : type(type) {
+      NVTX_RANGE("interpolation construct", 2);
       if (type == interpolation_type::cspline) {
         if (order != -1) throw std::runtime_error("order must be -1 for cubic spline interpolation");
         interpolator = interpolator_cspline_t<T>(u_tau, n_tot);
@@ -41,8 +42,7 @@ namespace inchworm {
     ~interpolator_t() = default;
 
     T operator()(int bl, double tau, int i, int j) const {
-      NVTX_RANGE("obtain interpolated points", 0);
-      std::cout << "interpolator_t::operator() called" << std::endl;
+      NVTX_RANGE("interpolation", 2);
       if (type == interpolation_type::cspline) {
         return std::get<interpolator_cspline_t<T>>(interpolator)(bl, tau, i, j);
       } else if (type == interpolation_type::linear_Chebyshev) {
@@ -52,6 +52,7 @@ namespace inchworm {
     }
 
     nda::matrix<T> operator()(int bl, double tau) const {
+      NVTX_RANGE("interpolation", 2);
       if (type == interpolation_type::cspline) {
         return std::get<interpolator_cspline_t<T>>(interpolator)(bl, tau);
       } else if (type == interpolation_type::linear_Chebyshev) {
@@ -61,6 +62,7 @@ namespace inchworm {
     }
 
     nda::array<nda::matrix<double>, 1> operator()(double tau) const {
+      NVTX_RANGE("interpolation", 2);
       if (type == interpolation_type::cspline) {
         return std::get<interpolator_cspline_t<T>>(interpolator)(tau);
       } else if (type == interpolation_type::linear_Chebyshev) {

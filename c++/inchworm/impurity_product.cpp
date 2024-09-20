@@ -26,6 +26,7 @@ namespace inchworm {
 
     // Filter out all operators in the time-window [tau_min, tau_max]
     std::vector<fop_t> op_lst;
+    op_lst.reserve(diagram.op_list.size());
     for (auto const &op : diagram.op_list) {
       if ((op.tau >= tau_min) and (op.tau <= tau_max)) op_lst.push_back(op);
     }
@@ -37,8 +38,6 @@ namespace inchworm {
       } else { // cthyb case
         auto bl_size = ad.get_subspace_dim(bl);
         auto res     = matrix_t::zeros({bl_size, bl_size});
-        // for (auto j : range(bl_size)) res(j, j) = std::exp(-tau * (ad.get_eigenvalue(bl, j) + ad.get_gs_energy()));
-        // for (auto j : range(bl_size)) res(j, j) = std::exp(-tau * ad.get_eigenvalue(bl, j));
         for (auto j : range(bl_size)) res(j, j) = std::exp(-tau * (ad.get_eigenvalue(bl, j) + energy_shift));
         return res;
       }
@@ -46,13 +45,12 @@ namespace inchworm {
 
     // Calculate full operator product
     u_partial_t u_partial(ad.n_subspaces());
-    for (long initial_bl : range(ad.n_subspaces())) {
+    if (op_lst.empty()) {
+      for (long initial_bl : range(ad.n_subspaces())) u_partial[initial_bl] = {initial_bl, u_tau(initial_bl, tau_max - tau_min)};
+      return u_partial;
+    }
 
-      // Treat the trivial case of zero operators separately
-      if (op_lst.empty()) {
-        u_partial[initial_bl] = {initial_bl, u_tau(initial_bl, tau_max - tau_min)};
-        continue;
-      }
+    for (long initial_bl : range(ad.n_subspaces())) {
 
       // Short-circuit if the product contains a void block, i.e. -1
       long curr_bl = initial_bl;

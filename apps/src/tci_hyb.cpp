@@ -1,8 +1,11 @@
 #include <iostream>
 #include <string>
 #include "mode_factory.hpp"
+#include <mpi.h>
 
 int main(int argc, char *argv[]) {
+  MPI_Init(&argc, &argv);
+
   std::string mode_name{};
   std::string json_file_path{};
   std::string hyb_file_path{};
@@ -23,16 +26,19 @@ int main(int argc, char *argv[]) {
 
   ModeBase *mode = create_mode(mode_name);
   if (mode) {
+    NVTX_RANGE("total", 0);
     std::cout << "###### Tensor Train Based Hybridization Expansion Algorithm ######" << std::endl;
     std::cout << std::fixed << std::setprecision(18);
     std::cerr << std::fixed << std::setprecision(18);
     mode->init(json_file_path, hyb_file_path);
     mode->run();
-    mode->print_summary();
+    if (mode->rank == 0) { mode->print_summary(); }
     delete mode;
   } else {
-    std::cout << "Invalid mode specified" << std::endl;
+    std::cerr << "Invalid mode name" << std::endl;
+    std::exit(EXIT_FAILURE);
   }
 
+  MPI_Finalize();
   return 0;
 }

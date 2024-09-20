@@ -258,15 +258,9 @@ namespace inchworm {
             F.params   = &params;
             interp[bl][n](i, j) = gsl_cheb_alloc(order_Chebyshev);
             gsl_cheb_init(interp[bl][n](i, j), &F, a, b);
-
-            // std::cout << "cspline a: "<< params.interp_cspline(bl, a, i, j) << std::endl;
-            // std::cout << "cspline b: "<< params.interp_cspline(bl, b, i, j) << std::endl;
-            // std::cout << "chebyshev a: "<< (*this)(bl, a, i, j) << std::endl;
-            // std::cout << "chebyshev b: "<< (*this)(bl, b, i, j) << std::endl;
           }
         }
       }
-      std::cout << "interpolator_linear_Chebyshev_t is constructed" << std::endl;
     }
 
     // This object holds raw pointers and can only be move-constructed

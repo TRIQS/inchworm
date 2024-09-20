@@ -44,7 +44,7 @@ void ModeInchworm::evaluate_propagator() {
   // 0 [0], 1 [dtau], ... , sp.n_tau_linear-1 [beta]
   // all the evaluated points are in sp.grid of length sp.n_tot
   for (size_t i_tau = 1; i_tau < sp.n_tau_linear; i_tau++) {
-    if (i_tau > 2) { break; }
+    // if (i_tau > 2) { break; }
     bool is_first_interval     = (i_tau == 1);
     sp.use_bare_propagator     = (i_tau == 1);
     long i_grid_tau_split      = i_tau + (i_tau - 1) * (sp.order_Chebyshev + 1) - 1;
@@ -57,12 +57,12 @@ void ModeInchworm::evaluate_propagator() {
          interpolator_t<scalar_t>(sr.u_tau, i_grid_tau_split + 1, i_tau, sp.order_Chebyshev, interpolation_type::linear_Chebyshev, grid_tau_split);
     }
     sp.tau_split = sp.grid_linear[i_tau - 1];
+    std::cout << "sp.tau_split = " << sp.tau_split << std::endl;
     // evaluate points from sp.grid[i_tau+(i_tau-1)*(order_Chebyshev+1)] to sp.grid[i_tau+1+(i_tau)*(order_Chebyshev+1)-1]
     if (gp.unsummed_tci != 2) {
       for (size_t i_Chebyshev_tau = 0; i_Chebyshev_tau < sp.order_Chebyshev + 2; i_Chebyshev_tau++) {
         sp.tau_max = sp.grid[i_grid_tau_split + 1 + i_Chebyshev_tau];
         std::cout << "sp.tau_max = " << sp.tau_max << std::endl;
-        std::cout << "sp.tau_split = " << sp.tau_split << std::endl;
         sr.u_tau_zeroth_order = sp.use_bare_propagator ? make_bare_u_frame(mp.ad_imp, sp.tau_max, gp.energy_shift) :
                                                          sr.u_interpolator(sp.tau_max - sp.tau_split) * sr.u_interpolator(sp.tau_split);
         auto u_frame          = make_zero_frame(mp.ad_imp.get_subspace_dims());
@@ -98,67 +98,49 @@ void ModeInchworm::evaluate_propagator() {
           } // end of bl loop
         }
         set_frame(u_frame, sr.u_tau, i_grid_tau_split + 1 + i_Chebyshev_tau);
-        //print u_frame
-        std::cout << "u_frame at tau = " << sp.tau_max << std::endl;
-        for (auto bl : range(mp.ad_imp.n_subspaces())) {
-          for (auto i : range(mp.ad_imp.get_subspace_dim(bl))) {
-            for (auto j : range(mp.ad_imp.get_subspace_dim(bl))) {
-              std::cout << "u_frame[" << bl << "](" << i << "," << j
-                        << ")*gp.Z_energy_shift_correction  = " << u_frame[bl](i, j) * gp.Z_energy_shift_correction << std::endl;
-              if (gp.model_type == 0) {
-                std::cout << "sr.u_tau_ref[" << bl << "](" << i << "," << j << ") = " << sr.u_interpolator_ref(sp.tau_max)[bl](i, j) << std::endl;
-              }
-            } // end of j loop
-          } // end of j loop
-        } // end of bl loop
       }
     } else {
       // unsummed_tci == 2; we add the tmax index into the tensor train
       int dims_tau = sp.order_Chebyshev + 2;
-      sp.tau_max =  sp.grid[i_grid_tau_split + 2+sp.order_Chebyshev];
-      std::cout << "sp.tau_max = " << sp.tau_max << std::endl;
-      std::cout << "sp.tau_split = " << sp.tau_split << std::endl;
+      sp.tau_max   = sp.grid[i_grid_tau_split + 2 + sp.order_Chebyshev];
       std::vector<double> input(dims_tau, 0.0);
       for (size_t i_Chebyshev_tau = 0; i_Chebyshev_tau < sp.order_Chebyshev + 2; i_Chebyshev_tau++) {
         input[i_Chebyshev_tau] = sp.grid[i_grid_tau_split + 1 + i_Chebyshev_tau];
       }
-      if (unsummed_input.size()==2) { unsummed_input.pop_back(); }
+      if (unsummed_input.size() == 2) { unsummed_input.pop_back(); }
       unsummed_input.push_back(input);
       assert(unsummed_input.size() == 2);
+      for (auto i : range(unsummed_input[1].size())) { std::cout << "unsummed_input[1][" << i << "] = " << unsummed_input[1][i] << std::endl; }
       ModeBase::clear_tci_results();
       ModeBase::evaluate(unsummed_input, is_first_interval);
-      // print the shape of sr.integral_list
-      std::cout << "sr.integral_list.size() = " << sr.integral_list.size() << std::endl;
       int dims_orb = 0;
       for (auto bl : range(mp.ad_imp.n_subspaces())) { dims_orb += mp.ad_imp.get_subspace_dim(bl) * mp.ad_imp.get_subspace_dim(bl); }
       std::vector<double> integrals(dims_tau * dims_orb, 0.0);
       for (auto integral_order : sr.integral_list) {
-        std::cout<<"integral_order.size() = "<<integral_order.size()<<std::endl;
         for (size_t i = 0; i < integral_order.size(); i++) { integrals[i] += integral_order[i]; }
       }
-      std::cout<<"integrals.size() = "<<integrals.size()<<std::endl;
       for (size_t tau_index = 0; tau_index < dims_tau; tau_index++) {
         auto u_frame = make_zero_frame(mp.ad_imp.get_subspace_dims());
         for (size_t orb_index = 0; orb_index < dims_orb; orb_index++) {
-          size_t k              = tau_index + dims_tau * orb_index;
-          std::cout<<"k = "<<k<<std::endl;
-          std::cout<<"orb_index = "<<orb_index<<std::endl;
-          std::cout<<"tau_index = "<<tau_index<<std::endl;
-          auto [bl, i, j]       = bl1_to_bl3(orb_index, mp.ad_imp.get_subspace_dims());
-          std::cout << "bl = " << bl << ", i = " << i << ", j = " << j << std::endl;
-          double tau_max        = sp.grid[i_grid_tau_split + 1 + tau_index];
-          std::cout << "tau_max = " << tau_max << std::endl;
+          size_t k = tau_index + dims_tau * orb_index;
+          auto [bl, i, j] = bl1_to_bl3(orb_index, mp.ad_imp.get_subspace_dims());
+          double tau_max = sp.grid[i_grid_tau_split + 1 + tau_index];
           sr.u_tau_zeroth_order = sp.use_bare_propagator ? make_bare_u_frame(mp.ad_imp, tau_max, gp.energy_shift) :
-                                                         sr.u_interpolator(tau_max - sp.tau_split) * sr.u_interpolator(sp.tau_split);
-          std::cout << "sr.u_tau_zeroth_order[" << bl << "](" << i << "," << j << ") = " << sr.u_tau_zeroth_order[bl](i, j) << std::endl;
-          std::cout<<"integrals[k] = "<<integrals[k]<<std::endl;
-          u_frame[bl](i, j)     = sr.u_tau_zeroth_order[bl](i, j) + integrals[k];
+                                                           sr.u_interpolator(tau_max - sp.tau_split) * sr.u_interpolator(sp.tau_split);
+          u_frame[bl](i, j) = sr.u_tau_zeroth_order[bl](i, j) + integrals[k];
+          // std::cout << "k = " << k << std::endl;
+          // std::cout << "orb_index = " << orb_index << std::endl;
+          // std::cout << "tau_index = " << tau_index << std::endl;
+          // std::cout << "tau_max = " << tau_max << std::endl;
+          // std::cout << "sr.u_tau_zeroth_order[" << bl << "](" << i << "," << j << ") = " << sr.u_tau_zeroth_order[bl](i, j) << std::endl;
+          // std::cout << "integrals[k] = " << integrals[k] << std::endl;
         }
         set_frame(u_frame, sr.u_tau, i_grid_tau_split + 1 + tau_index);
       }
     }
   } // end of i_tau loop
   gp.Z_energy_shift_correction = std::exp(gp.energy_shift * cp.beta);
+  if (sp.debug >0){
   std::cout << "gp.Z_energy_shift_correction = " << gp.Z_energy_shift_correction << std::endl;
   std::cout << "---- partition function ----" << std::endl;
   double partition_function     = 0.;
@@ -171,18 +153,21 @@ void ModeInchworm::evaluate_propagator() {
   }
   std::cout << "partition_function*gp.Z_energy_shift_correction  = " << partition_function * gp.Z_energy_shift_correction << std::endl;
   std::cout << "partition_function_ref = " << partition_function_ref << std::endl;
+  }
 
   sr.u_interpolator =
      interpolator_t<scalar_t>(sr.u_tau, sp.n_tot, sp.n_tau_linear, sp.order_Chebyshev, interpolation_type::linear_Chebyshev, sp.grid);
-
-  auto file_name = gp.output_prefix + ".h5";
-  h5::file file{file_name, 'w'};
-  h5::group group{file};
-  h5_save_params(this, group, "params");
-  h5_save_propagator(this, group, "propagator");
-  h5_save_cheb_coeff(this, group, "cheb_coeff");
-  h5_save_propagator_ref(this, group, "propagator_ref");
-  h5_save_cheb_coeff_ref(this, group, "cheb_coeff_ref");
+  if (rank == 0) {
+    std::cout << "---- save results ----" << std::endl;
+    auto file_name = gp.output_prefix + ".h5";
+    h5::file file{file_name, 'w'};
+    h5::group group{file};
+    h5_save_params(this, group, "params");
+    h5_save_propagator(this, group, "propagator");
+    h5_save_cheb_coeff(this, group, "cheb_coeff");
+    h5_save_propagator_ref(this, group, "propagator_ref");
+    h5_save_cheb_coeff_ref(this, group, "cheb_coeff_ref");
+  }
 }
 
 void ModeInchworm::evaluate_greens_function() {}

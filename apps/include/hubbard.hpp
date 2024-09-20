@@ -114,7 +114,6 @@ discrete_setup(int n_site, int n_bath, int n_spin, double U, double mu, double t
   // h_hyb: Hamiltonian coupling the impurity and the bath
   for (int i = 0; i < n_site; i++) {
     for (int k = 0; k < n_bath; k++) {
-      std::cout << "theta(" << i << "," << k << ") = " << theta(i, k) << std::endl;
       h_hyb += theta(i, k) * (c_dag("up", i) * c("up", k + n_site));
       h_hyb += theta(i, k) * (c_dag("up", k + n_site) * c("up", i));
       if (n_spin == 2) {
@@ -151,8 +150,10 @@ discrete_setup(int n_site, int n_bath, int n_spin, double U, double mu, double t
   auto Z_bath              = partition_function(ad_bath, cp.beta);
   double Z_bath_correction = std::exp(-(ad_bath.get_gs_energy()) * cp.beta);
   double Z_imp_correction  = std::exp(-(ad_imp.get_gs_energy()) * cp.beta);
-  std::cout << "ad_bath.get_gs_energy() " << ad_bath.get_gs_energy() << std::endl;
-  std::cout << "ad_imp.get_gs_energy() " << ad_imp.get_gs_energy() << std::endl;
+
+  
+  // std::cout << "ad_bath.get_gs_energy() " << ad_bath.get_gs_energy() << std::endl;
+  // std::cout << "ad_imp.get_gs_energy() " << ad_imp.get_gs_energy() << std::endl;
   //TEST: hidden fermion
   // for (auto tau : Delta_tau[0].mesh()) {
   //   for (int block = 0; block < cp.gf_struct.size(); block++) {
@@ -197,7 +198,6 @@ inline atom_diag imp_setup(int n_site, int n_spin, double U, double mu, double t
     h_imp -= mu * n("up", j);
 
     if (n_spin == 2) {
-      std::cout << "two spins" << std::endl;
       h_imp -= mu * n("dn", j);
       h_imp += U * n("up", j) * n("dn", j);
     }

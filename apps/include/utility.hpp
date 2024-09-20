@@ -319,13 +319,9 @@ inline std::vector<std::pair<std::vector<int>, std::vector<int>>> get_all_iota(c
 template <typename T> std::vector<T> get_elements(const std::vector<int> &indices, const std::vector<T> &values) {
   NVTX_RANGE("get_elements", 1);
   std::vector<T> result;
+  result.reserve(indices.size());
   for (int index : indices) {
-    if (index >= 0 && index < values.size()) {
-      result.push_back(values[index]);
-    } else {
-      std::cerr << "get_elements: index out of range\n";
-      std::exit(EXIT_FAILURE);
-    }
+    result.push_back(values[index]);
   }
   return result;
 }
@@ -333,13 +329,9 @@ template <typename T> std::vector<T> get_elements(const std::vector<int> &indice
 template <typename T> std::vector<int> get_elements_int(const std::vector<int> &indices, const std::vector<T> &values) {
   NVTX_RANGE("get_elements_int", 1);
   std::vector<int> result;
+  result.reserve(indices.size());
   for (int index : indices) {
-    if (index >= 0 && index < values.size()) {
       result.push_back(static_cast<int>(values[index]));
-    } else {
-      std::cerr << "get_elements: index out of range\n";
-      std::exit(EXIT_FAILURE);
-    }
   }
   return result;
 }
@@ -448,13 +440,14 @@ inline double evaluate_diagram(frame_t &frame_zeroth_order, double tau_split, do
                                std::vector<std::vector<fop_t>> const &all_d_dag_ops, std::vector<int> const &block_shape, constr_params_t const &cp,
                                hyb_tau_t const &Delta_tau, atom_diag const &ad_imp, interpolator_t<scalar_t> const &u_interpolator,
                                auto const &tau_d_list, auto const &tau_d_dag_list, auto const &iota_d_list, auto const &iota_d_dag_list, int bl_indx,
-                               int subspace_indx, bool use_bare_propagator, std::vector<int> const &gf_index, gf_struct_t const &gf_struct,
+                               int subspace_indx, bool use_bare_propagator, std::vector<int> const &gf_index, gf_struct_t const &gf_struct, mat_t const &theta, vec_t const &eps, int n_bath,
                                double energy_shift = 0.0) {
 
   NVTX_RANGE("evaluate_diagram", 0);
   auto config = config_t(frame_zeroth_order, cp.gf_struct, {0.0, tau_split});
+  {
+    NVTX_RANGE("set config", 3);
   for (auto i : range(tau_d_list.size())) {
-    NVTX_RANGE("evaluate construction", 3);
     auto [bl, subspace_d_index]       = findIndex(block_shape, iota_d_list[i]);
     auto d                            = all_d_ops[bl][subspace_d_index];
     d.tau                             = tau_d_list[i];
@@ -468,9 +461,19 @@ inline double evaluate_diagram(frame_t &frame_zeroth_order, double tau_split, do
     config.split_times.push_back(d.tau);
     config.split_times.push_back(d_dag.tau);
   }
+  }
 
   auto diagram = diagram::time_diagram_t{config, {tau_split}};
   frame_t u_products;
+  auto hyb_mat = diagram::hyb_matrix_t(diagram);
+  if (n_bath !=0){
+    auto hyb_mat_ = diagram::hyb_matrix_t(diagram, theta, eps, cp.beta, n_bath);
+    hyb_mat.copy_from(hyb_mat_);
+  }
+  else{
+    auto hyb_mat_ = diagram::hyb_matrix_t(diagram, Delta_tau);
+    hyb_mat.copy_from(hyb_mat_);
+  }
   if (gf_index.size() == 0) { // partiion function or propagator
     if (!use_bare_propagator) {
       NVTX_RANGE("inchworm-impurity product", 5);
@@ -486,12 +489,10 @@ inline double evaluate_diagram(frame_t &frame_zeroth_order, double tau_split, do
       NVTX_RANGE("bare-hyb det", 6);
       if (bl_indx == -1) { //-1 is for returning the trace
         if (has_zero_trace(ad_imp, diagram)) { return 0.0; }
-        auto hyb_mat = diagram::hyb_matrix_t(diagram, Delta_tau);
         sign         = diagram.sign();
         hyb_weight   = hyb_mat.det();
         return hyb_weight * sign * trace(u_products);
       } else if (u_products[bl_indx].size() != 0) {
-        auto hyb_mat = diagram::hyb_matrix_t(diagram, Delta_tau);
         sign         = diagram.sign();
         hyb_weight   = hyb_mat.det();
         int bl_size  = std::sqrt(u_products[bl_indx].size());
@@ -505,7 +506,6 @@ inline double evaluate_diagram(frame_t &frame_zeroth_order, double tau_split, do
     } // end of if (use_bare_propagator)
     else if (u_products[bl_indx].size() != 0) {
       NVTX_RANGE("inchworm-hyb det", 6);
-      auto hyb_mat = diagram::hyb_matrix_t(diagram, Delta_tau);
       sign         = diagram.sign();
       hyb_weight   = inclusion_exclusion(diagram, hyb_mat);
       int bl_size  = std::sqrt(u_products[bl_indx].size());
@@ -526,7 +526,6 @@ inline double evaluate_diagram(frame_t &frame_zeroth_order, double tau_split, do
     auto l_x_di                     = l * get_op_block_matrix(ad_imp, bl_name_d, i, false);
     auto r_x_djdag                  = r * get_op_block_matrix(ad_imp, bl_name_dag, j, true);
     auto prod                       = make_frame(l_x_di * r_x_djdag);
-    auto hyb_mat                    = diagram::hyb_matrix_t(diagram, Delta_tau);
     int sign                        = diagram.sign();
     double hyb_weight               = inclusion_exclusion(diagram, hyb_mat);
     return -1 * trace(prod) * hyb_weight * sign;
@@ -647,13 +646,7 @@ template <class T> std::vector<T> partial_integral_tt(xfac::TensorTrain<T> const
   auto right_integral = tt_sum.R[n_skip - 1];
   std::vector<int> n_index_list;
   for (size_t i = 0; i < n_skip; i++) { n_index_list.push_back(weight[i].size()); }
-  // std::cout<<"n_index_list: ";
-  // print_vector(n_index_list);
   auto index_combinations = generateCombinations(n_index_list);
-  // std::cout<<"index_combinations: ";
-  // for (auto index_combination : index_combinations) {
-  //   print_vector(index_combination);
-  // }
   for (auto index_combination : index_combinations) {
     auto partial_integral = right_integral;
     for (size_t i = n_skip - 1; i > 0; i--) {
@@ -938,6 +931,7 @@ std::vector<T_output> do_TCI(std::function<T_output(std::vector<T_input>)> integ
         if (i > 1) {
           for (auto b = 0u; b < ci.len() - 1; b++) ci.addPivotsAt(pivots[b], b);
           ci.makeCanonical();
+          // ci.iterate(1,0);
         }
       }
       if (init_global_pivots.size() != 0 && i == 1) { ci.addPivotsAllBonds(init_global_pivots); }
@@ -965,9 +959,9 @@ std::vector<T_output> do_TCI(std::function<T_output(std::vector<T_input>)> integ
         } else if (error_type == 1) {
           current_error = ci.trueError(error_eval);
         } else if (error_type == 2) {
-          current_error = tci_error_integral(integrand, ci.tt, input, error_eval);
+          current_error = tci_error_integral(integrand, tt, input, error_eval);
         } else if (error_type == 3) {
-          current_error = tci_error_integrand(integrand, ci.tt, input, error_eval);
+          current_error = tci_error_integrand(integrand, tt, input, error_eval);
         } else {
           std::cerr << "error_type not supported" << std::endl;
           std::exit(EXIT_FAILURE);
@@ -980,10 +974,10 @@ std::vector<T_output> do_TCI(std::function<T_output(std::vector<T_input>)> integ
       double TOL = 1e-16;
       if (abs(integral[i]) > TOL || abs(previous_integral[i]) > TOL) { all_zero = false; } 
       }
-      if (i>1 && all_zero) { return integral; } // if all elements previous integral and current integral are zero, return zero;
+      // if (i>1 && all_zero) { return integral; } // if all elements previous integral and current integral are zero, return zero;
       if (diff < convergence_bound && i > convergence_iter) { break; }
       previous_integral = integral;
-      if (debug > 1) { print_rank(ci.tt); }
+      if (debug > 1) { print_rank(tt); }
       pivots.clear();
       {
         NVTX_RANGE("ci-copy pivots", 8);
@@ -1023,13 +1017,9 @@ std::vector<T_output> do_TCI(std::function<T_output(std::vector<T_input>)> integ
        integrand, input,
        {.bondDim = bond_dim_max, .reltol = reltol, .pivot1 = valid_init_global_pivot, .fullPiv = fullPiv, .useCachedFunction = true});
     for (auto b = 0u; b < ci.len() - 1; b++) ci.addPivotsAt(pivots[b], b);
+    // ci.iterate(1,0);
     ci.makeCanonical();
-    auto tt = ci.tt;
-    if (unsummed_tci != 0) {
-      integral = partial_integral_tt(tt, weight, unsummed_tci);
-    } else {
-      integral = partial_integral_tt(tt, weight, 0);
-    }
+    integral = partial_integral_tt(ci.tt, weight, unsummed_tci);
     for (auto i = 0; i < integral.size(); i++) { integral[i] *= const_jacobian; }
     }
   } else {
