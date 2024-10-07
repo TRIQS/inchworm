@@ -28,6 +28,7 @@ struct global_params_t {
   std::string ergodicity{};
   int model_type{}; // 0 for discrete bath, 1 for continuous bath, 2 for bethe lattice
   bool do_segment = false;
+  bool do_cache   = true;
   std::string output_prefix{};
   int unsummed_tci                = 0; // 0: all indices are summed; 1: the first index is not summed; 2: the first two indices are not summed ... 
   double energy_shift              = 0.0;
@@ -70,7 +71,6 @@ struct tci_params_t {
   int error_eval{};
   double convergence_bound{};
   int convergence_iter{};
-  double integral_lower_bound{};
   double decay_rate{};
 };
 
@@ -113,6 +113,20 @@ struct eval_params_t {
   std::unordered_map<std::vector<double>, std::vector<std::pair<std::vector<int>, std::vector<int>>>,VectorHash> phi_pair_iota_cache;
 };
 
+struct statistics_per_inch_t {
+  std::vector<long> func_evals_order {};
+  std::vector<long> warning_same_time_order {};
+  std::vector<long> warning_tau_split_order {};
+  std::vector<long> warning_tau_max_order {};
+  std::vector<double> max_diff_order {}; 
+  std::vector<double> max_auxi_height_order {};
+  std::vector<double> max_error_order {};
+  std::vector<double> u_tau_sum_order {}; // this is the abs sum of all matrix element and all tau within the same inchworm/bare step
+  std::vector<double> time_order {};
+  std::vector<long> nTCI_order {};
+  std::vector<double> integral_max_order {};
+};
+
 struct simulation_results_t {
   double Z_bath            = 0;
   double Z_bath_correction = 0;
@@ -129,8 +143,7 @@ struct simulation_results_t {
   frame_t u_tau_zeroth_order{};
 
   std::vector<std::vector<double>> integral_list = {};
-  std::vector<double> calculation_time_list      = {};
-  double total_time=0;
+  std::vector<statistics_per_inch_t> statistics{};
 };
 
 template <typename T> struct Loop {
@@ -173,7 +186,7 @@ class ModeBase {
   virtual void print_summary();
   virtual void prepare_eval();
   virtual void evaluate(std::vector<std::vector<double>> const &unsummed_input         = std::vector<std::vector<double>>(),
-                        bool is_first_interval = false);
+                        bool is_first_interval = false, size_t inchworm_index = 0);
   virtual void evaluate_propagator()      = 0;
   virtual void evaluate_greens_function() = 0;
   virtual ~ModeBase() {}
@@ -188,6 +201,7 @@ class ModeBase {
   friend void h5_save_propagator_ref(const ModeBase *mode, h5::group h5group, std::string subgroup_name);
   friend void h5_save_cheb_coeff_ref(const ModeBase *mode, h5::group h5group, std::string subgroup_name);
   friend void h5_save_gf(const ModeBase *mode, h5::group h5group, std::string subgroup_name, g_tau_t const &G_tau);
+  friend void h5_save_statistics(const ModeBase *mode, h5::group h5group, std::string subgroup_name);
 
   protected:
   // parameters for all modes

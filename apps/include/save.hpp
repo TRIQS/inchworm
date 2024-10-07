@@ -47,12 +47,12 @@ inline void h5_save_propagator_ref(const ModeBase *mode, h5::group h5group, std:
 
 inline void h5_save_cheb_coeff(const ModeBase *mode, h5::group h5group, std::string subgroup_name) {
   auto grp                    = h5group.create_group(subgroup_name);
-  auto chebyshov_coefficients = mode->sr.u_interpolator.get_cheb_coeffs();
+  auto chebyshev_coefficients = mode->sr.u_interpolator.get_cheb_coeffs();
   for (auto bl : range(mode->mp.ad_imp.n_subspaces())) {
     for (auto i : range(mode->mp.ad_imp.get_subspace_dim(bl))) {
       for (auto j : range(mode->mp.ad_imp.get_subspace_dim(bl))) {
         for (auto tau_interval : range(mode->sp.n_tau_linear - 1)) {
-          auto coeffs              = chebyshov_coefficients[bl][tau_interval](i, j);
+          auto coeffs              = chebyshev_coefficients[bl][tau_interval](i, j);
           std::string dataset_name = fmt::format("cheb_coeff_{}_{}_{}_{}", bl, i, j, tau_interval);
           h5_write(grp, dataset_name, coeffs);
         }
@@ -63,12 +63,12 @@ inline void h5_save_cheb_coeff(const ModeBase *mode, h5::group h5group, std::str
 
 inline void h5_save_cheb_coeff_ref(const ModeBase *mode, h5::group h5group, std::string subgroup_name) {
   auto grp                    = h5group.create_group(subgroup_name);
-  auto chebyshov_coefficients = mode->sr.u_interpolator_ref.get_cheb_coeffs();
+  auto chebyshev_coefficients = mode->sr.u_interpolator_ref.get_cheb_coeffs();
   for (auto bl : range(mode->mp.ad_imp.n_subspaces())) {
     for (auto i : range(mode->mp.ad_imp.get_subspace_dim(bl))) {
       for (auto j : range(mode->mp.ad_imp.get_subspace_dim(bl))) {
         for (auto tau_interval : range(mode->sp.n_tau_linear - 1)) {
-          auto coeffs              = chebyshov_coefficients[bl][tau_interval](i, j);
+          auto coeffs              = chebyshev_coefficients[bl][tau_interval](i, j);
           std::string dataset_name = fmt::format("cheb_coeff_{}_{}_{}_{}", bl, i, j, tau_interval);
           h5_write(grp, dataset_name, coeffs);
         }
@@ -92,4 +92,35 @@ inline void h5_save_gf(const ModeBase *mode, h5::group h5group, std::string subg
       }
     }
   }
+}
+
+inline void h5_save_statistics(const ModeBase *mode, h5::group h5group, std::string subgroup_name) {
+  auto grp = h5group.create_group(subgroup_name);
+  // sr.statistics is a vector of vector, the first one is for different inchworm/bare step and the second one is the for different order
+  // generate subgroup for different components of statistics
+  auto grp_func_evals = grp.create_group("func_evals");
+  auto grp_warning_same_time = grp.create_group("warning_same_time");
+  auto grp_warning_tau_split = grp.create_group("warning_tau_split");
+  auto grp_warning_tau_max = grp.create_group("warning_tau_max");
+  auto grp_max_diff = grp.create_group("max_diff");
+  auto grp_max_auxi_height = grp.create_group("max_auxi_height");
+  auto grp_max_pivot_error = grp.create_group("max_pivot_error");
+  auto grp_u_tau_sum = grp.create_group("u_tau_sum");
+  auto grp_time = grp.create_group("time");
+  auto grp_nTCI = grp.create_group("nTCI");
+  auto grp_integral_max = grp.create_group("integral_max");
+  for (size_t i = 0; i < mode->sr.statistics.size(); i++) {
+    std::string subgroup_name = fmt::format("inch{}", i);
+    h5_write(grp_func_evals, subgroup_name, mode->sr.statistics[i].func_evals_order);
+    h5_write(grp_warning_same_time, subgroup_name, mode->sr.statistics[i].warning_same_time_order);
+    h5_write(grp_warning_tau_split, subgroup_name, mode->sr.statistics[i].warning_tau_split_order);
+    h5_write(grp_warning_tau_max, subgroup_name, mode->sr.statistics[i].warning_tau_max_order);
+    h5_write(grp_max_diff, subgroup_name, mode->sr.statistics[i].max_diff_order);
+    h5_write(grp_max_auxi_height, subgroup_name, mode->sr.statistics[i].max_auxi_height_order);
+    h5_write(grp_max_pivot_error, subgroup_name, mode->sr.statistics[i].max_error_order);
+    h5_write(grp_u_tau_sum, subgroup_name, mode->sr.statistics[i].u_tau_sum_order);
+    h5_write(grp_time, subgroup_name, mode->sr.statistics[i].time_order);
+    h5_write(grp_nTCI, subgroup_name, mode->sr.statistics[i].nTCI_order);
+    h5_write(grp_integral_max, subgroup_name, mode->sr.statistics[i].integral_max_order);
+}
 }

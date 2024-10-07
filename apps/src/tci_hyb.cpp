@@ -26,8 +26,8 @@ int main(int argc, char *argv[]) {
 
   ModeBase *mode = create_mode(mode_name);
   if (mode) {
-    NVTX_RANGE("total", 0);
-    std::cout << "###### Tensor Train Based Hybridization Expansion Algorithm ######" << std::endl;
+    NVTX_RANGE("main", 0);
+    if (mode->rank == 0) { std::cout << "###### Tensor Train Based Hybridization Expansion Algorithm ######" << std::endl; }
     std::cout << std::fixed << std::setprecision(18);
     std::cerr << std::fixed << std::setprecision(18);
     mode->init(json_file_path, hyb_file_path);

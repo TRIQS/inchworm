@@ -95,7 +95,6 @@
         "fullPiv": false,
         "error_type": 0,
         "convergence_bound": 1e-25,
-        "convergence_iter": 3,
-        "integral_lower_bound": 1e-20
+        "convergence_iter": 3
     }
 }

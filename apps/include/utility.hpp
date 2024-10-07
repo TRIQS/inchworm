@@ -194,6 +194,9 @@ inline auto select_quadrature_GK(int n, double a = 0, double b = 1) {
     case 17: return quadrature_GK<17>(a, b);
     case 19: return quadrature_GK<19>(a, b);
     case 13: return quadrature_GK<13>(a, b);
+    case 7: return quadrature_GK<7>(a, b);
+    case 5: return quadrature_GK<5>(a, b);
+    case 9: return quadrature_GK<9>(a, b);
     default: {
       std::cerr << "select_quadrature_GK: value not supported\n";
       std::exit(EXIT_FAILURE);
@@ -320,9 +323,7 @@ template <typename T> std::vector<T> get_elements(const std::vector<int> &indice
   NVTX_RANGE("get_elements", 1);
   std::vector<T> result;
   result.reserve(indices.size());
-  for (int index : indices) {
-    result.push_back(values[index]);
-  }
+  for (int index : indices) { result.push_back(values[index]); }
   return result;
 }
 
@@ -330,9 +331,7 @@ template <typename T> std::vector<int> get_elements_int(const std::vector<int> &
   NVTX_RANGE("get_elements_int", 1);
   std::vector<int> result;
   result.reserve(indices.size());
-  for (int index : indices) {
-      result.push_back(static_cast<int>(values[index]));
-  }
+  for (int index : indices) { result.push_back(static_cast<int>(values[index])); }
   return result;
 }
 
@@ -440,37 +439,36 @@ inline double evaluate_diagram(frame_t &frame_zeroth_order, double tau_split, do
                                std::vector<std::vector<fop_t>> const &all_d_dag_ops, std::vector<int> const &block_shape, constr_params_t const &cp,
                                hyb_tau_t const &Delta_tau, atom_diag const &ad_imp, interpolator_t<scalar_t> const &u_interpolator,
                                auto const &tau_d_list, auto const &tau_d_dag_list, auto const &iota_d_list, auto const &iota_d_dag_list, int bl_indx,
-                               int subspace_indx, bool use_bare_propagator, std::vector<int> const &gf_index, gf_struct_t const &gf_struct, mat_t const &theta, vec_t const &eps, int n_bath,
-                               double energy_shift = 0.0) {
+                               int subspace_indx, bool use_bare_propagator, std::vector<int> const &gf_index, gf_struct_t const &gf_struct,
+                               mat_t const &theta, vec_t const &eps, int n_bath, int model_type, double energy_shift = 0.0) {
 
   NVTX_RANGE("evaluate_diagram", 0);
   auto config = config_t(frame_zeroth_order, cp.gf_struct, {0.0, tau_split});
   {
     NVTX_RANGE("set config", 3);
-  for (auto i : range(tau_d_list.size())) {
-    auto [bl, subspace_d_index]       = findIndex(block_shape, iota_d_list[i]);
-    auto d                            = all_d_ops[bl][subspace_d_index];
-    d.tau                             = tau_d_list[i];
-    auto [bl_dag, subspace_index_dag] = findIndex(block_shape, iota_d_dag_list[i]);
-    auto d_dag                        = all_d_dag_ops[bl_dag][subspace_index_dag];
-    d_dag.tau                         = tau_d_dag_list[i];
-    config.d_bl_list[bl].push_back(d);
-    config.d_dag_bl_list[bl_dag].push_back(d_dag);
-    config.d_list.push_back(d);
-    config.d_dag_list.push_back(d_dag);
-    config.split_times.push_back(d.tau);
-    config.split_times.push_back(d_dag.tau);
-  }
+    for (auto i : range(tau_d_list.size())) {
+      auto [bl, subspace_d_index]       = findIndex(block_shape, iota_d_list[i]);
+      auto d                            = all_d_ops[bl][subspace_d_index];
+      d.tau                             = tau_d_list[i];
+      auto [bl_dag, subspace_index_dag] = findIndex(block_shape, iota_d_dag_list[i]);
+      auto d_dag                        = all_d_dag_ops[bl_dag][subspace_index_dag];
+      d_dag.tau                         = tau_d_dag_list[i];
+      config.d_bl_list[bl].push_back(d);
+      config.d_dag_bl_list[bl_dag].push_back(d_dag);
+      config.d_list.push_back(d);
+      config.d_dag_list.push_back(d_dag);
+      config.split_times.push_back(d.tau);
+      config.split_times.push_back(d_dag.tau);
+    }
   }
 
   auto diagram = diagram::time_diagram_t{config, {tau_split}};
   frame_t u_products;
   auto hyb_mat = diagram::hyb_matrix_t(diagram);
-  if (n_bath !=0){
+  if (model_type == 0) {
     auto hyb_mat_ = diagram::hyb_matrix_t(diagram, theta, eps, cp.beta, n_bath);
     hyb_mat.copy_from(hyb_mat_);
-  }
-  else{
+  } else {
     auto hyb_mat_ = diagram::hyb_matrix_t(diagram, Delta_tau);
     hyb_mat.copy_from(hyb_mat_);
   }
@@ -489,13 +487,13 @@ inline double evaluate_diagram(frame_t &frame_zeroth_order, double tau_split, do
       NVTX_RANGE("bare-hyb det", 6);
       if (bl_indx == -1) { //-1 is for returning the trace
         if (has_zero_trace(ad_imp, diagram)) { return 0.0; }
-        sign         = diagram.sign();
-        hyb_weight   = hyb_mat.det();
+        sign       = diagram.sign();
+        hyb_weight = hyb_mat.det();
         return hyb_weight * sign * trace(u_products);
       } else if (u_products[bl_indx].size() != 0) {
-        sign         = diagram.sign();
-        hyb_weight   = hyb_mat.det();
-        int bl_size  = std::sqrt(u_products[bl_indx].size());
+        sign        = diagram.sign();
+        hyb_weight  = hyb_mat.det();
+        int bl_size = std::sqrt(u_products[bl_indx].size());
         EXPECTS(bl_size == ad_imp.get_subspace_dim(bl_indx))
         int i = subspace_indx / bl_size;
         int j = subspace_indx % bl_size;
@@ -506,11 +504,11 @@ inline double evaluate_diagram(frame_t &frame_zeroth_order, double tau_split, do
     } // end of if (use_bare_propagator)
     else if (u_products[bl_indx].size() != 0) {
       NVTX_RANGE("inchworm-hyb det", 6);
-      sign         = diagram.sign();
-      hyb_weight   = inclusion_exclusion(diagram, hyb_mat);
-      int bl_size  = std::sqrt(u_products[bl_indx].size());
-      int i        = subspace_indx / bl_size;
-      int j        = subspace_indx % bl_size;
+      sign        = diagram.sign();
+      hyb_weight  = inclusion_exclusion(diagram, hyb_mat);
+      int bl_size = std::sqrt(u_products[bl_indx].size());
+      int i       = subspace_indx / bl_size;
+      int j       = subspace_indx % bl_size;
       return u_products[bl_indx](i, j) * hyb_weight * sign;
     } else {
       return 0.0;
@@ -894,13 +892,16 @@ std::vector<T_output> calculate_sum(std::function<T_output(std::vector<T_input>)
 }
 
 template <typename T_output, typename T_input>
-std::vector<T_output> do_TCI(std::function<T_output(std::vector<T_input>)> integrand, std::vector<std::vector<T_input>> const &input,
-                             std::vector<std::vector<double>> const &weight, std::vector<int> const &pivot1, long &count, int sweep_bound,
-                             int bond_dim_init, int bond_dim_increase, int bond_dim_max, double reltol, bool fullPiv, int tci_prrlu, int error_type,
-                             size_t error_eval, double convergence_bound, int convergence_iter, debug_t debug,
-                             std::vector<std::vector<int>> const &init_global_pivots, double const_jacobian, int unsummed_tci, int unsummed_tot_size,
-                             bool adaptive_error, double decay_rate, double *auxi_height = nullptr) {
+std::vector<T_output>
+do_TCI(int rank, const std::string &debug_info, std::function<T_output(std::vector<T_input>)> integrand,
+       std::vector<std::vector<T_input>> const &input, std::vector<std::vector<double>> const &weight, std::vector<int> const &pivot1, long &count,
+       int sweep_bound, int bond_dim_init, int bond_dim_increase, int bond_dim_max, double reltol, bool fullPiv, int tci_prrlu, int error_type,
+       size_t error_eval, double convergence_bound, int convergence_iter, debug_t debug, std::vector<std::vector<int>> const &init_global_pivots,
+       double const_jacobian, int unsummed_tci, int unsummed_tot_size, bool adaptive_error, double decay_rate, std::vector<double> &max_diff_order_rank,
+       std::vector<double> &max_auxi_height_order_rank, std::vector<double> &max_error_order_rank, std::vector<long> &nTCI_order_rank,
+       std::vector<double> &integral_max_order_rank, int order_idx, double *auxi_height = nullptr) {
   NVTX_RANGE("do TCI", 1);
+  nTCI_order_rank[order_idx] += 1;
   // prepare variables
   double current_error{0};
   std::vector<T_output> integral{};
@@ -916,9 +917,10 @@ std::vector<T_output> do_TCI(std::function<T_output(std::vector<T_input>)> integ
   }
 
   if (tci_prrlu == 2) {
-    if (debug > 1) { std::cout << "iteration nEval error integral\n";
-    std::cout << "auxi_height: " << *auxi_height << std::endl;
-     }
+    if (debug > 1 && rank == 0) {
+      std::cout << "iteration nEval error integral\n";
+      std::cout << "auxi_height: " << *auxi_height << std::endl;
+    }
     for (int i = 1; i <= sweep_bound; i++) {
       auto ci = xfac::CTensorCI2<T_output, T_input>(
          integrand, input, {.bondDim = bond_dim_init, .reltol = reltol, .pivot1 = pivot1, .fullPiv = fullPiv, .useCachedFunction = true});
@@ -946,11 +948,86 @@ std::vector<T_output> do_TCI(std::function<T_output(std::vector<T_input>)> integ
           *auxi_height = ci.pivotError[ci.pivotError.size() - 1] * decay_rate;
         }
       }
-      auto tt = ci.tt;
+      if (debug > 1 || i == sweep_bound) {
+        auto tt = ci.tt;
+        {
+          NVTX_RANGE("ci-obtain integral", 9);
+          integral = partial_integral_tt(tt, weight, unsummed_tci);
+        }
+        for (auto i = 0; i < integral.size(); i++) { integral[i] *= const_jacobian; }
+        {
+          NVTX_RANGE("ci-error calculation", 8);
+          if (error_type == 0) {
+            current_error = ci.pivotError[ci.pivotError.size() - 1];
+          } else if (error_type == 1) {
+            current_error = ci.trueError(error_eval);
+          } else if (error_type == 2) {
+            current_error = tci_error_integral(integrand, tt, input, error_eval);
+          } else if (error_type == 3) {
+            current_error = tci_error_integrand(integrand, tt, input, error_eval);
+          } else {
+            std::cerr << "error_type not supported" << std::endl;
+            std::exit(EXIT_FAILURE);
+          }
+        }
+        if (debug > 1 && rank == 0) { std::cout << i << " " << count << " " << current_error << " " << integral[0] << std::endl; }
+        T_output diff = 0;
+        bool all_zero = true;
+        for (auto i = 0u; i < integral.size(); i++) {
+          diff += std::abs(previous_integral[i] - integral[i]);
+          double TOL = 1e-16;
+          if (abs(integral[i]) > TOL || abs(previous_integral[i]) > TOL) { all_zero = false; }
+        }
+        if (i > 2 && all_zero) { return integral; } // if all elements previous integral and current integral are zero, return zero;
+        if (diff < convergence_bound && i > convergence_iter) { break; }
+        previous_integral = integral;
+        if (debug > 1 && rank == 0) { print_rank(tt); }
+      } // end of debug
+      pivots.clear();
       {
-        NVTX_RANGE("ci-obtain integral", 9);
-        integral = partial_integral_tt(tt, weight, unsummed_tci);
+        NVTX_RANGE("ci-copy pivots", 8);
+        for (auto b = 0u; b < ci.len() - 1; b++) {
+          pivots.emplace_back(ci.getPivotsAt(b));
+          if (valid_init_global_pivot.size() == 0) {
+            // temporaliy change auxi_height to 0
+            double current_auxi_height = *auxi_height;
+            *auxi_height               = 0;
+            for (auto pivot : ci.getPivotsAt(b)) {
+              std::vector<T_input> inputs;
+              for (auto i = 0u; i < input.size(); i++) { inputs.emplace_back(input[i][pivot[i]]); }
+              if (integrand(inputs) != 0) {
+                valid_init_global_pivot = pivot;
+                break;
+              }
+            }
+            *auxi_height = current_auxi_height;
+          }
+        }
       }
+    }
+    if (adaptive_error) {
+      if (abs(*auxi_height) > max_auxi_height_order_rank[order_idx]) { max_auxi_height_order_rank[order_idx] = abs(*auxi_height); }
+    }
+    if (valid_init_global_pivot.size() == 0) {
+      if (unsummed_tci != 0) {
+        integral = std::vector<T_output>(unsummed_tot_size, 0);
+      } else {
+        integral = std::vector<T_output>(1, 0);
+      }
+      std::cerr << "Warning: no valid initial global pivot found." << std::endl;
+      return integral;
+    }
+    {
+      NVTX_RANGE("ci-generate final integral", 8);
+      *auxi_height = 0;
+      auto ci      = xfac::CTensorCI2<T_output, T_input>(
+         integrand, input,
+         {.bondDim = bond_dim_max, .reltol = reltol, .pivot1 = valid_init_global_pivot, .fullPiv = fullPiv, .useCachedFunction = true});
+      for (auto b = 0u; b < ci.len() - 1; b++) ci.addPivotsAt(pivots[b], b);
+      // ci.iterate(1,0);
+      ci.makeCanonical();
+      auto tt = ci.tt;
+      integral = partial_integral_tt(tt, weight, unsummed_tci);
       for (auto i = 0; i < integral.size(); i++) { integral[i] *= const_jacobian; }
       {
         NVTX_RANGE("ci-error calculation", 8);
@@ -967,66 +1044,19 @@ std::vector<T_output> do_TCI(std::function<T_output(std::vector<T_input>)> integ
           std::exit(EXIT_FAILURE);
         }
       }
-      if (debug > 1) { std::cout << i << " " << count << " " << current_error << " " << integral[0] << std::endl; }
-      T_output diff = 0;
-      bool all_zero = true;
-      for (auto i = 0u; i < integral.size(); i++) { diff += std::abs(previous_integral[i] - integral[i]); 
-      double TOL = 1e-16;
-      if (abs(integral[i]) > TOL || abs(previous_integral[i]) > TOL) { all_zero = false; } 
-      }
-      // if (i>1 && all_zero) { return integral; } // if all elements previous integral and current integral are zero, return zero;
-      if (diff < convergence_bound && i > convergence_iter) { break; }
-      previous_integral = integral;
-      if (debug > 1) { print_rank(tt); }
-      pivots.clear();
-      {
-        NVTX_RANGE("ci-copy pivots", 8);
-        for (auto b = 0u; b < ci.len() - 1; b++) {
-          pivots.emplace_back(ci.getPivotsAt(b));
-          if (valid_init_global_pivot.size() == 0) {
-            // temporaliy change auxi_height to 0
-            double current_auxi_height = *auxi_height;
-            *auxi_height               = 0;
-            for (auto pivot : ci.getPivotsAt(b)) {
-              std::vector<T_input> inputs;
-              for (auto i = 0u; i < input.size(); i++) { inputs.emplace_back(input[i][pivot[i]]); }
-              if (integrand(inputs) != 0) { valid_init_global_pivot = pivot; break;}
-            }
-            *auxi_height = current_auxi_height;
-          }
-        }
-      }
-      if (adaptive_error && *auxi_height > convergence_bound && i == sweep_bound) {
-        std::cerr << "Warning: the last auxiliary height is larger than the convergence bound." << std::endl;
-        std::cerr << "auxi_height: " << *auxi_height << std::endl;
-      }
-    }
-    if (valid_init_global_pivot.size() == 0) {
-      if (unsummed_tci != 0) {
-        integral = std::vector<T_output>(unsummed_tot_size, 0);
-      } else {
-        integral = std::vector<T_output>(1, 0);
-      }
-      std::cerr << "Warning: no valid initial global pivot found." << std::endl;
-      return integral;
-    }
-    {
-    NVTX_RANGE("ci-generate final integral", 8);
-    *auxi_height = 0;
-    auto ci      = xfac::CTensorCI2<T_output, T_input>(
-       integrand, input,
-       {.bondDim = bond_dim_max, .reltol = reltol, .pivot1 = valid_init_global_pivot, .fullPiv = fullPiv, .useCachedFunction = true});
-    for (auto b = 0u; b < ci.len() - 1; b++) ci.addPivotsAt(pivots[b], b);
-    // ci.iterate(1,0);
-    ci.makeCanonical();
-    integral = partial_integral_tt(ci.tt, weight, unsummed_tci);
-    for (auto i = 0; i < integral.size(); i++) { integral[i] *= const_jacobian; }
+      T_output max_diff = 0;
+      for (auto i = 0u; i < integral.size(); i++) { max_diff = std::max(max_diff, std::abs(previous_integral[i] - integral[i])); }
+      if (max_diff > max_diff_order_rank[order_idx]) { max_diff_order_rank[order_idx] = max_diff; }
+      if (abs(current_error) > max_error_order_rank[order_idx]) { max_error_order_rank[order_idx] = abs(current_error); }
     }
   } else {
     std::cerr << "tci_prrlu not supported" << std::endl;
     std::exit(EXIT_FAILURE);
   }
-  if (debug > 1) { std::cout << std::endl; }
+  if (debug > 1 and rank == 0) { std::cout << std::endl; }
+  for (auto i = 0; i < integral.size(); i++) {
+    if (abs(integral[i]) > integral_max_order_rank[order_idx]) { integral_max_order_rank[order_idx] = abs(integral[i]); }
+  }
   return integral;
 }
 
