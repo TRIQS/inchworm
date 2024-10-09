@@ -33,6 +33,7 @@ struct global_params_t {
   int unsummed_tci                = 0; // 0: all indices are summed; 1: the first index is not summed; 2: the first two indices are not summed ... 
   double energy_shift              = 0.0;
   double Z_energy_shift_correction = 1.0;
+  bool do_adaptive_nGK           = false;
 };
 
 struct model_params_t {

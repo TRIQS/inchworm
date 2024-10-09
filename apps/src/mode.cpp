@@ -42,6 +42,12 @@ void ModeBase::read_json_parameters(std::string json_file_path) {
   }catch(const std::exception &e){
     gp.do_cache = true;
   }
+  try{
+    gp.do_adaptive_nGK = root.get<bool>("gp.do_adaptive_nGK");
+  }
+  catch(const std::exception &e){
+    gp.do_adaptive_nGK = false;
+  }
 
   // Read construction parameters
   //// required parameters
@@ -652,10 +658,43 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
         input.push_back(iota_value);
         weight.push_back(iota_weight);
       }
-      for (int i = 0; i < n_opt; i++) {
-        input.push_back(tp.v_value);
-        weight.push_back(tp.v_weight);
+      
+      std::vector<double> v_value_left{}; 
+      std::vector<double> v_value_right{};
+      std::vector<double> v_weight_left{};
+      std::vector<double> v_weight_right{};
+      if(gp.do_adaptive_nGK){
+      int nGK_left = tp.n_GK;
+      if (n_left>0){
+      int nGK_left = adjust_nGK(n_left, 3, tp.n_GK, sp.tau_split, 0.0, ep.change_variable);
       }
+      int nGK_right = adjust_nGK(n_opt - n_left, 3, tp.n_GK, sp.tau_max, sp.tau_split, ep.change_variable);
+      if(sp.debug > 0){
+        std::cout << "-----adaptive nGK-----" << std::endl;
+        std::cout << "tau_max: " << sp.tau_max << std::endl;
+        std::cout << "tau_split: " << sp.tau_split << std::endl;
+        std::cout << "n_opt: " << n_opt << std::endl;
+        std::cout << "n_left: " << n_left << std::endl;
+        std::cout << "nGK_left: " << nGK_left << std::endl;
+        std::cout << "nGK_right: " << nGK_right << std::endl;
+      }
+      std::tie(v_value_left, v_weight_left) = select_quadrature_GK(nGK_left, 0, 1);
+      std::tie(v_value_right, v_weight_right) = select_quadrature_GK(nGK_right, 0, 1);
+      }
+      else{
+        std::tie(v_value_left, v_weight_left) = select_quadrature_GK(tp.n_GK, 0, 1);
+        std::tie(v_value_right, v_weight_right) = select_quadrature_GK(tp.n_GK, 0, 1);
+      }
+
+      for (int i = 0; i < n_left; i++) {
+        input.push_back(v_value_left);
+        weight.push_back(v_weight_left);
+      }
+      for (int i = n_left; i < n_opt; i++) {
+        input.push_back(v_value_right);
+        weight.push_back(v_weight_right);
+      }
+
     } else {
       std::cerr << "not implemented" << std::endl;
       std::exit(EXIT_FAILURE);

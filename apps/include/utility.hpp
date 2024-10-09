@@ -181,22 +181,23 @@ template <int n> inline auto quadrature_GK(double a = 0, double b = 1) {
 
 inline auto select_quadrature_GK(int n, double a = 0, double b = 1) {
   switch (n) {
-    case 15: return quadrature_GK<15>(a, b);
-    case 30: return quadrature_GK<30>(a, b);
+    case 51: return quadrature_GK<51>(a, b);
     case 45: return quadrature_GK<45>(a, b);
-    case 50: return quadrature_GK<50>(a, b);
     case 31: return quadrature_GK<31>(a, b);
     case 29: return quadrature_GK<29>(a, b);
     case 27: return quadrature_GK<27>(a, b);
     case 25: return quadrature_GK<25>(a, b);
     case 23: return quadrature_GK<23>(a, b);
     case 21: return quadrature_GK<21>(a, b);
-    case 17: return quadrature_GK<17>(a, b);
     case 19: return quadrature_GK<19>(a, b);
+    case 17: return quadrature_GK<17>(a, b);
+    case 15: return quadrature_GK<15>(a, b);
     case 13: return quadrature_GK<13>(a, b);
+    case 11: return quadrature_GK<11>(a, b);
+    case 9: return quadrature_GK<9>(a, b);
     case 7: return quadrature_GK<7>(a, b);
     case 5: return quadrature_GK<5>(a, b);
-    case 9: return quadrature_GK<9>(a, b);
+    case 3: return quadrature_GK<3>(a, b);
     default: {
       std::cerr << "select_quadrature_GK: value not supported\n";
       std::exit(EXIT_FAILURE);
@@ -1091,6 +1092,39 @@ obtain_taus(const std::vector<double> &vs, int n_left, double tau_split, double 
 
   return std::make_tuple(taus_left, taus_right, taus);
 }
+
+inline int adjust_nGK(int nopt, int nGK_min, int nGK_max, double tau_max, double tau_min, cv_func change_variable){
+    int nGK = nGK_max;
+    EXPECTS(nGK_max % 2 != 0);
+    EXPECTS(nGK_min % 2 != 0);
+    EXPECTS(nGK_max >= nGK_min);
+    while(nGK> nGK_min)
+    {
+        auto [v_value, v_weight] = select_quadrature_GK(nGK, 0, 1);
+        auto v_value_max = *std::max_element(v_value.begin(), v_value.end());
+        std::vector<double> nus_left_max(nopt, v_value_max);
+        auto taus_left_max = change_variable(nus_left_max, tau_max, tau_min);
+        if(
+          is_duplicated(taus_left_max) || if_contains(taus_left_max, tau_max) || if_contains(taus_left_max, tau_min)
+        )
+        {
+          nGK -= 2;
+          continue;
+        }
+        auto v_value_min = *std::min_element(v_value.begin(), v_value.end());
+        std::vector<double> nus_left_min(nopt, v_value_min);
+        auto taus_left_min = change_variable(nus_left_min, tau_max, tau_min);
+        if(
+          is_duplicated(taus_left_min) || if_contains(taus_left_min, tau_max) || if_contains(taus_left_min, tau_min)
+        )
+        {
+          nGK -= 2;
+          continue;
+        }
+        break;
+    }
+    return nGK;
+} 
 
 template <typename T1, typename T2> void sort_B_according_A(std::vector<T1> &A, std::vector<T2> &B, double reltol = 1e-20) {
   std::vector<size_t> indices(A.size());
