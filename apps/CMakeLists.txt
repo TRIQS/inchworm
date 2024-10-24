@@ -6,6 +6,8 @@ target_link_libraries(tci_hyb PRIVATE ${PROJECT_NAME}_c)
 target_link_libraries(tci_hyb PRIVATE OpenMP::OpenMP_CXX)
 target_link_libraries(tci_hyb PRIVATE nvtx_wrapper)
 target_link_libraries(tci_hyb PRIVATE MPI::MPI_CXX)
+target_link_libraries(tci_hyb PRIVATE Eigen3::Eigen)
+target_link_libraries(tci_hyb PRIVATE GSL::gsl GSL::gslcblas)
 
 target_include_directories(tci_hyb PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
