@@ -162,7 +162,7 @@ namespace inchworm {
     //check the location of x in grid, x should be exact in the grid otherwise gives error output
     long n = 0;
     while (n < params->grid.size() && params->grid[n] < x) { n++; }
-    if (params->grid[n] == x) { return params->u_tau->operator[](params->bl)[n](params->i, params->j); }
+    if (std::abs(params->grid[n] - x)<1e-15) { return params->u_tau->operator[](params->bl)[n](params->i, params->j); }
     else{
       std::cerr << "x = " << x << std::endl;
       std::cerr << "params->grid[n] = " << params->grid[n] << std::endl;
