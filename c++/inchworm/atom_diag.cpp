@@ -54,7 +54,8 @@ namespace inchworm {
       double b = grid_linear[i + 1];
       grid.push_back(a);
       for (int j = order_Chebyshev; j >= 0; j--) {
-        double x = 0.5 * (a + b) + 0.5 * (b - a) * cos(M_PI * (2 * j + 1) / (2 * (order_Chebyshev + 1)));
+        double x = 0.5 * (a + b) + 0.5 * (b - a) * cos(M_PI * (j + 0.5) / ( (order_Chebyshev + 1)));
+        // double x = 0.5 * (a + b) + 0.5 * (b - a) * cos(M_PI * (2 * j + 1) / (2 * (order_Chebyshev + 1)));
         grid.push_back(x);
       }
     }
