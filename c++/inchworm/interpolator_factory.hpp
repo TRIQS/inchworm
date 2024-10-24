@@ -161,7 +161,8 @@ namespace inchworm {
     my_f_params_new *params = (my_f_params_new *)p;
     //check the location of x in grid, x should be exact in the grid otherwise gives error output
     long n = 0;
-    while (n < params->grid.size() && params->grid[n] < x) { n++; }
+    // while (n < params->grid.size() && params->grid[n] < x) { n++; }
+    while (n < params->grid.size() && (x - params->grid[n]) > 1e-15) { n++; }
     if (std::abs(params->grid[n] - x)<1e-15) { return params->u_tau->operator[](params->bl)[n](params->i, params->j); }
     else{
       std::cerr << "x = " << x << std::endl;
