@@ -157,6 +157,7 @@ add_subdirectory(apps)
 
 find_package(Boost)
 find_package(HDF5)
+find_package(Eigen3)
 # # Tests
 # if(Build_Tests)
 #   add_subdirectory(test)
