@@ -5,6 +5,7 @@
 
 int main(int argc, char *argv[]) {
   MPI_Init(&argc, &argv);
+  auto time_start = MPI_Wtime();
 
   std::string mode_name{};
   std::string json_file_path{};
@@ -38,7 +39,13 @@ int main(int argc, char *argv[]) {
     std::cerr << "Invalid mode name" << std::endl;
     std::exit(EXIT_FAILURE);
   }
-
+  
+  auto time = MPI_Wtime() - time_start;
+  double time_sum;
+  MPI_Reduce(&time, &time_sum, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  if(mode->rank == 0) {
+    std::cout << "CPU hours: " << time_sum / 3600 << std::endl;
+  }
   MPI_Finalize();
   return 0;
 }

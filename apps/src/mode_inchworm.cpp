@@ -40,11 +40,34 @@ void ModeInchworm::evaluate_propagator() {
   for (auto &ubl : sr.u_tau) {
     for (int i = 0; i < ubl.target_shape()[0]; ++i) ubl[0](i, i) = 1;
   }
+  
+  if (sp.inch_start_index < 1 || sp.inch_start_index >= sp.n_tau_linear){
+    std::cerr << "Error: inch_start_index should be between 1 and n_tau_linear-1" << std::endl;
+    std::exit(EXIT_FAILURE);
+  }
+  if(sp.inch_start_index!=1 && gp.model_type != 0){
+    std::cerr << "Error: inch_start_index should be 1 for model_type != 0" << std::endl;
+    std::exit(EXIT_FAILURE);
+  }
+  if(sp.inch_end_index != (sp.n_tau_linear-1) && gp.model_type != 0){
+    std::cerr << "Error: inch_end_index should be n_tau_linear-1 for model_type != 0" << std::endl;
+    std::exit(EXIT_FAILURE);
+  }
+  if(sp.inch_end_index < sp.inch_start_index || sp.inch_end_index >= sp.n_tau_linear){
+    std::cerr << "Error: inch_end_index should be between inch_start_index and n_tau_linear-1" << std::endl;
+    std::exit(EXIT_FAILURE);
+  }
+  if(sp.inch_start_index!=1){
+    for (int i = 0; i < (sp.inch_start_index-1)*(sp.order_Chebyshev + 1)+sp.inch_start_index; i++) {
+      for (int bl = 0; bl < sr.u_tau_ref.size(); bl++) sr.u_tau[bl][i] = sr.u_tau_ref[bl][i];
+    }
+  }
+
   // inchworm grid points are in sp.grid_linear of length sp.n_tau_linear
   // 0 [0], 1 [dtau], ... , sp.n_tau_linear-1 [beta]
   // all the evaluated points are in sp.grid of length sp.n_tot
-  for (size_t i_tau = 1; i_tau < sp.n_tau_linear; i_tau++) {
-    // if (i_tau > 2) { break; }
+  for (size_t i_tau = sp.inch_start_index; i_tau < sp.n_tau_linear; i_tau++) {
+    if (i_tau > sp.inch_end_index) { break; }
     bool is_first_interval     = (i_tau == 1);
     sp.use_bare_propagator     = (i_tau == 1);
     long i_grid_tau_split      = i_tau + (i_tau - 1) * (sp.order_Chebyshev + 1) - 1;
@@ -142,6 +165,12 @@ void ModeInchworm::evaluate_propagator() {
       std::cout << std::endl;
     }
   } // end of i_tau loop
+  // set sr.u_tau be sr.u_tau_ref for i_tau > sp.inch_end_index
+  if(sp.inch_end_index < sp.n_tau_linear-1){
+    for (int i = (sp.inch_end_index)*(sp.order_Chebyshev + 1)+sp.inch_end_index+1; i < sp.n_tot; i++) {
+      for (int bl = 0; bl < sr.u_tau_ref.size(); bl++) sr.u_tau[bl][i] = sr.u_tau_ref[bl][i];
+    }
+  }
   gp.Z_energy_shift_correction = std::exp(gp.energy_shift * cp.beta);
   if (sp.debug > 0 && rank == 0) {
     std::cout << "gp.Z_energy_shift_correction = " << gp.Z_energy_shift_correction << std::endl;

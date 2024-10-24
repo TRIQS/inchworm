@@ -900,7 +900,7 @@ do_TCI(int rank, const std::string &debug_info, std::function<T_output(std::vect
        size_t error_eval, double convergence_bound, int convergence_iter, debug_t debug, std::vector<std::vector<int>> const &init_global_pivots,
        double const_jacobian, int unsummed_tci, int unsummed_tot_size, bool adaptive_error, double decay_rate, std::vector<double> &max_diff_order_rank,
        std::vector<double> &max_auxi_height_order_rank, std::vector<double> &max_error_order_rank, std::vector<long> &nTCI_order_rank,
-       std::vector<double> &integral_max_order_rank, int order_idx, double *auxi_height = nullptr) {
+       std::vector<double> &integral_max_order_rank, int order_idx, double *auxi_height = nullptr, double *mini_height = nullptr, double *mini_value = nullptr) {
   NVTX_RANGE("do TCI", 1);
   nTCI_order_rank[order_idx] += 1;
   // prepare variables
@@ -937,7 +937,8 @@ do_TCI(int rank, const std::string &debug_info, std::function<T_output(std::vect
           // ci.iterate(1,0);
         }
       }
-      if (init_global_pivots.size() != 0 && i == 1) { ci.addPivotsAllBonds(init_global_pivots); }
+      if (init_global_pivots.size() != 0 && i == 1) {
+         ci.addPivotsAllBonds(init_global_pivots); }
       {
         NVTX_RANGE("ci-iterate", 7);
         ci.iterate();
@@ -1020,6 +1021,8 @@ do_TCI(int rank, const std::string &debug_info, std::function<T_output(std::vect
     }
     {
       NVTX_RANGE("ci-generate final integral", 8);
+      // *mini_height = *mini_value;
+      *mini_height = *auxi_height;
       *auxi_height = 0;
       auto ci      = xfac::CTensorCI2<T_output, T_input>(
          integrand, input,
@@ -1073,6 +1076,58 @@ inline void print_pivot1(std::vector<int> const &iota_d_list, std::vector<int> c
   print_vector(tau_d_dag_list);
   std::cout << "get_u_tau_max_element(pivot1): " << pivot_value << std::endl;
   std::cout << std::endl;
+}
+
+inline std::vector<double> adjustClosePoints(const std::vector<double>& sortedNumbers, double epsilon, double a, double b) {
+    epsilon = epsilon * b;
+    // Ensure input is within (a, b)
+    std::vector<double> adjustedNumbers;
+    adjustedNumbers.push_back(sortedNumbers[0]);  // Start with the first number
+    //check if the first number is within bounds
+    if (adjustedNumbers[0] < a || adjustedNumbers[0] > b) {
+        std::cerr << "The first number is not within the bounds (" << a << ", " << b << ")." << std::endl;
+        std::exit(EXIT_FAILURE);
+    }
+
+    // Iterate over the sorted set of numbers
+    for (size_t i = 1; i < sortedNumbers.size(); ++i) {
+        // Check the distance between the current point and the previous one
+        double new_point = sortedNumbers[i];
+        
+        // If the new point is too close to the previous point
+        if (new_point - adjustedNumbers.back() < epsilon) {
+            new_point = adjustedNumbers.back() + epsilon; // Adjust to meet the minimum separation
+        }
+        
+        // Make sure new_point stays within bounds
+        if (new_point >= b) {
+            // If it exceeds b, redistribute the adjustment backwards
+            double excess = std::max(new_point - b, epsilon/2);
+            double adjustment = excess; // Distribute the excess equally across previous points
+            
+            for (size_t j = 0; j < i; ++j) {
+                adjustedNumbers[j] = std::max(adjustedNumbers[j] - adjustment, a); // Ensure it doesn't go below 'a'
+            }
+            new_point = b - (epsilon-excess); // Set new point near the upper boundary 'b'
+        }
+        
+        adjustedNumbers.push_back(new_point);
+    }
+
+    return adjustedNumbers;
+}
+
+
+inline std::tuple<std::vector<double>, std::vector<double>, std::vector<double>> obtain_taus_restricted(const std::vector<double> &taus_left, const std::vector<double> &taus_right, const std::vector<double> &taus, double epsilon, int n_left, double tau_split, double tau_max) {
+  if (n_left == 0 && tau_split == 0.0) {
+    auto taus_adjusted = adjustClosePoints(taus, epsilon, 0.0, tau_max);
+    return std::make_tuple(taus_adjusted, taus_adjusted, taus_adjusted);
+  }
+  auto taus_left_adjusted = adjustClosePoints(taus_left, epsilon, 0.0, tau_split);
+  auto taus_right_adjusted = adjustClosePoints(taus_right, epsilon, tau_split, tau_max);
+  auto taus_adjusted = taus_left_adjusted;
+  taus_adjusted.insert(taus_adjusted.end(), taus_right_adjusted.begin(), taus_right_adjusted.end());
+  return std::make_tuple(taus_left_adjusted, taus_right_adjusted, taus_adjusted);
 }
 
 inline std::tuple<std::vector<double>, std::vector<double>, std::vector<double>>

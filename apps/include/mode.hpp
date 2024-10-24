@@ -34,12 +34,14 @@ struct global_params_t {
   double energy_shift              = 0.0;
   double Z_energy_shift_correction = 1.0;
   bool do_adaptive_nGK           = false;
+  bool do_global_pivot         = false;
 };
 
 struct model_params_t {
   int n_site{};
   int n_bath{};
   int n_spin{};
+  double rescale{};
   double U{};
   double mu{};
   double t{};
@@ -77,6 +79,8 @@ struct tci_params_t {
 
 struct simulation_params_t {
   debug_t debug{};
+  size_t inch_start_index{};
+  size_t inch_end_index{};
   double tau_max{};
   double tau_split{};
   double tau_split_ratio{};

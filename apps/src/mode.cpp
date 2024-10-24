@@ -48,6 +48,12 @@ void ModeBase::read_json_parameters(std::string json_file_path) {
   catch(const std::exception &e){
     gp.do_adaptive_nGK = false;
   }
+  try{
+    gp.do_global_pivot = root.get<bool>("gp.do_global_pivot");
+  }
+  catch(const std::exception &e){
+    gp.do_global_pivot = false;
+  }
 
   // Read construction parameters
   //// required parameters
@@ -88,6 +94,16 @@ void ModeBase::read_json_parameters(std::string json_file_path) {
     }
     i++;
   }
+  try {
+    mp.rescale = root.get<double>("mp.rescale");
+  } catch (const std::exception &e) { mp.rescale = 1.0; }
+  // rescale beta, U, mu, t, epsilon, theta
+  cp.beta *= mp.rescale;
+  mp.U /= mp.rescale;
+  mp.mu /= mp.rescale;
+  mp.t /= mp.rescale;
+  for (auto &e : mp.epsilon) { e /= mp.rescale; }
+  for (auto &e : mp.theta) { e /= mp.rescale; }
 
   // Read simulation parameters
   //// required parameters
@@ -118,12 +134,16 @@ void ModeBase::read_json_parameters(std::string json_file_path) {
   }
   //// optional parameters
   try {
+    sp.inch_start_index = root.get<int>("sp.inch_start_index");
+    sp.inch_end_index   = root.get<int>("sp.inch_end_index");
     sp.tau_max         = root.get<double>("sp.tau_max");
     sp.tau_split_ratio = root.get<double>("sp.tau_split_ratio");
     sp.tau_split       = sp.tau_split_ratio * sp.tau_max;
     sp.bl_index        = root.get<int>("sp.bl_index");
     sp.subspace_index  = root.get<int>("sp.subspace_index");
   } catch (const std::exception &e) {
+    sp.inch_start_index = 1;
+    sp.inch_end_index   = sp.n_tau_linear-1;
     sp.tau_max         = -1.0;
     sp.tau_split_ratio = -1.0;
     sp.tau_split       = -1.0;
@@ -538,7 +558,9 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
        + ", tau_split: " + std::to_string(sp.tau_split);
 
     long count     = 0;
-    auto integrand = [this, &count, &phi_d_list = phi_d_list, &phi_d_dag_list = phi_d_dag_list, &n_left, &auxi_height,
+    double mini_height = 0.0;
+    double mini_value = 1e10;
+    auto integrand = [this, &count, &phi_d_list = phi_d_list, &phi_d_dag_list = phi_d_dag_list, &n_left, &auxi_height, &mini_height, &mini_value,
                       &debug_info, &order_idx, &warning_same_time_order_rank, &warning_tau_split_order_rank, &warning_tau_max_order_rank](std::vector<double> variables) -> double {
       NVTX_RANGE("integrand", 0);
       std::vector<double> taus_left{};
@@ -570,28 +592,42 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
 
       // for bare mode, taus_left = taus_right = taus
       std::tie(taus_left, taus_right, taus) = obtain_taus(vs, n_left, sp.tau_split, tau_max, ep.change_variable);
+      // adjust taus
+      std::tie(taus_left, taus_right, taus) = obtain_taus_restricted(taus_left,taus_right,taus,1e-15, n_left,sp.tau_split,tau_max);
+
       if (is_duplicated(taus)) {
         std::cerr << "Warning: duplicated elements in taus" << std::endl;
+        std::cerr << "taus: ";
+        for (auto tau : taus) { std::cerr << tau << " "; }
+        std::cerr << std::endl;
         std::cerr << "debug_info: " << debug_info << std::endl;
         warning_same_time_order_rank[order_idx] += 1;
-        if (gp.ergodicity == "random_auxi_adaptive") { return auxi_height * get_random_number(); }
-        return 0.0;
+        if (gp.ergodicity == "random_auxi_adaptive") { return auxi_height * get_random_number()+mini_height; }
+        return 0.0+mini_height;
       }
 
       if (if_contains(taus, sp.tau_split)) {
         std::cerr << "Warning: tau_split is in taus" << std::endl;
+        std::cerr << "taus: ";
+        for (auto tau : taus) { std::cerr << tau << " "; }
+        std::cerr << std::endl;
+        std::cerr << "tau_split: " << sp.tau_split << std::endl;
         std::cerr << "debug_info: " << debug_info << std::endl;
         warning_tau_split_order_rank[order_idx] += 1;
-        if (gp.ergodicity == "random_auxi_adaptive") { return auxi_height * get_random_number(); }
-        return 0.0;
+        if (gp.ergodicity == "random_auxi_adaptive") { return auxi_height * get_random_number()+mini_height; }
+        return 0.0+mini_height;
       }
 
       if (if_contains(taus, tau_max)) {
         std::cerr << "Warning: tau_max is in taus" << std::endl;
+        std::cerr << "taus: ";
+        for (auto tau : taus) { std::cerr << tau << " "; }
+        std::cerr << std::endl;
+        std::cerr << "tau_max: " << tau_max << std::endl;
         std::cerr << "debug_info: " << debug_info << std::endl;
         warning_tau_max_order_rank[order_idx] += 1;
-        if (gp.ergodicity == "random_auxi_adaptive") { return auxi_height * get_random_number(); }
-        return 0.0;
+        if (gp.ergodicity == "random_auxi_adaptive") { return auxi_height * get_random_number()+mini_height; }
+        return 0.0+mini_height;
       }
 
       std::vector<int> phi_loop_list{0};
@@ -640,6 +676,10 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
         if (sp.use_bare_propagator == false) { j *= ep.jacobian(taus_left, sp.tau_split, 0.0); }
         integrand_val += integrand_phi * j;
       } // end of loop over phi
+
+      if(abs(integrand_val) < mini_value && abs(integrand_val) > 1e-16){
+        mini_value = integrand_val;
+      }
 
       if (gp.ergodicity == "random_auxi_adaptive") { return auxi_height * get_random_number() + integrand_val; }
       return integrand_val;
@@ -705,7 +745,8 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
         weight.insert(weight.begin(), std::vector<double>(unsummed_input[i].size(), 1.0));
       }
     }
-
+    
+    // std::cout << "mini_value (old)" << mini_value << std::endl;
     // set up initial pivot, initial input, initial integrand
     for (int i = 0; i < input.size(); i++) { init_pivot.push_back(0); }
     std::vector<double> init_input{};
@@ -719,9 +760,15 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
     }
 
     std::vector<std::vector<int>> init_global_pivots{};
+    if(gp.do_global_pivot){
+      std::vector<int> global_pivots_last_element{};
+      for (int i = 0; i < input.size(); i++) {
+        global_pivots_last_element.push_back(input[i].size() - 1);
+      }
+      init_global_pivots.push_back(global_pivots_last_element);
+    }
     double const_jacobian = 1.0;
     std::vector<double> integral(unsummed_tot_size, 0.0);
-
     bool adaptive_error = false;
     if (gp.ergodicity == "random_auxi_adaptive") { adaptive_error = true; }
     integral = do_TCI<double, double>(rank, debug_info, integrand, input, weight, init_pivot, count, tp.sweep_bound, tp.bond_dim_init,
@@ -731,7 +778,9 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
                                       max_auxi_height_order_rank,
                                        max_error_order_rank, 
                                        nTCI_order_rank, integral_max_order_rank,
-                                       order_idx,  &auxi_height);
+                                       order_idx,  &auxi_height, &mini_height, &mini_value);
+    // std::cout << "integral" << integral[0] << std::endl;
+    // std::cout << "mini_value" << mini_value << std::endl;
     // accumulate statistics
     func_evals_order_rank[order_idx] += count;
     // warning_same_time, warning_tau_split, warning_tau_max are already accumulated in the integrand lambda function
