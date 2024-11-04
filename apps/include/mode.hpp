@@ -35,6 +35,7 @@ struct global_params_t {
   double Z_energy_shift_correction = 1.0;
   bool do_adaptive_nGK           = false;
   bool do_global_pivot         = false;
+  int map_type = 0;
 };
 
 struct model_params_t {

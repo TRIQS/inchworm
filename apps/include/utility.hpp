@@ -1079,41 +1079,44 @@ inline void print_pivot1(std::vector<int> const &iota_d_list, std::vector<int> c
 }
 
 inline std::vector<double> adjustClosePoints(const std::vector<double>& sortedNumbers, double epsilon, double a, double b) {
-    epsilon = epsilon * b;
-    // Ensure input is within (a, b)
+    size_t n = sortedNumbers.size();
     std::vector<double> adjustedNumbers;
-    adjustedNumbers.push_back(sortedNumbers[0]);  // Start with the first number
-    //check if the first number is within bounds
-    if (adjustedNumbers[0] < a || adjustedNumbers[0] > b) {
-        std::cerr << "The first number is not within the bounds (" << a << ", " << b << ")." << std::endl;
-        std::exit(EXIT_FAILURE);
-    }
+    adjustedNumbers.reserve(n); // Reserve memory for performance
 
-    // Iterate over the sorted set of numbers
-    for (size_t i = 1; i < sortedNumbers.size(); ++i) {
-        // Check the distance between the current point and the previous one
-        double new_point = sortedNumbers[i];
-        
-        // If the new point is too close to the previous point
-        if (new_point - adjustedNumbers.back() < epsilon) {
-            new_point = adjustedNumbers.back() + epsilon; // Adjust to meet the minimum separation
+    // Initial adjustment of the first point
+    double firstPoint = sortedNumbers[0];
+    if (firstPoint - a < epsilon) {
+        firstPoint = a + epsilon;
+    }
+    if (b - firstPoint < epsilon) {
+        firstPoint = b - epsilon;
+    }
+    adjustedNumbers.push_back(firstPoint);
+
+    // Iterate over the sorted numbers, enforcing minimum separation
+    for (size_t i = 1; i < n; ++i) {
+        double newPoint = sortedNumbers[i];
+
+        // Enforce minimum separation with the previous point
+        if (newPoint - adjustedNumbers.back() < epsilon) {
+            newPoint = adjustedNumbers.back() + epsilon;
         }
         
-        // Make sure new_point stays within bounds
-        if (new_point >= b) {
-            // If it exceeds b, redistribute the adjustment backwards
-            double excess = std::max(new_point - b, epsilon/2);
-            double adjustment = excess; // Distribute the excess equally across previous points
-            
-            for (size_t j = 0; j < i; ++j) {
-                adjustedNumbers[j] = std::max(adjustedNumbers[j] - adjustment, a); // Ensure it doesn't go below 'a'
+        // Ensure upper bound
+        if (b - newPoint < epsilon) {
+            newPoint = b - epsilon;
+            adjustedNumbers.push_back(newPoint);
+            // Perform backpropagation adjustments if necessary
+            for (int j = i - 1; j >= 0; --j) {
+                if (adjustedNumbers[j+1] - adjustedNumbers[j] < epsilon) {
+                    adjustedNumbers[j] = std::max(adjustedNumbers[j+1] - epsilon, a + epsilon);
+                }
             }
-            new_point = b - (epsilon-excess); // Set new point near the upper boundary 'b'
         }
-        
-        adjustedNumbers.push_back(new_point);
+        else {
+            adjustedNumbers.push_back(newPoint);
+        }
     }
-
     return adjustedNumbers;
 }
 

@@ -54,6 +54,12 @@ void ModeBase::read_json_parameters(std::string json_file_path) {
   catch(const std::exception &e){
     gp.do_global_pivot = false;
   }
+  try{
+    gp.map_type = root.get<int>("gp.map_type");
+  }
+  catch(const std::exception &e){
+    gp.map_type = 0;
+  }
 
   // Read construction parameters
   //// required parameters
@@ -223,7 +229,30 @@ void ModeBase::prepare_input(std::string hyb_file_path) {
   NVTX_RANGE("prepare input", 0);
 
   // TCI setup
-  std::tie(tp.v_value, tp.v_weight) = select_quadrature_GK(tp.n_GK, 0, 1);
+  //set 0
+  if (gp.map_type == 0){
+  if(sp.debug>0 && rank==0){std::cout<<"Using map_type 0"<<std::endl;}
+  std::tie(tp.v_value, tp.v_weight) = select_quadrature_GK(tp.n_GK, 0, 1);}
+  else if (gp.map_type == 3){
+  if(sp.debug>0 && rank==0){std::cout<<"Using map_type 3"<<std::endl;}
+  //set 3
+  int n_grid_tanh_sinh = tp.n_GK;
+  double h_tanh_sinh   = 4.0 / n_grid_tanh_sinh;
+  auto [xi_old, wi_old] = tanh_sinh_quadrature(0, 1, h_tanh_sinh, n_grid_tanh_sinh);
+  double tol = 1e-14;
+  // for (int i = 0; i < xi_old.size(); i++) {
+  //   if (abs(xi_old[i]) > tol && abs(xi_old[i] - 1) > tol) {
+  //     tp.v_value.push_back(xi_old[i]);
+  //     tp.v_weight.push_back(wi_old[i]);
+  //   }
+  // }
+  tp.v_value  = xi_old;
+  tp.v_weight = wi_old;
+  }
+  else{
+    std::cerr << "Invalid map_type" << std::endl;
+    std::exit(EXIT_FAILURE);
+  }
 
   // operators setup
   int n_bl = cp.gf_struct.size();
@@ -387,8 +416,19 @@ void ModeBase::prepare_eval() {
   NVTX_RANGE("prepare eval", 0);
   // set up quantities that are valid for all calls of evaluate, i.e., those does not depend on tau and propagator
   // setup the mapping and jacobian functions for the transformation of time-ordered variables v->tau
+  //set 0 
+  if (gp.map_type == 0){
   ep.change_variable = change_variable0;
-  ep.jacobian        = jacobian0;
+  ep.jacobian        = jacobian0;}
+  else if (gp.map_type == 3){
+  // // set 3
+  ep.change_variable = change_variable3;
+  ep.jacobian        = jacobian3;
+  }
+  else{
+    std::cerr << "Invalid map_type" << std::endl;
+    std::exit(EXIT_FAILURE);
+  }
   if (!gp.do_segment) {
     // generate the union set elements in sp.order_list_first and sp.order_list, only store each element once
     std::vector<int> order_list_union(sp.order_list_first.size() + sp.order_list.size());
@@ -554,8 +594,18 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
       std::exit(EXIT_FAILURE);
     }
 
-    std::string debug_info = "rank: " + std::to_string(rank) + ", order: " + std::to_string(order) + ", n_left: " + std::to_string(n_left)
-       + ", tau_split: " + std::to_string(sp.tau_split);
+    // std::string debug_info = "rank: " + std::to_string(rank) + ", order: " + std::to_string(order) + ", n_left: " + std::to_string(n_left)
+    //    + ", tau_split: " + std::to_string(sp.tau_split);
+
+    std::string debug_info;
+    {
+        std::ostringstream oss;
+        oss << "rank: " << rank
+            << ", order: " << order
+            << ", n_left: " << n_left
+            << ", tau_split: " << std::fixed << std::setprecision(16) << sp.tau_split;
+        debug_info = oss.str();
+    }
 
     long count     = 0;
     double mini_height = 0.0;
@@ -596,17 +646,22 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
       std::tie(taus_left, taus_right, taus) = obtain_taus_restricted(taus_left,taus_right,taus,1e-15, n_left,sp.tau_split,tau_max);
 
       if (is_duplicated(taus)) {
+        // mini_height = 0.0;
         std::cerr << "Warning: duplicated elements in taus" << std::endl;
         std::cerr << "taus: ";
         for (auto tau : taus) { std::cerr << tau << " "; }
         std::cerr << std::endl;
         std::cerr << "debug_info: " << debug_info << std::endl;
         warning_same_time_order_rank[order_idx] += 1;
-        if (gp.ergodicity == "random_auxi_adaptive") { return auxi_height * get_random_number()+mini_height; }
+        //gracifally exit the program
+        std::exit(EXIT_FAILURE);
+        if (gp.ergodicity == "random_auxi_adaptive") { 
+          return auxi_height * get_random_number()+mini_height; }
         return 0.0+mini_height;
       }
 
       if (if_contains(taus, sp.tau_split)) {
+        // mini_height = 0.0;
         std::cerr << "Warning: tau_split is in taus" << std::endl;
         std::cerr << "taus: ";
         for (auto tau : taus) { std::cerr << tau << " "; }
@@ -614,11 +669,14 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
         std::cerr << "tau_split: " << sp.tau_split << std::endl;
         std::cerr << "debug_info: " << debug_info << std::endl;
         warning_tau_split_order_rank[order_idx] += 1;
-        if (gp.ergodicity == "random_auxi_adaptive") { return auxi_height * get_random_number()+mini_height; }
+        std::exit(EXIT_FAILURE);
+        if (gp.ergodicity == "random_auxi_adaptive") { 
+          return auxi_height * get_random_number()+mini_height; }
         return 0.0+mini_height;
       }
 
       if (if_contains(taus, tau_max)) {
+        // mini_height = 0.0;
         std::cerr << "Warning: tau_max is in taus" << std::endl;
         std::cerr << "taus: ";
         for (auto tau : taus) { std::cerr << tau << " "; }
@@ -626,7 +684,9 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
         std::cerr << "tau_max: " << tau_max << std::endl;
         std::cerr << "debug_info: " << debug_info << std::endl;
         warning_tau_max_order_rank[order_idx] += 1;
-        if (gp.ergodicity == "random_auxi_adaptive") { return auxi_height * get_random_number()+mini_height; }
+        std::exit(EXIT_FAILURE);
+        if (gp.ergodicity == "random_auxi_adaptive") { 
+          return auxi_height * get_random_number()+mini_height; }
         return 0.0+mini_height;
       }
 
@@ -722,8 +782,10 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
       std::tie(v_value_right, v_weight_right) = select_quadrature_GK(nGK_right, 0, 1);
       }
       else{
-        std::tie(v_value_left, v_weight_left) = select_quadrature_GK(tp.n_GK, 0, 1);
-        std::tie(v_value_right, v_weight_right) = select_quadrature_GK(tp.n_GK, 0, 1);
+        v_value_left = tp.v_value;
+        v_value_right = tp.v_value;
+        v_weight_left = tp.v_weight;
+        v_weight_right = tp.v_weight;
       }
 
       for (int i = 0; i < n_left; i++) {
