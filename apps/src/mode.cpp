@@ -60,6 +60,12 @@ void ModeBase::read_json_parameters(std::string json_file_path) {
   catch(const std::exception &e){
     gp.map_type = 0;
   }
+  try{
+    gp.do_enum = root.get<bool>("gp.do_enum");
+  }
+  catch(const std::exception &e){
+    gp.do_enum = false;
+  }
 
   // Read construction parameters
   //// required parameters
@@ -252,6 +258,9 @@ void ModeBase::prepare_input(std::string hyb_file_path) {
   else{
     std::cerr << "Invalid map_type" << std::endl;
     std::exit(EXIT_FAILURE);
+  }
+  if(sp.debug>0 && rank==0){
+    std::cout << "do_enum: " << gp.do_enum << std::endl;
   }
 
   // operators setup
@@ -731,7 +740,7 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
         auto integrand_phi =
            evaluate_diagram(sr.u_tau_zeroth_order, sp.tau_split, tau_max, mp.all_d_ops, mp.all_d_dag_ops, mp.gf_block_shape, cp, mp.Delta_tau,
                             mp.ad_imp, sr.u_interpolator, tau_d, tau_d_dag, iota_d, iota_d_dag, bl_index, subspace_index, sp.use_bare_propagator,
-                            sp.gf_index, cp.gf_struct, mp.theta, mp.epsilon, mp.n_bath, gp.model_type, gp.energy_shift);
+                            sp.gf_index, cp.gf_struct, mp.theta, mp.epsilon, mp.n_bath, gp.model_type, gp.energy_shift, gp.do_enum);
         double j = ep.jacobian(taus_right, tau_max, sp.tau_split);
         if (sp.use_bare_propagator == false) { j *= ep.jacobian(taus_left, sp.tau_split, 0.0); }
         integrand_val += integrand_phi * j;

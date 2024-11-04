@@ -36,6 +36,7 @@ struct global_params_t {
   bool do_adaptive_nGK           = false;
   bool do_global_pivot         = false;
   int map_type = 0;
+  bool do_enum = false;
 };
 
 struct model_params_t {

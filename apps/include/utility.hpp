@@ -18,6 +18,7 @@
 #include <xfac/tensor/tensor_train.h>
 #include <inchworm/diagram/diagram.hpp>
 #include <inchworm/diagram/inclusion_exclusion.hpp>
+#include <inchworm/diagram/proper_enum.hpp>
 #include <inchworm/diagram/print.hpp>
 #include <inchworm/atom_diag.hpp>
 #include <inchworm/u_frame.hpp>
@@ -441,7 +442,7 @@ inline double evaluate_diagram(frame_t &frame_zeroth_order, double tau_split, do
                                hyb_tau_t const &Delta_tau, atom_diag const &ad_imp, interpolator_t<scalar_t> const &u_interpolator,
                                auto const &tau_d_list, auto const &tau_d_dag_list, auto const &iota_d_list, auto const &iota_d_dag_list, int bl_indx,
                                int subspace_indx, bool use_bare_propagator, std::vector<int> const &gf_index, gf_struct_t const &gf_struct,
-                               mat_t const &theta, vec_t const &eps, int n_bath, int model_type, double energy_shift = 0.0) {
+                               mat_t const &theta, vec_t const &eps, int n_bath, int model_type, double energy_shift = 0.0, bool do_enum = false) {
 
   NVTX_RANGE("evaluate_diagram", 0);
   auto config = config_t(frame_zeroth_order, cp.gf_struct, {0.0, tau_split});
@@ -505,8 +506,12 @@ inline double evaluate_diagram(frame_t &frame_zeroth_order, double tau_split, do
     } // end of if (use_bare_propagator)
     else if (u_products[bl_indx].size() != 0) {
       NVTX_RANGE("inchworm-hyb det", 6);
-      sign        = diagram.sign();
-      hyb_weight  = inclusion_exclusion(diagram, hyb_mat);
+      sign = diagram.sign();
+      if (do_enum) {
+        hyb_weight = proper_enum(diagram, hyb_mat);
+      } else {
+        hyb_weight = inclusion_exclusion(diagram, hyb_mat);
+      }
       int bl_size = std::sqrt(u_products[bl_indx].size());
       int i       = subspace_indx / bl_size;
       int j       = subspace_indx % bl_size;
@@ -526,7 +531,12 @@ inline double evaluate_diagram(frame_t &frame_zeroth_order, double tau_split, do
     auto r_x_djdag                  = r * get_op_block_matrix(ad_imp, bl_name_dag, j, true);
     auto prod                       = make_frame(l_x_di * r_x_djdag);
     int sign                        = diagram.sign();
-    double hyb_weight               = inclusion_exclusion(diagram, hyb_mat);
+    double hyb_weight               = 0.0;
+    if (do_enum) {
+      hyb_weight = proper_enum(diagram, hyb_mat);
+    } else {
+      hyb_weight = inclusion_exclusion(diagram, hyb_mat);
+    }
     return -1 * trace(prod) * hyb_weight * sign;
   }
   return 0.0;
@@ -898,9 +908,10 @@ do_TCI(int rank, const std::string &debug_info, std::function<T_output(std::vect
        std::vector<std::vector<T_input>> const &input, std::vector<std::vector<double>> const &weight, std::vector<int> const &pivot1, long &count,
        int sweep_bound, int bond_dim_init, int bond_dim_increase, int bond_dim_max, double reltol, bool fullPiv, int tci_prrlu, int error_type,
        size_t error_eval, double convergence_bound, int convergence_iter, debug_t debug, std::vector<std::vector<int>> const &init_global_pivots,
-       double const_jacobian, int unsummed_tci, int unsummed_tot_size, bool adaptive_error, double decay_rate, std::vector<double> &max_diff_order_rank,
-       std::vector<double> &max_auxi_height_order_rank, std::vector<double> &max_error_order_rank, std::vector<long> &nTCI_order_rank,
-       std::vector<double> &integral_max_order_rank, int order_idx, double *auxi_height = nullptr, double *mini_height = nullptr, double *mini_value = nullptr) {
+       double const_jacobian, int unsummed_tci, int unsummed_tot_size, bool adaptive_error, double decay_rate,
+       std::vector<double> &max_diff_order_rank, std::vector<double> &max_auxi_height_order_rank, std::vector<double> &max_error_order_rank,
+       std::vector<long> &nTCI_order_rank, std::vector<double> &integral_max_order_rank, int order_idx, double *auxi_height = nullptr,
+       double *mini_height = nullptr, double *mini_value = nullptr) {
   NVTX_RANGE("do TCI", 1);
   nTCI_order_rank[order_idx] += 1;
   // prepare variables
@@ -937,8 +948,7 @@ do_TCI(int rank, const std::string &debug_info, std::function<T_output(std::vect
           // ci.iterate(1,0);
         }
       }
-      if (init_global_pivots.size() != 0 && i == 1) {
-         ci.addPivotsAllBonds(init_global_pivots); }
+      if (init_global_pivots.size() != 0 && i == 1) { ci.addPivotsAllBonds(init_global_pivots); }
       {
         NVTX_RANGE("ci-iterate", 7);
         ci.iterate();
@@ -1030,7 +1040,7 @@ do_TCI(int rank, const std::string &debug_info, std::function<T_output(std::vect
       for (auto b = 0u; b < ci.len() - 1; b++) ci.addPivotsAt(pivots[b], b);
       // ci.iterate(1,0);
       ci.makeCanonical();
-      auto tt = ci.tt;
+      auto tt  = ci.tt;
       integral = partial_integral_tt(tt, weight, unsummed_tci);
       for (auto i = 0; i < integral.size(); i++) { integral[i] *= const_jacobian; }
       {
@@ -1078,57 +1088,49 @@ inline void print_pivot1(std::vector<int> const &iota_d_list, std::vector<int> c
   std::cout << std::endl;
 }
 
-inline std::vector<double> adjustClosePoints(const std::vector<double>& sortedNumbers, double epsilon, double a, double b) {
-    size_t n = sortedNumbers.size();
-    std::vector<double> adjustedNumbers;
-    adjustedNumbers.reserve(n); // Reserve memory for performance
+inline std::vector<double> adjustClosePoints(const std::vector<double> &sortedNumbers, double epsilon, double a, double b) {
+  size_t n = sortedNumbers.size();
+  std::vector<double> adjustedNumbers;
+  adjustedNumbers.reserve(n); // Reserve memory for performance
 
-    // Initial adjustment of the first point
-    double firstPoint = sortedNumbers[0];
-    if (firstPoint - a < epsilon) {
-        firstPoint = a + epsilon;
-    }
-    if (b - firstPoint < epsilon) {
-        firstPoint = b - epsilon;
-    }
-    adjustedNumbers.push_back(firstPoint);
+  // Initial adjustment of the first point
+  double firstPoint = sortedNumbers[0];
+  if (firstPoint - a < epsilon) { firstPoint = a + epsilon; }
+  if (b - firstPoint < epsilon) { firstPoint = b - epsilon; }
+  adjustedNumbers.push_back(firstPoint);
 
-    // Iterate over the sorted numbers, enforcing minimum separation
-    for (size_t i = 1; i < n; ++i) {
-        double newPoint = sortedNumbers[i];
+  // Iterate over the sorted numbers, enforcing minimum separation
+  for (size_t i = 1; i < n; ++i) {
+    double newPoint = sortedNumbers[i];
 
-        // Enforce minimum separation with the previous point
-        if (newPoint - adjustedNumbers.back() < epsilon) {
-            newPoint = adjustedNumbers.back() + epsilon;
-        }
-        
-        // Ensure upper bound
-        if (b - newPoint < epsilon) {
-            newPoint = b - epsilon;
-            adjustedNumbers.push_back(newPoint);
-            // Perform backpropagation adjustments if necessary
-            for (int j = i - 1; j >= 0; --j) {
-                if (adjustedNumbers[j+1] - adjustedNumbers[j] < epsilon) {
-                    adjustedNumbers[j] = std::max(adjustedNumbers[j+1] - epsilon, a + epsilon);
-                }
-            }
-        }
-        else {
-            adjustedNumbers.push_back(newPoint);
-        }
+    // Enforce minimum separation with the previous point
+    if (newPoint - adjustedNumbers.back() < epsilon) { newPoint = adjustedNumbers.back() + epsilon; }
+
+    // Ensure upper bound
+    if (b - newPoint < epsilon) {
+      newPoint = b - epsilon;
+      adjustedNumbers.push_back(newPoint);
+      // Perform backpropagation adjustments if necessary
+      for (int j = i - 1; j >= 0; --j) {
+        if (adjustedNumbers[j + 1] - adjustedNumbers[j] < epsilon) { adjustedNumbers[j] = std::max(adjustedNumbers[j + 1] - epsilon, a + epsilon); }
+      }
+    } else {
+      adjustedNumbers.push_back(newPoint);
     }
-    return adjustedNumbers;
+  }
+  return adjustedNumbers;
 }
 
-
-inline std::tuple<std::vector<double>, std::vector<double>, std::vector<double>> obtain_taus_restricted(const std::vector<double> &taus_left, const std::vector<double> &taus_right, const std::vector<double> &taus, double epsilon, int n_left, double tau_split, double tau_max) {
+inline std::tuple<std::vector<double>, std::vector<double>, std::vector<double>>
+obtain_taus_restricted(const std::vector<double> &taus_left, const std::vector<double> &taus_right, const std::vector<double> &taus, double epsilon,
+                       int n_left, double tau_split, double tau_max) {
   if (n_left == 0 && tau_split == 0.0) {
     auto taus_adjusted = adjustClosePoints(taus, epsilon, 0.0, tau_max);
     return std::make_tuple(taus_adjusted, taus_adjusted, taus_adjusted);
   }
-  auto taus_left_adjusted = adjustClosePoints(taus_left, epsilon, 0.0, tau_split);
+  auto taus_left_adjusted  = adjustClosePoints(taus_left, epsilon, 0.0, tau_split);
   auto taus_right_adjusted = adjustClosePoints(taus_right, epsilon, tau_split, tau_max);
-  auto taus_adjusted = taus_left_adjusted;
+  auto taus_adjusted       = taus_left_adjusted;
   taus_adjusted.insert(taus_adjusted.end(), taus_right_adjusted.begin(), taus_right_adjusted.end());
   return std::make_tuple(taus_left_adjusted, taus_right_adjusted, taus_adjusted);
 }
@@ -1151,38 +1153,31 @@ obtain_taus(const std::vector<double> &vs, int n_left, double tau_split, double 
   return std::make_tuple(taus_left, taus_right, taus);
 }
 
-inline int adjust_nGK(int nopt, int nGK_min, int nGK_max, double tau_max, double tau_min, cv_func change_variable){
-    int nGK = nGK_max;
-    EXPECTS(nGK_max % 2 != 0);
-    EXPECTS(nGK_min % 2 != 0);
-    EXPECTS(nGK_max >= nGK_min);
-    while(nGK> nGK_min)
-    {
-        auto [v_value, v_weight] = select_quadrature_GK(nGK, 0, 1);
-        auto v_value_max = *std::max_element(v_value.begin(), v_value.end());
-        std::vector<double> nus_left_max(nopt, v_value_max);
-        auto taus_left_max = change_variable(nus_left_max, tau_max, tau_min);
-        if(
-          is_duplicated(taus_left_max) || if_contains(taus_left_max, tau_max) || if_contains(taus_left_max, tau_min)
-        )
-        {
-          nGK -= 2;
-          continue;
-        }
-        auto v_value_min = *std::min_element(v_value.begin(), v_value.end());
-        std::vector<double> nus_left_min(nopt, v_value_min);
-        auto taus_left_min = change_variable(nus_left_min, tau_max, tau_min);
-        if(
-          is_duplicated(taus_left_min) || if_contains(taus_left_min, tau_max) || if_contains(taus_left_min, tau_min)
-        )
-        {
-          nGK -= 2;
-          continue;
-        }
-        break;
+inline int adjust_nGK(int nopt, int nGK_min, int nGK_max, double tau_max, double tau_min, cv_func change_variable) {
+  int nGK = nGK_max;
+  EXPECTS(nGK_max % 2 != 0);
+  EXPECTS(nGK_min % 2 != 0);
+  EXPECTS(nGK_max >= nGK_min);
+  while (nGK > nGK_min) {
+    auto [v_value, v_weight] = select_quadrature_GK(nGK, 0, 1);
+    auto v_value_max         = *std::max_element(v_value.begin(), v_value.end());
+    std::vector<double> nus_left_max(nopt, v_value_max);
+    auto taus_left_max = change_variable(nus_left_max, tau_max, tau_min);
+    if (is_duplicated(taus_left_max) || if_contains(taus_left_max, tau_max) || if_contains(taus_left_max, tau_min)) {
+      nGK -= 2;
+      continue;
     }
-    return nGK;
-} 
+    auto v_value_min = *std::min_element(v_value.begin(), v_value.end());
+    std::vector<double> nus_left_min(nopt, v_value_min);
+    auto taus_left_min = change_variable(nus_left_min, tau_max, tau_min);
+    if (is_duplicated(taus_left_min) || if_contains(taus_left_min, tau_max) || if_contains(taus_left_min, tau_min)) {
+      nGK -= 2;
+      continue;
+    }
+    break;
+  }
+  return nGK;
+}
 
 template <typename T1, typename T2> void sort_B_according_A(std::vector<T1> &A, std::vector<T2> &B, double reltol = 1e-20) {
   std::vector<size_t> indices(A.size());
