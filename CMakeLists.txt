@@ -23,12 +23,12 @@ cmake_policy(VERSION 3.20)
 
 # ############
 # Define Project
-project(inchworm VERSION 3.2.0 LANGUAGES C CXX)
+project(inchworm VERSION 3.3.1 LANGUAGES C CXX)
 get_directory_property(IS_SUBPROJECT PARENT_DIRECTORY)
 
 # ############
 # Load TRIQS and CPP2PY
-find_package(TRIQS 3.2 REQUIRED)
+find_package(TRIQS 3.3 REQUIRED)
 
 find_package(MPI REQUIRED)
 

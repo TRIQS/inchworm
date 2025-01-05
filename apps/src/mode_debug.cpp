@@ -17,6 +17,9 @@ void ModeDebug::validate_input() {
   }
   if (sp.tau_max < 0 || sp.tau_max > cp.beta || sp.tau_split < 0 || sp.tau_split > sp.tau_max) {
     std::cerr << "debug mode: invalid tau_max or tau_split" << std::endl;
+    std::cerr << "tau_max: " << sp.tau_max << std::endl;
+    std::cout << "beta: " << cp.beta << std::endl;
+    std::cerr << "tau_split: " << sp.tau_split << std::endl;
     std::exit(EXIT_FAILURE);
   }
   if (sp.bl_index < 0 || sp.bl_index >= sr.u_tau_ref.size()) {
@@ -38,7 +41,6 @@ void ModeDebug::print_summary() {
   if (sp.debug <= 0) return;
   ModeBase::print_summary();
 
-
   auto [bl, i, j] = bl2_to_bl3(sp.bl_index, sp.subspace_index, mp.ad_imp.get_subspace_dims());
   std::cout << "#### debug results ####" << std::endl;
   std::cout << "---- order contribution ----" << std::endl;
@@ -48,36 +50,33 @@ void ModeDebug::print_summary() {
     std::cout << std::setw(10) << sp.order_list[i] << std::setw(30) << sr.integral_list[i][0] << std::setw(30) << (sr.statistics[0].time_order)[i]
               << std::endl;
   }
-  double total_integral = 0.0;
+  double total_integral        = 0.0;
+  gp.Z_energy_shift_correction = std::exp(gp.energy_shift * cp.beta);
   for (const auto &inner_vec : sr.integral_list) { total_integral += std::accumulate(inner_vec.begin(), inner_vec.end(), 0.0); }
   double sum_value = sr.u_tau_zeroth_order[sp.bl_index](i, j) + total_integral;
-  double sum_time = std::accumulate(sr.statistics[0].time_order.begin(), sr.statistics[0].time_order.end(), 0.0);
-    std::cout << std::setw(10) << "sum:" << std::setw(30) << sum_value << std::setw(30) << sum_time << std::endl;
-  
-  if(gp.target == "propagator"){
-  std::cout << "---- results comparision ----" << std::endl;
-  std::cout << "u_tau_max at tau=" << sp.tau_max << " for bl_index=" << sp.bl_index << ", subspace_index=" << sp.subspace_index << std::endl;
+  double sum_time  = std::accumulate(sr.statistics[0].time_order.begin(), sr.statistics[0].time_order.end(), 0.0);
+  std::cout << std::setw(10) << "sum:" << std::setw(30) << sum_value << std::setw(30) << sum_time << std::endl;
 
-  // Table headers
-  std::cout << std::setw(40) << std::left << "Description" 
-            << std::setw(30) << "Exact" 
-            << std::setw(30) << "Hyb" << std::endl;
+  if (gp.target == "propagator") {
+    std::cout << "---- results comparision ----" << std::endl;
+    std::cout << "u_tau_max at tau=" << sp.tau_max << " for bl_index=" << sp.bl_index << ", subspace_index=" << sp.subspace_index << std::endl;
 
-  // u values
-  std::cout << std::setw(40) << std::left << "u" 
-            << std::setw(30) << sr.u_interpolator_ref(sp.tau_max)[sp.bl_index](i, j) 
-            << std::setw(30) << sum_value * gp.Z_energy_shift_correction << std::endl;
+    // Table headers
+    std::cout << std::setw(40) << std::left << "Description" << std::setw(30) << "Exact" << std::setw(30) << "Hyb" << std::endl;
 
-  // u * Z_imp_correction values
-  std::cout << std::setw(40) << std::left << "u*Z_imp_correction" 
-            << std::setw(30) << sr.u_interpolator_ref(sp.tau_max)[sp.bl_index](i, j) * sr.Z_imp_correction 
-            << std::setw(30) << sum_value * sr.Z_imp_correction * gp.Z_energy_shift_correction << std::endl;
+    // u values
+    std::cout << std::setw(40) << std::left << "u" << std::setw(30) << sr.u_interpolator_ref(sp.tau_max)[sp.bl_index](i, j) << std::setw(30)
+              << sum_value * gp.Z_energy_shift_correction << std::endl;
 
-  // u * Z_imp_correction * Z_bath * Z_bath_correction values
-  std::cout << std::setw(40) << std::left << "u*Z_imp_correction*Z_bath_(correction)" 
-            << std::setw(30) << sr.u_interpolator_ref(sp.tau_max)[sp.bl_index](i, j) * sr.Z_bath * sr.Z_imp_correction * sr.Z_bath_correction 
-            << std::setw(30) << sum_value * sr.Z_bath * sr.Z_imp_correction * sr.Z_bath_correction * gp.Z_energy_shift_correction << std::endl;
-  
+    // u * Z_imp_correction values
+    std::cout << std::setw(40) << std::left << "u*Z_imp_correction" << std::setw(30)
+              << sr.u_interpolator_ref(sp.tau_max)[sp.bl_index](i, j) * sr.Z_imp_correction << std::setw(30)
+              << sum_value * sr.Z_imp_correction * gp.Z_energy_shift_correction << std::endl;
+
+    // u * Z_imp_correction * Z_bath * Z_bath_correction values
+    std::cout << std::setw(40) << std::left << "u*Z_imp_correction*Z_bath_(correction)" << std::setw(30)
+              << sr.u_interpolator_ref(sp.tau_max)[sp.bl_index](i, j) * sr.Z_bath * sr.Z_imp_correction * sr.Z_bath_correction << std::setw(30)
+              << sum_value * sr.Z_bath * sr.Z_imp_correction * sr.Z_bath_correction * gp.Z_energy_shift_correction << std::endl;
   }
 }
 
@@ -95,10 +94,18 @@ void ModeDebug::run() {
 
 void ModeDebug::evaluate_propagator() {
   // for debug mode, the discrete bath is used
-  sr.u_tau_zeroth_order = sr.u_interpolator_ref(sp.tau_max - sp.tau_split) * sr.u_interpolator_ref(sp.tau_split);
-  long n_tot = sr.u_tau_ref[0].mesh().size();
-  sr.u_interpolator =
-     interpolator_t<scalar_t>(sr.u_tau_ref, n_tot, sp.n_tau_linear, sp.order_Chebyshev, interpolation_type::linear_Chebyshev, sp.grid);
+  auto u_tau_ref_shifted = sr.u_tau_ref;
+  for (auto bl : range(mp.ad_imp.n_subspaces())) {
+    for (auto i : range(mp.ad_imp.get_subspace_dim(bl))) {
+      for (auto j : range(mp.ad_imp.get_subspace_dim(bl))) {
+        for (size_t i_tau = 0; i_tau < sp.grid.size(); i_tau++) { u_tau_ref_shifted[bl][i_tau](i, j) *= std::exp(-gp.energy_shift * sp.grid[i_tau]); }
+      }
+    }
+  }
+  auto u_interpolator_ref_shifted     = interpolator_t<scalar_t>(u_tau_ref_shifted, sp.n_tot, sp.n_tau_linear, sp.order_Chebyshev, sp.interp_type, sp.grid);
+  sr.u_tau_zeroth_order = u_interpolator_ref_shifted(sp.tau_max - sp.tau_split) * u_interpolator_ref_shifted(sp.tau_split);
+  long n_tot            = u_tau_ref_shifted[0].mesh().size();
+  sr.u_interpolator = interpolator_t<scalar_t>(u_tau_ref_shifted, sp.n_tot, sp.n_tau_linear, sp.order_Chebyshev, sp.interp_type, sp.grid);
   sp.use_bare_propagator = false;
   ModeBase::evaluate();
 }
