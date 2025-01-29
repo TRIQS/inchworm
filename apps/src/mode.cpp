@@ -378,8 +378,9 @@ void ModeBase::validate_input() {
   }
 
   // bl2_to_bl1
-  int total_index_ = bl2_to_bl1(subspace_index, bl_index, block_shape);
+  int total_index_ = bl2_to_bl1(bl_index, subspace_index, block_shape);
   if (total_index_ != total_index) {
+    std::cout << "total_index: " << total_index << std::endl;
     std::cerr << "total_index_: " << total_index_ << std::endl;
     std::exit(EXIT_FAILURE);
   }
