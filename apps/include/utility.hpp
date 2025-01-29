@@ -928,7 +928,7 @@ do_TCI(int rank, const std::string &debug_info, std::function<T_output(std::vect
     previous_integral = std::vector<T_output>(1, 0);
   }
 
-  if (tci_prrlu == 2) {
+  if (tci_prrlu == 2 && adaptive_error) {
     if (debug > 1 && rank == 0) {
       std::cout << "iteration nEval error integral\n";
       std::cout << "auxi_height: " << *auxi_height << std::endl;
@@ -1063,6 +1063,60 @@ do_TCI(int rank, const std::string &debug_info, std::function<T_output(std::vect
       if (max_diff > max_diff_order_rank[order_idx]) { max_diff_order_rank[order_idx] = max_diff; }
       if (abs(current_error) > max_error_order_rank[order_idx]) { max_error_order_rank[order_idx] = abs(current_error); }
     }
+  } else if (tci_prrlu == 2 && !adaptive_error) {
+    if (debug > 1 && rank == 0) {
+      std::cout << "iteration nEval error integral\n";
+      std::cout << "No adaptive error" << std::endl;
+    }
+    auto ci = xfac::CTensorCI2<T_output, T_input>(
+       integrand, input, {.bondDim = bond_dim_init, .reltol = reltol, .pivot1 = pivot1, .fullPiv = fullPiv, .useCachedFunction = true});
+    for (int i = 1; i <= sweep_bound; i++) {
+      if (tci_prrlu == 2) {
+        ci.param.bondDim = bond_dim_init + i * bond_dim_increase;
+        if (ci.param.bondDim > bond_dim_max) { ci.param.bondDim = bond_dim_max; }
+      }
+      if (init_global_pivots.size() != 0 && i == 1) { ci.addPivotsAllBonds(init_global_pivots); }
+      {
+        NVTX_RANGE("ci-iterate", 7);
+        ci.iterate();
+      }
+      auto tt = ci.tt;
+      {
+        NVTX_RANGE("ci-obtain integral", 9);
+        integral = partial_integral_tt(tt, weight, unsummed_tci);
+      }
+      for (auto i = 0; i < integral.size(); i++) { integral[i] *= const_jacobian; }
+      {
+        NVTX_RANGE("ci-error calculation", 8);
+        if (error_type == 0) {
+          current_error = ci.pivotError[ci.pivotError.size() - 1];
+        } else if (error_type == 1) {
+          current_error = ci.trueError(error_eval);
+        } else if (error_type == 2) {
+          current_error = tci_error_integral(integrand, tt, input, error_eval);
+        } else if (error_type == 3) {
+          current_error = tci_error_integrand(integrand, tt, input, error_eval);
+        } else {
+          std::cerr << "error_type not supported" << std::endl;
+          std::exit(EXIT_FAILURE);
+        }
+      }
+      if (debug > 1 && rank == 0) { std::cout << i << " " << count << " " << current_error << " " << integral[0] << std::endl; }
+      T_output diff = 0;
+      bool all_zero = true;
+      for (auto i = 0u; i < integral.size(); i++) {
+        diff += std::abs(previous_integral[i] - integral[i]);
+        double TOL = 1e-16;
+        if (abs(integral[i]) > TOL || abs(previous_integral[i]) > TOL) { all_zero = false; }
+      }
+      if (i > 2 && all_zero) { return integral; }
+      if (diff < convergence_bound && i > convergence_iter) { break; }
+      if (debug > 1 && rank == 0) { print_rank(tt); }
+    }
+    T_output max_diff = 0;
+    for (auto i = 0u; i < integral.size(); i++) { max_diff = std::max(max_diff, std::abs(previous_integral[i] - integral[i])); }
+    if (max_diff > max_diff_order_rank[order_idx]) { max_diff_order_rank[order_idx] = max_diff; }
+    if (abs(current_error) > max_error_order_rank[order_idx]) { max_error_order_rank[order_idx] = abs(current_error); }
   } else {
     std::cerr << "tci_prrlu not supported" << std::endl;
     std::exit(EXIT_FAILURE);
