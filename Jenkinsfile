@@ -24,8 +24,8 @@ properties([
 def platforms = [:]
 
 /****************** linux builds (in docker) */
-/* Each platform must have a cooresponding Dockerfile.PLATFORM in triqs/packaging */
-def dockerPlatforms = ["ubuntu-clang", "ubuntu-gcc", "sanitize"]
+/* Each platform must have a corresponding Dockerfile.PLATFORM in triqs/packaging */
+def dockerPlatforms = ["ubuntu-clang", "ubuntu-gcc", "ubuntu-intel", "sanitize"]
 /* .each is currently broken in jenkins */
 for (int i = 0; i < dockerPlatforms.size(); i++) {
   def platform = dockerPlatforms[i]
@@ -87,8 +87,9 @@ for (int i = 0; i < osxPlatforms.size(); i++) {
           "CPLUS_INCLUDE_PATH=$venv/include:$hdf5/include:${env.BREW}/include",
           "LIBRARY_PATH=$venv/lib:$hdf5/lib:${env.BREW}/lib",
           "LD_LIBRARY_PATH=$hdf5/lib",
-          "PYTHONPATH=$installDir/lib/python3.9/site-packages",
+          "PYTHONPATH=$installDir/lib/python3.12/site-packages",
           "CMAKE_PREFIX_PATH=$venv/lib/cmake/triqs",
+          "VIRTUAL_ENV=$venv",
           "OMP_NUM_THREADS=2"]) {
         deleteDir()
         /* note: this is installing into the parent (triqs) venv (install dir), which is thus shared among apps and so not be completely safe */

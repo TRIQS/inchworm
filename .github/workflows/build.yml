@@ -21,7 +21,14 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
+
+    - uses: actions/cache/restore@v4
+      with:
+        path: ${{ env.CCACHE_DIR }}
+        key: ccache-${{ matrix.os }}-${{ matrix.cc }}-${{ github.run_id }}
+        restore-keys:
+          ccache-${{ matrix.os }}-${{ matrix.cc }}-
 
     - name: Install ubuntu dependencies
       if: matrix.os == 'ubuntu-20.04'
@@ -72,7 +79,7 @@ jobs:
         CC: ${{ matrix.cc }}
         CXX: ${{ matrix.cxx }}
       run: |
-        git clone https://github.com/TRIQS/triqs --branch unstable
+        git clone https://github.com/TRIQS/triqs --branch ${{ github.ref_name }}
         mkdir triqs/build && cd triqs/build
         cmake .. -DBuild_Tests=OFF -DCMAKE_INSTALL_PREFIX=$HOME/install
         make -j1 install VERBOSE=1
@@ -82,7 +89,6 @@ jobs:
       env:
         CC: ${{ matrix.cc }}
         CXX: ${{ matrix.cxx }}
-        LIBRARY_PATH: /usr/local/opt/llvm/lib
       run: |
         source $HOME/install/share/triqs/triqsvars.sh
         mkdir build && cd build && cmake ..
@@ -90,8 +96,18 @@ jobs:
 
     - name: Test inchworm
       env:
-        DYLD_FALLBACK_LIBRARY_PATH: /usr/local/opt/llvm/lib
+        OPENBLAS_NUM_THREADS: "1"
       run: |
         source $HOME/install/share/triqs/triqsvars.sh
         cd build
         ctest -j2 --output-on-failure
+
+    - name: ccache statistics
+      if: always()
+      run: ccache -sv
+
+    - uses: actions/cache/save@v4
+      if: always()
+      with:
+        path: ${{ env.CCACHE_DIR }}
+        key: ccache-${{ matrix.os }}-${{ matrix.cc }}-${{ github.run_id }}
