@@ -74,10 +74,16 @@ jobs:
         pip3 install mako numpy scipy mpi4py
         pip3 install -r requirements.txt
 
+    - name: Add clang LDFLAGS for macos to link against brew's libc++
+      if: ${{ contains(matrix.os, 'macos') && contains(matrix.cxx, 'clang') }}
+      run: |
+        echo 'LDFLAGS="-L$(brew --prefix llvm)/lib/c++ -L$(brew --prefix llvm)/lib -lunwind"' >> $GITHUB_ENV
+
     - name: Build & Install TRIQS
       env:
         CC: ${{ matrix.cc }}
         CXX: ${{ matrix.cxx }}
+        TRIQS_BRANCH: ${{ github.event_name == 'pull_request' && github.base_ref || github.ref_name }}
       run: |
         git clone https://github.com/TRIQS/triqs --branch ${{ github.ref_name }}
         mkdir triqs/build && cd triqs/build
