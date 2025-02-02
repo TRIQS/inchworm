@@ -82,6 +82,13 @@ inline int bl2_to_bl1(int bl_indx, int subspace_index, const std::vector<int> &b
   return index;
 }
 
+inline int bl2_to_bl1_gf(int bl_indx, int subspace_index, const std::vector<int> &block_shape) {
+  int index = 0;
+  for (int bl = 0; bl < bl_indx; ++bl) { index += block_shape[bl]; }
+  index += subspace_index;
+  return index;
+}
+
 inline std::tuple<int, int, int> bl2_to_bl3(int bl_indx, int subspace_index, const std::vector<int> &block_shape) {
   int i = subspace_index / block_shape[bl_indx];
   int j = subspace_index % block_shape[bl_indx];
@@ -523,8 +530,8 @@ inline double evaluate_diagram(frame_t &frame_zeroth_order, double tau_split, do
     NVTX_RANGE("green function", 6);
     auto l                          = impurity_product(ad_imp, diagram, tau_max, tau_split, energy_shift, &u_interpolator);
     auto r                          = impurity_product(ad_imp, diagram, tau_split, 0, energy_shift, &u_interpolator);
-    auto [i, bl_d]                  = findIndex(block_shape, gf_index[0]);
-    auto [j, bl_dag]                = findIndex(block_shape, gf_index[1]);
+    auto [bl_d, i]                  = findIndex(block_shape, gf_index[0]);
+    auto [bl_dag, j]                = findIndex(block_shape, gf_index[1]);
     auto [bl_name_d, bl_size_d]     = gf_struct[bl_d];
     auto [bl_name_dag, bl_size_dag] = gf_struct[bl_dag];
     auto l_x_di                     = l * get_op_block_matrix(ad_imp, bl_name_d, i, false);
@@ -537,7 +544,11 @@ inline double evaluate_diagram(frame_t &frame_zeroth_order, double tau_split, do
     } else {
       hyb_weight = inclusion_exclusion(diagram, hyb_mat);
     }
-    return -1 * trace(prod) * hyb_weight * sign;
+    // Account for the sign due to the additional operator insertions
+    auto const &ops     = diagram.op_list;
+    int nop_r           = std::count_if(begin(ops), end(ops), [tau_split = tau_split](auto const &op) { return tau_split > op.tau; });
+    int additional_sign = (nop_r % 2 == 1) ? -1 : 1;
+    return -1 * trace(prod) * hyb_weight * sign * additional_sign;
   }
   return 0.0;
 }

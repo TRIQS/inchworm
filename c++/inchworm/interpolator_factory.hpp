@@ -163,7 +163,7 @@ namespace inchworm {
     long n = 0;
     // while (n < params->grid.size() && params->grid[n] < x) { n++; }
     while (n < params->grid.size() && (x - params->grid[n]) > 1e-15*x) { n++; }
-    if (std::abs(params->grid[n] - x)<1e-15) { return params->u_tau->operator[](params->bl)[n](params->i, params->j); }
+    if (std::abs(params->grid[n] - x)*x<1e-15) { return params->u_tau->operator[](params->bl)[n](params->i, params->j); }
     else{
       std::cerr << "x = " << x << std::endl;
       std::cerr << "params->grid[n] = " << params->grid[n] << std::endl;

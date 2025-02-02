@@ -4,9 +4,7 @@
 #include "utility.hpp"
 #include "mode.hpp"
 
-void ModeBase::clear_tci_results() {
-  sr.integral_list.clear();
-} // end of clear_results
+void ModeBase::clear_tci_results() { sr.integral_list.clear(); } // end of clear_results
 
 void ModeBase::read_json_parameters(std::string json_file_path) {
   NVTX_RANGE("read params", 0);
@@ -37,35 +35,21 @@ void ModeBase::read_json_parameters(std::string json_file_path) {
   try {
     gp.energy_shift = root.get<double>("gp.energy_shift");
   } catch (const std::exception &e) { gp.energy_shift = 0.0; }
-  try{
+  try {
     gp.do_cache = root.get<bool>("gp.do_cache");
-  }catch(const std::exception &e){
-    gp.do_cache = true;
-  }
-  try{
+  } catch (const std::exception &e) { gp.do_cache = true; }
+  try {
     gp.do_adaptive_nGK = root.get<bool>("gp.do_adaptive_nGK");
-  }
-  catch(const std::exception &e){
-    gp.do_adaptive_nGK = false;
-  }
-  try{
+  } catch (const std::exception &e) { gp.do_adaptive_nGK = false; }
+  try {
     gp.do_global_pivot = root.get<bool>("gp.do_global_pivot");
-  }
-  catch(const std::exception &e){
-    gp.do_global_pivot = false;
-  }
-  try{
+  } catch (const std::exception &e) { gp.do_global_pivot = false; }
+  try {
     gp.map_type = root.get<int>("gp.map_type");
-  }
-  catch(const std::exception &e){
-    gp.map_type = 0;
-  }
-  try{
+  } catch (const std::exception &e) { gp.map_type = 0; }
+  try {
     gp.do_enum = root.get<bool>("gp.do_enum");
-  }
-  catch(const std::exception &e){
-    gp.do_enum = false;
-  }
+  } catch (const std::exception &e) { gp.do_enum = false; }
 
   // Read construction parameters
   //// required parameters
@@ -148,19 +132,19 @@ void ModeBase::read_json_parameters(std::string json_file_path) {
   try {
     sp.inch_start_index = root.get<int>("sp.inch_start_index");
     sp.inch_end_index   = root.get<int>("sp.inch_end_index");
-    sp.tau_max         = root.get<double>("sp.tau_max");
-    sp.tau_split_ratio = root.get<double>("sp.tau_split_ratio");
-    sp.tau_split       = sp.tau_split_ratio * sp.tau_max;
-    sp.bl_index        = root.get<int>("sp.bl_index");
-    sp.subspace_index  = root.get<int>("sp.subspace_index");
+    sp.tau_max          = root.get<double>("sp.tau_max");
+    sp.tau_split_ratio  = root.get<double>("sp.tau_split_ratio");
+    sp.tau_split        = sp.tau_split_ratio * sp.tau_max;
+    sp.bl_index         = root.get<int>("sp.bl_index");
+    sp.subspace_index   = root.get<int>("sp.subspace_index");
   } catch (const std::exception &e) {
     sp.inch_start_index = 1;
-    sp.inch_end_index   = sp.n_tau_linear-1;
-    sp.tau_max         = -1.0;
-    sp.tau_split_ratio = -1.0;
-    sp.tau_split       = -1.0;
-    sp.bl_index        = -1.0;
-    sp.subspace_index  = -1.0;
+    sp.inch_end_index   = sp.n_tau_linear - 1;
+    sp.tau_max          = -1.0;
+    sp.tau_split_ratio  = -1.0;
+    sp.tau_split        = -1.0;
+    sp.bl_index         = -1.0;
+    sp.subspace_index   = -1.0;
   }
 
   // Read TCI parameters
@@ -236,32 +220,29 @@ void ModeBase::prepare_input(std::string hyb_file_path) {
 
   // TCI setup
   //set 0
-  if (gp.map_type == 0){
-  if(sp.debug>0 && rank==0){std::cout<<"Using map_type 0"<<std::endl;}
-  std::tie(tp.v_value, tp.v_weight) = select_quadrature_GK(tp.n_GK, 0, 1);}
-  else if (gp.map_type == 3){
-  if(sp.debug>0 && rank==0){std::cout<<"Using map_type 3"<<std::endl;}
-  //set 3
-  int n_grid_tanh_sinh = tp.n_GK;
-  double h_tanh_sinh   = 4.0 / n_grid_tanh_sinh;
-  auto [xi_old, wi_old] = tanh_sinh_quadrature(0, 1, h_tanh_sinh, n_grid_tanh_sinh);
-  double tol = 1e-14;
-  // for (int i = 0; i < xi_old.size(); i++) {
-  //   if (abs(xi_old[i]) > tol && abs(xi_old[i] - 1) > tol) {
-  //     tp.v_value.push_back(xi_old[i]);
-  //     tp.v_weight.push_back(wi_old[i]);
-  //   }
-  // }
-  tp.v_value  = xi_old;
-  tp.v_weight = wi_old;
-  }
-  else{
+  if (gp.map_type == 0) {
+    if (sp.debug > 0 && rank == 0) { std::cout << "Using map_type 0" << std::endl; }
+    std::tie(tp.v_value, tp.v_weight) = select_quadrature_GK(tp.n_GK, 0, 1);
+  } else if (gp.map_type == 3) {
+    if (sp.debug > 0 && rank == 0) { std::cout << "Using map_type 3" << std::endl; }
+    //set 3
+    int n_grid_tanh_sinh  = tp.n_GK;
+    double h_tanh_sinh    = 4.0 / n_grid_tanh_sinh;
+    auto [xi_old, wi_old] = tanh_sinh_quadrature(0, 1, h_tanh_sinh, n_grid_tanh_sinh);
+    double tol            = 1e-14;
+    // for (int i = 0; i < xi_old.size(); i++) {
+    //   if (abs(xi_old[i]) > tol && abs(xi_old[i] - 1) > tol) {
+    //     tp.v_value.push_back(xi_old[i]);
+    //     tp.v_weight.push_back(wi_old[i]);
+    //   }
+    // }
+    tp.v_value  = xi_old;
+    tp.v_weight = wi_old;
+  } else {
     std::cerr << "Invalid map_type" << std::endl;
     std::exit(EXIT_FAILURE);
   }
-  if(sp.debug>0 && rank==0){
-    std::cout << "do_enum: " << gp.do_enum << std::endl;
-  }
+  if (sp.debug > 0 && rank == 0) { std::cout << "do_enum: " << gp.do_enum << std::endl; }
 
   // operators setup
   int n_bl = cp.gf_struct.size();
@@ -414,9 +395,10 @@ void ModeBase::validate_input() {
     std::exit(EXIT_FAILURE);
   }
 
-  bool valid_unsumed_mode = (gp.unsummed_tci == 1 || gp.unsummed_tci == 2) && mode_name == "inchworm"
+  bool valid_unsumed_mode_propagator = (gp.unsummed_tci == 1 || gp.unsummed_tci == 2) && mode_name == "inchworm"
      || (gp.unsummed_tci == 0) && (mode_name == "bare" || mode_name == "debug");
-  if (!valid_unsumed_mode) {
+  bool valid_unsumed_mode_gf = mode_name == "inchworm" || mode_name == "debug";
+  if (!(valid_unsumed_mode_propagator && gp.target == "propagator") && !(valid_unsumed_mode_gf && gp.target == "greens_function")) {
     std::cerr << "invalid unsummed_tci and mode_name combination" << std::endl;
     std::exit(EXIT_FAILURE);
   }
@@ -426,16 +408,15 @@ void ModeBase::prepare_eval() {
   NVTX_RANGE("prepare eval", 0);
   // set up quantities that are valid for all calls of evaluate, i.e., those does not depend on tau and propagator
   // setup the mapping and jacobian functions for the transformation of time-ordered variables v->tau
-  //set 0 
-  if (gp.map_type == 0){
-  ep.change_variable = change_variable0;
-  ep.jacobian        = jacobian0;}
-  else if (gp.map_type == 3){
-  // // set 3
-  ep.change_variable = change_variable3;
-  ep.jacobian        = jacobian3;
-  }
-  else{
+  //set 0
+  if (gp.map_type == 0) {
+    ep.change_variable = change_variable0;
+    ep.jacobian        = jacobian0;
+  } else if (gp.map_type == 3) {
+    // // set 3
+    ep.change_variable = change_variable3;
+    ep.jacobian        = jacobian3;
+  } else {
     std::cerr << "Invalid map_type" << std::endl;
     std::exit(EXIT_FAILURE);
   }
@@ -452,11 +433,10 @@ void ModeBase::prepare_eval() {
       ep.phi_pair_order_cache[order] = get_all_phi(index_range);
     }
   }
-  // generate the space for sr.statistics 
-  if(mode_name == "inchworm"){
-    sr.statistics.resize(sp.n_tau_linear-1);
-  }
-  else{
+  // generate the space for sr.statistics
+  if (mode_name == "inchworm") {
+    sr.statistics.resize(sp.n_tau_linear - 1);
+  } else {
     sr.statistics.resize(1);
   }
 }
@@ -519,7 +499,7 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
 
   std::vector<double> integral_order_flatten(order_list.size() * unsummed_tot_size, 0);
   std::vector<double> integral_order_rank_flatten(order_list.size() * unsummed_tot_size, 0);
-  
+
   /// statistics start
   std::vector<long> func_evals_order(order_list.size(), 0);
   std::vector<long> func_evals_order_rank(order_list.size(), 0);
@@ -609,19 +589,17 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
 
     std::string debug_info;
     {
-        std::ostringstream oss;
-        oss << "rank: " << rank
-            << ", order: " << order
-            << ", n_left: " << n_left
-            << ", tau_split: " << std::fixed << std::setprecision(16) << sp.tau_split;
-        debug_info = oss.str();
+      std::ostringstream oss;
+      oss << "rank: " << rank << ", order: " << order << ", n_left: " << n_left << ", tau_split: " << std::setprecision(16) << sp.tau_split;
+      debug_info = oss.str();
     }
 
-    long count     = 0;
+    long count         = 0;
     double mini_height = 0.0;
-    double mini_value = 1e10;
-    auto integrand = [this, &count, &phi_d_list = phi_d_list, &phi_d_dag_list = phi_d_dag_list, &n_left, &auxi_height, &mini_height, &mini_value,
-                      &debug_info, &order_idx, &warning_same_time_order_rank, &warning_tau_split_order_rank, &warning_tau_max_order_rank](std::vector<double> variables) -> double {
+    double mini_value  = 1e10;
+    auto integrand     = [this, &count, &phi_d_list = phi_d_list, &phi_d_dag_list = phi_d_dag_list, &n_left, &auxi_height, &mini_height, &mini_value,
+                      &debug_info, &order_idx, &warning_same_time_order_rank, &warning_tau_split_order_rank,
+                      &warning_tau_max_order_rank](std::vector<double> variables) -> double {
       NVTX_RANGE("integrand", 0);
       std::vector<double> taus_left{};
       std::vector<double> taus_right{};
@@ -633,12 +611,34 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
       int bl_index       = sp.bl_index;
       int subspace_index = sp.subspace_index;
       double tau_max     = sp.tau_max;
-      if ((gp.unsummed_tci == 1 || gp.unsummed_tci == 2)) {
-        int index                          = static_cast<int>(variables[0]);
-        std::tie(bl_index, subspace_index) = bl1_to_bl2(index, mp.ad_imp.get_subspace_dims());
+      double tau_split  = sp.tau_split;
+      std::vector<int> gf_index = sp.gf_index;
+      if (gp.target == "propagator") {
+        if ((gp.unsummed_tci == 1 || gp.unsummed_tci == 2)) {
+          int index                          = static_cast<int>(variables[0]);
+          std::tie(bl_index, subspace_index) = bl1_to_bl2(index, mp.ad_imp.get_subspace_dims());
+        }
+        if (gp.unsummed_tci == 2) { tau_max = variables[1]; }
+      } else if (gp.target == "greens_function") {
+        if (gp.unsummed_tci == 1){
+          tau_split = variables[0];
+        }
+        else if (gp.unsummed_tci == 3) { 
+          int bl = int(variables[0]);
+          int orb_d = int(variables[1]);
+          int orb_ddag = int(variables[2]);
+          gf_index[0] = bl2_to_bl1_gf(bl, orb_d, mp.gf_block_shape);
+          gf_index[1] = bl2_to_bl1_gf(bl, orb_ddag, mp.gf_block_shape);
+        }
+        else if (gp.unsummed_tci == 4) {
+          int bl = int(variables[0]);
+          int orb_d = int(variables[1]);
+          int orb_ddag = int(variables[2]);
+          gf_index[0] = bl2_to_bl1_gf(bl, orb_d, mp.gf_block_shape);
+          gf_index[1] = bl2_to_bl1_gf(bl, orb_ddag, mp.gf_block_shape);
+          tau_split = variables[3];
+        }
       }
-
-      if (gp.unsummed_tci == 2) { tau_max = variables[1]; }
 
       // set integral variables
       if (gp.integral_variable == "v_iota" && gp.tci_shape == "partition") {
@@ -651,9 +651,9 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
       }
 
       // for bare mode, taus_left = taus_right = taus
-      std::tie(taus_left, taus_right, taus) = obtain_taus(vs, n_left, sp.tau_split, tau_max, ep.change_variable);
+      std::tie(taus_left, taus_right, taus) = obtain_taus(vs, n_left, tau_split, tau_max, ep.change_variable);
       // adjust taus
-      std::tie(taus_left, taus_right, taus) = obtain_taus_restricted(taus_left,taus_right,taus,1e-15, n_left,sp.tau_split,tau_max);
+      std::tie(taus_left, taus_right, taus) = obtain_taus_restricted(taus_left, taus_right, taus, 1e-15, n_left, tau_split, tau_max);
 
       if (is_duplicated(taus)) {
         // mini_height = 0.0;
@@ -665,24 +665,22 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
         warning_same_time_order_rank[order_idx] += 1;
         //gracifally exit the program
         std::exit(EXIT_FAILURE);
-        if (gp.ergodicity == "random_auxi_adaptive") { 
-          return auxi_height * get_random_number()+mini_height; }
-        return 0.0+mini_height;
+        if (gp.ergodicity == "random_auxi_adaptive") { return auxi_height * get_random_number() + mini_height; }
+        return 0.0 + mini_height;
       }
 
-      if (if_contains(taus, sp.tau_split)) {
+      if (if_contains(taus, tau_split)) {
         // mini_height = 0.0;
         std::cerr << "Warning: tau_split is in taus" << std::endl;
         std::cerr << "taus: ";
         for (auto tau : taus) { std::cerr << tau << " "; }
         std::cerr << std::endl;
-        std::cerr << "tau_split: " << sp.tau_split << std::endl;
+        std::cerr << "tau_split: " << tau_split << std::endl;
         std::cerr << "debug_info: " << debug_info << std::endl;
         warning_tau_split_order_rank[order_idx] += 1;
         std::exit(EXIT_FAILURE);
-        if (gp.ergodicity == "random_auxi_adaptive") { 
-          return auxi_height * get_random_number()+mini_height; }
-        return 0.0+mini_height;
+        if (gp.ergodicity == "random_auxi_adaptive") { return auxi_height * get_random_number() + mini_height; }
+        return 0.0 + mini_height;
       }
 
       if (if_contains(taus, tau_max)) {
@@ -695,25 +693,23 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
         std::cerr << "debug_info: " << debug_info << std::endl;
         warning_tau_max_order_rank[order_idx] += 1;
         std::exit(EXIT_FAILURE);
-        if (gp.ergodicity == "random_auxi_adaptive") { 
-          return auxi_height * get_random_number()+mini_height; }
-        return 0.0+mini_height;
+        if (gp.ergodicity == "random_auxi_adaptive") { return auxi_height * get_random_number() + mini_height; }
+        return 0.0 + mini_height;
       }
 
       std::vector<int> phi_loop_list{0};
       std::vector<std::pair<std::vector<int>, std::vector<int>>> phi_loop_pair_list{{phi_d_list, phi_d_dag_list}};
       if (gp.integrand == "sum_phi" && gp.do_segment) {
         NVTX_RANGE("segment", 5);
-        if(gp.do_cache){
-        auto it = ep.phi_pair_iota_cache.find(iotas);
-        if (it == ep.phi_pair_iota_cache.end()) {
-          phi_loop_pair_list            = generate_phi_segment(iotas, mp.gf_block_shape);
-          ep.phi_pair_iota_cache[iotas] = phi_loop_pair_list;
+        if (gp.do_cache) {
+          auto it = ep.phi_pair_iota_cache.find(iotas);
+          if (it == ep.phi_pair_iota_cache.end()) {
+            phi_loop_pair_list            = generate_phi_segment(iotas, mp.gf_block_shape);
+            ep.phi_pair_iota_cache[iotas] = phi_loop_pair_list;
+          } else {
+            phi_loop_pair_list = it->second;
+          }
         } else {
-          phi_loop_pair_list = it->second;
-        }
-        }
-        else{
           phi_loop_pair_list = generate_phi_segment(iotas, mp.gf_block_shape);
         }
         phi_loop_list.resize(phi_loop_pair_list.size());
@@ -739,17 +735,15 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
         auto tau_d     = get_elements(phi_d, taus);
         auto tau_d_dag = get_elements(phi_d_dag, taus);
         auto integrand_phi =
-           evaluate_diagram(sr.u_tau_zeroth_order, sp.tau_split, tau_max, mp.all_d_ops, mp.all_d_dag_ops, mp.gf_block_shape, cp, mp.Delta_tau,
-                            mp.ad_imp, sr.u_interpolator, tau_d, tau_d_dag, iota_d, iota_d_dag, bl_index, subspace_index, sp.use_bare_propagator,
-                            sp.gf_index, cp.gf_struct, mp.theta, mp.epsilon, mp.n_bath, gp.model_type, gp.energy_shift, gp.do_enum);
-        double j = ep.jacobian(taus_right, tau_max, sp.tau_split);
-        if (sp.use_bare_propagator == false) { j *= ep.jacobian(taus_left, sp.tau_split, 0.0); }
+           evaluate_diagram(sr.u_tau_zeroth_order, tau_split, tau_max, mp.all_d_ops, mp.all_d_dag_ops, mp.gf_block_shape, cp, mp.Delta_tau,
+                                mp.ad_imp, sr.u_interpolator, tau_d, tau_d_dag, iota_d, iota_d_dag, bl_index, subspace_index, sp.use_bare_propagator,
+                                gf_index, cp.gf_struct, mp.theta, mp.epsilon, mp.n_bath, gp.model_type, gp.energy_shift, gp.do_enum);
+        double j = ep.jacobian(taus_right, tau_max, tau_split);
+        if (sp.use_bare_propagator == false) { j *= ep.jacobian(taus_left, tau_split, 0.0); }
         integrand_val += integrand_phi * j;
       } // end of loop over phi
 
-      if(abs(integrand_val) < mini_value && abs(integrand_val) > 1e-16){
-        mini_value = integrand_val;
-      }
+      if (abs(integrand_val) < mini_value && abs(integrand_val) > 1e-16) { mini_value = integrand_val; }
 
       if (gp.ergodicity == "random_auxi_adaptive") { return auxi_height * get_random_number() + integrand_val; }
       return integrand_val;
@@ -768,33 +762,30 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
         input.push_back(iota_value);
         weight.push_back(iota_weight);
       }
-      
-      std::vector<double> v_value_left{}; 
+
+      std::vector<double> v_value_left{};
       std::vector<double> v_value_right{};
       std::vector<double> v_weight_left{};
       std::vector<double> v_weight_right{};
-      if(gp.do_adaptive_nGK){
-      int nGK_left = tp.n_GK;
-      if (n_left>0){
-      int nGK_left = adjust_nGK(n_left, 3, tp.n_GK, sp.tau_split, 0.0, ep.change_variable);
-      }
-      int nGK_right = adjust_nGK(n_opt - n_left, 3, tp.n_GK, sp.tau_max, sp.tau_split, ep.change_variable);
-      if(sp.debug > 0){
-        std::cout << "-----adaptive nGK-----" << std::endl;
-        std::cout << "tau_max: " << sp.tau_max << std::endl;
-        std::cout << "tau_split: " << sp.tau_split << std::endl;
-        std::cout << "n_opt: " << n_opt << std::endl;
-        std::cout << "n_left: " << n_left << std::endl;
-        std::cout << "nGK_left: " << nGK_left << std::endl;
-        std::cout << "nGK_right: " << nGK_right << std::endl;
-      }
-      std::tie(v_value_left, v_weight_left) = select_quadrature_GK(nGK_left, 0, 1);
-      std::tie(v_value_right, v_weight_right) = select_quadrature_GK(nGK_right, 0, 1);
-      }
-      else{
-        v_value_left = tp.v_value;
-        v_value_right = tp.v_value;
-        v_weight_left = tp.v_weight;
+      if (gp.do_adaptive_nGK) {
+        int nGK_left = tp.n_GK;
+        if (n_left > 0) { int nGK_left = adjust_nGK(n_left, 3, tp.n_GK, sp.tau_split, 0.0, ep.change_variable); }
+        int nGK_right = adjust_nGK(n_opt - n_left, 3, tp.n_GK, sp.tau_max, sp.tau_split, ep.change_variable);
+        if (sp.debug > 0) {
+          std::cout << "-----adaptive nGK-----" << std::endl;
+          std::cout << "tau_max: " << sp.tau_max << std::endl;
+          std::cout << "tau_split: " << sp.tau_split << std::endl;
+          std::cout << "n_opt: " << n_opt << std::endl;
+          std::cout << "n_left: " << n_left << std::endl;
+          std::cout << "nGK_left: " << nGK_left << std::endl;
+          std::cout << "nGK_right: " << nGK_right << std::endl;
+        }
+        std::tie(v_value_left, v_weight_left)   = select_quadrature_GK(nGK_left, 0, 1);
+        std::tie(v_value_right, v_weight_right) = select_quadrature_GK(nGK_right, 0, 1);
+      } else {
+        v_value_left   = tp.v_value;
+        v_value_right  = tp.v_value;
+        v_weight_left  = tp.v_weight;
         v_weight_right = tp.v_weight;
       }
 
@@ -811,13 +802,13 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
       std::cerr << "not implemented" << std::endl;
       std::exit(EXIT_FAILURE);
     }
-    if (gp.unsummed_tci != 0 && mode_name == "inchworm") {
+    if (gp.unsummed_tci != 0) {
       for (int i = unsummed_input.size() - 1; i >= 0; i--) {
         input.insert(input.begin(), unsummed_input[i]);
         weight.insert(weight.begin(), std::vector<double>(unsummed_input[i].size(), 1.0));
       }
     }
-    
+
     // std::cout << "mini_value (old)" << mini_value << std::endl;
     // set up initial pivot, initial input, initial integrand
     for (int i = 0; i < input.size(); i++) { init_pivot.push_back(0); }
@@ -832,36 +823,31 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
     }
 
     std::vector<std::vector<int>> init_global_pivots{};
-    if(gp.do_global_pivot){
+    if (gp.do_global_pivot) {
       std::vector<int> global_pivots_last_element{};
-      for (int i = 0; i < input.size(); i++) {
-        global_pivots_last_element.push_back(input[i].size() - 1);
-      }
+      for (int i = 0; i < input.size(); i++) { global_pivots_last_element.push_back(input[i].size() - 1); }
       init_global_pivots.push_back(global_pivots_last_element);
     }
     double const_jacobian = 1.0;
     std::vector<double> integral(unsummed_tot_size, 0.0);
     bool adaptive_error = false;
     if (gp.ergodicity == "random_auxi_adaptive") { adaptive_error = true; }
-    integral = do_TCI<double, double>(rank, debug_info, integrand, input, weight, init_pivot, count, tp.sweep_bound, tp.bond_dim_init,
-                                      tp.bond_dim_increase, tp.bond_dim_max, tp.reltol, tp.fullPiv, tp.tci_prrlu, tp.error_type, tp.error_eval,
-                                      tp.convergence_bound, tp.convergence_iter, sp.debug, init_global_pivots, const_jacobian, gp.unsummed_tci,
-                                      unsummed_tot_size, adaptive_error, tp.decay_rate, max_diff_order_rank, 
-                                      max_auxi_height_order_rank,
-                                       max_error_order_rank, 
-                                       nTCI_order_rank, integral_max_order_rank,
-                                       order_idx,  &auxi_height, &mini_height, &mini_value);
+    integral = do_TCI<double, double>(
+       rank, debug_info, integrand, input, weight, init_pivot, count, tp.sweep_bound, tp.bond_dim_init, tp.bond_dim_increase, tp.bond_dim_max,
+       tp.reltol, tp.fullPiv, tp.tci_prrlu, tp.error_type, tp.error_eval, tp.convergence_bound, tp.convergence_iter, sp.debug, init_global_pivots,
+       const_jacobian, gp.unsummed_tci, unsummed_tot_size, adaptive_error, tp.decay_rate, max_diff_order_rank, max_auxi_height_order_rank,
+       max_error_order_rank, nTCI_order_rank, integral_max_order_rank, order_idx, &auxi_height, &mini_height, &mini_value);
     // std::cout << "integral" << integral[0] << std::endl;
     // std::cout << "mini_value" << mini_value << std::endl;
     // accumulate statistics
     func_evals_order_rank[order_idx] += count;
     // warning_same_time, warning_tau_split, warning_tau_max are already accumulated in the integrand lambda function
     // max_diff, max_auxi_height, max_pivot_error are already accumulated in do_TCI
-    for (size_t i = 0; i < unsummed_tot_size; i++) {u_tau_sum_order_rank[order_idx] += std::abs(integral[i]);}
+    for (size_t i = 0; i < unsummed_tot_size; i++) { u_tau_sum_order_rank[order_idx] += std::abs(integral[i]); }
     auto end_time = std::chrono::high_resolution_clock::now();
     time_order_rank[order_idx] += std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count() / 1e6;
     // nTCI, integral_max are already accumulated in do_TCI
-    
+
     // accumate integral
     for (size_t i = 0; i < unsummed_tot_size; i++) { integral_order_rank_flatten[order_idx * unsummed_tot_size + i] += integral[i]; }
   } // end of loop over looptotl
@@ -872,11 +858,15 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
 
   // gather statistics
   MPI_Allreduce(func_evals_order_rank.data(), func_evals_order.data(), func_evals_order_rank.size(), MPI_LONG, MPI_SUM, MPI_COMM_WORLD);
-  MPI_Allreduce(warning_same_time_order_rank.data(), warning_same_time_order.data(), warning_same_time_order_rank.size(), MPI_LONG, MPI_SUM, MPI_COMM_WORLD);
-  MPI_Allreduce(warning_tau_split_order_rank.data(), warning_tau_split_order.data(), warning_tau_split_order_rank.size(), MPI_LONG, MPI_SUM, MPI_COMM_WORLD);
-  MPI_Allreduce(warning_tau_max_order_rank.data(), warning_tau_max_order.data(), warning_tau_max_order_rank.size(), MPI_LONG, MPI_SUM, MPI_COMM_WORLD);
+  MPI_Allreduce(warning_same_time_order_rank.data(), warning_same_time_order.data(), warning_same_time_order_rank.size(), MPI_LONG, MPI_SUM,
+                MPI_COMM_WORLD);
+  MPI_Allreduce(warning_tau_split_order_rank.data(), warning_tau_split_order.data(), warning_tau_split_order_rank.size(), MPI_LONG, MPI_SUM,
+                MPI_COMM_WORLD);
+  MPI_Allreduce(warning_tau_max_order_rank.data(), warning_tau_max_order.data(), warning_tau_max_order_rank.size(), MPI_LONG, MPI_SUM,
+                MPI_COMM_WORLD);
   MPI_Allreduce(max_diff_order_rank.data(), max_diff_order.data(), max_diff_order_rank.size(), MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-  MPI_Allreduce(max_auxi_height_order_rank.data(), max_auxi_height_order.data(), max_auxi_height_order_rank.size(), MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+  MPI_Allreduce(max_auxi_height_order_rank.data(), max_auxi_height_order.data(), max_auxi_height_order_rank.size(), MPI_DOUBLE, MPI_MAX,
+                MPI_COMM_WORLD);
   MPI_Allreduce(max_error_order_rank.data(), max_error_order.data(), max_error_order_rank.size(), MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
   MPI_Allreduce(u_tau_sum_order_rank.data(), u_tau_sum_order.data(), u_tau_sum_order_rank.size(), MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
   MPI_Allreduce(time_order_rank.data(), time_order.data(), time_order_rank.size(), MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
@@ -888,15 +878,15 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
        std::vector<double>(integral_order_flatten.begin() + i * unsummed_tot_size, integral_order_flatten.begin() + (i + 1) * unsummed_tot_size));
   }
   // store statistics
-  sr.statistics[inchworm_index].func_evals_order = func_evals_order;
+  sr.statistics[inchworm_index].func_evals_order        = func_evals_order;
   sr.statistics[inchworm_index].warning_same_time_order = warning_same_time_order;
   sr.statistics[inchworm_index].warning_tau_split_order = warning_tau_split_order;
-  sr.statistics[inchworm_index].warning_tau_max_order = warning_tau_max_order;
-  sr.statistics[inchworm_index].max_diff_order = max_diff_order;
-  sr.statistics[inchworm_index].max_auxi_height_order = max_auxi_height_order;
-  sr.statistics[inchworm_index].max_error_order = max_error_order;
-  sr.statistics[inchworm_index].u_tau_sum_order = u_tau_sum_order;
-  sr.statistics[inchworm_index].time_order = time_order;
-  sr.statistics[inchworm_index].nTCI_order = nTCI_order;
-  sr.statistics[inchworm_index].integral_max_order = integral_max_order;
+  sr.statistics[inchworm_index].warning_tau_max_order   = warning_tau_max_order;
+  sr.statistics[inchworm_index].max_diff_order          = max_diff_order;
+  sr.statistics[inchworm_index].max_auxi_height_order   = max_auxi_height_order;
+  sr.statistics[inchworm_index].max_error_order         = max_error_order;
+  sr.statistics[inchworm_index].u_tau_sum_order         = u_tau_sum_order;
+  sr.statistics[inchworm_index].time_order              = time_order;
+  sr.statistics[inchworm_index].nTCI_order              = nTCI_order;
+  sr.statistics[inchworm_index].integral_max_order      = integral_max_order;
 } // end of evaluate

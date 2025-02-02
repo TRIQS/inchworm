@@ -29,8 +29,8 @@ int main(int argc, char *argv[]) {
   if (mode) {
     NVTX_RANGE("main", 0);
     if (mode->rank == 0) { std::cout << "###### Tensor Train Based Hybridization Expansion Algorithm ######" << std::endl; }
-    std::cout << std::fixed << std::setprecision(18);
-    std::cerr << std::fixed << std::setprecision(18);
+    std::cout << std::setprecision(16);
+    std::cerr << std::setprecision(16);
     mode->init(json_file_path, hyb_file_path);
     mode->run();
     if (mode->rank == 0) { mode->print_summary(); }
