@@ -146,10 +146,11 @@ void ModeDebug::evaluate_greens_function() {
     }
   }
   if (gp.unsummed_tci == 0) {
-          sp.tau_max   = cp.beta;
+    sp.tau_max = cp.beta;
     for (size_t n = 1; n < cp.n_tau_green - 1; n++) {
       std::cout << "evaluating tau[" << n << "] = " << sr.G_tau[0].mesh()[n] << std::endl;
       sp.tau_split = sr.G_tau[0].mesh()[n];
+      // the most naive way is to loop over the spin-oribital index for d and ddag separately, However, since the Green's function is saved in block format, we only allow spin-orbital indices within the same block.
       for (int bl = 0; bl < mp.gf_block_shape.size(); bl++) {
         for (auto orb_d : range(mp.gf_block_shape[bl])) {
           for (auto orb_ddag : range(mp.gf_block_shape[bl])) {
@@ -175,8 +176,8 @@ void ModeDebug::evaluate_greens_function() {
     for (size_t n = 1; n < cp.n_tau_green - 1; n++) { tau_list.push_back(sr.G_tau[0].mesh()[n]); }
     unsummed_input.push_back(tau_list);
     size_t dims_tau = tau_list.size();
-    sp.tau_max   = cp.beta;
-    sp.tau_split = sr.G_tau[0].mesh()[1];
+    sp.tau_max      = cp.beta;
+    sp.tau_split    = sr.G_tau[0].mesh()[1];
     for (int bl = 0; bl < mp.gf_block_shape.size(); bl++) {
       for (auto orb_d : range(mp.gf_block_shape[bl])) {
         for (auto orb_ddag : range(mp.gf_block_shape[bl])) {
@@ -187,23 +188,50 @@ void ModeDebug::evaluate_greens_function() {
           sp.gf_index.push_back(orb_ddag_index);
           ModeBase::clear_tci_results();
           ModeBase::evaluate(unsummed_input);
-          
           // save results
           std::vector<double> integrals(dims_tau, 0.0);
           for (auto integral_order : sr.integral_list) {
             for (size_t i = 0; i < integral_order.size(); i++) { integrals[i] += integral_order[i]; }
           }
-          for (size_t n = 1; n < cp.n_tau_green - 1; n++) { 
-            auto tci_result = integrals[n-1] / Tr_Ubeta;
+          for (size_t n = 1; n < cp.n_tau_green - 1; n++) {
+            auto tci_result = integrals[n - 1] / Tr_Ubeta;
             sr.G_tau[bl][n](orb_d, orb_ddag) += tci_result;
           }
         }
       }
     }
-  } else if (gp.unsummed_tci == 3) {
-    // include the two orb indexs into the tci
-  } else if (gp.unsummed_tci == 4) {
-    // include the two orb indexs  and the time index into the tci
+  } else if (gp.unsummed_tci == 2) {
+    sp.gf_index.clear();
+    sp.gf_index.push_back(0);
+    sp.gf_index.push_back(0);
+    //include the two orb indexs and tau index into tensor train
+    std::vector<std::vector<double>> unsummed_input;
+    size_t dims_orb = 0;
+    for (int bl = 0; bl < mp.gf_block_shape.size(); bl++) { dims_orb += mp.gf_block_shape[bl] * mp.gf_block_shape[bl]; }
+    std::vector<double> input(dims_orb, 0.0);
+    std::iota(input.begin(), input.end(), 0);
+    unsummed_input.push_back(input);
+    std::vector<double> tau_list;
+    for (size_t n = 1; n < cp.n_tau_green - 1; n++) { tau_list.push_back(sr.G_tau[0].mesh()[n]); }
+    size_t dims_tau = tau_list.size();
+    unsummed_input.push_back(tau_list);
+    size_t dims_tot = dims_orb * dims_tau;
+    sp.tau_max      = cp.beta;
+    ModeBase::clear_tci_results();
+    ModeBase::evaluate(unsummed_input);
+    std::vector<double> integrals(dims_tot, 0.0);
+    for (auto integral_order : sr.integral_list) {
+      for (size_t i = 0; i < integral_order.size(); i++) { integrals[i] += integral_order[i]; }
+    }
+    for (size_t tau_index = 0; tau_index < dims_tau; tau_index++) {
+      for (size_t orb_index = 0; orb_index < dims_orb; orb_index++) {
+        size_t k                = tau_index + dims_tau * orb_index;
+        auto [bl, i, j]         = bl1_to_bl3(orb_index, mp.gf_block_shape);
+        size_t tau_index_actual = tau_index + 1;
+        auto tci_result         = integrals[k] / Tr_Ubeta;
+        sr.G_tau[bl][tau_index_actual](i, j) += tci_result;
+      }
+    }
   } else {
     throw std::runtime_error("evaluate Green's function: invalid unsummed_tci");
   }

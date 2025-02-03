@@ -608,10 +608,10 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
       std::vector<double> iotas{};
       count++;
 
-      int bl_index       = sp.bl_index;
-      int subspace_index = sp.subspace_index;
-      double tau_max     = sp.tau_max;
-      double tau_split  = sp.tau_split;
+      int bl_index              = sp.bl_index;
+      int subspace_index        = sp.subspace_index;
+      double tau_max            = sp.tau_max;
+      double tau_split          = sp.tau_split;
       std::vector<int> gf_index = sp.gf_index;
       if (gp.target == "propagator") {
         if ((gp.unsummed_tci == 1 || gp.unsummed_tci == 2)) {
@@ -620,23 +620,14 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
         }
         if (gp.unsummed_tci == 2) { tau_max = variables[1]; }
       } else if (gp.target == "greens_function") {
-        if (gp.unsummed_tci == 1){
+        if (gp.unsummed_tci == 1) {
           tau_split = variables[0];
-        }
-        else if (gp.unsummed_tci == 3) { 
-          int bl = int(variables[0]);
-          int orb_d = int(variables[1]);
-          int orb_ddag = int(variables[2]);
-          gf_index[0] = bl2_to_bl1_gf(bl, orb_d, mp.gf_block_shape);
-          gf_index[1] = bl2_to_bl1_gf(bl, orb_ddag, mp.gf_block_shape);
-        }
-        else if (gp.unsummed_tci == 4) {
-          int bl = int(variables[0]);
-          int orb_d = int(variables[1]);
-          int orb_ddag = int(variables[2]);
-          gf_index[0] = bl2_to_bl1_gf(bl, orb_d, mp.gf_block_shape);
-          gf_index[1] = bl2_to_bl1_gf(bl, orb_ddag, mp.gf_block_shape);
-          tau_split = variables[3];
+        } else if (gp.unsummed_tci == 2) {
+          int index       = int(variables[0]);
+          tau_split       = variables[1];
+          auto [bl, i, j] = bl1_to_bl3(index, mp.gf_block_shape);
+          gf_index[0]     = bl2_to_bl1_gf(bl, i, mp.gf_block_shape);
+          gf_index[1]     = bl2_to_bl1_gf(bl, j, mp.gf_block_shape);
         }
       }
 
@@ -735,9 +726,9 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
         auto tau_d     = get_elements(phi_d, taus);
         auto tau_d_dag = get_elements(phi_d_dag, taus);
         auto integrand_phi =
-           evaluate_diagram(sr.u_tau_zeroth_order, tau_split, tau_max, mp.all_d_ops, mp.all_d_dag_ops, mp.gf_block_shape, cp, mp.Delta_tau,
-                                mp.ad_imp, sr.u_interpolator, tau_d, tau_d_dag, iota_d, iota_d_dag, bl_index, subspace_index, sp.use_bare_propagator,
-                                gf_index, cp.gf_struct, mp.theta, mp.epsilon, mp.n_bath, gp.model_type, gp.energy_shift, gp.do_enum);
+           evaluate_diagram(sr.u_tau_zeroth_order, tau_split, tau_max, mp.all_d_ops, mp.all_d_dag_ops, mp.gf_block_shape, cp, mp.Delta_tau, mp.ad_imp,
+                                sr.u_interpolator, tau_d, tau_d_dag, iota_d, iota_d_dag, bl_index, subspace_index, sp.use_bare_propagator, gf_index,
+                                cp.gf_struct, mp.theta, mp.epsilon, mp.n_bath, gp.model_type, gp.energy_shift, gp.do_enum);
         double j = ep.jacobian(taus_right, tau_max, tau_split);
         if (sp.use_bare_propagator == false) { j *= ep.jacobian(taus_left, tau_split, 0.0); }
         integrand_val += integrand_phi * j;
