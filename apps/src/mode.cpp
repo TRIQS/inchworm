@@ -420,6 +420,7 @@ void ModeBase::prepare_eval() {
     std::cerr << "Invalid map_type" << std::endl;
     std::exit(EXIT_FAILURE);
   }
+  if (gp.target == "greens_function" && gp.do_segment) { throw std::runtime_error("gp.target == greens_function and gp.do_segment == true is not supported yet"); }
   if (!gp.do_segment) {
     // generate the union set elements in sp.order_list_first and sp.order_list, only store each element once
     std::vector<int> order_list_union(sp.order_list_first.size() + sp.order_list.size());
@@ -557,6 +558,7 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
 
     //       // set up quantities
     double auxi_height = tp.auxi_height;
+    int seed = 0;
     int n_left         = -1;
     std::vector<int> phi_d_list{};
     std::vector<int> phi_d_dag_list{};
@@ -597,7 +599,7 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
     long count         = 0;
     double mini_height = 0.0;
     double mini_value  = 1e10;
-    auto integrand     = [this, &count, &phi_d_list = phi_d_list, &phi_d_dag_list = phi_d_dag_list, &n_left, &auxi_height, &mini_height, &mini_value,
+    auto integrand     = [this, &count, &phi_d_list = phi_d_list, &phi_d_dag_list = phi_d_dag_list, &n_left, &auxi_height, &seed, &mini_height, &mini_value,
                       &debug_info, &order_idx, &warning_same_time_order_rank, &warning_tau_split_order_rank,
                       &warning_tau_max_order_rank](std::vector<double> variables) -> double {
       NVTX_RANGE("integrand", 0);
@@ -656,7 +658,9 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
         warning_same_time_order_rank[order_idx] += 1;
         //gracifally exit the program
         std::exit(EXIT_FAILURE);
-        if (gp.ergodicity == "random_auxi_adaptive") { return auxi_height * get_random_number() + mini_height; }
+        // if (gp.ergodicity == "random_auxi_adaptive") { return auxi_height * get_random_number() + mini_height; }
+        // if (gp.ergodicity == "random_auxi_adaptive") { return auxi_height * get_hash_random_number(variables) + mini_height; }
+        if (gp.ergodicity == "random_auxi_adaptive") { return 0.0; }
         return 0.0 + mini_height;
       }
 
@@ -670,7 +674,9 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
         std::cerr << "debug_info: " << debug_info << std::endl;
         warning_tau_split_order_rank[order_idx] += 1;
         std::exit(EXIT_FAILURE);
-        if (gp.ergodicity == "random_auxi_adaptive") { return auxi_height * get_random_number() + mini_height; }
+        // if (gp.ergodicity == "random_auxi_adaptive") { return auxi_height * get_random_number() + mini_height; }
+        // if (gp.ergodicity == "random_auxi_adaptive") { return auxi_height * get_hash_random_number(variables) + mini_height; }
+        if (gp.ergodicity == "random_auxi_adaptive") { return 0.0; }
         return 0.0 + mini_height;
       }
 
@@ -684,7 +690,9 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
         std::cerr << "debug_info: " << debug_info << std::endl;
         warning_tau_max_order_rank[order_idx] += 1;
         std::exit(EXIT_FAILURE);
-        if (gp.ergodicity == "random_auxi_adaptive") { return auxi_height * get_random_number() + mini_height; }
+        // if (gp.ergodicity == "random_auxi_adaptive") { return auxi_height * get_random_number() + mini_height; }
+        // if (gp.ergodicity == "random_auxi_adaptive") { return auxi_height * get_hash_random_number(variables)+ mini_height; }
+        if (gp.ergodicity == "random_auxi_adaptive") { return 0.0; }
         return 0.0 + mini_height;
       }
 
@@ -736,7 +744,9 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
 
       if (abs(integrand_val) < mini_value && abs(integrand_val) > 1e-16) { mini_value = integrand_val; }
 
-      if (gp.ergodicity == "random_auxi_adaptive") { return auxi_height * get_random_number() + integrand_val; }
+      // if (gp.ergodicity == "random_auxi_adaptive") { return auxi_height * get_random_number() + integrand_val; }
+      // if (gp.ergodicity == "random_auxi_adaptive") { return auxi_height * get_hash_random_number(variables) + integrand_val; }
+      if (gp.ergodicity == "random_auxi_adaptive") { return integrand_val; }
       return integrand_val;
     }; // end of integrand lambda function
 
@@ -807,7 +817,7 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
     for (int i = 0; i < init_pivot.size(); i++) { init_input.push_back(input[i][init_pivot[i]]); }
     double init_integrand = integrand(init_input);
     if (sp.debug > 1 && rank == 0) { std::cout << "init_integrand: " << init_integrand << std::endl; }
-    if (init_integrand == 0) {
+    if (init_integrand == 0 && gp.ergodicity != "random_auxi_adaptive") {
       std::cerr << "Warning: initial integrand is zero !!" << std::endl;
       std::cerr << "debug_info: " << debug_info << std::endl;
       continue;
@@ -827,7 +837,7 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
        rank, debug_info, integrand, input, weight, init_pivot, count, tp.sweep_bound, tp.bond_dim_init, tp.bond_dim_increase, tp.bond_dim_max,
        tp.reltol, tp.fullPiv, tp.tci_prrlu, tp.error_type, tp.error_eval, tp.convergence_bound, tp.convergence_iter, sp.debug, init_global_pivots,
        const_jacobian, gp.unsummed_tci, unsummed_tot_size, adaptive_error, tp.decay_rate, max_diff_order_rank, max_auxi_height_order_rank,
-       max_error_order_rank, nTCI_order_rank, integral_max_order_rank, order_idx, &auxi_height, &mini_height, &mini_value);
+       max_error_order_rank, nTCI_order_rank, integral_max_order_rank, order_idx, &auxi_height, &seed, &mini_height, &mini_value);
     // std::cout << "integral" << integral[0] << std::endl;
     // std::cout << "mini_value" << mini_value << std::endl;
     // accumulate statistics

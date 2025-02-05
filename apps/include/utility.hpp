@@ -15,6 +15,7 @@
 #include <xfac/grid.h>
 #include <xfac/tensor/tensor_ci.h>
 #include <xfac/tensor/tensor_ci_2.h>
+#include <xfac/tensor/tensor_ci_3.h>
 #include <xfac/tensor/tensor_train.h>
 #include <inchworm/diagram/diagram.hpp>
 #include <inchworm/diagram/inclusion_exclusion.hpp>
@@ -124,7 +125,7 @@ inline std::pair<std::vector<double>, std::vector<double>> generate_inchworm_gri
   return {grid_linear, grid};
 }
 
-inline double get_random_number() {
+inline double get_random_number(const std::vector<double> &vec) {
   // Create a random number generator
   std::random_device rd;
   std::mt19937 gen(rd());
@@ -141,9 +142,10 @@ inline double get_hash_random_number(const std::vector<double> &vec) {
   }
 
   // Map the resulting hash to a double in [-1, 1]
-  // static_cast is used to convert size_t to double
-  // This mapping is a simple example, and there are many ways to do it.
-  return static_cast<double>(seed) / static_cast<double>(std::numeric_limits<std::size_t>::max()) * 2.0 - 1.0;
+  // Use a proper mapping to ensure the result is in the desired range
+  double random_value = static_cast<double>(seed) / static_cast<double>(std::numeric_limits<std::size_t>::max()) * 2.0 - 1.0;
+  // std::cout << "random_value = " << random_value << std::endl;
+  return random_value;
 }
 
 //printing helper
@@ -922,7 +924,7 @@ do_TCI(int rank, const std::string &debug_info, std::function<T_output(std::vect
        double const_jacobian, int unsummed_tci, int unsummed_tot_size, bool adaptive_error, double decay_rate,
        std::vector<double> &max_diff_order_rank, std::vector<double> &max_auxi_height_order_rank, std::vector<double> &max_error_order_rank,
        std::vector<long> &nTCI_order_rank, std::vector<double> &integral_max_order_rank, int order_idx, double *auxi_height = nullptr,
-       double *mini_height = nullptr, double *mini_value = nullptr) {
+       int *seed = nullptr, double *mini_height = nullptr, double *mini_value = nullptr) {
   NVTX_RANGE("do TCI", 1);
   nTCI_order_rank[order_idx] += 1;
   // prepare variables
@@ -938,38 +940,195 @@ do_TCI(int rank, const std::string &debug_info, std::function<T_output(std::vect
     integral          = std::vector<T_output>(1, 0);
     previous_integral = std::vector<T_output>(1, 0);
   }
+  if (debug > 1 && rank == 0) {
+    std::cout << "input shape: ";
+    for (auto i : input) { std::cout << i.size() << " "; }
+    std::cout << std::endl;
+  }
 
+  // if (tci_prrlu == 2 && adaptive_error) {
+  //   if (debug > 1 && rank == 0) {
+  //     std::cout << "iteration nEval error integral\n";
+  //     std::cout << "auxi_height: " << *auxi_height << std::endl;
+  //   }
+  //   //setp pivots as pivot1
+  //   std::vector<std::vector<int>> pivot1_at_b{pivot1};
+  //   for (auto b = 0u; b < input.size() - 1; b++) { pivots.push_back(pivot1_at_b); }
+  //   for (int i = 1; i <= sweep_bound; i++) {
+  //     *seed = i * 10;
+  //     std::cout << "count before construct: " << count << std::endl;
+  //     auto ci = xfac::CTensorCI2<T_output, T_input>(
+  //        integrand, input, pivots,
+  //        {.bondDim = bond_dim_init + i * bond_dim_increase - 1, .reltol = reltol, .pivot1 = pivot1, .fullPiv = fullPiv, .useCachedFunction = true});
+  //     std::cout << "count after construct: " << count << std::endl;
+  //     if (tci_prrlu == 2) {
+  //       ci.param.bondDim = bond_dim_init + i * bond_dim_increase;
+  //       if (ci.param.bondDim > bond_dim_max) { ci.param.bondDim = bond_dim_max; }
+  //     }
+  //     // {
+  //     //   NVTX_RANGE("ci-paste pivots", 6);
+  //     //   if (i > 1) {
+  //     //     for (auto b = 0u; b < ci.len() - 1; b++) ci.addPivotsAt(pivots[b], b);
+  //     //     // ci.makeCanonical();
+  //     //     // ci.iterate(1,0);
+  //     //   }
+  //     // }
+  //     std::cout << "count after add pivots: " << count << std::endl;
+  //     if (init_global_pivots.size() != 0 && i == 1) { ci.addPivotsAllBonds(init_global_pivots); }
+  //     {
+  //       NVTX_RANGE("ci-iterate", 7);
+  //       ci.iterate();
+  //     }
+  //     std::cout << "count after add ci.iterate: " << count << std::endl;
+  //     if (adaptive_error) {
+  //       if (i == 1) {
+  //         // *auxi_height = ci.pivotError[ci.pivotError.size() - 1];
+  //       } else {
+  //         *auxi_height = ci.pivotError[ci.pivotError.size() - 1] * decay_rate;
+  //       }
+  //     }
+  //     if (debug > 1 || i == sweep_bound) {
+  //       auto tt = ci.tt;
+  //       {
+  //         NVTX_RANGE("ci-obtain integral", 9);
+  //         integral = partial_integral_tt(tt, weight, unsummed_tci);
+  //       }
+  //       for (auto i = 0; i < integral.size(); i++) { integral[i] *= const_jacobian; }
+  //       {
+  //         NVTX_RANGE("ci-error calculation", 8);
+  //         if (error_type == 0) {
+  //           current_error = ci.pivotError[ci.pivotError.size() - 1];
+  //         } else if (error_type == 1) {
+  //           current_error = ci.trueError(error_eval);
+  //         } else if (error_type == 2) {
+  //           current_error = tci_error_integral(integrand, tt, input, error_eval);
+  //         } else if (error_type == 3) {
+  //           current_error = tci_error_integrand(integrand, tt, input, error_eval);
+  //         } else {
+  //           std::cerr << "error_type not supported" << std::endl;
+  //           std::exit(EXIT_FAILURE);
+  //         }
+  //       }
+  //       if (debug > 1 && rank == 0) { std::cout << i << " " << count << " " << current_error << " " << integral[0] << std::endl; }
+  //       T_output diff = 0;
+  //       bool all_zero = true;
+  //       for (auto i = 0u; i < integral.size(); i++) {
+  //         diff += std::abs(previous_integral[i] - integral[i]);
+  //         double TOL = 1e-16;
+  //         if (abs(integral[i]) > TOL || abs(previous_integral[i]) > TOL) { all_zero = false; }
+  //       }
+  //       if (i > 2 && all_zero) { return integral; } // if all elements previous integral and current integral are zero, return zero;
+  //       if (diff < convergence_bound && i > convergence_iter) { break; }
+  //       previous_integral = integral;
+  //       if (debug > 1 && rank == 0) { print_rank(tt); }
+  //     } // end of debug
+  //     pivots.clear();
+  //     {
+  //       NVTX_RANGE("ci-copy pivots", 8);
+  //       for (auto b = 0u; b < ci.len() - 1; b++) {
+  //         pivots.emplace_back(ci.getPivotsAt(b));
+  //         if (valid_init_global_pivot.size() == 0) {
+  //           // temporaliy change auxi_height to 0
+  //           double current_auxi_height = *auxi_height;
+  //           *auxi_height               = 0;
+  //           for (auto pivot : ci.getPivotsAt(b)) {
+  //             std::vector<T_input> inputs;
+  //             for (auto i = 0u; i < input.size(); i++) { inputs.emplace_back(input[i][pivot[i]]); }
+  //             if (integrand(inputs) != 0) {
+  //               valid_init_global_pivot = pivot;
+  //               break;
+  //             }
+  //           }
+  //           *auxi_height = current_auxi_height;
+  //         }
+  //       }
+  //     }
+  //   }
+  //   if (adaptive_error) {
+  //     if (abs(*auxi_height) > max_auxi_height_order_rank[order_idx]) { max_auxi_height_order_rank[order_idx] = abs(*auxi_height); }
+  //   }
+  //   if (valid_init_global_pivot.size() == 0) {
+  //     if (unsummed_tci != 0) {
+  //       integral = std::vector<T_output>(unsummed_tot_size, 0);
+  //     } else {
+  //       integral = std::vector<T_output>(1, 0);
+  //     }
+  //     std::cerr << "Warning: no valid initial global pivot found." << std::endl;
+  //     return integral;
+  //   }
+  //   {
+  //     NVTX_RANGE("ci-generate final integral", 8);
+  //     // *mini_height = *mini_value;
+  //     *mini_height = *auxi_height;
+  //     *auxi_height = 0;
+  //     auto ci      = xfac::CTensorCI2<T_output, T_input>(
+  //        integrand, input,
+  //        {.bondDim = bond_dim_max, .reltol = reltol, .pivot1 = valid_init_global_pivot, .fullPiv = fullPiv, .useCachedFunction = true});
+  //     for (auto b = 0u; b < ci.len() - 1; b++) ci.addPivotsAt(pivots[b], b);
+  //     // ci.iterate(1,0);
+  //     ci.makeCanonical();
+  //     auto tt  = ci.tt;
+  //     integral = partial_integral_tt(tt, weight, unsummed_tci);
+  //     for (auto i = 0; i < integral.size(); i++) { integral[i] *= const_jacobian; }
+  //     {
+  //       NVTX_RANGE("ci-error calculation", 8);
+  //       if (error_type == 0) {
+  //         current_error = ci.pivotError[ci.pivotError.size() - 1];
+  //       } else if (error_type == 1) {
+  //         current_error = ci.trueError(error_eval);
+  //       } else if (error_type == 2) {
+  //         current_error = tci_error_integral(integrand, tt, input, error_eval);
+  //       } else if (error_type == 3) {
+  //         current_error = tci_error_integrand(integrand, tt, input, error_eval);
+  //       } else {
+  //         std::cerr << "error_type not supported" << std::endl;
+  //         std::exit(EXIT_FAILURE);
+  //       }
+  //     }
+  //     T_output max_diff = 0;
+  //     for (auto i = 0u; i < integral.size(); i++) { max_diff = std::max(max_diff, std::abs(previous_integral[i] - integral[i])); }
+  //     if (max_diff > max_diff_order_rank[order_idx]) { max_diff_order_rank[order_idx] = max_diff; }
+  //     if (abs(current_error) > max_error_order_rank[order_idx]) { max_error_order_rank[order_idx] = abs(current_error); }
+  //   }
+  // }
+  size_t count_random = 0;
   if (tci_prrlu == 2 && adaptive_error) {
     if (debug > 1 && rank == 0) {
       std::cout << "iteration nEval error integral\n";
       std::cout << "auxi_height: " << *auxi_height << std::endl;
     }
+    auto ci = xfac::CTensorCI3<T_output, T_input>(
+       integrand,
+       [&count_random](const std::vector<T_input> &x) {
+         count_random++;
+         return get_hash_random_number(x);
+       },
+       auxi_height, input, {.bondDim = bond_dim_init, .reltol = reltol, .pivot1 = pivot1, .fullPiv = fullPiv, .useCachedFunction = true});
     for (int i = 1; i <= sweep_bound; i++) {
-      auto ci = xfac::CTensorCI2<T_output, T_input>(
-         integrand, input, {.bondDim = bond_dim_init, .reltol = reltol, .pivot1 = pivot1, .fullPiv = fullPiv, .useCachedFunction = true});
+      std::cout << "ci.auxi_height " << *ci.auxi_height << std::endl;
       if (tci_prrlu == 2) {
         ci.param.bondDim = bond_dim_init + i * bond_dim_increase;
         if (ci.param.bondDim > bond_dim_max) { ci.param.bondDim = bond_dim_max; }
       }
-      {
-        NVTX_RANGE("ci-paste pivots", 6);
-        if (i > 1) {
-          for (auto b = 0u; b < ci.len() - 1; b++) ci.addPivotsAt(pivots[b], b);
-          ci.makeCanonical();
-          // ci.iterate(1,0);
-        }
-      }
+      std::cout << "ci.param.bondDim " << ci.param.bondDim << std::endl;
       if (init_global_pivots.size() != 0 && i == 1) { ci.addPivotsAllBonds(init_global_pivots); }
-      {
-        NVTX_RANGE("ci-iterate", 7);
-        ci.iterate();
-      }
       if (adaptive_error) {
         if (i == 1) {
           // *auxi_height = ci.pivotError[ci.pivotError.size() - 1];
+          // ci.auxi_height = ci.pivotError[ci.pivotError.size() - 1] * decay_rate;
         } else {
-          *auxi_height = ci.pivotError[ci.pivotError.size() - 1] * decay_rate;
+          if (*ci.auxi_height == ci.pivotError[ci.pivotError.size() - 1] * decay_rate ) {
+            *auxi_height = ci.pivotError[ci.pivotError.size() - 1] * decay_rate * decay_rate;
+          } else {
+            *auxi_height = ci.pivotError[ci.pivotError.size() - 1] * decay_rate;
+          }
         }
+      }
+      {
+        NVTX_RANGE("ci-iterate", 7);
+        ci.iterate();
+        std::cout << "count_random after iterate: " << count_random << std::endl;
+        std::cout << "count after iterate: " << count << std::endl;
       }
       if (debug > 1 || i == sweep_bound) {
         auto tt = ci.tt;
@@ -1001,84 +1160,21 @@ do_TCI(int rank, const std::string &debug_info, std::function<T_output(std::vect
           double TOL = 1e-16;
           if (abs(integral[i]) > TOL || abs(previous_integral[i]) > TOL) { all_zero = false; }
         }
-        if (i > 2 && all_zero) { return integral; } // if all elements previous integral and current integral are zero, return zero;
+        if (i > 2 && all_zero) { return integral; }
         if (diff < convergence_bound && i > convergence_iter) { break; }
-        previous_integral = integral;
         if (debug > 1 && rank == 0) { print_rank(tt); }
-      } // end of debug
-      pivots.clear();
-      {
-        NVTX_RANGE("ci-copy pivots", 8);
-        for (auto b = 0u; b < ci.len() - 1; b++) {
-          pivots.emplace_back(ci.getPivotsAt(b));
-          if (valid_init_global_pivot.size() == 0) {
-            // temporaliy change auxi_height to 0
-            double current_auxi_height = *auxi_height;
-            *auxi_height               = 0;
-            for (auto pivot : ci.getPivotsAt(b)) {
-              std::vector<T_input> inputs;
-              for (auto i = 0u; i < input.size(); i++) { inputs.emplace_back(input[i][pivot[i]]); }
-              if (integrand(inputs) != 0) {
-                valid_init_global_pivot = pivot;
-                break;
-              }
-            }
-            *auxi_height = current_auxi_height;
-          }
-        }
       }
     }
-    if (adaptive_error) {
-      if (abs(*auxi_height) > max_auxi_height_order_rank[order_idx]) { max_auxi_height_order_rank[order_idx] = abs(*auxi_height); }
-    }
-    if (valid_init_global_pivot.size() == 0) {
-      if (unsummed_tci != 0) {
-        integral = std::vector<T_output>(unsummed_tot_size, 0);
-      } else {
-        integral = std::vector<T_output>(1, 0);
-      }
-      std::cerr << "Warning: no valid initial global pivot found." << std::endl;
-      return integral;
-    }
-    {
-      NVTX_RANGE("ci-generate final integral", 8);
-      // *mini_height = *mini_value;
-      *mini_height = *auxi_height;
-      *auxi_height = 0;
-      auto ci      = xfac::CTensorCI2<T_output, T_input>(
-         integrand, input,
-         {.bondDim = bond_dim_max, .reltol = reltol, .pivot1 = valid_init_global_pivot, .fullPiv = fullPiv, .useCachedFunction = true});
-      for (auto b = 0u; b < ci.len() - 1; b++) ci.addPivotsAt(pivots[b], b);
-      // ci.iterate(1,0);
-      ci.makeCanonical();
-      auto tt  = ci.tt;
-      integral = partial_integral_tt(tt, weight, unsummed_tci);
-      for (auto i = 0; i < integral.size(); i++) { integral[i] *= const_jacobian; }
-      {
-        NVTX_RANGE("ci-error calculation", 8);
-        if (error_type == 0) {
-          current_error = ci.pivotError[ci.pivotError.size() - 1];
-        } else if (error_type == 1) {
-          current_error = ci.trueError(error_eval);
-        } else if (error_type == 2) {
-          current_error = tci_error_integral(integrand, tt, input, error_eval);
-        } else if (error_type == 3) {
-          current_error = tci_error_integrand(integrand, tt, input, error_eval);
-        } else {
-          std::cerr << "error_type not supported" << std::endl;
-          std::exit(EXIT_FAILURE);
-        }
-      }
-      T_output max_diff = 0;
-      for (auto i = 0u; i < integral.size(); i++) { max_diff = std::max(max_diff, std::abs(previous_integral[i] - integral[i])); }
-      if (max_diff > max_diff_order_rank[order_idx]) { max_diff_order_rank[order_idx] = max_diff; }
-      if (abs(current_error) > max_error_order_rank[order_idx]) { max_error_order_rank[order_idx] = abs(current_error); }
-    }
+    T_output max_diff = 0;
+    for (auto i = 0u; i < integral.size(); i++) { max_diff = std::max(max_diff, std::abs(previous_integral[i] - integral[i])); }
+    if (max_diff > max_diff_order_rank[order_idx]) { max_diff_order_rank[order_idx] = max_diff; }
+    if (abs(current_error) > max_error_order_rank[order_idx]) { max_error_order_rank[order_idx] = abs(current_error); }
   } else if (tci_prrlu == 2 && !adaptive_error) {
     if (debug > 1 && rank == 0) {
       std::cout << "iteration nEval error integral\n";
       std::cout << "No adaptive error" << std::endl;
     }
+    std::cout << "count before construct: " << count << std::endl;
     auto ci = xfac::CTensorCI2<T_output, T_input>(
        integrand, input, {.bondDim = bond_dim_init, .reltol = reltol, .pivot1 = pivot1, .fullPiv = fullPiv, .useCachedFunction = true});
     for (int i = 1; i <= sweep_bound; i++) {
@@ -1091,38 +1187,40 @@ do_TCI(int rank, const std::string &debug_info, std::function<T_output(std::vect
         NVTX_RANGE("ci-iterate", 7);
         ci.iterate();
       }
-      auto tt = ci.tt;
-      {
-        NVTX_RANGE("ci-obtain integral", 9);
-        integral = partial_integral_tt(tt, weight, unsummed_tci);
-      }
-      for (auto i = 0; i < integral.size(); i++) { integral[i] *= const_jacobian; }
-      {
-        NVTX_RANGE("ci-error calculation", 8);
-        if (error_type == 0) {
-          current_error = ci.pivotError[ci.pivotError.size() - 1];
-        } else if (error_type == 1) {
-          current_error = ci.trueError(error_eval);
-        } else if (error_type == 2) {
-          current_error = tci_error_integral(integrand, tt, input, error_eval);
-        } else if (error_type == 3) {
-          current_error = tci_error_integrand(integrand, tt, input, error_eval);
-        } else {
-          std::cerr << "error_type not supported" << std::endl;
-          std::exit(EXIT_FAILURE);
+      if (debug > 1 || i == sweep_bound) {
+        auto tt = ci.tt;
+        {
+          NVTX_RANGE("ci-obtain integral", 9);
+          integral = partial_integral_tt(tt, weight, unsummed_tci);
         }
+        for (auto i = 0; i < integral.size(); i++) { integral[i] *= const_jacobian; }
+        {
+          NVTX_RANGE("ci-error calculation", 8);
+          if (error_type == 0) {
+            current_error = ci.pivotError[ci.pivotError.size() - 1];
+          } else if (error_type == 1) {
+            current_error = ci.trueError(error_eval);
+          } else if (error_type == 2) {
+            current_error = tci_error_integral(integrand, tt, input, error_eval);
+          } else if (error_type == 3) {
+            current_error = tci_error_integrand(integrand, tt, input, error_eval);
+          } else {
+            std::cerr << "error_type not supported" << std::endl;
+            std::exit(EXIT_FAILURE);
+          }
+        }
+        if (debug > 1 && rank == 0) { std::cout << i << " " << count << " " << current_error << " " << integral[0] << std::endl; }
+        T_output diff = 0;
+        bool all_zero = true;
+        for (auto i = 0u; i < integral.size(); i++) {
+          diff += std::abs(previous_integral[i] - integral[i]);
+          double TOL = 1e-16;
+          if (abs(integral[i]) > TOL || abs(previous_integral[i]) > TOL) { all_zero = false; }
+        }
+        if (i > 2 && all_zero) { return integral; }
+        if (diff < convergence_bound && i > convergence_iter) { break; }
+        if (debug > 1 && rank == 0) { print_rank(tt); }
       }
-      if (debug > 1 && rank == 0) { std::cout << i << " " << count << " " << current_error << " " << integral[0] << std::endl; }
-      T_output diff = 0;
-      bool all_zero = true;
-      for (auto i = 0u; i < integral.size(); i++) {
-        diff += std::abs(previous_integral[i] - integral[i]);
-        double TOL = 1e-16;
-        if (abs(integral[i]) > TOL || abs(previous_integral[i]) > TOL) { all_zero = false; }
-      }
-      if (i > 2 && all_zero) { return integral; }
-      if (diff < convergence_bound && i > convergence_iter) { break; }
-      if (debug > 1 && rank == 0) { print_rank(tt); }
     }
     T_output max_diff = 0;
     for (auto i = 0u; i < integral.size(); i++) { max_diff = std::max(max_diff, std::abs(previous_integral[i] - integral[i])); }
