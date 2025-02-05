@@ -1105,30 +1105,39 @@ do_TCI(int rank, const std::string &debug_info, std::function<T_output(std::vect
        },
        auxi_height, input, {.bondDim = bond_dim_init, .reltol = reltol, .pivot1 = pivot1, .fullPiv = fullPiv, .useCachedFunction = true});
     for (int i = 1; i <= sweep_bound; i++) {
-      std::cout << "ci.auxi_height " << *ci.auxi_height << std::endl;
       if (tci_prrlu == 2) {
         ci.param.bondDim = bond_dim_init + i * bond_dim_increase;
         if (ci.param.bondDim > bond_dim_max) { ci.param.bondDim = bond_dim_max; }
       }
-      std::cout << "ci.param.bondDim " << ci.param.bondDim << std::endl;
       if (init_global_pivots.size() != 0 && i == 1) { ci.addPivotsAllBonds(init_global_pivots); }
       if (adaptive_error) {
         if (i == 1) {
           // *auxi_height = ci.pivotError[ci.pivotError.size() - 1];
           // ci.auxi_height = ci.pivotError[ci.pivotError.size() - 1] * decay_rate;
         } else {
-          if (*ci.auxi_height == ci.pivotError[ci.pivotError.size() - 1] * decay_rate ) {
-            *auxi_height = ci.pivotError[ci.pivotError.size() - 1] * decay_rate * decay_rate;
+          if (*ci.auxi_height == ci.pivotError[ci.pivotError.size() - 1] * decay_rate || *ci.auxi_height == 0) {
+            if (valid_init_global_pivot.size() != 0) { // a valid tensor train that explore all the function space but the error wrongly report to be a non-zero constant
+              *auxi_height = 0.0;
+            } else {
+              if (unsummed_tci != 0) {
+                integral = std::vector<T_output>(unsummed_tot_size, 0);
+              } else {
+                integral = std::vector<T_output>(1, 0);
+              }
+              return integral;
+            }
           } else {
             *auxi_height = ci.pivotError[ci.pivotError.size() - 1] * decay_rate;
           }
         }
       }
+      if (debug > 1 && rank == 0) {
+        std::cout << "ci.param.bondDim " << ci.param.bondDim << std::endl;
+        std::cout << "ci.auxi_height " << *ci.auxi_height << std::endl;
+      }
       {
         NVTX_RANGE("ci-iterate", 7);
         ci.iterate();
-        std::cout << "count_random after iterate: " << count_random << std::endl;
-        std::cout << "count after iterate: " << count << std::endl;
       }
       if (debug > 1 || i == sweep_bound) {
         auto tt = ci.tt;
@@ -1163,6 +1172,18 @@ do_TCI(int rank, const std::string &debug_info, std::function<T_output(std::vect
         if (i > 2 && all_zero) { return integral; }
         if (diff < convergence_bound && i > convergence_iter) { break; }
         if (debug > 1 && rank == 0) { print_rank(tt); }
+      }
+      if (valid_init_global_pivot.size() == 0) {
+        for (auto b = 0u; b < ci.len() - 1; b++) { // one can improve this step by cache the function
+          for (auto pivot : ci.getPivotsAt(b)) {
+            std::vector<T_input> inputs;
+            for (auto i = 0u; i < input.size(); i++) { inputs.emplace_back(input[i][pivot[i]]); }
+            if (integrand(inputs) != 0) {
+              valid_init_global_pivot = pivot;
+              break;
+            }
+          }
+        }
       }
     }
     T_output max_diff = 0;
