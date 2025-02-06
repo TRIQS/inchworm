@@ -4,6 +4,7 @@
 #include <numeric>
 #include <chrono>
 #include "mode.hpp"
+#include "save.hpp"
 
 using namespace inchworm;
 

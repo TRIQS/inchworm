@@ -198,6 +198,7 @@ class ModeBase {
                         bool is_first_interval = false, size_t inchworm_index = 0);
   virtual void evaluate_propagator()      = 0;
   virtual void evaluate_greens_function() = 0;
+  void evaluate_greens_function_bold();
   static std::tuple<u_tau_t,double> regularize_propagator(const u_tau_t &u, const model_params_t &mp, const simulation_params_t &sp,
                                                          size_t idx_tau_max, double amplification = 1.0) ;
   virtual ~ModeBase() {}
@@ -205,7 +206,7 @@ class ModeBase {
   int rank;
   int size;
 
-  // friend function (saving files->save.hpp)
+  // friend function (from save.hpp)
   friend void h5_save_params(const ModeBase *mode, h5::group h5group, std::string subgroup_name);
   friend void h5_save_propagator(const ModeBase *mode, h5::group h5group, std::string subgroup_name);
   friend void h5_save_cheb_coeff(const ModeBase *mode, h5::group h5group, std::string subgroup_name);

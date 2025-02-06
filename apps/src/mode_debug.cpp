@@ -95,7 +95,9 @@ void ModeDebug::run() {
 void ModeDebug::evaluate_propagator() {
   auto u_tau_ref_shifted = sr.u_tau_ref;
   if (gp.do_regularization) {
-    std::tie(u_tau_ref_shifted, gp.exponent_u) = regularize_propagator(sr.u_tau_ref, mp, sp, sp.grid.size() - 1, gp.amplification_u);
+    double exponent = 0.0;
+    std::tie(u_tau_ref_shifted, exponent) = regularize_propagator(sr.u_tau_ref, mp, sp, sp.grid.size() - 1, gp.amplification_u);
+    gp.exponent_u +=  exponent;
   }
   auto u_interpolator_ref_shifted =
      interpolator_t<scalar_t>(u_tau_ref_shifted, sp.n_tot, sp.n_tau_linear, sp.order_Chebyshev, sp.interp_type, sp.grid);
@@ -108,147 +110,6 @@ void ModeDebug::evaluate_propagator() {
 
 void ModeDebug::evaluate_greens_function() {
   // for debug mode, the discrete bath is used, so that we get u_interpolator from u_tau_ref
-  sr.u_interpolator      = interpolator_t<scalar_t>(sr.u_tau_ref, sp.n_tot, sp.n_tau_linear, sp.order_Chebyshev, sp.interp_type, sp.grid);
-  sp.use_bare_propagator = false;
-  // Calculate Tr U(beta)
-  scalar_t Tr_Ubeta = 0.0;
-  for (int bl = 0; bl < sr.u_tau_ref.size(); bl++) Tr_Ubeta += trace(sr.u_tau_ref[bl][sp.n_tot - 1]);
-  std::cout << "Z = Tr[U(beta)]: " << Tr_Ubeta << std::endl;
-
-  sr.G_tau     = g_tau_t{{cp.beta, Fermion, cp.n_tau_green}, cp.gf_struct};
-  int tot_dims = 0;
-  for (auto subspace_dim : mp.gf_block_shape) { tot_dims += subspace_dim * subspace_dim; }
-  // treat the first and last point separately
-  EXPECTS(sr.G_tau[0].mesh()[0] == 0.0);
-  frame_t g_frame_0 = make_bare_g_frame(mp.ad_imp, sr.u_tau_ref, cp.gf_struct, 0.0, cp.beta) / Tr_Ubeta;
-  set_frame(g_frame_0, sr.G_tau, 0);
-  EXPECTS(sr.G_tau[0].mesh()[cp.n_tau_green - 1] == cp.beta);
-  frame_t g_frame_beta = make_bare_g_frame(mp.ad_imp, sr.u_tau_ref, cp.gf_struct, cp.beta, cp.beta) / Tr_Ubeta;
-  set_frame(g_frame_beta, sr.G_tau, cp.n_tau_green - 1);
-
-  //set zero-th order
-  for (size_t n = 1; n < cp.n_tau_green - 1; n++) {
-    sp.tau_split            = sr.G_tau[0].mesh()[n];
-    auto frame_zeroth_order = make_bare_g_frame(mp.ad_imp, sr.u_tau_ref, cp.gf_struct, sp.tau_split, cp.beta);
-    for (int bl = 0; bl < mp.gf_block_shape.size(); bl++) {
-      for (auto orb_d : range(mp.gf_block_shape[bl])) {
-        for (auto orb_ddag : range(mp.gf_block_shape[bl])) {
-          int orb_d_index                  = bl2_to_bl1_gf(bl, orb_d, mp.gf_block_shape);
-          int orb_ddag_index               = bl2_to_bl1_gf(bl, orb_ddag, mp.gf_block_shape);
-          sr.G_tau[bl][n](orb_d, orb_ddag) = (frame_zeroth_order[bl](orb_d, orb_ddag)) / Tr_Ubeta;
-        }
-      }
-    }
-  }
-  if (gp.unsummed_tci == 0) {
-    sp.tau_max = cp.beta;
-    for (size_t n = 1; n < cp.n_tau_green - 1; n++) {
-      std::cout << "evaluating tau[" << n << "] = " << sr.G_tau[0].mesh()[n] << std::endl;
-      sp.tau_split = sr.G_tau[0].mesh()[n];
-      // the most naive way is to loop over the spin-oribital index for d and ddag separately, However, since the Green's function is saved in block format, we only allow spin-orbital indices within the same block.
-      for (int bl = 0; bl < mp.gf_block_shape.size(); bl++) {
-        for (auto orb_d : range(mp.gf_block_shape[bl])) {
-          for (auto orb_ddag : range(mp.gf_block_shape[bl])) {
-            int orb_d_index    = bl2_to_bl1_gf(bl, orb_d, mp.gf_block_shape);
-            int orb_ddag_index = bl2_to_bl1_gf(bl, orb_ddag, mp.gf_block_shape);
-            sp.gf_index.clear();
-            sp.gf_index.push_back(orb_d_index);
-            sp.gf_index.push_back(orb_ddag_index);
-            ModeBase::clear_tci_results();
-            ModeBase::evaluate();
-            double total_integral = 0.0;
-            for (auto integral : sr.integral_list) total_integral += std::accumulate(integral.begin(), integral.end(), 0.0);
-            double tci_result = total_integral / Tr_Ubeta;
-            sr.G_tau[bl][n](orb_d, orb_ddag) += tci_result;
-          }
-        }
-      }
-    }
-  } else if (gp.unsummed_tci == 1) {
-    // include the time index into the tci
-    std::vector<std::vector<double>> unsummed_input;
-    std::vector<double> tau_list;
-    for (size_t n = 1; n < cp.n_tau_green - 1; n++) { tau_list.push_back(sr.G_tau[0].mesh()[n]); }
-    unsummed_input.push_back(tau_list);
-    size_t dims_tau = tau_list.size();
-    sp.tau_max      = cp.beta;
-    sp.tau_split    = sr.G_tau[0].mesh()[1];
-    for (int bl = 0; bl < mp.gf_block_shape.size(); bl++) {
-      for (auto orb_d : range(mp.gf_block_shape[bl])) {
-        for (auto orb_ddag : range(mp.gf_block_shape[bl])) {
-          int orb_d_index    = bl2_to_bl1_gf(bl, orb_d, mp.gf_block_shape);
-          int orb_ddag_index = bl2_to_bl1_gf(bl, orb_ddag, mp.gf_block_shape);
-          sp.gf_index.clear();
-          sp.gf_index.push_back(orb_d_index);
-          sp.gf_index.push_back(orb_ddag_index);
-          ModeBase::clear_tci_results();
-          ModeBase::evaluate(unsummed_input);
-          // save results
-          std::vector<double> integrals(dims_tau, 0.0);
-          for (auto integral_order : sr.integral_list) {
-            for (size_t i = 0; i < integral_order.size(); i++) { integrals[i] += integral_order[i]; }
-          }
-          for (size_t n = 1; n < cp.n_tau_green - 1; n++) {
-            auto tci_result = integrals[n - 1] / Tr_Ubeta;
-            sr.G_tau[bl][n](orb_d, orb_ddag) += tci_result;
-          }
-        }
-      }
-    }
-  } else if (gp.unsummed_tci == 2) {
-    sp.gf_index.clear();
-    sp.gf_index.push_back(0);
-    sp.gf_index.push_back(0);
-    //include the two orb indexs and tau index into tensor train
-    std::vector<std::vector<double>> unsummed_input;
-    size_t dims_orb = 0;
-    for (int bl = 0; bl < mp.gf_block_shape.size(); bl++) { dims_orb += mp.gf_block_shape[bl] * mp.gf_block_shape[bl]; }
-    std::vector<double> input(dims_orb, 0.0);
-    std::iota(input.begin(), input.end(), 0);
-    unsummed_input.push_back(input);
-    std::vector<double> tau_list;
-    for (size_t n = 1; n < cp.n_tau_green - 1; n++) { tau_list.push_back(sr.G_tau[0].mesh()[n]); }
-    size_t dims_tau = tau_list.size();
-    unsummed_input.push_back(tau_list);
-    size_t dims_tot = dims_orb * dims_tau;
-    sp.tau_max      = cp.beta;
-    ModeBase::clear_tci_results();
-    ModeBase::evaluate(unsummed_input);
-    std::vector<double> integrals(dims_tot, 0.0);
-    for (auto integral_order : sr.integral_list) {
-      for (size_t i = 0; i < integral_order.size(); i++) { integrals[i] += integral_order[i]; }
-    }
-    for (size_t tau_index = 0; tau_index < dims_tau; tau_index++) {
-      for (size_t orb_index = 0; orb_index < dims_orb; orb_index++) {
-        size_t k                = tau_index + dims_tau * orb_index;
-        auto [bl, i, j]         = bl1_to_bl3(orb_index, mp.gf_block_shape);
-        size_t tau_index_actual = tau_index + 1;
-        auto tci_result         = integrals[k] / Tr_Ubeta;
-        sr.G_tau[bl][tau_index_actual](i, j) += tci_result;
-      }
-    }
-  } else {
-    throw std::runtime_error("evaluate Green's function: invalid unsummed_tci");
-  }
-
-  if (rank == 0) {
-    // print the result
-    for (size_t n = 0; n < cp.n_tau_green; n++) {
-      for (int bl = 0; bl < mp.gf_block_shape.size(); bl++) {
-        for (auto orb_d : range(mp.gf_block_shape[bl])) {
-          for (auto orb_ddag : range(mp.gf_block_shape[bl])) {
-            std::cout << "G[" << n << "][" << bl << "][" << orb_d << "][" << orb_ddag << "] = " << sr.G_tau[bl][n](orb_d, orb_ddag) << std::endl;
-            std::cout << "G_ref[" << n << "][" << bl << "][" << orb_d << "][" << orb_ddag << "] = " << sr.G_tau_ref[bl][n](orb_d, orb_ddag)
-                      << std::endl;
-          }
-        }
-      }
-    }
-    auto file_name = gp.output_prefix + ".h5";
-    h5::file file{file_name, 'w'};
-    h5::group group{file};
-    h5_save_params(this, group, "params");
-    h5_save_gf(this, group, "gf", sr.G_tau);
-    h5_save_gf(this, group, "gf_ref", sr.G_tau_ref);
-  }
+  sr.u_tau = sr.u_tau_ref;
+  ModeBase::evaluate_greens_function_bold();
 }
