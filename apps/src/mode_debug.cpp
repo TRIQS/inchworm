@@ -52,7 +52,7 @@ void ModeDebug::print_summary() {
                 << std::endl;
     }
     double total_integral        = 0.0;
-    gp.Z_energy_shift_correction = std::exp(gp.energy_shift * cp.beta);
+    gp.Z_energy_shift_correction = std::exp(gp.exponent_u * cp.beta);
     for (const auto &inner_vec : sr.integral_list) { total_integral += std::accumulate(inner_vec.begin(), inner_vec.end(), 0.0); }
     double sum_value = sr.u_tau_zeroth_order[sp.bl_index](i, j) + total_integral;
     double sum_time  = std::accumulate(sr.statistics[0].time_order.begin(), sr.statistics[0].time_order.end(), 0.0);
@@ -93,14 +93,9 @@ void ModeDebug::run() {
 }
 
 void ModeDebug::evaluate_propagator() {
-  // for debug mode, the discrete bath is used
   auto u_tau_ref_shifted = sr.u_tau_ref;
-  for (auto bl : range(mp.ad_imp.n_subspaces())) {
-    for (auto i : range(mp.ad_imp.get_subspace_dim(bl))) {
-      for (auto j : range(mp.ad_imp.get_subspace_dim(bl))) {
-        for (size_t i_tau = 0; i_tau < sp.grid.size(); i_tau++) { u_tau_ref_shifted[bl][i_tau](i, j) *= std::exp(-gp.energy_shift * sp.grid[i_tau]); }
-      }
-    }
+  if (gp.do_regularization) {
+    std::tie(u_tau_ref_shifted, gp.exponent_u) = regularize_propagator(sr.u_tau_ref, mp, sp, sp.grid.size() - 1, gp.amplification_u);
   }
   auto u_interpolator_ref_shifted =
      interpolator_t<scalar_t>(u_tau_ref_shifted, sp.n_tot, sp.n_tau_linear, sp.order_Chebyshev, sp.interp_type, sp.grid);

@@ -65,8 +65,7 @@ inline double one_fermion(double tau, double eps, double beta) {
 
 inline std::tuple<double, double, double, hyb_tau_t, atom_diag, u_tau_t, g_tau_t>
 discrete_setup(int n_site, int n_bath, int n_spin, double U, double mu, double t, constr_params_t const &cp, mat_t const &theta, vec_t const &eps,
-               long n_tot, long n_tau_linear, int order_Chebyshev, std::vector<double> &grid_linear, std::vector<double> &grid,
-               double energy_shift = 0.0) {
+               long n_tot, long n_tau_linear, int order_Chebyshev, std::vector<double> &grid_linear, std::vector<double> &grid) {
 
   // === Define fundamental operator sets
 

@@ -84,7 +84,7 @@ void ModeInchworm::evaluate_propagator() {
     if (gp.unsummed_tci != 2) {
       for (size_t i_Chebyshev_tau = 0; i_Chebyshev_tau < sp.order_Chebyshev + 2; i_Chebyshev_tau++) {
         sp.tau_max            = sp.grid[i_grid_tau_split + 1 + i_Chebyshev_tau];
-        sr.u_tau_zeroth_order = sp.use_bare_propagator ? make_bare_u_frame(mp.ad_imp, sp.tau_max, gp.energy_shift) :
+        sr.u_tau_zeroth_order = sp.use_bare_propagator ? make_bare_u_frame(mp.ad_imp, sp.tau_max, gp.exponent_u) :
                                                          sr.u_interpolator(sp.tau_max - sp.tau_split) * sr.u_interpolator(sp.tau_split);
         auto u_frame          = make_zero_frame(mp.ad_imp.get_subspace_dims());
 
@@ -142,7 +142,7 @@ void ModeInchworm::evaluate_propagator() {
           size_t k              = tau_index + dims_tau * orb_index;
           auto [bl, i, j]       = bl1_to_bl3(orb_index, mp.ad_imp.get_subspace_dims());
           double tau_max        = sp.grid[i_grid_tau_split + 1 + tau_index];
-          sr.u_tau_zeroth_order = sp.use_bare_propagator ? make_bare_u_frame(mp.ad_imp, tau_max, gp.energy_shift) :
+          sr.u_tau_zeroth_order = sp.use_bare_propagator ? make_bare_u_frame(mp.ad_imp, tau_max, gp.exponent_u) :
                                                            sr.u_interpolator(tau_max - sp.tau_split) * sr.u_interpolator(sp.tau_split);
           u_frame[bl](i, j)     = sr.u_tau_zeroth_order[bl](i, j) + integrals[k];
         }
@@ -171,7 +171,7 @@ void ModeInchworm::evaluate_propagator() {
       for (int bl = 0; bl < sr.u_tau_ref.size(); bl++) sr.u_tau[bl][i] = sr.u_tau_ref[bl][i];
     }
   }
-  gp.Z_energy_shift_correction = std::exp(gp.energy_shift * cp.beta);
+  gp.Z_energy_shift_correction = std::exp(gp.exponent_u * cp.beta);
   if (sp.debug > 0 && rank == 0) {
     std::cout << "gp.Z_energy_shift_correction = " << gp.Z_energy_shift_correction << std::endl;
     std::cout << "---- partition function ----" << std::endl;

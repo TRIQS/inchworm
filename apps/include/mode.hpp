@@ -31,7 +31,9 @@ struct global_params_t {
   bool do_cache   = true;
   std::string output_prefix{};
   int unsummed_tci                = 0; // 0: all indices are summed; 1: the first index is not summed; 2: the first two indices are not summed ... 
-  double energy_shift              = 0.0;
+  bool do_regularization = true;
+  double amplification_u              = 1.0;
+  double exponent_u = 0.0;
   double Z_energy_shift_correction = 1.0;
   bool do_adaptive_nGK           = false;
   bool do_global_pivot         = false;
@@ -196,6 +198,8 @@ class ModeBase {
                         bool is_first_interval = false, size_t inchworm_index = 0);
   virtual void evaluate_propagator()      = 0;
   virtual void evaluate_greens_function() = 0;
+  static std::tuple<u_tau_t,double> regularize_propagator(const u_tau_t &u, const model_params_t &mp, const simulation_params_t &sp,
+                                                         size_t idx_tau_max, double amplification = 1.0) ;
   virtual ~ModeBase() {}
   std::string mode_name{};
   int rank;

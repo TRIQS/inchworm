@@ -32,9 +32,15 @@ void ModeBase::read_json_parameters(std::string json_file_path) {
   try {
     gp.unsummed_tci = root.get<int>("gp.unsummed_tci");
   } catch (const std::exception &e) { gp.unsummed_tci = 0; }
+    try {
+    gp.do_regularization = root.get<bool>("gp.do_regularization");
+  } catch (const std::exception &e) { gp.do_regularization = true; }
   try {
-    gp.energy_shift = root.get<double>("gp.energy_shift");
-  } catch (const std::exception &e) { gp.energy_shift = 0.0; }
+    gp.amplification_u = root.get<double>("gp.amplification_u");
+    if(gp.amplification_u <0){
+      throw std::invalid_argument("Error: amplification_u should be non-negative");
+    }
+  } catch (const std::exception &e) { gp.amplification_u = 1.0; }
   try {
     gp.do_cache = root.get<bool>("gp.do_cache");
   } catch (const std::exception &e) { gp.do_cache = true; }
@@ -330,7 +336,7 @@ void ModeBase::print_summary() {
     std::cerr << "invalid model_type" << std::endl;
     std::exit(EXIT_FAILURE);
   }
-  std::cout << "energy_shift: " << gp.energy_shift << std::endl;
+  std::cout << "amplification: " << gp.amplification_u << std::endl;
 } // end of print_summary
 
 void ModeBase::validate_input() {
@@ -420,7 +426,9 @@ void ModeBase::prepare_eval() {
     std::cerr << "Invalid map_type" << std::endl;
     std::exit(EXIT_FAILURE);
   }
-  if (gp.target == "greens_function" && gp.do_segment) { throw std::runtime_error("gp.target == greens_function and gp.do_segment == true is not supported yet"); }
+  if (gp.target == "greens_function" && gp.do_segment) {
+    throw std::runtime_error("gp.target == greens_function and gp.do_segment == true is not supported yet");
+  }
   if (!gp.do_segment) {
     // generate the union set elements in sp.order_list_first and sp.order_list, only store each element once
     std::vector<int> order_list_union(sp.order_list_first.size() + sp.order_list.size());
@@ -558,7 +566,7 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
 
     //       // set up quantities
     double auxi_height = tp.auxi_height;
-    int seed = 0;
+    int seed           = 0;
     int n_left         = -1;
     std::vector<int> phi_d_list{};
     std::vector<int> phi_d_dag_list{};
@@ -599,8 +607,8 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
     long count         = 0;
     double mini_height = 0.0;
     double mini_value  = 1e10;
-    auto integrand     = [this, &count, &phi_d_list = phi_d_list, &phi_d_dag_list = phi_d_dag_list, &n_left, &auxi_height, &seed, &mini_height, &mini_value,
-                      &debug_info, &order_idx, &warning_same_time_order_rank, &warning_tau_split_order_rank,
+    auto integrand     = [this, &count, &phi_d_list = phi_d_list, &phi_d_dag_list = phi_d_dag_list, &n_left, &auxi_height, &seed, &mini_height,
+                      &mini_value, &debug_info, &order_idx, &warning_same_time_order_rank, &warning_tau_split_order_rank,
                       &warning_tau_max_order_rank](std::vector<double> variables) -> double {
       NVTX_RANGE("integrand", 0);
       std::vector<double> taus_left{};
@@ -736,7 +744,7 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
         auto integrand_phi =
            evaluate_diagram(sr.u_tau_zeroth_order, tau_split, tau_max, mp.all_d_ops, mp.all_d_dag_ops, mp.gf_block_shape, cp, mp.Delta_tau, mp.ad_imp,
                                 sr.u_interpolator, tau_d, tau_d_dag, iota_d, iota_d_dag, bl_index, subspace_index, sp.use_bare_propagator, gf_index,
-                                cp.gf_struct, mp.theta, mp.epsilon, mp.n_bath, gp.model_type, gp.energy_shift, gp.do_enum);
+                                cp.gf_struct, mp.theta, mp.epsilon, mp.n_bath, gp.model_type, gp.exponent_u, gp.do_enum);
         double j = ep.jacobian(taus_right, tau_max, tau_split);
         if (sp.use_bare_propagator == false) { j *= ep.jacobian(taus_left, tau_split, 0.0); }
         integrand_val += integrand_phi * j;
@@ -891,3 +899,26 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
   sr.statistics[inchworm_index].nTCI_order              = nTCI_order;
   sr.statistics[inchworm_index].integral_max_order      = integral_max_order;
 } // end of evaluate
+
+std::tuple<u_tau_t, double> ModeBase::regularize_propagator(const u_tau_t &u, const model_params_t &mp, const simulation_params_t &sp,
+                                                            size_t idx_tau_max, double amplification) {
+  auto u_regularized = u;
+  double u_max       = -1.0;
+  // find the maximum element in u at idx_tau_max
+  for (auto bl : range(mp.ad_imp.n_subspaces())) {
+    for (auto i : range(mp.ad_imp.get_subspace_dim(bl))) {
+      for (auto j : range(mp.ad_imp.get_subspace_dim(bl))) { u_max = std::max(u_max, std::abs(u[bl][idx_tau_max](i, j))); }
+    }
+  }
+  // calculate the exponent
+  double exponent = std::log(amplification * u_max) / sp.grid[idx_tau_max];
+  for (auto bl : range(mp.ad_imp.n_subspaces())) {
+    for (auto i : range(mp.ad_imp.get_subspace_dim(bl))) {
+      for (auto j : range(mp.ad_imp.get_subspace_dim(bl))) {
+        for (size_t i_tau = 0; i_tau < sp.grid.size(); i_tau++) { u_regularized[bl][i_tau](i, j) *= std::exp(-exponent * sp.grid[i_tau]); }
+      }
+    }
+  }
+
+  return {u_regularized, exponent};
+}

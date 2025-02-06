@@ -54,7 +54,7 @@ void ModeBare::evaluate_propagator() {
   sp.tau_max                   = cp.beta;
   sp.bl_index                  = -1; // indicating doing trace instead of finding element
   sp.subspace_index            = -1;
-  auto u_tau_zeroth_order_bare = make_bare_u_frame(mp.ad_imp, cp.beta, gp.energy_shift);
+  auto u_tau_zeroth_order_bare = make_bare_u_frame(mp.ad_imp, cp.beta, gp.exponent_u);
   sr.u_tau_zeroth_order        = u_tau_zeroth_order_bare;
   sp.use_bare_propagator       = true;
   // sr.u_interpolator    = interpolator_t<scalar_t>(sr.u_tau_ref, sr.u_tau_ref[0].mesh().size());
