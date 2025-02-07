@@ -45,6 +45,7 @@ struct model_params_t {
   int n_site{};
   int n_bath{};
   int n_spin{};
+  int n_phi{};
   double rescale{};
   double U{};
   double mu{};
@@ -57,9 +58,7 @@ struct model_params_t {
   std::vector<int> gf_block_shape{};
   std::vector<std::vector<fop_t>> all_d_ops{};
   std::vector<std::vector<fop_t>> all_d_dag_ops{};
-  long n_bl{};
   fundamental_operator_set fops{};
-  int n_phi{};
 };
 
 struct tci_params_t {
@@ -192,7 +191,8 @@ class ModeBase {
   }
   virtual void run() = 0;
   virtual void validate_input();
-  virtual void print_summary();
+  virtual void print_summary() = 0;
+  void print_params();
   virtual void prepare_eval();
   virtual void evaluate(std::vector<std::vector<double>> const &unsummed_input         = std::vector<std::vector<double>>(),
                         bool is_first_interval = false, size_t inchworm_index = 0);

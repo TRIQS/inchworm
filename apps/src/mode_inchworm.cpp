@@ -12,7 +12,7 @@ void ModeInchworm::validate_input() { ModeBase::validate_input(); }
 
 void ModeInchworm::print_summary() {
   if (sp.debug <= 0) return;
-  ModeBase::print_summary();
+  ModeBase::print_params();
 }
 
 void ModeInchworm::run() {
@@ -23,9 +23,15 @@ void ModeInchworm::run() {
   if (gp.target == "propagator") {
     evaluate_propagator();
   } else if (gp.target == "greens_function") {
+    gp.target = "propagator";
     evaluate_propagator();
+    gp.target = "greens_function";
     evaluate_greens_function();
-  } else {
+  } else if (gp.target == "greens_function_restart"){
+    // calculate Green's function from the input propagator
+    throw std::runtime_error("greens_function_restart is not supported in inchworm mode yet");
+  }
+  else {
     std::cerr << "invalid target" << std::endl;
     std::exit(EXIT_FAILURE);
   }

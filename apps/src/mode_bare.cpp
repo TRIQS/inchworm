@@ -18,7 +18,7 @@ void ModeBare::validate_input() {
 
 void ModeBare::print_summary() {
   if (sp.debug <= 0) return;
-  ModeBase::print_summary();
+  ModeBase::print_params();
   std::cout << "partition function exact: " << std::setw(10) << sr.partition_function_ref << std::endl;
   std::cout << "partition function exact * Z_imp_correction : " << std::setw(10) << sr.partition_function_ref * sr.Z_imp_correction << std::endl;
   std::cout << "partition function exact * Z_bath * Z_imp_correction * Z_bath_correction : " << std::setw(10)
@@ -44,7 +44,9 @@ void ModeBare::print_summary() {
 }
 
 void ModeBare::run() {
-  std::cout << "### bare mode: start running ###" << std::endl;
+  if( rank == 0) {
+    std::cout << "### bare mode: start running ###" << std::endl;
+  }
   validate_input();
   ModeBase::prepare_eval();
   evaluate_propagator();
@@ -62,4 +64,6 @@ void ModeBare::evaluate_propagator() {
   ModeBase::evaluate();
 }
 
-void ModeBare::evaluate_greens_function() {}
+void ModeBare::evaluate_greens_function() {
+  throw std::runtime_error("evaluate_greens_function is not implemented in bare mode yet");
+}

@@ -34,7 +34,6 @@ int main(int argc, char *argv[]) {
     mode->init(json_file_path, hyb_file_path);
     mode->run();
     if (mode->rank == 0) { mode->print_summary(); }
-    delete mode;
   } else {
     std::cerr << "Invalid mode name" << std::endl;
     std::exit(EXIT_FAILURE);

@@ -987,7 +987,6 @@ do_TCI(int rank, const std::string &debug_info, std::function<T_output(std::vect
         }
       }
       if (debug > 1 && rank == 0) {
-        std::cout << "ci.param.bondDim " << ci.param.bondDim << std::endl;
         std::cout << "ci.auxi_height " << *ci.auxi_height << std::endl;
       }
       {

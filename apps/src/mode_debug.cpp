@@ -39,7 +39,7 @@ void ModeDebug::validate_input() {
 
 void ModeDebug::print_summary() {
   if (sp.debug <= 0) return;
-  ModeBase::print_summary();
+  ModeBase::print_params();
   if (gp.target == "propagator") {
 
     auto [bl, i, j] = bl2_to_bl3(sp.bl_index, sp.subspace_index, mp.ad_imp.get_subspace_dims());
@@ -81,7 +81,9 @@ void ModeDebug::print_summary() {
 }
 
 void ModeDebug::run() {
-  std::cout << "### debug mode: start running ###" << std::endl;
+  if(rank == 0){
+    std::cout << "### debug mode: start running ###" << std::endl;
+  }
   validate_input();
   ModeBase::prepare_eval();
   if (gp.target == "propagator")
@@ -93,23 +95,19 @@ void ModeDebug::run() {
 }
 
 void ModeDebug::evaluate_propagator() {
-  auto u_tau_ref_shifted = sr.u_tau_ref;
+  sr.u_tau = sr.u_tau_ref;
   if (gp.do_regularization) {
-    double exponent = 0.0;
-    std::tie(u_tau_ref_shifted, exponent) = regularize_propagator(sr.u_tau_ref, mp, sp, sp.grid.size() - 1, gp.amplification_u);
-    gp.exponent_u +=  exponent;
+    double exponent              = 0.0;
+    std::tie(sr.u_tau, exponent) = regularize_propagator(sr.u_tau, mp, sp, sp.grid.size() - 1, gp.amplification_u);
+    gp.exponent_u += exponent;
   }
-  auto u_interpolator_ref_shifted =
-     interpolator_t<scalar_t>(u_tau_ref_shifted, sp.n_tot, sp.n_tau_linear, sp.order_Chebyshev, sp.interp_type, sp.grid);
-  sr.u_tau_zeroth_order  = u_interpolator_ref_shifted(sp.tau_max - sp.tau_split) * u_interpolator_ref_shifted(sp.tau_split);
-  long n_tot             = u_tau_ref_shifted[0].mesh().size();
-  sr.u_interpolator      = interpolator_t<scalar_t>(u_tau_ref_shifted, sp.n_tot, sp.n_tau_linear, sp.order_Chebyshev, sp.interp_type, sp.grid);
+  sr.u_interpolator      = interpolator_t<scalar_t>(sr.u_tau, sp.n_tot, sp.n_tau_linear, sp.order_Chebyshev, sp.interp_type, sp.grid);
+  sr.u_tau_zeroth_order  = sr.u_interpolator(sp.tau_max - sp.tau_split) * sr.u_interpolator(sp.tau_split);
   sp.use_bare_propagator = false;
   ModeBase::evaluate();
 }
 
 void ModeDebug::evaluate_greens_function() {
-  // for debug mode, the discrete bath is used, so that we get u_interpolator from u_tau_ref
   sr.u_tau = sr.u_tau_ref;
   ModeBase::evaluate_greens_function_bold();
 }
