@@ -27,11 +27,10 @@ void ModeInchworm::run() {
     evaluate_propagator();
     gp.target = "greens_function";
     evaluate_greens_function();
-  } else if (gp.target == "greens_function_restart"){
+  } else if (gp.target == "greens_function_restart") {
     // calculate Green's function from the input propagator
     throw std::runtime_error("greens_function_restart is not supported in inchworm mode yet");
-  }
-  else {
+  } else {
     std::cerr << "invalid target" << std::endl;
     std::exit(EXIT_FAILURE);
   }
@@ -89,12 +88,18 @@ void ModeInchworm::evaluate_propagator() {
     EXPECTS(sp.grid[i_grid_tau_split] == sp.grid_linear[i_tau - 1]);
     EXPECTS(sp.grid[i_grid_tau_next_split] == sp.grid_linear[i_tau]);
     if (!sp.use_bare_propagator) {
+      if (gp.do_regularization) {
+        double exponent              = 0.0;
+        std::tie(sr.u_tau, exponent) = regularize_propagator(sr.u_tau, mp, sp, i_grid_tau_split, gp.amplification_u);
+        gp.exponent_u += exponent;
+      }
       std::vector<double> grid_tau_split(sp.grid.begin(), sp.grid.begin() + i_grid_tau_split + 1);
       sr.u_interpolator =
          interpolator_t<scalar_t>(sr.u_tau, i_grid_tau_split + 1, i_tau, sp.order_Chebyshev, interpolation_type::linear_Chebyshev, grid_tau_split);
     }
     sp.tau_split = sp.grid_linear[i_tau - 1];
     // evaluate points from sp.grid[i_tau+(i_tau-1)*(order_Chebyshev+1)] to sp.grid[i_tau+1+(i_tau)*(order_Chebyshev+1)-1]
+
     if (gp.unsummed_tci != 2) {
       for (size_t i_Chebyshev_tau = 0; i_Chebyshev_tau < sp.order_Chebyshev + 2; i_Chebyshev_tau++) {
         sp.tau_max            = sp.grid[i_grid_tau_split + 1 + i_Chebyshev_tau];
@@ -165,6 +170,7 @@ void ModeInchworm::evaluate_propagator() {
     }
     if (sp.debug > 0 && rank == 0) {
       std::cout << "---- inchworm ----" << std::endl;
+      std::cout << "gp.exponent_u: " << gp.exponent_u << std::endl;
       std::cout << "tau_split = " << sp.tau_split << std::endl;
       std::cout << "tau_max = " << std::endl;
       if (gp.unsummed_tci == 2) {
@@ -180,14 +186,23 @@ void ModeInchworm::evaluate_propagator() {
   } // end of i_tau loop
   // set sr.u_tau be sr.u_tau_ref for i_tau > sp.inch_end_index
   if (sp.inch_end_index < sp.n_tau_linear - 1) {
-    for (int i = (sp.inch_end_index) * (sp.order_Chebyshev + 1) + sp.inch_end_index + 1; i < sp.n_tot; i++) {
-      for (int bl = 0; bl < sr.u_tau_ref.size(); bl++) sr.u_tau[bl][i] = sr.u_tau_ref[bl][i];
+    if (gp.model_type == 0) {
+      for (int i = (sp.inch_end_index) * (sp.order_Chebyshev + 1) + sp.inch_end_index + 1; i < sp.n_tot; i++) {
+        for (int bl = 0; bl < sr.u_tau_ref.size(); bl++) sr.u_tau[bl][i] = sr.u_tau_ref[bl][i] * std::exp(-gp.exponent_u * sp.grid[i]);
+      }
+    } else {
+      throw std::runtime_error("inchworm mode does not support model_type != 0 while sp.inch_end_index < n_tau_linear - 1");
     }
+  }
+  if (gp.do_regularization) {
+    double exponent              = 0.0;
+    std::tie(sr.u_tau, exponent) = regularize_propagator(sr.u_tau, mp, sp, sp.n_tot - 1, gp.amplification_u);
+    gp.exponent_u += exponent;
   }
   gp.Z_energy_shift_correction = std::exp(gp.exponent_u * cp.beta);
   if (sp.debug > 0 && rank == 0) {
-    std::cout << "gp.Z_energy_shift_correction = " << gp.Z_energy_shift_correction << std::endl;
     std::cout << "---- partition function ----" << std::endl;
+    std::cout << "gp.Z_energy_shift_correction = " << gp.Z_energy_shift_correction << std::endl;
     double partition_function     = 0.;
     double partition_function_ref = 0.;
     for (auto bl : range(mp.ad_imp.n_subspaces())) {

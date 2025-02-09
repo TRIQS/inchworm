@@ -35,7 +35,7 @@ void ModeBase::read_json_parameters(std::string json_file_path) {
   } catch (const std::exception &e) { gp.unsummed_tci = 0; }
   try {
     gp.do_regularization = root.get<bool>("gp.do_regularization");
-  } catch (const std::exception &e) { gp.do_regularization = true; }
+  } catch (const std::exception &e) { gp.do_regularization = false; }
   try {
     gp.amplification_u = root.get<double>("gp.amplification_u");
     if (gp.amplification_u < 0) { throw std::invalid_argument("Error: amplification_u should be non-negative"); }
@@ -221,7 +221,7 @@ hyb_tau_t ModeBase::read_hyb_function(std::string hyb_file_path, model_params_t 
 }
 
 void ModeBase::print_params() {
-  if (sp.debug <= 1) return;
+  if (sp.debug <= 2) return;
   std::cout << "#### global params ####" << std::endl;
   std::cout << "target: " << gp.target << std::endl;
   std::cout << "integrand: " << gp.integrand << std::endl;

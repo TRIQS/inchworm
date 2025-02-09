@@ -19,7 +19,7 @@ inline void h5_save_propagator(const ModeBase *mode, h5::group h5group, std::str
       for (auto j : range(mode->mp.ad_imp.get_subspace_dim(bl))) {
         std::string dataset_name = fmt::format("u_tau_{}_{}_{}", bl, i, j);
         std::vector<double> data;
-        for (size_t i_tau = 0; i_tau < mode->sp.grid.size(); i_tau++) { data.push_back(mode->sr.u_tau[bl][i_tau](i, j)); }
+        for (size_t i_tau = 0; i_tau < mode->sp.grid.size(); i_tau++) { data.push_back(mode->sr.u_tau[bl][i_tau](i, j) * std::exp(mode->gp.exponent_u * mode->sp.grid[i_tau])); }
         h5_write(grp, dataset_name, data);
       }
     }

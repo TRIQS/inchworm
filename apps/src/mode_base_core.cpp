@@ -292,7 +292,7 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
     int loop1_idx   = std::get<1>(index);
     int loop2_idx   = std::get<2>(index);
     if (ii % size != rank) { continue; }
-    if (sp.debug >= 1) {
+    if (sp.debug >= 3) {
       std::cout << "rank: " << rank << ", order_idx: " << order_idx << ", loop1_idx: " << loop1_idx << ", loop2_idx: " << loop2_idx << std::endl;
     }
     int order  = order_list[order_idx];

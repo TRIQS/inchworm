@@ -965,11 +965,8 @@ do_TCI(int rank, const std::string &debug_info, std::function<T_output(std::vect
       }
       if (init_global_pivots.size() != 0 && i == 1) { ci.addPivotsAllBonds(init_global_pivots); }
       if (adaptive_error) {
-        if (i == 1) {
-          // *auxi_height = ci.pivotError[ci.pivotError.size() - 1];
-          // ci.auxi_height = ci.pivotError[ci.pivotError.size() - 1] * decay_rate;
-        } else {
-          if (*ci.auxi_height == ci.pivotError[ci.pivotError.size() - 1] * decay_rate || *ci.auxi_height == 0) {
+        if (i != 1) {
+          if (*ci.auxi_height == ci.pivotError[ci.pivotError.size() - 1] * decay_rate || *ci.auxi_height < 1e-15) {
             if (valid_init_global_pivot.size()
                 != 0) { // a valid tensor train that explore all the function space but the error wrongly report to be a non-zero constant
               *auxi_height = 0.0;
@@ -986,9 +983,7 @@ do_TCI(int rank, const std::string &debug_info, std::function<T_output(std::vect
           }
         }
       }
-      if (debug > 1 && rank == 0) {
-        std::cout << "ci.auxi_height " << *ci.auxi_height << std::endl;
-      }
+      if (debug > 1 && rank == 0) { std::cout << "ci.auxi_height " << *ci.auxi_height << std::endl; }
       {
         NVTX_RANGE("ci-iterate", 7);
         ci.iterate();
@@ -1383,4 +1378,3 @@ inline std::vector<std::pair<std::vector<int>, std::vector<int>>> generate_phi_s
   removeDuplicates(phi_pair_list);
   return phi_pair_list;
 }
-
