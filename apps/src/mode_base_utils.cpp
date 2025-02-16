@@ -35,7 +35,7 @@ void ModeBase::read_json_parameters(std::string json_file_path) {
   } catch (const std::exception &e) { gp.unsummed_tci = 0; }
   try {
     gp.do_regularization = root.get<bool>("gp.do_regularization");
-  } catch (const std::exception &e) { gp.do_regularization = false; }
+  } catch (const std::exception &e) { gp.do_regularization = true; }
   try {
     gp.amplification_u = root.get<double>("gp.amplification_u");
     if (gp.amplification_u < 0) { throw std::invalid_argument("Error: amplification_u should be non-negative"); }
