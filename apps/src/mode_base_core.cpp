@@ -411,11 +411,11 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
         std::cerr << "debug_info: " << debug_info << std::endl;
         warning_same_time_order_rank[order_idx] += 1;
         //gracifally exit the program
-        std::exit(EXIT_FAILURE);
+        // std::exit(EXIT_FAILURE);
         // if (gp.ergodicity == "random_auxi_adaptive") { return auxi_height * get_random_number() + mini_height; }
         // if (gp.ergodicity == "random_auxi_adaptive") { return auxi_height * get_hash_random_number(variables) + mini_height; }
         if (gp.ergodicity == "random_auxi_adaptive") { return 0.0; }
-        return 0.0 + mini_height;
+        return 0.0;
       }
 
       if (if_contains(taus, tau_split)) {
@@ -427,11 +427,11 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
         std::cerr << "tau_split: " << tau_split << std::endl;
         std::cerr << "debug_info: " << debug_info << std::endl;
         warning_tau_split_order_rank[order_idx] += 1;
-        std::exit(EXIT_FAILURE);
+        // std::exit(EXIT_FAILURE);
         // if (gp.ergodicity == "random_auxi_adaptive") { return auxi_height * get_random_number() + mini_height; }
         // if (gp.ergodicity == "random_auxi_adaptive") { return auxi_height * get_hash_random_number(variables) + mini_height; }
         if (gp.ergodicity == "random_auxi_adaptive") { return 0.0; }
-        return 0.0 + mini_height;
+        return 0.0;
       }
 
       if (if_contains(taus, tau_max)) {
@@ -443,11 +443,11 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
         std::cerr << "tau_max: " << tau_max << std::endl;
         std::cerr << "debug_info: " << debug_info << std::endl;
         warning_tau_max_order_rank[order_idx] += 1;
-        std::exit(EXIT_FAILURE);
+        // std::exit(EXIT_FAILURE);
         // if (gp.ergodicity == "random_auxi_adaptive") { return auxi_height * get_random_number() + mini_height; }
         // if (gp.ergodicity == "random_auxi_adaptive") { return auxi_height * get_hash_random_number(variables)+ mini_height; }
         if (gp.ergodicity == "random_auxi_adaptive") { return 0.0; }
-        return 0.0 + mini_height;
+        return 0.0;
       }
 
       std::vector<int> phi_loop_list{0};
@@ -570,12 +570,25 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
     std::vector<double> init_input{};
     for (int i = 0; i < init_pivot.size(); i++) { init_input.push_back(input[i][init_pivot[i]]); }
     double init_integrand = integrand(init_input);
-    if (sp.debug > 1 && rank == 0) { std::cout << "init_integrand: " << init_integrand << std::endl; }
+
     if (init_integrand == 0 && gp.ergodicity != "random_auxi_adaptive") {
-      std::cerr << "Warning: initial integrand is zero !!" << std::endl;
-      std::cerr << "debug_info: " << debug_info << std::endl;
-      continue;
+      // try all possible pivots for the first element
+      for (int i = 0; i < input[0].size(); i++) {
+        init_pivot[0] = i;
+        init_input[0] = input[0][init_pivot[0]];
+        init_integrand = integrand(init_input);
+        if (init_integrand != 0) { 
+          std::cerr << "update init_pivot[0] to " << i << std::endl;
+          break; }
+      }
+      if (init_integrand == 0) {
+        std::cerr << "Warning: initial integrand is zero !!" << std::endl;
+        std::cerr << "debug_info: " << debug_info << std::endl;
+        continue;
+      }
     }
+
+    if (sp.debug > 1 && rank == 0) { std::cout << "init_integrand: " << init_integrand << std::endl; }
 
     std::vector<std::vector<int>> init_global_pivots{};
     if (gp.do_global_pivot) {
@@ -670,6 +683,7 @@ std::tuple<u_tau_t, double> ModeBase::regularize_propagator(const u_tau_t &u, co
 }
 
 void ModeBase::evaluate_greens_function_bold() {
+  gp.unsummed_tci = gp.unsummed_tci_green_function; // Fixme later, not elegant
   if (gp.do_regularization) {
     double exponent              = 0.0;
     std::tie(sr.u_tau, exponent) = regularize_propagator(sr.u_tau, mp, sp, sp.grid.size() - 1, gp.amplification_u);
@@ -805,17 +819,19 @@ void ModeBase::evaluate_greens_function_bold() {
         for (auto orb_d : range(mp.gf_block_shape[bl])) {
           for (auto orb_ddag : range(mp.gf_block_shape[bl])) {
             std::cout << "G[" << n << "][" << bl << "][" << orb_d << "][" << orb_ddag << "] = " << sr.G_tau[bl][n](orb_d, orb_ddag) << std::endl;
+            if(gp.model_type==0){
             std::cout << "G_ref[" << n << "][" << bl << "][" << orb_d << "][" << orb_ddag << "] = " << sr.G_tau_ref[bl][n](orb_d, orb_ddag)
-                      << std::endl;
+                      << std::endl;}
           }
         }
       }
     }
     auto file_name = gp.output_prefix + ".h5";
-    h5::file file{file_name, 'w'};
+    h5::file file{file_name, 'a'};
     h5::group group{file};
     h5_save_params(this, group, "params");
     h5_save_gf(this, group, "gf", sr.G_tau);
-    h5_save_gf(this, group, "gf_ref", sr.G_tau_ref);
+    if(gp.model_type==0){
+    h5_save_gf(this, group, "gf_ref", sr.G_tau_ref);}
   }
 }

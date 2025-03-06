@@ -225,8 +225,10 @@ void ModeInchworm::evaluate_propagator() {
     h5_save_params(this, group, "params");
     h5_save_propagator(this, group, "propagator");
     h5_save_cheb_coeff(this, group, "cheb_coeff");
-    h5_save_propagator_ref(this, group, "propagator_ref");
-    h5_save_cheb_coeff_ref(this, group, "cheb_coeff_ref");
+    if(gp.model_type == 0){
+      h5_save_propagator_ref(this, group, "propagator_ref");
+      h5_save_cheb_coeff_ref(this, group, "cheb_coeff_ref");
+    }
     h5_save_statistics(this, group, "statistics");
   }
 }

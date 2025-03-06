@@ -31,6 +31,7 @@ struct global_params_t {
   bool do_cache   = true;
   std::string output_prefix{};
   int unsummed_tci                = 0; // 0: all indices are summed; 1: the first index is not summed; 2: the first two indices are not summed ... 
+  int unsummed_tci_green_function = 0; 
   bool do_regularization = true;
   double amplification_u              = 1.0;
   double exponent_u = 0.0;

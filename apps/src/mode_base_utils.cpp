@@ -34,6 +34,9 @@ void ModeBase::read_json_parameters(std::string json_file_path) {
     gp.unsummed_tci = root.get<int>("gp.unsummed_tci");
   } catch (const std::exception &e) { gp.unsummed_tci = 0; }
   try {
+    gp.unsummed_tci_green_function = root.get<int>("gp.unsummed_tci_green_function");
+  } catch (const std::exception &e) { gp.unsummed_tci_green_function = 0; }
+  try {
     gp.do_regularization = root.get<bool>("gp.do_regularization");
   } catch (const std::exception &e) { gp.do_regularization = true; }
   try {
@@ -177,7 +180,7 @@ void ModeBase::read_json_parameters(std::string json_file_path) {
 
 hyb_tau_t ModeBase::read_hyb_function(std::string hyb_file_path, model_params_t const &mp, constr_params_t const &cp) {
 
-  const double TOL = 1e-14;
+  const double TOL = 1e-12;
   if (hyb_file_path.empty()) {
     std::cerr << "hyb_file_path is empty" << std::endl;
     std::exit(EXIT_FAILURE);
@@ -210,8 +213,8 @@ hyb_tau_t ModeBase::read_hyb_function(std::string hyb_file_path, model_params_t 
       h5_read(grp, "data/" + std::to_string(block) + '_' + std::to_string(i) + std::to_string(j), Delta_tau_ij);
       for (int k = 0; k < Delta_tau_grid.size(); k++) {
         Delta_tau[block][Delta_tau_grid[k]](i, j) = Delta_tau_ij[k];
-        if (std::abs(Delta_tau[block](Delta_tau_grid[k])(i, j) - Delta_tau[block][Delta_tau_grid[k]](i, j)) > TOL) {
-          std::cerr << "inconsistency in Delta_tau" << std::endl;
+        if (std::abs(Delta_tau[block](Delta_tau_grid[k])(i, j) - Delta_tau[block][Delta_tau_grid[k]](i, j))/std::abs(Delta_tau[block](Delta_tau_grid[k])(i, j)) > TOL) {
+          throw std::runtime_error("Error: Delta_tau is not consistent");
         }
       }
     }

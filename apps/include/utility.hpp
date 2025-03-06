@@ -1044,7 +1044,6 @@ do_TCI(int rank, const std::string &debug_info, std::function<T_output(std::vect
       std::cout << "iteration nEval error integral\n";
       std::cout << "No adaptive error" << std::endl;
     }
-    std::cout << "count before construct: " << count << std::endl;
     auto ci = xfac::CTensorCI2<T_output, T_input>(
        integrand, input, {.bondDim = bond_dim_init, .reltol = reltol, .pivot1 = pivot1, .fullPiv = fullPiv, .useCachedFunction = true});
     for (int i = 1; i <= sweep_bound; i++) {
