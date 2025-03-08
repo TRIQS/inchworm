@@ -21,6 +21,7 @@
 #include "utility.hpp"
 
 struct global_params_t {
+  std::string hyb_file_path{};
   std::string target{};
   std::string integrand{};
   std::string integral_variable{};
@@ -175,7 +176,7 @@ class ModeBase {
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
   }
-  virtual void init(std::string json_file_path, std::string hyb_file_path) {
+  virtual void init(std::string json_file_path) {
     NVTX_RANGE("init", 0);
     try {
       read_json_parameters(json_file_path);
@@ -184,7 +185,7 @@ class ModeBase {
       std::exit(EXIT_FAILURE);
     }
     try {
-      prepare_input(hyb_file_path);
+      prepare_input();
     } catch (std::exception &e) {
       std::cerr << "Error in preparing input: " << e.what() << std::endl;
       std::exit(EXIT_FAILURE);
@@ -225,9 +226,9 @@ class ModeBase {
   simulation_params_t sp{};
   simulation_results_t sr{};
   eval_params_t ep{};
-  void read_json_parameters(std::string json_file_path);
-  hyb_tau_t read_hyb_function(std::string hyb_file_path, model_params_t const &mp, constr_params_t const &cp);
-  void prepare_input(std::string hyb_file_path);
+  void read_json_parameters(const std::string & json_file_path);
+  hyb_tau_t read_hyb_function(const std::string & hyb_file_path, model_params_t const &mp, constr_params_t const &cp);
+  void prepare_input();
   void clear_tci_results();
 };
 

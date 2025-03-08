@@ -7,7 +7,7 @@
 
 void ModeBase::clear_tci_results() { sr.integral_list.clear(); } // end of clear_results
 
-void ModeBase::read_json_parameters(std::string json_file_path) {
+void ModeBase::read_json_parameters(const std::string & json_file_path) {
   NVTX_RANGE("read params", 0);
   namespace pt = boost::property_tree;
   pt::ptree root;
@@ -20,6 +20,12 @@ void ModeBase::read_json_parameters(std::string json_file_path) {
   gp.integral_variable = root.get<std::string>("gp.integral_variable");
   gp.tci_shape         = root.get<std::string>("gp.tci_shape");
   gp.model_type        = root.get<int>("gp.model_type");
+  try{
+    gp.hyb_file_path = root.get<std::string>("gp.hyb_file_path");
+  }
+  catch (const std::exception &e) {
+    gp.hyb_file_path = "";
+  }
   //// optional parameters
   try {
     gp.ergodicity = root.get<std::string>("gp.ergodicity");
@@ -178,9 +184,9 @@ void ModeBase::read_json_parameters(std::string json_file_path) {
   if (sp.debug > 0 && rank == 0) { std::cout << "json parameter file read successfully" << std::endl; }
 } // end of read_json_parameters
 
-hyb_tau_t ModeBase::read_hyb_function(std::string hyb_file_path, model_params_t const &mp, constr_params_t const &cp) {
+hyb_tau_t ModeBase::read_hyb_function(const std::string& hyb_file_path, model_params_t const &mp, constr_params_t const &cp) {
 
-  const double TOL = 1e-12;
+  const double TOL = 1e-10;
   if (hyb_file_path.empty()) {
     std::cerr << "hyb_file_path is empty" << std::endl;
     std::exit(EXIT_FAILURE);
@@ -214,6 +220,8 @@ hyb_tau_t ModeBase::read_hyb_function(std::string hyb_file_path, model_params_t 
       for (int k = 0; k < Delta_tau_grid.size(); k++) {
         Delta_tau[block][Delta_tau_grid[k]](i, j) = Delta_tau_ij[k];
         if (std::abs(Delta_tau[block](Delta_tau_grid[k])(i, j) - Delta_tau[block][Delta_tau_grid[k]](i, j))/std::abs(Delta_tau[block](Delta_tau_grid[k])(i, j)) > TOL) {
+          std::cerr << "Delta_tau[block](Delta_tau_grid[k])(i, j): " << Delta_tau[block](Delta_tau_grid[k])(i, j) << std::endl;
+          std::cerr << "Delta_tau[block][Delta_tau_grid[k]](i, j): " << Delta_tau[block][Delta_tau_grid[k]](i, j) << std::endl;
           throw std::runtime_error("Error: Delta_tau is not consistent");
         }
       }

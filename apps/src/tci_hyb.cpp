@@ -14,11 +14,8 @@ int main(int argc, char *argv[]) {
   if (argc == 3) {
     mode_name      = argv[1];
     json_file_path = argv[2];
-  } else if (argc == 4) {
-    mode_name      = argv[1];
-    json_file_path = argv[2];
-    hyb_file_path  = argv[3];
-  } else {
+  } 
+  else {
     std::cout << "Please provide mode name and parameter file" << std::endl;
     std::cout << "Usage: tci_hyb <mode> <json_file_path>" << std::endl;
     std::cout << "mode: inch, debug, bare" << std::endl;
@@ -31,7 +28,7 @@ int main(int argc, char *argv[]) {
     if (mode->rank == 0) { std::cout << "###### Tensor Train Based Hybridization Expansion Algorithm ######" << std::endl; }
     std::cout << std::setprecision(16);
     std::cerr << std::setprecision(16);
-    mode->init(json_file_path, hyb_file_path);
+    mode->init(json_file_path);
     mode->run();
     if (mode->rank == 0) { mode->print_summary(); }
   } else {

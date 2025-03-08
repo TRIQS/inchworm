@@ -5,7 +5,7 @@
 #include "mode.hpp"
 #include "save.hpp"
 
-void ModeBase::prepare_input(std::string hyb_file_path) {
+void ModeBase::prepare_input() {
   NVTX_RANGE("prepare input", 0);
 
   // TCI setup
@@ -74,7 +74,7 @@ void ModeBase::prepare_input(std::string hyb_file_path) {
   } else if (gp.model_type == 1) { //model_type 1: read hybridization function from input file
     mp.ad_imp                         = imp_setup(mp.n_site, mp.n_spin, mp.U, mp.mu, mp.t, cp);
     sr.Z_imp_correction               = std::exp(-(mp.ad_imp.get_gs_energy()) * cp.beta);
-    mp.Delta_tau                      = read_hyb_function(hyb_file_path, mp, cp);
+    mp.Delta_tau                      = read_hyb_function(gp.hyb_file_path, mp, cp);
     std::tie(sp.grid_linear, sp.grid) = generate_inchworm_grid(0, cp.beta, sp.n_tau_linear, sp.order_Chebyshev);
     //// params that does not have analytical reference
     // sr.Z_bath = 0;
