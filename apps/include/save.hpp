@@ -18,14 +18,20 @@ inline void h5_save_propagator(const ModeBase *mode, h5::group h5group, std::str
     for (auto i : range(mode->mp.ad_imp.get_subspace_dim(bl))) {
       for (auto j : range(mode->mp.ad_imp.get_subspace_dim(bl))) {
         std::string dataset_name = fmt::format("u_tau_{}_{}{}", bl, i, j);
+        std::string dataset_name_re = fmt::format("u_tau_re_{}_{}{}", bl, i, j);
         std::vector<double> data;
-        for (size_t i_tau = 0; i_tau < mode->sp.grid.size(); i_tau++) { data.push_back(mode->sr.u_tau[bl][i_tau](i, j) * std::exp(mode->gp.exponent_u * mode->sp.grid[i_tau])); }
+        std::vector<double> data_re;
+        for (size_t i_tau = 0; i_tau < mode->sp.grid.size(); i_tau++) { data.push_back(mode->sr.u_tau[bl][i_tau](i, j) * std::exp(mode->gp.exponent_u * mode->sp.grid[i_tau])); 
+        data_re.push_back(mode->sr.u_tau[bl][i_tau](i, j));
+        }
         h5_write(grp, dataset_name, data);
+        h5_write(grp, dataset_name_re, data_re);
       }
     }
   }
   h5_write(grp, "Z_energy_shift_correction", mode->gp.Z_energy_shift_correction);
   h5_write(grp, "Z_imp_correction", mode->sr.Z_imp_correction);
+  h5_write(grp, "exponent_u", mode->gp.exponent_u);
 }
 
 inline void h5_save_propagator_ref(const ModeBase *mode, h5::group h5group, std::string subgroup_name) {

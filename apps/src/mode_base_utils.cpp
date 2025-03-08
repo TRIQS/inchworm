@@ -265,7 +265,7 @@ void ModeBase::read_propagator(){
     for (int i = 0; i < mp.ad_imp.get_subspace_dim(bl); i++) {
       for (int j = 0; j < mp.ad_imp.get_subspace_dim(bl); j++) {
         std::vector<double> u_tau_ij{};
-        h5_read(grp, "propagator/u_tau_" + std::to_string(bl) + '_' + std::to_string(i) + std::to_string(j), u_tau_ij);
+        h5_read(grp, "propagator/u_tau_re_" + std::to_string(bl) + '_' + std::to_string(i) + std::to_string(j), u_tau_ij);
         for (int k = 0; k < sp.grid.size(); k++) {
           sr.u_tau[bl][k](i, j) = u_tau_ij[k];
         }
