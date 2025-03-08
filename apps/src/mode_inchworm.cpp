@@ -28,8 +28,10 @@ void ModeInchworm::run() {
     gp.target = "greens_function";
     evaluate_greens_function();
   } else if (gp.target == "greens_function_restart") {
-    // calculate Green's function from the input propagator
-    throw std::runtime_error("greens_function_restart is not supported in inchworm mode yet");
+    read_propagator();
+    std::cout << "read propagator from file" << std::endl;
+    gp.target = "greens_function";
+    evaluate_greens_function();
   } else {
     std::cerr << "invalid target" << std::endl;
     std::exit(EXIT_FAILURE);

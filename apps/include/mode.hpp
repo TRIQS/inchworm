@@ -22,6 +22,7 @@
 
 struct global_params_t {
   std::string hyb_file_path{};
+  std::string propagator_file_path{};
   std::string target{};
   std::string integrand{};
   std::string integral_variable{};
@@ -227,7 +228,8 @@ class ModeBase {
   simulation_results_t sr{};
   eval_params_t ep{};
   void read_json_parameters(const std::string & json_file_path);
-  hyb_tau_t read_hyb_function(const std::string & hyb_file_path, model_params_t const &mp, constr_params_t const &cp);
+  hyb_tau_t read_hyb_function();
+  void read_propagator();
   void prepare_input();
   void clear_tci_results();
 };

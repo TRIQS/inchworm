@@ -26,6 +26,12 @@ void ModeBase::read_json_parameters(const std::string & json_file_path) {
   catch (const std::exception &e) {
     gp.hyb_file_path = "";
   }
+  try{
+    gp.propagator_file_path = root.get<std::string>("gp.propagator_file_path");
+  }
+  catch (const std::exception &e) {
+    gp.propagator_file_path = "";
+  }
   //// optional parameters
   try {
     gp.ergodicity = root.get<std::string>("gp.ergodicity");
@@ -184,16 +190,16 @@ void ModeBase::read_json_parameters(const std::string & json_file_path) {
   if (sp.debug > 0 && rank == 0) { std::cout << "json parameter file read successfully" << std::endl; }
 } // end of read_json_parameters
 
-hyb_tau_t ModeBase::read_hyb_function(const std::string& hyb_file_path, model_params_t const &mp, constr_params_t const &cp) {
+hyb_tau_t ModeBase::read_hyb_function() {
 
   const double TOL = 1e-10;
-  if (hyb_file_path.empty()) {
+  if (gp.hyb_file_path.empty()) {
     std::cerr << "hyb_file_path is empty" << std::endl;
     std::exit(EXIT_FAILURE);
   }
 
   std::vector<int> block_shape{};
-  h5::file file{hyb_file_path, 'r'};
+  h5::file file{gp.hyb_file_path, 'r'};
   h5::group grp{file};
   h5_read(grp, "bl_structure", block_shape);
   if (block_shape != mp.gf_block_shape) {
@@ -230,6 +236,45 @@ hyb_tau_t ModeBase::read_hyb_function(const std::string& hyb_file_path, model_pa
 
   return Delta_tau;
 }
+
+void ModeBase::read_propagator(){
+  if(gp.propagator_file_path.empty()){
+    throw std::runtime_error("Error: propagator_file_path is empty");
+  }
+  h5::file file{gp.propagator_file_path, 'r'};
+  h5::group grp{file};
+  // read params/propagator_block_shape, make sure it is the same as mp.ad_imp.get_subspace_dims()
+  std::vector<int> block_shape{};
+  h5_read(grp, "params/propagator_block_shape", block_shape);
+  if (block_shape != mp.ad_imp.get_subspace_dims()) {
+    throw std::runtime_error("Error: propagator_block_shape in propagator_file_path does not match mp.ad_imp.get_subspace_dims()");
+  }
+
+  // read propagator/tau_grid, make sure it is the same as sp.grid
+  std::vector<double> tau_grid{};
+  h5_read(grp, "propagator/tau_grid", tau_grid);
+  if(tau_grid != sp.grid) {
+    throw std::runtime_error("Error: tau_grid in propagator_file_path does not match sp.grid");
+  }
+  std::cout << "reading propagator from file: " << gp.propagator_file_path << std::endl;
+  auto u_tau_zero = u_tau_t{{cp.beta, Fermion, sp.n_tot}, mp.ad_imp.get_subspace_dims()};
+  u_tau_zero()    = 0.;
+  sr.u_tau        = u_tau_zero;
+  // read propagator, assign it to sr.u_tau
+  for (int bl = 0; bl < mp.ad_imp.n_subspaces(); bl++) {
+    for (int i = 0; i < mp.ad_imp.get_subspace_dim(bl); i++) {
+      for (int j = 0; j < mp.ad_imp.get_subspace_dim(bl); j++) {
+        std::vector<double> u_tau_ij{};
+        h5_read(grp, "propagator/u_tau_" + std::to_string(bl) + '_' + std::to_string(i) + std::to_string(j), u_tau_ij);
+        for (int k = 0; k < sp.grid.size(); k++) {
+          sr.u_tau[bl][k](i, j) = u_tau_ij[k];
+        }
+      }
+    }
+  }
+}
+
+
 
 void ModeBase::print_params() {
   if (sp.debug <= 2) return;

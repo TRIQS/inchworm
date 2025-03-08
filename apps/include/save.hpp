@@ -17,7 +17,7 @@ inline void h5_save_propagator(const ModeBase *mode, h5::group h5group, std::str
   for (auto bl : range(mode->mp.ad_imp.n_subspaces())) {
     for (auto i : range(mode->mp.ad_imp.get_subspace_dim(bl))) {
       for (auto j : range(mode->mp.ad_imp.get_subspace_dim(bl))) {
-        std::string dataset_name = fmt::format("u_tau_{}_{}_{}", bl, i, j);
+        std::string dataset_name = fmt::format("u_tau_{}_{}{}", bl, i, j);
         std::vector<double> data;
         for (size_t i_tau = 0; i_tau < mode->sp.grid.size(); i_tau++) { data.push_back(mode->sr.u_tau[bl][i_tau](i, j) * std::exp(mode->gp.exponent_u * mode->sp.grid[i_tau])); }
         h5_write(grp, dataset_name, data);
@@ -34,7 +34,7 @@ inline void h5_save_propagator_ref(const ModeBase *mode, h5::group h5group, std:
   for (auto bl : range(mode->mp.ad_imp.n_subspaces())) {
     for (auto i : range(mode->mp.ad_imp.get_subspace_dim(bl))) {
       for (auto j : range(mode->mp.ad_imp.get_subspace_dim(bl))) {
-        std::string dataset_name = fmt::format("u_tau_{}_{}_{}", bl, i, j);
+        std::string dataset_name = fmt::format("u_tau_{}_{}{}", bl, i, j);
         std::vector<double> data;
         for (size_t i_tau = 0; i_tau < mode->sp.grid.size(); i_tau++) { data.push_back(mode->sr.u_tau_ref[bl][i_tau](i, j)); }
         h5_write(grp, dataset_name, data);
@@ -53,7 +53,7 @@ inline void h5_save_cheb_coeff(const ModeBase *mode, h5::group h5group, std::str
       for (auto j : range(mode->mp.ad_imp.get_subspace_dim(bl))) {
         for (auto tau_interval : range(mode->sp.n_tau_linear - 1)) {
           auto coeffs              = chebyshev_coefficients[bl][tau_interval](i, j);
-          std::string dataset_name = fmt::format("cheb_coeff_{}_{}_{}_{}", bl, i, j, tau_interval);
+          std::string dataset_name = fmt::format("cheb_coeff_{}_{}_{}{}", bl, i, j, tau_interval);
           h5_write(grp, dataset_name, coeffs);
         }
       }
@@ -69,7 +69,7 @@ inline void h5_save_cheb_coeff_ref(const ModeBase *mode, h5::group h5group, std:
       for (auto j : range(mode->mp.ad_imp.get_subspace_dim(bl))) {
         for (auto tau_interval : range(mode->sp.n_tau_linear - 1)) {
           auto coeffs              = chebyshev_coefficients[bl][tau_interval](i, j);
-          std::string dataset_name = fmt::format("cheb_coeff_{}_{}_{}_{}", bl, i, j, tau_interval);
+          std::string dataset_name = fmt::format("cheb_coeff_{}_{}_{}{}", bl, i, j, tau_interval);
           h5_write(grp, dataset_name, coeffs);
         }
       }
@@ -85,7 +85,7 @@ inline void h5_save_gf(const ModeBase *mode, h5::group h5group, std::string subg
   for (int bl = 0; bl < mode->mp.gf_block_shape.size(); bl++) {
     for (auto i : range(mode->mp.gf_block_shape[bl])) {
       for (auto j : range(mode->mp.gf_block_shape[bl])) {
-        std::string dataset_name = fmt::format("G_tau_{}_{}_{}", bl, i, j);
+        std::string dataset_name = fmt::format("G_tau_{}_{}{}", bl, i, j);
         std::vector<double> data;
         for (size_t i_tau = 0; i_tau < G_tau[0].mesh().size(); i_tau++) { data.push_back(G_tau[bl][i_tau](i, j)); }
         h5_write(grp, dataset_name, data);

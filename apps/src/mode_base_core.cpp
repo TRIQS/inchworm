@@ -74,7 +74,7 @@ void ModeBase::prepare_input() {
   } else if (gp.model_type == 1) { //model_type 1: read hybridization function from input file
     mp.ad_imp                         = imp_setup(mp.n_site, mp.n_spin, mp.U, mp.mu, mp.t, cp);
     sr.Z_imp_correction               = std::exp(-(mp.ad_imp.get_gs_energy()) * cp.beta);
-    mp.Delta_tau                      = read_hyb_function(gp.hyb_file_path, mp, cp);
+    mp.Delta_tau                      = read_hyb_function();
     std::tie(sp.grid_linear, sp.grid) = generate_inchworm_grid(0, cp.beta, sp.n_tau_linear, sp.order_Chebyshev);
     //// params that does not have analytical reference
     // sr.Z_bath = 0;
@@ -153,7 +153,7 @@ void ModeBase::validate_input() {
   bool valid_unsumed_mode_propagator = (gp.unsummed_tci == 1 || gp.unsummed_tci == 2) && mode_name == "inchworm"
      || (gp.unsummed_tci == 0) && (mode_name == "bare" || mode_name == "debug");
   bool valid_unsumed_mode_gf = mode_name == "inchworm" || mode_name == "debug";
-  if (!(valid_unsumed_mode_propagator && gp.target == "propagator") && !(valid_unsumed_mode_gf && gp.target == "greens_function")) {
+  if (!(valid_unsumed_mode_propagator && gp.target == "propagator") && !(valid_unsumed_mode_gf && gp.target == "greens_function") && !(valid_unsumed_mode_gf && gp.target == "greens_function_restart") ) {
     std::cerr << "invalid unsummed_tci and mode_name combination" << std::endl;
     std::exit(EXIT_FAILURE);
   }
