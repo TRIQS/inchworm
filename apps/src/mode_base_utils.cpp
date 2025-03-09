@@ -192,7 +192,7 @@ void ModeBase::read_json_parameters(const std::string & json_file_path) {
 
 hyb_tau_t ModeBase::read_hyb_function() {
 
-  const double TOL = 1e-10;
+  const double TOL = 1e-12;
   if (gp.hyb_file_path.empty()) {
     std::cerr << "hyb_file_path is empty" << std::endl;
     std::exit(EXIT_FAILURE);
@@ -224,12 +224,7 @@ hyb_tau_t ModeBase::read_hyb_function() {
       Delta_tau_ij.reserve(tau_grid.size());
       h5_read(grp, "data/" + std::to_string(block) + '_' + std::to_string(i) + std::to_string(j), Delta_tau_ij);
       for (int k = 0; k < Delta_tau_grid.size(); k++) {
-        Delta_tau[block][Delta_tau_grid[k]](i, j) = Delta_tau_ij[k];
-        if (std::abs(Delta_tau[block](Delta_tau_grid[k])(i, j) - Delta_tau[block][Delta_tau_grid[k]](i, j))/std::abs(Delta_tau[block](Delta_tau_grid[k])(i, j)) > TOL) {
-          std::cerr << "Delta_tau[block](Delta_tau_grid[k])(i, j): " << Delta_tau[block](Delta_tau_grid[k])(i, j) << std::endl;
-          std::cerr << "Delta_tau[block][Delta_tau_grid[k]](i, j): " << Delta_tau[block][Delta_tau_grid[k]](i, j) << std::endl;
-          throw std::runtime_error("Error: Delta_tau is not consistent");
-        }
+        Delta_tau[block][k](i, j) = Delta_tau_ij[k];
       }
     }
   }
