@@ -582,8 +582,8 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
           break; }
       }
       if (init_integrand == 0) {
-        std::cerr << "Warning: initial integrand is zero !!" << std::endl;
-        std::cerr << "debug_info: " << debug_info << std::endl;
+        // std::cerr << "Warning: initial integrand is zero !!" << std::endl;
+        // std::cerr << "debug_info: " << debug_info << std::endl;
         continue;
       }
     }
