@@ -12,12 +12,12 @@ void ModeBase::prepare_input() {
   if (gp.map_type == 0) {
     std::tie(tp.v_value, tp.v_weight) = select_quadrature_GK(tp.n_GK, 0, 1);
   } else if (gp.map_type == 3) {
-    int n_grid_tanh_sinh  = tp.n_GK;
-    double h_tanh_sinh    = 4.0 / n_grid_tanh_sinh;
+    int n_grid_tanh_sinh              = tp.n_GK;
+    double h_tanh_sinh                = 4.0 / n_grid_tanh_sinh;
     auto [xi_tanh_sinh, wi_tanh_sinh] = tanh_sinh_quadrature(0, 1, h_tanh_sinh, n_grid_tanh_sinh);
-    double tol            = 1e-14;
-    tp.v_value  = xi_tanh_sinh;
-    tp.v_weight = wi_tanh_sinh;
+    double tol                        = 1e-14;
+    tp.v_value                        = xi_tanh_sinh;
+    tp.v_weight                       = wi_tanh_sinh;
   } else {
     std::cerr << "Invalid map_type" << std::endl;
     std::exit(EXIT_FAILURE);
@@ -55,9 +55,15 @@ void ModeBase::prepare_input() {
 
   // model setup
   if (gp.model_type == 0) { //model_type 0: discrete bath, where exact results (reference) are available
+    if(!gp.read_general_params){
     std::tie(sr.Z_bath_correction, sr.Z_imp_correction, sr.Z_bath, mp.Delta_tau, mp.ad_imp, sr.u_tau_ref, sr.G_tau_ref) =
-       discrete_setup(mp.n_site, mp.n_bath, mp.n_spin, mp.U, mp.mu, mp.t, cp, mp.theta, mp.epsilon, sp.n_tot, sp.n_tau_linear, sp.order_Chebyshev,
-                      sp.grid_linear, sp.grid);
+       discrete_Hubbard_setup(mp.n_site, mp.n_bath, mp.n_spin, mp.U, mp.mu, mp.t, cp, mp.theta, mp.epsilon, sp.n_tot, sp.n_tau_linear,
+                              sp.order_Chebyshev, sp.grid_linear, sp.grid);}
+    else{
+      std::tie(sr.Z_bath_correction, sr.Z_imp_correction, sr.Z_bath, mp.Delta_tau, mp.ad_imp, sr.u_tau_ref, sr.G_tau_ref) =
+       discrete_setup(mp.n_site, mp.n_bath, mp.n_spin, gp.interaction_file_path, mp.mu, gp.hopping_file_path, cp, mp.theta, mp.epsilon, sp.n_tot, sp.n_tau_linear,
+                              sp.order_Chebyshev, sp.grid_linear, sp.grid);
+    }
 
     sr.u_interpolator_ref     = interpolator_t<scalar_t>(sr.u_tau_ref, sp.n_tot, sp.n_tau_linear, sp.order_Chebyshev, sp.interp_type, sp.grid);
     sr.partition_function_ref = trace(sr.u_interpolator_ref(cp.beta));
@@ -72,7 +78,11 @@ void ModeBase::prepare_input() {
       for (auto bl : range(mp.ad_imp.n_subspaces())) { std::cout << "bl: " << bl << ", dim: " << mp.ad_imp.get_subspace_dim(bl) << std::endl; }
     }
   } else if (gp.model_type == 1) { //model_type 1: read hybridization function from input file
-    mp.ad_imp                         = imp_setup(mp.n_site, mp.n_spin, mp.U, mp.mu, mp.t, cp);
+    if (!gp.read_general_params) {
+      mp.ad_imp = imp_Hubbard_setup(mp.n_site, mp.n_spin, mp.U, mp.mu, mp.t, cp);
+    } else {
+      mp.ad_imp = imp_step(mp.n_site, mp.n_spin, gp.interaction_file_path, mp.mu, gp.hopping_file_path, cp);
+    }
     sr.Z_imp_correction               = std::exp(-(mp.ad_imp.get_gs_energy()) * cp.beta);
     mp.Delta_tau                      = read_hyb_function();
     std::tie(sp.grid_linear, sp.grid) = generate_inchworm_grid(0, cp.beta, sp.n_tau_linear, sp.order_Chebyshev);
@@ -153,7 +163,8 @@ void ModeBase::validate_input() {
   bool valid_unsumed_mode_propagator = (gp.unsummed_tci == 1 || gp.unsummed_tci == 2) && mode_name == "inchworm"
      || (gp.unsummed_tci == 0) && (mode_name == "bare" || mode_name == "debug");
   bool valid_unsumed_mode_gf = mode_name == "inchworm" || mode_name == "debug";
-  if (!(valid_unsumed_mode_propagator && gp.target == "propagator") && !(valid_unsumed_mode_gf && gp.target == "greens_function") && !(valid_unsumed_mode_gf && gp.target == "greens_function_restart") ) {
+  if (!(valid_unsumed_mode_propagator && gp.target == "propagator") && !(valid_unsumed_mode_gf && gp.target == "greens_function")
+      && !(valid_unsumed_mode_gf && gp.target == "greens_function_restart")) {
     std::cerr << "invalid unsummed_tci and mode_name combination" << std::endl;
     std::exit(EXIT_FAILURE);
   }
@@ -574,12 +585,13 @@ void ModeBase::evaluate(std::vector<std::vector<double>> const &unsummed_input, 
     if (init_integrand == 0 && gp.ergodicity != "random_auxi_adaptive") {
       // try all possible pivots for the first element
       for (int i = 0; i < input[0].size(); i++) {
-        init_pivot[0] = i;
-        init_input[0] = input[0][init_pivot[0]];
+        init_pivot[0]  = i;
+        init_input[0]  = input[0][init_pivot[0]];
         init_integrand = integrand(init_input);
-        if (init_integrand != 0) { 
+        if (init_integrand != 0) {
           std::cerr << "update init_pivot[0] to " << i << std::endl;
-          break; }
+          break;
+        }
       }
       if (init_integrand == 0) {
         // std::cerr << "Warning: initial integrand is zero !!" << std::endl;
@@ -819,9 +831,10 @@ void ModeBase::evaluate_greens_function_bold() {
         for (auto orb_d : range(mp.gf_block_shape[bl])) {
           for (auto orb_ddag : range(mp.gf_block_shape[bl])) {
             std::cout << "G[" << n << "][" << bl << "][" << orb_d << "][" << orb_ddag << "] = " << sr.G_tau[bl][n](orb_d, orb_ddag) << std::endl;
-            if(gp.model_type==0){
-            std::cout << "G_ref[" << n << "][" << bl << "][" << orb_d << "][" << orb_ddag << "] = " << sr.G_tau_ref[bl][n](orb_d, orb_ddag)
-                      << std::endl;}
+            if (gp.model_type == 0) {
+              std::cout << "G_ref[" << n << "][" << bl << "][" << orb_d << "][" << orb_ddag << "] = " << sr.G_tau_ref[bl][n](orb_d, orb_ddag)
+                        << std::endl;
+            }
           }
         }
       }
@@ -831,7 +844,6 @@ void ModeBase::evaluate_greens_function_bold() {
     h5::group group{file};
     h5_save_params(this, group, "params");
     h5_save_gf(this, group, "gf", sr.G_tau);
-    if(gp.model_type==0){
-    h5_save_gf(this, group, "gf_ref", sr.G_tau_ref);}
+    if (gp.model_type == 0) { h5_save_gf(this, group, "gf_ref", sr.G_tau_ref); }
   }
 }

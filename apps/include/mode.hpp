@@ -17,10 +17,13 @@
 #include <inchworm/impurity_product.hpp>
 #include <inchworm/util.hpp>
 #include <inchworm/interpolator.hpp>
-#include "hubbard.hpp"
+#include "model.hpp"
 #include "utility.hpp"
 
 struct global_params_t {
+  bool read_general_params = false;
+  std::string hopping_file_path{};
+  std::string interaction_file_path{};
   std::string hyb_file_path{};
   std::string propagator_file_path{};
   std::string target{};
