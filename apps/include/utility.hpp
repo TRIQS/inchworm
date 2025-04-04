@@ -1015,7 +1015,7 @@ do_TCI(int rank, const std::string &debug_info, std::function<T_output(std::vect
         bool all_zero = true;
         for (auto i = 0u; i < integral.size(); i++) {
           diff += std::abs(previous_integral[i] - integral[i]);
-          double TOL = 1e-16;
+          double TOL = 1e-14;
           if (abs(integral[i]) > TOL || abs(previous_integral[i]) > TOL) { all_zero = false; }
         }
         if (i > 2 && all_zero) { return integral; }

@@ -32,7 +32,7 @@ function save_to_hdf5(file_path, bl_structure, tau_grid, data, spin, orbital, of
 					if iorb_i == iorb_j
 						prefactor = 1.0
 					else
-						prefactor = -1 * off_diagonal_strength
+						prefactor = off_diagonal_strength
 					end
 					write(file, "data/$(ispin-1)_$(iorb_i-1)$(iorb_j-1)", prefactor * data)
 				end
@@ -60,7 +60,7 @@ function save_to_txt(txt_file_path, tau_grid, data, spin, orbital, off_diagonal_
 						if orbital_j == orbital_k
 							prefactor = 1.0
 						else
-							prefactor = -1 * off_diagonal_strength
+							prefactor = off_diagonal_strength
 						end
 					end
 					# Format the line with consistent spacing

@@ -277,10 +277,11 @@ hyb_tau_t ModeBase::read_hyb_function() {
       }
     }
     // check if the file is read completely
-    if (!file.eof()) {
-      throw std::runtime_error("Error[Params::readDeltaFile]: extra lines in file: " + gp.hyb_file_path);
-    }
-    // check if the file is read completely
+
+  file >> std::ws;  // Skip any remaining whitespace
+  if (file.peek() != EOF) {
+    throw std::runtime_error("Extra data in file after expected end");
+  }
     return Delta_tau;
   } else {
     throw std::runtime_error("Error: hyb_file_path should be either .h5 or .txt");

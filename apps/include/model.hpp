@@ -263,6 +263,10 @@ inline std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>> 
   size_t count;
   for (size_t i = 0; i < nNonzero; ++i) {
     file >> count >> flavorI >> flavorJ >> flavorK >> flavorL >> real >> imag;
+    std::cout << "read nonzero element [" << i << "]: count=" << count
+              << ", flavorI=" << flavorI << ", flavorJ=" << flavorJ
+              << ", flavorK=" << flavorK << ", flavorL=" << flavorL
+              << " -> (" << real << "," << imag << ")" << std::endl;
     u[flavorI][flavorJ][flavorK][flavorL] = {real, imag};
     if (count != i) { throw std::runtime_error("Error[read_interaction_file]: parsing interaction file: " + file_name); }
     // if end of file is reached before nNonzero lines are read, throw an error
@@ -333,7 +337,7 @@ inline atom_diag imp_step(int n_site, int n_spin, const std::string &interaction
               continue;
             }
           }
-          h_imp += interaction[i][j][k][l].real() / 2.0 * c_dag(spin_names[spin_i], site_i) * c_dag(spin_names[spin_j], site_j)
+          h_imp += interaction[i][j][k][l].real() * c_dag(spin_names[spin_i], site_i) * c_dag(spin_names[spin_j], site_j)
              * c(spin_names[spin_k], site_k) * c(spin_names[spin_l], site_l);
         }
       }

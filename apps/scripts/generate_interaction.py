@@ -31,7 +31,7 @@ def generate_coulomb_tensor_file(flavors, U, filename="coulomb_tensor.txt"):
                     # 2. i and l have the same spin.
                     # 3. j and k have the opposite spin of i and l.
                     if (i_orbital == j_orbital == k_orbital == l_orbital) and (i_spin == l_spin) and (j_spin == k_spin) and (i_spin != j_spin):
-                        non_zero_elements.append((i, j, k, l, U))
+                        non_zero_elements.append((i, j, k, l, U/2.0))
 
     # Write to file
     with open(filename, "w") as file:
