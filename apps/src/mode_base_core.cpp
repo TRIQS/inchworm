@@ -706,7 +706,7 @@ void ModeBase::evaluate_greens_function_bold() {
   // Calculate Tr U(beta)
   scalar_t Tr_Ubeta = 0.0;
   for (int bl = 0; bl < sr.u_tau.size(); bl++) Tr_Ubeta += trace(sr.u_tau[bl][sp.n_tot - 1]);
-  std::cout << "Z = Tr[U(beta)]: " << Tr_Ubeta << std::endl;
+  if(rank == 0) {std::cout << "Tr[U(beta)] = " << Tr_Ubeta << std::endl;}
 
   sr.G_tau     = g_tau_t{{cp.beta, Fermion, cp.n_tau_green}, cp.gf_struct};
   int tot_dims = 0;
@@ -736,7 +736,8 @@ void ModeBase::evaluate_greens_function_bold() {
   if (gp.unsummed_tci == 0) {
     sp.tau_max = cp.beta;
     for (size_t n = 1; n < cp.n_tau_green - 1; n++) {
-      std::cout << "evaluating tau[" << n << "] = " << sr.G_tau[0].mesh()[n] << std::endl;
+      if(rank==0){
+      std::cout << "evaluating tau[" << n << "] = " << sr.G_tau[0].mesh()[n] << std::endl;}
       sp.tau_split = sr.G_tau[0].mesh()[n];
       // the most naive way is to loop over the spin-oribital index for d and ddag separately, However, since the Green's function is saved in block format, we only allow spin-orbital indices within the same block.
       for (int bl = 0; bl < mp.gf_block_shape.size(); bl++) {

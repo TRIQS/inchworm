@@ -101,6 +101,10 @@ void ModeBase::read_json_parameters(const std::string &json_file_path) {
     mp.epsilon[i] = ep.second.get_value<double>();
     i++;
   }
+  // ensure that the size of epsilon matches n_bath
+  if (size != mp.n_bath) {
+    throw std::runtime_error("Error: the size of mp.epsilon does not match mp.n_bath");
+  }
   int sizex = root.get_child("mp.theta").size();
   int sizey = root.get_child("mp.theta").begin()->second.size();
   mp.theta.resize(sizex, sizey);
@@ -113,6 +117,11 @@ void ModeBase::read_json_parameters(const std::string &json_file_path) {
     }
     i++;
   }
+  // ensure that the size of theta matches n_site x n_bath
+  if (sizex != mp.n_site || sizey != mp.n_bath) {
+    throw std::runtime_error("Error: the size of mp.theta does not match mp.n_site x mp.n_bath");
+  }
+
   try {
     mp.rescale = root.get<double>("mp.rescale");
   } catch (const std::exception &e) { mp.rescale = 1.0; }

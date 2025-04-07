@@ -67,7 +67,6 @@ inline std::tuple<double, double, double, hyb_tau_t, atom_diag, u_tau_t, g_tau_t
 discrete_Hubbard_setup(int n_site, int n_bath, int n_spin, double U, double mu, double t, constr_params_t const &cp, mat_t const &theta,
                        vec_t const &eps, long n_tot, long n_tau_linear, int order_Chebyshev, std::vector<double> &grid_linear,
                        std::vector<double> &grid) {
-  std::cout << "Discrete Hubbard model setup" << std::endl;
 
   // === Define fundamental operator sets
 
@@ -184,7 +183,6 @@ discrete_Hubbard_setup(int n_site, int n_bath, int n_spin, double U, double mu, 
 }
 
 inline atom_diag imp_Hubbard_setup(int n_site, int n_spin, double U, double mu, double t, constr_params_t const &cp) {
-  std::cout << "imp_Hubbard_setup..." << std::endl;
 
   // === Define fundamental operator sets
 
@@ -263,10 +261,6 @@ inline std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>> 
   size_t count;
   for (size_t i = 0; i < nNonzero; ++i) {
     file >> count >> flavorI >> flavorJ >> flavorK >> flavorL >> real >> imag;
-    std::cout << "read nonzero element [" << i << "]: count=" << count
-              << ", flavorI=" << flavorI << ", flavorJ=" << flavorJ
-              << ", flavorK=" << flavorK << ", flavorL=" << flavorL
-              << " -> (" << real << "," << imag << ")" << std::endl;
     u[flavorI][flavorJ][flavorK][flavorL] = {real, imag};
     if (count != i) { throw std::runtime_error("Error[read_interaction_file]: parsing interaction file: " + file_name); }
     // if end of file is reached before nNonzero lines are read, throw an error
@@ -356,7 +350,6 @@ inline std::tuple<double, double, double, hyb_tau_t, atom_diag, u_tau_t, g_tau_t
 discrete_setup(int n_site, int n_bath, int n_spin, const std::string &interaction_file, double mu, const std::string &hopping_file, constr_params_t const &cp, mat_t const &theta,
                        vec_t const &eps, long n_tot, long n_tau_linear, int order_Chebyshev, std::vector<double> &grid_linear,
                        std::vector<double> &grid) {
-  std::cout << "discrete_setup..." << std::endl;
   // === Define fundamental operator sets
 
   // Full system
@@ -379,7 +372,6 @@ discrete_setup(int n_site, int n_bath, int n_spin, const std::string &interactio
     h_imp -= mu * n("up", j);
     if (n_spin == 2) { h_imp -= mu * n("dn", j); }
   }
-
   size_t n_site_spin = n_site * n_spin;
   // hopping part
   std::string spin_names[2] = {"up", "dn"};
@@ -421,7 +413,7 @@ discrete_setup(int n_site, int n_bath, int n_spin, const std::string &interactio
               continue;
             }
           }
-          h_imp += interaction[i][j][k][l].real() / 2.0 * c_dag(spin_names[spin_i], site_i) * c_dag(spin_names[spin_j], site_j)
+          h_imp += interaction[i][j][k][l].real() * c_dag(spin_names[spin_i], site_i) * c_dag(spin_names[spin_j], site_j)
              * c(spin_names[spin_k], site_k) * c(spin_names[spin_l], site_l);
         }
       }
@@ -469,6 +461,12 @@ discrete_setup(int n_site, int n_bath, int n_spin, const std::string &interactio
       }
     }
   }
+
+  std::cout << "Delta_tau[0][0](0,0)" << Delta_tau[0][0](0, 0) << std::endl;
+  std::cout << "Delta_tau[0][0](1,0)" << Delta_tau[0][0](1, 0) << std::endl;
+  std::cout << "Delta_tau[0][-1](0,0)" << Delta_tau[0][Delta_tau[0].mesh().size() - 1](0, 0) << std::endl;
+  std::cout << "Delta_tau[0][-1](1,0)" << Delta_tau[0][Delta_tau[0].mesh().size() - 1](1, 0) << std::endl;
+
 
   auto Z_bath              = partition_function(ad_bath, cp.beta);
   double Z_bath_correction = std::exp(-(ad_bath.get_gs_energy()) * cp.beta);
