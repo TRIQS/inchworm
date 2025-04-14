@@ -73,6 +73,10 @@ void ModeBase::read_json_parameters(const std::string &json_file_path) {
   try {
     gp.do_enum = root.get<bool>("gp.do_enum");
   } catch (const std::exception &e) { gp.do_enum = false; }
+  try{
+    gp.use_green_grid = root.get<bool>("gp.use_green_grid");
+  }
+  catch (const std::exception &e) { gp.use_green_grid = false; }
 
   // Read construction parameters
   //// required parameters
@@ -84,6 +88,24 @@ void ModeBase::read_json_parameters(const std::string &json_file_path) {
     std::string name = g_s.first;
     int size         = g_s.second.get_value<int>();
     cp.gf_struct.emplace_back(std::make_pair(name, size));
+  }
+
+  if(gp.use_green_grid){
+    try{
+      size_t size = root.get_child("gp.green_grid").size();
+      gp.green_grid.resize(size);
+      int i = 0;
+      for (pt::ptree::value_type &g : root.get_child("gp.green_grid")) {
+        gp.green_grid[i] = g.second.get_value<double>();
+        i++;
+      }
+      if(gp.green_grid.size() != cp.n_tau_green){
+        throw std::runtime_error("Error: gp.green_grid size does not match cp.n_tau_green");
+      }
+    }
+    catch (const std::exception &e) {
+      throw std::runtime_error("Error: gp.green_grid is not provided");
+    }
   }
 
   // Read model parameters

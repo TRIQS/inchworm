@@ -83,10 +83,8 @@ inline void h5_save_cheb_coeff_ref(const ModeBase *mode, h5::group h5group, std:
   }
 }
 
-inline void h5_save_gf(const ModeBase *mode, h5::group h5group, std::string subgroup_name, g_tau_t const &G_tau) {
+inline void h5_save_gf(const ModeBase *mode, h5::group h5group, std::string subgroup_name, g_tau_t const &G_tau, std::vector<double> const &tau_grid) {
   auto grp = h5group.create_group(subgroup_name);
-  std::vector<double> tau_grid{};
-  for (auto tau : G_tau[0].mesh()) { tau_grid.push_back(tau); }
   h5_write(grp, "tau_grid", tau_grid);
   for (int bl = 0; bl < mode->mp.gf_block_shape.size(); bl++) {
     for (auto i : range(mode->mp.gf_block_shape[bl])) {

@@ -29,6 +29,7 @@ int main(int argc, char *argv[]) {
     std::cout << std::setprecision(16);
     std::cerr << std::setprecision(16);
     mode->init(json_file_path);
+    time_start = MPI_Wtime();
     mode->run();
     if (mode->rank == 0) { mode->print_summary(); }
   } else {

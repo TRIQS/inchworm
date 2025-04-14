@@ -45,6 +45,8 @@ struct global_params_t {
   bool do_global_pivot         = false;
   int map_type = 0;
   bool do_enum = false;
+  bool use_green_grid = false;
+  std::vector<double> green_grid{};
 };
 
 struct model_params_t {
@@ -218,7 +220,7 @@ class ModeBase {
   friend void h5_save_cheb_coeff(const ModeBase *mode, h5::group h5group, std::string subgroup_name);
   friend void h5_save_propagator_ref(const ModeBase *mode, h5::group h5group, std::string subgroup_name);
   friend void h5_save_cheb_coeff_ref(const ModeBase *mode, h5::group h5group, std::string subgroup_name);
-  friend void h5_save_gf(const ModeBase *mode, h5::group h5group, std::string subgroup_name, g_tau_t const &G_tau);
+  friend void h5_save_gf(const ModeBase *mode, h5::group h5group, std::string subgroup_name, g_tau_t const &G_tau, std::vector<double> const &tau_grid);
   friend void h5_save_statistics(const ModeBase *mode, h5::group h5group, std::string subgroup_name);
 
   protected:

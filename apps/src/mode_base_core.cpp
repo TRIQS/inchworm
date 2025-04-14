@@ -696,6 +696,17 @@ std::tuple<u_tau_t, double> ModeBase::regularize_propagator(const u_tau_t &u, co
 
 void ModeBase::evaluate_greens_function_bold() {
   gp.unsummed_tci = gp.unsummed_tci_green_function; // Fixme later, not elegant
+  sr.G_tau     = g_tau_t{{cp.beta, Fermion, cp.n_tau_green}, cp.gf_struct};
+  std::vector<double> green_grid{};
+  if(gp.use_green_grid){
+    green_grid = gp.green_grid;
+  }
+  else{
+    for(int i = 0; i < cp.n_tau_green; i++){
+      green_grid.push_back(sr.G_tau[0].mesh()[i]);
+    }
+  }
+
   if (gp.do_regularization) {
     double exponent              = 0.0;
     std::tie(sr.u_tau, exponent) = regularize_propagator(sr.u_tau, mp, sp, sp.grid.size() - 1, gp.amplification_u);
@@ -708,20 +719,19 @@ void ModeBase::evaluate_greens_function_bold() {
   for (int bl = 0; bl < sr.u_tau.size(); bl++) Tr_Ubeta += trace(sr.u_tau[bl][sp.n_tot - 1]);
   if(rank == 0) {std::cout << "Tr[U(beta)] = " << Tr_Ubeta << std::endl;}
 
-  sr.G_tau     = g_tau_t{{cp.beta, Fermion, cp.n_tau_green}, cp.gf_struct};
   int tot_dims = 0;
   for (auto subspace_dim : mp.gf_block_shape) { tot_dims += subspace_dim * subspace_dim; }
   // treat the first and last point separately
-  EXPECTS(sr.G_tau[0].mesh()[0] == 0.0);
+  EXPECTS(green_grid[0] == 0.0);
   frame_t g_frame_0 = make_bare_g_frame(mp.ad_imp, sr.u_tau, cp.gf_struct, 0.0, cp.beta) / Tr_Ubeta;
   set_frame(g_frame_0, sr.G_tau, 0);
-  EXPECTS(sr.G_tau[0].mesh()[cp.n_tau_green - 1] == cp.beta);
+  EXPECTS(green_grid[cp.n_tau_green - 1] == cp.beta);
   frame_t g_frame_beta = make_bare_g_frame(mp.ad_imp, sr.u_tau, cp.gf_struct, cp.beta, cp.beta) / Tr_Ubeta;
   set_frame(g_frame_beta, sr.G_tau, cp.n_tau_green - 1);
 
   //set zero-th order
   for (size_t n = 1; n < cp.n_tau_green - 1; n++) {
-    sp.tau_split            = sr.G_tau[0].mesh()[n];
+    sp.tau_split            = green_grid[n];
     auto frame_zeroth_order = make_bare_g_frame(mp.ad_imp, sr.u_tau, cp.gf_struct, sp.tau_split, cp.beta);
     for (int bl = 0; bl < mp.gf_block_shape.size(); bl++) {
       for (auto orb_d : range(mp.gf_block_shape[bl])) {
@@ -737,12 +747,15 @@ void ModeBase::evaluate_greens_function_bold() {
     sp.tau_max = cp.beta;
     for (size_t n = 1; n < cp.n_tau_green - 1; n++) {
       if(rank==0){
-      std::cout << "evaluating tau[" << n << "] = " << sr.G_tau[0].mesh()[n] << std::endl;}
-      sp.tau_split = sr.G_tau[0].mesh()[n];
+      std::cout << "evaluating tau[" << n << "] = " << green_grid[n] << std::endl;}
+      sp.tau_split = green_grid[n];
       // the most naive way is to loop over the spin-oribital index for d and ddag separately, However, since the Green's function is saved in block format, we only allow spin-orbital indices within the same block.
-      for (int bl = 0; bl < mp.gf_block_shape.size(); bl++) {
-        for (auto orb_d : range(mp.gf_block_shape[bl])) {
-          for (auto orb_ddag : range(mp.gf_block_shape[bl])) {
+      // for (int bl = 0; bl < mp.gf_block_shape.size(); bl++) {
+      //   for (auto orb_d : range(mp.gf_block_shape[bl])) {
+      //     for (auto orb_ddag : range(mp.gf_block_shape[bl])) {
+      for (int bl = 0; bl < 1; bl++) {
+        for(int orb_d = 0; orb_d < 1; orb_d++){
+          for (int orb_ddag = 0; orb_ddag < mp.gf_block_shape[bl]; orb_ddag++) {
             int orb_d_index    = bl2_to_bl1_gf(bl, orb_d, mp.gf_block_shape);
             int orb_ddag_index = bl2_to_bl1_gf(bl, orb_ddag, mp.gf_block_shape);
             sp.gf_index.clear();
@@ -762,11 +775,11 @@ void ModeBase::evaluate_greens_function_bold() {
     // include the time index into the tci
     std::vector<std::vector<double>> unsummed_input;
     std::vector<double> tau_list;
-    for (size_t n = 1; n < cp.n_tau_green - 1; n++) { tau_list.push_back(sr.G_tau[0].mesh()[n]); }
+    for (size_t n = 1; n < cp.n_tau_green - 1; n++) { tau_list.push_back(green_grid[n]); }
     unsummed_input.push_back(tau_list);
     size_t dims_tau = tau_list.size();
     sp.tau_max      = cp.beta;
-    sp.tau_split    = sr.G_tau[0].mesh()[1];
+    sp.tau_split    = green_grid[1];
     for (int bl = 0; bl < mp.gf_block_shape.size(); bl++) {
       for (auto orb_d : range(mp.gf_block_shape[bl])) {
         for (auto orb_ddag : range(mp.gf_block_shape[bl])) {
@@ -801,7 +814,7 @@ void ModeBase::evaluate_greens_function_bold() {
     std::iota(input.begin(), input.end(), 0);
     unsummed_input.push_back(input);
     std::vector<double> tau_list;
-    for (size_t n = 1; n < cp.n_tau_green - 1; n++) { tau_list.push_back(sr.G_tau[0].mesh()[n]); }
+    for (size_t n = 1; n < cp.n_tau_green - 1; n++) { tau_list.push_back(green_grid[n]); }
     size_t dims_tau = tau_list.size();
     unsummed_input.push_back(tau_list);
     size_t dims_tot = dims_orb * dims_tau;
@@ -844,7 +857,7 @@ void ModeBase::evaluate_greens_function_bold() {
     h5::file file{file_name, 'a'};
     h5::group group{file};
     h5_save_params(this, group, "params");
-    h5_save_gf(this, group, "gf", sr.G_tau);
-    if (gp.model_type == 0) { h5_save_gf(this, group, "gf_ref", sr.G_tau_ref); }
+    h5_save_gf(this, group, "gf", sr.G_tau, green_grid);
+    if (gp.model_type == 0) { h5_save_gf(this, group, "gf_ref", sr.G_tau_ref, green_grid); }
   }
 }

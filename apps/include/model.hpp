@@ -462,11 +462,6 @@ discrete_setup(int n_site, int n_bath, int n_spin, const std::string &interactio
     }
   }
 
-  std::cout << "Delta_tau[0][0](0,0)" << Delta_tau[0][0](0, 0) << std::endl;
-  std::cout << "Delta_tau[0][0](1,0)" << Delta_tau[0][0](1, 0) << std::endl;
-  std::cout << "Delta_tau[0][-1](0,0)" << Delta_tau[0][Delta_tau[0].mesh().size() - 1](0, 0) << std::endl;
-  std::cout << "Delta_tau[0][-1](1,0)" << Delta_tau[0][Delta_tau[0].mesh().size() - 1](1, 0) << std::endl;
-
 
   auto Z_bath              = partition_function(ad_bath, cp.beta);
   double Z_bath_correction = std::exp(-(ad_bath.get_gs_energy()) * cp.beta);
