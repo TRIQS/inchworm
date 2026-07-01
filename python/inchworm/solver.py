@@ -22,8 +22,8 @@
 from .solver_core import SolverCore
 from .version import is_delta_complex
 
-from triqs.gf import *
-from triqs.gf.tools import discretize_bath
+from triqs.gfs import *
+from triqs.gfs.tools import discretize_bath
 from triqs.utility import mpi
 from triqs.operators import *
 

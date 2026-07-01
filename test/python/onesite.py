@@ -27,7 +27,7 @@ from itertools import product
 
 from inchworm import Solver
 
-from triqs.gf import *
+from triqs.gfs import *
 from h5 import *
 from triqs.operators import *
 from triqs.utility.h5diff import h5diff
