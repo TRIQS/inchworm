@@ -83,4 +83,7 @@ class test_hubbard(unittest.TestCase):
     h5diff("onesite.out.h5", "onesite.ref.h5")
 
 if __name__ == '__main__':
-    unittest.main()
+    # exit=False: the h5diff comparison in the class body is the actual gate
+    # (it raises on mismatch); unittest.main would otherwise exit 5 on Python
+    # 3.12 as the class defines no test_* methods.
+    unittest.main(exit=False)
