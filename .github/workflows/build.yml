@@ -6,6 +6,17 @@ on:
   pull_request:
     branches: [ disable ]
 
+env:
+  CMAKE_C_COMPILER_LAUNCHER: ccache
+  CMAKE_CXX_COMPILER_LAUNCHER: ccache
+  CCACHE_COMPILERCHECK: content
+  CCACHE_BASEDIR: ${{ github.workspace }}
+  CCACHE_DIR: ${{ github.workspace }}/.ccache
+  CCACHE_MAXSIZE: 500M
+  CCACHE_SLOPPINESS: pch_defines,time_macros,include_file_mtime,include_file_ctime
+  CCACHE_COMPRESS: "1"
+  CCACHE_COMPRESSLEVEL: "1"
+
 jobs:
   build:
 
@@ -13,50 +24,52 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - {os: ubuntu-20.04, cc: gcc-10, cxx: g++-10}
-          - {os: ubuntu-20.04, cc: clang-12, cxx: clang++-12}
-          - {os: macos-11, cc: gcc-11, cxx: g++-11}
-          - {os: macos-11, cc: /usr/local/opt/llvm/bin/clang, cxx: /usr/local/opt/llvm/bin/clang++}
+          - { os: ubuntu-24.04, cxx: clang++-20, clang_cxx: clang++-20 }
+          - { os: ubuntu-24.04, cxx: g++-14, clang_cxx: clang++-20 }
+          - { os: macos-15, cxx: clang++, clang_cxx: clang++ }
+          - { os: macos-15, cxx: g++, clang_cxx: clang++ }
 
     runs-on: ${{ matrix.os }}
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
     - uses: actions/cache/restore@v4
       with:
         path: ${{ env.CCACHE_DIR }}
-        key: ccache-${{ matrix.os }}-${{ matrix.cc }}-${{ github.run_id }}
-        restore-keys:
-          ccache-${{ matrix.os }}-${{ matrix.cc }}-
+        key: ccache-${{ matrix.os }}-${{ matrix.cxx }}-${{ github.run_id }}-${{ github.run_attempt }}
+        restore-keys: |
+          ccache-${{ matrix.os }}-${{ matrix.cxx }}-
 
-    - name: Install ubuntu dependencies
-      if: matrix.os == 'ubuntu-20.04'
+    - name: Set up Linux environment
+      if: ${{ contains(matrix.os, 'ubuntu') }}
       run: >
         sudo apt-get update &&
         sudo apt-get install lsb-release wget software-properties-common &&
-        wget -O /tmp/llvm.sh https://apt.llvm.org/llvm.sh && sudo chmod +x /tmp/llvm.sh && sudo /tmp/llvm.sh 12 &&
         sudo apt-get install
-        clang-12
-        g++-10
+        ccache
+        cmake
+        ninja-build
+        clang-20
+        clang-tools-20
+        g++
         gfortran
         hdf5-tools
-        libblas-dev
         libboost-dev
-        libclang-12-dev
-        libc++-12-dev
-        libc++abi-12-dev
-        libomp-12-dev
+        llvm-20-dev
+        libclang-20-dev
+        libomp-20-dev
+        libc++-20-dev
+        libc++abi-20-dev
         libfftw3-dev
         libgfortran5
         libgmp-dev
         libhdf5-dev
-        liblapack-dev
+        libopenblas-dev
         libopenmpi-dev
         openmpi-bin
         openmpi-common
         openmpi-doc
-        python3-clang-12
         python3-dev
         python3-mako
         python3-matplotlib
@@ -64,41 +77,69 @@ jobs:
         python3-numpy
         python3-pip
         python3-scipy
-        python3-sphinx
-        python3-nbsphinx
+        python3-ipython &&
+        echo "CXX=${{ matrix.cxx }}" >> $GITHUB_ENV
 
-    - name: Install homebrew dependencies
-      if: matrix.os == 'macos-11'
+    - name: Set up Python venv
       run: |
-        brew install gcc@11 llvm boost fftw hdf5 open-mpi openblas
-        pip3 install mako numpy scipy mpi4py
-        pip3 install -r requirements.txt
+        # --system-site-packages exposes apt- (Linux) / brew- (macOS) installed mpi4py/numpy/scipy
+        python3 -m venv --system-site-packages $HOME/.venv/my_python
+        echo "VIRTUAL_ENV=$HOME/.venv/my_python" >> $GITHUB_ENV
+        echo "$HOME/.venv/my_python/bin"         >> $GITHUB_PATH
 
-    - name: Add clang LDFLAGS for macos to link against brew's libc++
-      if: ${{ contains(matrix.os, 'macos') && contains(matrix.cxx, 'clang') }}
+    - name: Set up macOS environment
+      if: ${{ contains(matrix.os, 'macos') }}
       run: |
-        echo 'LDFLAGS="-L$(brew --prefix llvm)/lib/c++ -L$(brew --prefix llvm)/lib -lunwind"' >> $GITHUB_ENV
+        brew update
+        brew install ccache gcc llvm libomp boost fftw hdf5 open-mpi openblas
+        # Set CXX from the matrix; for gcc, resolve unversioned 'g++' to whatever g++-NN Homebrew installed
+        CXX=${{ matrix.cxx }}
+        if [[ $CXX == g++ ]]; then
+          CXX=$(basename "$(ls $(brew --prefix)/bin/g++-* | sort -V | tail -1)")
+        fi
+        echo "CXX=$CXX" >> $GITHUB_ENV
+        pip install mako numpy scipy mpi4py
+        pip install -r requirements.txt
+        echo "PATH=$(brew --prefix llvm)/bin:$(brew --prefix gcc)/bin:$PATH" >> $GITHUB_ENV
+        echo "PYTHONPATH=$(brew --prefix llvm)/lib/python3.13/site-packages" >> $GITHUB_ENV
+        echo "SDKROOT=$(xcrun --show-sdk-path)" >> $GITHUB_ENV
+        echo "CPPFLAGS=-I$(brew --prefix libomp)/include $CPPFLAGS" >> $GITHUB_ENV
+        echo "LDFLAGS=-L$(brew --prefix libomp)/lib -L$(brew --prefix llvm)/lib/c++ -L$(brew --prefix llvm)/lib/unwind -lunwind" >> $GITHUB_ENV
+
+    - name: Add clang CXXFLAGS
+      if: ${{ contains(matrix.cxx, 'clang') }}
+      run: |
+        echo "CXXFLAGS=-stdlib=libc++" >> $GITHUB_ENV
+
+    - name: Build & Install clair
+      env:
+        CXX: ${{ matrix.clang_cxx }}
+        CXXFLAGS: ""
+      run: |
+        git clone https://github.com/flatironinstitute/clair --branch unstable
+        cmake -S clair -B clair/build -G Ninja \
+          -DPython_EXECUTABLE=$VIRTUAL_ENV/bin/python \
+          -DBuild_Tests=OFF \
+          -DCMAKE_INSTALL_PREFIX=$HOME/install
+        cmake --build clair/build --target install --verbose
 
     - name: Build & Install TRIQS
       env:
-        CC: ${{ matrix.cc }}
-        CXX: ${{ matrix.cxx }}
         TRIQS_BRANCH: ${{ github.event_name == 'pull_request' && github.base_ref || github.ref_name }}
       run: |
-        git clone https://github.com/TRIQS/triqs --branch ${{ github.ref_name }}
-        mkdir triqs/build && cd triqs/build
-        cmake .. -DBuild_Tests=OFF -DCMAKE_INSTALL_PREFIX=$HOME/install
-        make -j1 install VERBOSE=1
-        cd ../
+        git ls-remote --exit-code --heads https://github.com/TRIQS/triqs "$TRIQS_BRANCH" > /dev/null 2>&1 || TRIQS_BRANCH=unstable
+        git clone https://github.com/TRIQS/triqs --branch "$TRIQS_BRANCH"
+        cmake -S triqs -B triqs/build -G Ninja \
+          -DPython_EXECUTABLE=$VIRTUAL_ENV/bin/python \
+          -DBuild_Tests=OFF \
+          -DCMAKE_INSTALL_PREFIX=$HOME/install
+        cmake --build triqs/build --target install --verbose
 
     - name: Build inchworm
-      env:
-        CC: ${{ matrix.cc }}
-        CXX: ${{ matrix.cxx }}
       run: |
         source $HOME/install/share/triqs/triqsvars.sh
-        mkdir build && cd build && cmake ..
-        make -j2 || make -j1 VERBOSE=1
+        cmake -S . -B build -G Ninja
+        cmake --build build --verbose
 
     - name: Test inchworm
       env:
@@ -116,4 +157,4 @@ jobs:
       if: always()
       with:
         path: ${{ env.CCACHE_DIR }}
-        key: ccache-${{ matrix.os }}-${{ matrix.cc }}-${{ github.run_id }}
+        key: ccache-${{ matrix.os }}-${{ matrix.cxx }}-${{ github.run_id }}-${{ github.run_attempt }}

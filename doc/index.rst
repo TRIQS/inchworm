@@ -14,7 +14,7 @@ inchworm
          :target: https://github.com/triqs/inchworm
 
 
-An example application using cpp2py and :ref:`TRIQS <triqslibs:welcome>`.
+An example application using c2py + clair and :ref:`TRIQS <triqslibs:welcome>`.
 
 This documentation is generated based on `rst <https://de.wikipedia.org/wiki/ReStructuredText>`_ files
 and the comments in the sources and headers.
@@ -29,5 +29,5 @@ Learn how to use inchworm in the :ref:`documentation`.
    install
    documentation
    issues
-   ChangeLog.md
+   ChangeLog
    about

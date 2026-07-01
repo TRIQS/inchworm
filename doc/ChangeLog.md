@@ -1,5 +1,3 @@
-(changelog)=
-
 # Changelog
 
 ## Version ...
