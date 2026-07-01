@@ -5,6 +5,8 @@
 #include "types.hpp"
 #include "interpolator.hpp"
 
+#include <triqs/utility/macros.hpp>
+
 namespace inchworm {
 
   /// The Solver class
@@ -38,7 +40,7 @@ namespace inchworm {
     u_tau_t u_tau;
 
     /// The interpolator on the propagator
-    interpolator_t<scalar_t> u_interpolator;
+    C2PY_IGNORE interpolator_t<scalar_t> u_interpolator;
 
     /// The zeroth order frame of the last sampling method
     frame_t frame_zeroth_order;
@@ -70,9 +72,8 @@ namespace inchworm {
     /**
      * Construct a INCHWORM solver
      *
-     * @param construct_parameters Set of parameters specific to the INCHWORM solver
+     * @param constr_params_ Set of parameters specific to the INCHWORM solver
      */
-    CPP2PY_ARG_AS_DICT
     solver_core(constr_params_t const &constr_params_);
 
     // Delete assignement operator because of const members
@@ -84,9 +85,8 @@ namespace inchworm {
     /**
      * Solve method that performs INCHWORM calculation
      *
-     * @param solve_params_t Set of parameters specific to the INCHWORM run
+     * @param solve_params Set of parameters specific to the INCHWORM run
      */
-    CPP2PY_ARG_AS_DICT
     void solve(solve_params_t const &solve_params);
 
     // solve cthyb (no split point + bare propagator):
@@ -99,7 +99,6 @@ namespace inchworm {
     void solve_inchworm(solve_params_t const &solve_params, bool use_cthyb = false);
 
     // Sample the Green function S.G_tau
-    CPP2PY_ARG_AS_DICT
     void solve_green(solve_params_t const &solve_params);
 
     private:
@@ -122,7 +121,7 @@ namespace inchworm {
     friend void h5_write(h5::group h5group, std::string subgroup_name, solver_core const &s);
 
     // Function that constructs a solver object from an hdf5 file
-    CPP2PY_IGNORE
+    C2PY_IGNORE
     static solver_core h5_read_construct(h5::group h5group, std::string subgroup_name);
   };
 

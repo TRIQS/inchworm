@@ -1,0 +1,4 @@
+package_name = "inchworm"
+documentation = "The inchworm solve_core module"
+namespaces = "inchworm"
+match_names = "inchworm::(solver_core|qmc_results_t|constr_params_t|solve_params_t|fop_t)"

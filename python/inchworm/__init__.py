@@ -27,6 +27,9 @@ r"""
 DOC
 
 """
+# Register converters for foreign wrapped types returned by the C++ layer
+import triqs.atom_diag
+
 from .solver import Solver
 from .solver_core import SolverCore
 

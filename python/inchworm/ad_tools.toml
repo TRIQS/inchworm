@@ -1,0 +1,4 @@
+package_name = "inchworm"
+documentation = "Inchworm atom_diag tools"
+namespaces = "inchworm"
+match_names = "inchworm::(create_effective_hyb|get_op_block_matrix|make_g_frame_from_l_and_r|make_bare_u_frame|make_bare_g_frame|partial_trace_bath|make_ED_propagator)"

@@ -19,7 +19,7 @@
 # inchworm. If not, see <http://www.gnu.org/licenses/>.
 #
 ##############################################################################
-from .solver_core import SolverCore
+from .solver_core import SolverCore, ConstrParamsT, SolveParamsT
 from .version import is_delta_complex
 
 from triqs.gfs import *
@@ -56,7 +56,7 @@ class Solver(SolverCore):
                Number of imaginary time points used for the Green's functions.
         """
         # Initialise the core solver
-        SolverCore.__init__(self, beta=beta, gf_struct=gf_struct, **kwargs)
+        SolverCore.__init__(self, ConstrParamsT(beta=beta, gf_struct=gf_struct, **kwargs))
 
     def fit_bath(self, n_bath_sites_ED):
         if n_bath_sites_ED == 0:
@@ -95,16 +95,16 @@ class Solver(SolverCore):
         self.fit_bath(kwargs.get("n_bath_sites_ED",0))
 
         # Call the core solver's solve routine
-        return SolverCore.solve(self, **kwargs)
+        return SolverCore.solve(self, SolveParamsT(**kwargs))
 
     def solve_self_consistently(self, solve_params, *args):
         self.fit_bath(solve_params.get("n_bath_sites_ED",0))
-        return SolverCore.solve_self_consistently(self, solve_params, *args)
+        return SolverCore.solve_self_consistently(self, SolveParamsT(**solve_params), *args)
 
     def solve_inchworm(self, solve_params, *args):
         self.fit_bath(solve_params.get("n_bath_sites_ED",0))
-        return SolverCore.solve_inchworm(self, solve_params, *args)
+        return SolverCore.solve_inchworm(self, SolveParamsT(**solve_params), *args)
 
     def solve_green(self, **kwargs):
         self.fit_bath(kwargs.get("n_bath_sites_ED",0))
-        return SolverCore.solve_green(self, **kwargs)
+        return SolverCore.solve_green(self, SolveParamsT(**kwargs))
