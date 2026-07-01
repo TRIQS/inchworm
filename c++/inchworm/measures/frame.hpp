@@ -35,10 +35,10 @@ namespace inchworm::measures {
     std::vector<scalar_t> &errs_frame;
 
     // The scalar accumulator for the auto-correlation analysis
-    accumulator<scalar_t> log_acc = {0.0, -1, 0};
+    log_binning<scalar_t> log_acc = {0.0, -1};
 
     // The scalar accumulator for the error analysis
-    std::vector<accumulator<scalar_t>> lin_acc;
+    std::vector<lin_binning<scalar_t>> lin_acc;
 
     // The number of samples
     long long N_samples = 0;

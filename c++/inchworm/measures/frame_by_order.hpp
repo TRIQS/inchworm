@@ -34,8 +34,8 @@ namespace inchworm::measures {
     frame_t zero_frame;
 
     // The vector of accumulators for the error analysis
-    std::vector<accumulator<scalar_t>> lin_acc_by_order;
-    accumulator<scalar_t> empty_lin_acc = {0.0, 0, 1000};
+    std::vector<lin_binning<scalar_t>> lin_acc_by_order;
+    lin_binning<scalar_t> empty_lin_acc = {0.0, 1000, 1};
   };
 
 } // namespace inchworm::measures

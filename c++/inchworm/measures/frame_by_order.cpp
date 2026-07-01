@@ -42,7 +42,7 @@ namespace inchworm::measures {
     // Estimate the errors of all the frame[k][0](0,0) components
     err_frame_by_order.clear();
     for (auto &lin_acc : lin_acc_by_order) {
-      err_frame_by_order.push_back(std::get<1>(mean_and_err_mpi(comm, lin_acc.linear_bins())));
+      err_frame_by_order.push_back(std::get<1>(mean_and_err_mpi(comm, lin_acc.bins())));
       lin_acc = empty_lin_acc;
     }
   }

@@ -77,7 +77,7 @@ namespace inchworm::diagram {
       for (int j = 0; j < N; j++) { m(i, j) = mat(list_of_d[i], list_of_d_dag[j]); }
     }
 
-    return determinant_in_place(m);
+    return nda::linalg::det_in_place(m);
   }
 
 } // namespace inchworm::diagram

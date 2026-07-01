@@ -77,7 +77,7 @@ namespace inchworm::diagram {
     }
   }
 
-  hyb_scalar_t hyb_matrix_t::det() const { return determinant(mat); }
+  hyb_scalar_t hyb_matrix_t::det() const { return nda::linalg::det(mat); }
 
   void hyb_matrix_t::print() const {
     std::printf("\nhybridization mat: \n");

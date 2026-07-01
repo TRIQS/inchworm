@@ -329,10 +329,10 @@ namespace inchworm {
 
     // Initialize the accumulators for the tau difference statistics
     long n_bl = params.gf_struct.size();
-    std::vector<nda::array<accumulator<double>, 3>> tau_diff_stat(n_bl);
+    std::vector<nda::array<lin_binning<double>, 3>> tau_diff_stat(n_bl);
     for (auto bl : range(n_bl)) {
-      tau_diff_stat[bl] = nda::array<accumulator<double>, 3>{params.gf_struct[bl].second, 2, 2};
-      tau_diff_stat[bl] = accumulator<double>{0.0, 0, -1}; // Lin-binning only
+      tau_diff_stat[bl] = nda::array<lin_binning<double>, 3>{params.gf_struct[bl].second, 2, 2};
+      tau_diff_stat[bl] = lin_binning<double>{0.0, -1, 1}; // Lin-binning only
     }
 
     // FIXME Reset operator widths manually
@@ -387,26 +387,26 @@ namespace inchworm {
       long below_threshold_count = 0;
       for (auto bl : range(n_bl)) {
         for (auto &op : all_d_ops[bl]) { // FIXME join(all_d_ops[bl], all_d_dag_ops[bl])
-          if (mpi::all_reduce(tau_diff_stat[bl](op.idx, op.dag, 0).n_lin_bins()) > 0)
-            op.left_width = mean_mpi(world, tau_diff_stat[bl](op.idx, op.dag, 0).linear_bins());
+          if (mpi::all_reduce(tau_diff_stat[bl](op.idx, op.dag, 0).count()) > 0)
+            op.left_width = mean_mpi(world, tau_diff_stat[bl](op.idx, op.dag, 0).bins());
           else
             ++below_threshold_count;
 
-          if (mpi::all_reduce(tau_diff_stat[bl](op.idx, op.dag, 1).n_lin_bins()) > 0)
-            op.right_width = mean_mpi(world, tau_diff_stat[bl](op.idx, op.dag, 1).linear_bins());
+          if (mpi::all_reduce(tau_diff_stat[bl](op.idx, op.dag, 1).count()) > 0)
+            op.right_width = mean_mpi(world, tau_diff_stat[bl](op.idx, op.dag, 1).bins());
           else
             ++below_threshold_count;
 
           if (params.verbosity > 0) std::cout << op << "\n";
         }
         for (auto &op : all_d_dag_ops[bl]) {
-          if (mpi::all_reduce(tau_diff_stat[bl](op.idx, op.dag, 0).n_lin_bins()) > 0)
-            op.left_width = mean_mpi(world, tau_diff_stat[bl](op.idx, op.dag, 0).linear_bins());
+          if (mpi::all_reduce(tau_diff_stat[bl](op.idx, op.dag, 0).count()) > 0)
+            op.left_width = mean_mpi(world, tau_diff_stat[bl](op.idx, op.dag, 0).bins());
           else
             ++below_threshold_count;
 
-          if (mpi::all_reduce(tau_diff_stat[bl](op.idx, op.dag, 1).n_lin_bins()) > 0)
-            op.right_width = mean_mpi(world, tau_diff_stat[bl](op.idx, op.dag, 1).linear_bins());
+          if (mpi::all_reduce(tau_diff_stat[bl](op.idx, op.dag, 1).count()) > 0)
+            op.right_width = mean_mpi(world, tau_diff_stat[bl](op.idx, op.dag, 1).bins());
           else
             ++below_threshold_count;
 

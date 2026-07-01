@@ -8,7 +8,7 @@ namespace inchworm::moves {
 
   template <KIND Kind> struct insert : public base_move {
 
-    using acc_t = std::vector<nda::array<accumulator<double>, 3>>;
+    using acc_t = std::vector<nda::array<lin_binning<double>, 3>>;
 
     insert(config_t &config, frame_t &frame, qmc_params_t const &params, solver_core const &solver, triqs::mc_tools::random_generator &rng,
            acc_t &tau_diff_stat)

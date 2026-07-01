@@ -5,7 +5,8 @@
 #include <triqs/operators/many_body_operator.hpp>
 #include <triqs/atom_diag/atom_diag.hpp>
 #include <triqs/atom_diag/functions.hpp>
-#include <triqs/stat/accumulator.hpp>
+#include <triqs/stat/lin_binning.hpp>
+#include <triqs/stat/log_binning.hpp>
 
 #include <nda/nda.hpp>
 #include <nda/macros.hpp>

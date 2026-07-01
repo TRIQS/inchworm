@@ -10,7 +10,7 @@ namespace inchworm::measures {
        acc_frame(results.frame),
        weight_zeroth_order(results.weight_zeroth_order),
        errs_frame(results.errs_frame),
-       lin_acc(frame.size(), accumulator<scalar_t>{0.0, 0, 1000}) {
+       lin_acc(frame.size(), lin_binning<scalar_t>{0.0, 1000, 1}) {
     for (auto &bl : acc_frame) bl = 0.;
     weight_zeroth_order = 0.;
   }
@@ -45,9 +45,9 @@ namespace inchworm::measures {
     N_samples           = mpi::all_reduce(N_samples, comm);
 
     // Estimate error of the frame[0](0,0) component
-    for (int bl : range(curr_frame.size())) errs_frame[bl] = N_samples * std::get<1>(mean_and_err_mpi(comm, lin_acc[bl].linear_bins()));
+    for (int bl : range(curr_frame.size())) errs_frame[bl] = N_samples * std::get<1>(mean_and_err_mpi(comm, lin_acc[bl].bins()));
 
-    auto [errs, counts] = log_acc.log_bin_errors_all_reduce(comm);
+    auto errs = std::get<1>(log_acc.mean_errors_and_taus(comm));
 
     // Debug Prints
     if (comm.rank() == 0 and verbosity > 1) {
@@ -59,13 +59,13 @@ namespace inchworm::measures {
     // Estimate auto-correlation time
     if (comm.rank() == 0) {
       double auto_corr_time = 0.0;
-      if (errs[0] > 0) auto_corr_time = std::max(0.0, tau_estimate_from_errors(errs[int(0.7 * errs.size())], errs[0]));
+      if (!errs.empty() && errs[0] > 0) auto_corr_time = std::max(0.0, tau_estimate_from_errors(errs[int(0.7 * errs.size())], errs[0]));
       std::printf("     autocorr: %.3f\n", auto_corr_time);
     }
 
     // Reset the accumulators
-    log_acc = {0.0, -1, 0};
-    lin_acc = {size_t(curr_frame.size()), accumulator<scalar_t>{0.0, 0, 1000}};
+    log_acc = {0.0, -1};
+    lin_acc = {size_t(curr_frame.size()), lin_binning<scalar_t>{0.0, 1000, 1}};
   }
 
 } // namespace inchworm::measures

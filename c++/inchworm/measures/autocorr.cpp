@@ -17,7 +17,7 @@ namespace inchworm::measures {
 
   void autocorr::collect_results(mpi::communicator const &comm) {
 
-    auto [errs, counts] = log_acc.log_bin_errors_all_reduce(comm);
+    auto errs = std::get<1>(log_acc.mean_errors_and_taus(comm));
 
     // Debug Prints
     if (comm.rank() == 0 and verbosity > 1) {
@@ -28,11 +28,12 @@ namespace inchworm::measures {
 
     // Estimate auto-correlation time
     results.auto_corr_time = 0.0;
-    if (comm.rank() == 0 && errs[0] > 0) results.auto_corr_time = std::max(0.0, tau_estimate_from_errors(errs[int(0.7 * errs.size())], errs[0]));
+    if (comm.rank() == 0 && !errs.empty() && errs[0] > 0)
+      results.auto_corr_time = std::max(0.0, tau_estimate_from_errors(errs[int(0.7 * errs.size())], errs[0]));
     mpi::broadcast(results.auto_corr_time, comm, 0);
 
     // Reset the accumulator
-    log_acc = {0.0, -1, 0};
+    log_acc = {0.0, -1};
   }
 
 } // namespace inchworm::measures
