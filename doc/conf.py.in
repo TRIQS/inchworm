@@ -62,7 +62,7 @@ html_style = 'css/custom.css'
 # over older versions in search results.
 html_baseurl = 'https://triqs.github.io/@PROJECT_NAME@/latest/'
 
-#html_favicon = '@CMAKE_CURRENT_SOURCE_DIR@/logos/favicon.ico'
+html_favicon = '@CMAKE_CURRENT_SOURCE_DIR@/_static/triqs_logo/triqs_favicon.ico'
 #html_logo = '@CMAKE_CURRENT_SOURCE_DIR@/logos/logo.png'
 
 # options for the the rtd theme
@@ -90,10 +90,7 @@ html_context = {
     # list is static -- update it when a new release line is published.
     'current_version': version,
     'versions': [
-        ['latest',   'https://triqs.github.io/@PROJECT_NAME@/latest/'],
         ['unstable', 'https://triqs.github.io/@PROJECT_NAME@/unstable/'],
-        ['4.0.x',    'https://triqs.github.io/@PROJECT_NAME@/4.0.x/'],
-        ['3.3.x',    'https://triqs.github.io/@PROJECT_NAME@/3.3.x/'],
     ],
 }
 
