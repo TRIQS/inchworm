@@ -42,8 +42,8 @@ endif()
 add_custom_target(${PROJECT_NAME}_docs_sphinx ALL)
 add_dependencies(${PROJECT_NAME}_docs_sphinx ${PROJECT_NAME}_c ${PROJECT_NAME}_python_modules)
 add_custom_command(
-  TARGET ${PROJECT_NAME}_docs_sphinx
-  COMMAND PYTHONPATH=${PROJECT_BINARY_DIR}/python:$ENV{PYTHONPATH} ${SPHINXBUILD_EXECUTABLE} -c . -j8 -b html ${CMAKE_CURRENT_SOURCE_DIR} html
+  TARGET ${PROJECT_NAME}_docs_sphinx POST_BUILD
+  COMMAND PYTHONPATH=${PROJECT_BINARY_DIR}/python:$ENV{PYTHONPATH} ${SPHINXBUILD_EXECUTABLE} -j auto -c . -b html ${CMAKE_CURRENT_SOURCE_DIR} html
 )
 
 option(Sphinx_Only "When building the documentation, skip the Python Modules and the generation of C++ Api and example outputs" OFF)
@@ -57,7 +57,7 @@ endif()
 # ---------------------------------
 install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html/ COMPONENT documentation DESTINATION share/doc/${PROJECT_NAME}
   FILES_MATCHING
-  REGEX "\\.(html|pdf|png|gif|jpg|svg|js|xsl|css|py|txt|inv|bib|ttf|woff2|eot)$"
+  REGEX "\\.(html|pdf|png|gif|jpg|svg|ico|js|xsl|css|py|txt|inv|bib|ttf|woff2|eot|sh)$"
   PATTERN "_*"
 )
 
