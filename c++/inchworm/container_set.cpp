@@ -26,7 +26,7 @@
 namespace inchworm {
 
   qmc_results_t::qmc_results_t(std::vector<int> const &shape_of_frame)
-     : frame{make_zero_frame(shape_of_frame)}, errs_frame(shape_of_frame.size(), 0.0){};
+     : frame{make_zero_frame(shape_of_frame)}, errs_frame(shape_of_frame.size(), 0.0) {};
 
   void qmc_results_t::normalize(scalar_t normalization_cte) {
     if (normalization_cte == scalar_t{0.}) TRIQS_RUNTIME_ERROR << "Error in result normalization: Division by zero.";

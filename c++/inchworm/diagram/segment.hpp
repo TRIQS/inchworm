@@ -42,7 +42,7 @@ namespace inchworm::diagram {
     const int id;    // The segment identifier
     const int size;  // The number of vertices in the segment
 
-    bool calculated             = false; // Has this segment been calculated?
+    bool calculated                 = false; // Has this segment been calculated?
     hyb_scalar_t value              = 0.;    // The full value of the segment, c.f. Eq (14) arXiv:1807.00290v1
     hyb_scalar_t value_without_cuts = 0.;    // The value of the segment if split points are not considered // FIXME CHECK
 
@@ -78,7 +78,7 @@ namespace inchworm::diagram {
     std::span<const int> seg_ids() const { return {seg_ids_arr.data(), N_segs}; }
 
     cppcoro::generator<segment_t const &> segs() const {
-      for (auto i : range(N_segs)) co_yield(*segment_list_ptr)[seg_ids_arr(i)];
+      for (auto i : range(N_segs)) co_yield (*segment_list_ptr)[seg_ids_arr(i)];
     }
 
     /**

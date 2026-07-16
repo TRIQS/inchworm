@@ -42,19 +42,19 @@ namespace inchworm {
 #ifdef IMPURITY_HAMILTONIAN_IS_COMPLEX
   using h_scalar_t = dcomplex;
 #else
-  using h_scalar_t   = double;
+  using h_scalar_t = double;
 #endif
 
   /// The target type of the impurity Green function and propagator
 #if defined(HYBRIDIZATION_IS_COMPLEX) || defined(IMPURITY_HAMILTONIAN_IS_COMPLEX)
   using target_t = matrix_valued;
 #else
-  using target_t     = matrix_real_valued;
+  using target_t = matrix_real_valued;
 #endif
 
   // Combined scalar_t: complex if either hyb or himp are complex
-  using scalar_t     = decltype(h_scalar_t{} * hyb_scalar_t{});
-  using matrix_t     = nda::matrix<scalar_t>;
+  using scalar_t = decltype(h_scalar_t{} * hyb_scalar_t{});
+  using matrix_t = nda::matrix<scalar_t>;
 
   enum class MODE { PROPAGATOR, GREENFUNCTION };
 

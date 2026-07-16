@@ -21,11 +21,7 @@ namespace inchworm {
     interpolator_t() = default;
 
     interpolator_t(u_tau_t::real_t const &u_tau, long n_tau)
-       : n_blocks(u_tau.size()),
-         datx(n_tau),
-         daty(n_blocks),
-         interp(n_blocks),
-         accel_ptr(gsl_interp_accel_alloc()) {
+       : n_blocks(u_tau.size()), datx(n_tau), daty(n_blocks), interp(n_blocks), accel_ptr(gsl_interp_accel_alloc()) {
       EXPECTS(n_tau >= 2);
 
       for (auto n : range(n_tau)) datx[n] = u_tau[0].mesh()[n];
@@ -47,7 +43,7 @@ namespace inchworm {
 
     // This object holds raw pointers and can only be move-assigned
     interpolator_t &operator=(interpolator_t const &) = delete;
-    interpolator_t &operator=(interpolator_t &&) = default;
+    interpolator_t &operator=(interpolator_t &&)      = default;
 
     ~interpolator_t() {
       for (auto bl : range(n_blocks)) {
@@ -116,7 +112,7 @@ namespace inchworm {
 
     // This object can only be move-assigned as it has members that hold raw pointers
     interpolator_t &operator=(interpolator_t const &) = delete;
-    interpolator_t &operator=(interpolator_t &&) = default;
+    interpolator_t &operator=(interpolator_t &&)      = default;
 
     dcomplex operator()(int bl, double tau, int i, int j) const { return {interpolator_real(bl, tau, i, j), interpolator_imag(bl, tau, i, j)}; }
 
