@@ -12,8 +12,8 @@ library.
 ## What is implemented
 
 - Iterative calculation of the imaginary-time impurity propagator
-  \(\mathcal{U}(\tau)\) and subsequent sampling of the impurity Green's function
-  \(G(\tau)\).
+  $\mathcal{U}(\tau)$ and subsequent sampling of the impurity Green's function
+  $G(\tau)$.
 - General local interactions expressed as TRIQS many-body operators and
   block-structured, matrix-valued hybridization functions.
 - Inclusion–exclusion summation of the proper hybridization diagrams, with a
@@ -29,6 +29,30 @@ implement real-time or nonequilibrium Inchworm calculations. The API is not
 stable, and users must check convergence with respect to Monte Carlo statistics,
 the imaginary-time meshes, and any perturbation-order cutoff.
 
+## Expansion around a fitted discrete bath
+
+By default, the solver expands around the atomic Hamiltonian in the full
+hybridization function $\Delta$. The Python interface also supports a shifted
+expansion point, enabled by setting the solve parameter `n_bath_sites_ED` to the
+number of auxiliary bath sites per hybridization block. It fits a discrete-bath
+hybridization $\Delta_{\mathrm{ED}}$, adds the corresponding bath orbitals,
+energies, and couplings to the Hamiltonian treated by exact diagonalization, and
+samples the residual hybridization
+
+$$
+\widetilde{\Delta} = \Delta - \Delta_{\mathrm{ED}}.
+$$
+
+This is an add-and-subtract reorganization of the expansion, rather than an ED
+approximation to the final answer: when the residual expansion is converged, it
+recovers the problem defined by the original $\Delta$. A good bath fit can
+reduce the required perturbation order, at the cost of an exponentially larger
+local Hilbert space. The default `n_bath_sites_ED=0` selects the ordinary atomic
+expansion.
+
+This option was introduced in the original
+[August 2021 implementation commit](https://github.com/TRIQS/inchworm/commit/c21ef1e12d82d33a20bbbf3fca77c4a13d8b5a67).
+
 ## Build and run
 
 `inchworm` requires a compatible installation of TRIQS 4.0. After loading the
@@ -42,7 +66,7 @@ ctest --test-dir build -j 16 --output-on-failure
 
 The [single-site example](examples/onesite.py) is the smallest complete solver
 run. It constructs a spinful Anderson impurity coupled to a discrete bath,
-computes \(\mathcal{U}(\tau)\) and \(G(\tau)\), and writes them to
+computes $\mathcal{U}(\tau)$ and $G(\tau)$, and writes them to
 `onesite.out.h5`:
 
 ```bash
