@@ -110,4 +110,4 @@ additional permutation-sign factor in the adapted inclusion–exclusion formula.
 ## License
 
 `inchworm` is distributed under the
-[GNU General Public License, version 3 or later](LICENSE.txt).
+[GNU General Public License, version 3 or later](LICENSE).

@@ -2,8 +2,7 @@
 #
 # inchworm: A TRIQS based impurity solver
 #
-# Copyright (c) 2018-2019 The Simons foundation
-#   authors: Nils Wentzell
+# Copyright (c) 2019--present, The Simons Foundation
 #
 # inchworm is free software: you can redistribute it and/or modify it under the
 # terms of the GNU General Public License as published by the Free Software

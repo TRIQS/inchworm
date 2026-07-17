@@ -2,7 +2,7 @@
 #
 # inchworm - An example application using triqs and c2py + clair
 #
-# Copyright (C) ...
+# Copyright (C) 2019--present, The Simons Foundation
 #
 # inchworm is free software: you can redistribute it and/or modify it under the
 # terms of the GNU General Public License as published by the Free Software
@@ -14,8 +14,7 @@
 # A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License along with
-# inchworm (in the file COPYING.txt in this directory). If not, see
-# <http://www.gnu.org/licenses/>.
+# inchworm. If not, see <http://www.gnu.org/licenses/>.
 #
 # ##############################################################################
 
