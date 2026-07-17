@@ -1,5 +1,5 @@
 compile_commands.json
-doc/_autosummary
+doc/_ref
 doc/cpp2rst_generated
 .claude
 

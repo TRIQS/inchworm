@@ -4,20 +4,27 @@
 
 > This is the homepage of **TRIQS/@PROJECT_NAME@ v@PROJECT_VERSION@**. The source code can be found on [GitHub](https://github.com/TRIQS/inchworm).
 
-An example application using [c2py](https://github.com/flatironinstitute/c2py)/[clair](https://github.com/flatironinstitute/clair) and [TRIQS](https://github.com/TRIQS/triqs).
+**inchworm** is a TRIQS-based quantum impurity solver. It implements an equilibrium,
+imaginary-time Inchworm quantum Monte Carlo solver for quantum impurity models, based on a
+continuous-time hybridization expansion and built on the
+[TRIQS](https://github.com/TRIQS/triqs) library.
+
+It iteratively computes the imaginary-time impurity propagator @f$\mathcal{U}(\tau)@f$ and
+samples the impurity Green's function @f$G(\tau)@f$ for general local interactions, expressed
+as TRIQS many-body operators, and block-structured, matrix-valued hybridization functions.
+Monte Carlo sampling is MPI-parallel, and both C++ and Python interfaces are provided.
 
 This documentation is generated based on [doxygen](https://www.doxygen.nl/)
 and the comments in the sources and headers.
 
 @section start Where to start?
 
-The @ref installation section tells you how to get the library and make it available on your system.
+The @ref installation section tells you how to get inchworm and make it available on your system.
 
-@ref integration explains how to integrate **inchworm** in your own C++ code.
+@ref integration explains how to integrate **inchworm** into your own C++ code.
 
-Then, you can start with the @ref examples section to get an overview of the library's features and how
-**inchworm** can be used in practice.
+Then, the @ref examples section shows how **inchworm** can be used in practice.
 
-Furthermore, we provide a detailed reference @ref documentation to answer your questions.
+Furthermore, we provide a detailed reference @ref documentation.
 
 If you experience any problem with the library, you can post an [issue](../issues.html) on GitHub.

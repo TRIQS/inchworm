@@ -3,25 +3,24 @@
 Documentation
 *************
 
+Reference manual
+----------------
 
-.. math::
+.. autosummary::
+   :toctree: _ref
+   :template: autosummary_module_template.rst
+   :recursive:
 
-   (a + b)^2  &=  (a + b)(a + b) \\
-              &=  a^2 + 2ab + b^2
+   inchworm.solver
+   inchworm.solver_core
+   inchworm.ad_tools
 
+Links to all relevant solver parameters:
+
+* :doc:`Construction parameters <_ref/inchworm.solver_core.ConstrParamsT>`
+* :doc:`Solve parameters <_ref/inchworm.solver_core.SolveParamsT>`
 
 C++ reference manual
 ====================
 
 The C++ reference manual can be found `here <./doxygen/index.html>`_.
-
-Python reference manual
-=======================
-
-.. automodule:: inchworm 
-   :members:
-
-.. autoclass:: inchworm.inchworm_module.Toto
-   :members:
-
-.. autofunction:: inchworm.inchworm_module.chain

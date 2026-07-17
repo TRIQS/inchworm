@@ -6,7 +6,7 @@ import sys
 sys.path.insert(0, "@CMAKE_CURRENT_SOURCE_DIR@/sphinxext")
 
 # exclude these folders from scanning by sphinx
-exclude_patterns = ['doxygen']
+exclude_patterns = ['_templates', 'doxygen']
 
 extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.mathjax',
@@ -45,6 +45,13 @@ source_suffix = {
 
 project = '@PROJECT_NAME@'
 version = '@PROJECT_VERSION@'
+
+# this makes the current project version available as var in every rst file
+rst_epilog = """
+.. |PROJECT_VERSION| replace:: {version}
+""".format(
+version = version,
+)
 
 copyright = '2017-2018 N. Wentzell, O. Parcollet 2018-2021 The Simons Foundation, authors: N. Wentzell, D. Simons, H. Strand, O. Parcollet'
 
@@ -103,6 +110,11 @@ intersphinx_mapping = {'python': ('https://docs.python.org/3.8', None), 'triqsli
 
 # configure numpydoc if enabled
 numpydoc_attributes_as_param_list = False
+numpydoc_show_inherited_class_members = True
+
+# generate the autosummary reference pages, but skip imported members
+autosummary_generate = True
+autosummary_imported_members = False
 
 
 # open links in new tab instead of same window
