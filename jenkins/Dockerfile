@@ -2,4 +2,4 @@
 FROM flatironinstitute/triqs:unstable-ubuntu-clang
 
 # Install here missing dependencies, e.g.
-# RUN apt-get update && apt-get install -y python3-skimage
+RUN apt-get update && apt-get install -y libgsl-dev
