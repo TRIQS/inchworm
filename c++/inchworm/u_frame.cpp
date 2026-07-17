@@ -23,7 +23,9 @@ namespace inchworm {
     frame_t diff = l;
     for (auto bl : range(l.size())) { diff[bl] = l[bl] - r[bl]; }
 
-    return norm(diff) / std::max(norm(l), norm(r));
+    double scale = std::max(norm(l), norm(r));
+    if (scale == 0.0) return 0.0;
+    return norm(diff) / scale;
   }
 
   frame_t make_zero_frame(std::vector<int> const &shape_of_frame) {
